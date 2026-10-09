@@ -1,3 +1,4 @@
+// @vitest-environment node
 import {describe, expect, it} from "vitest";
 
 import {candidateKey, type CompactIpData, createIpLookup, encodeIpData, type IpCandidate, parseIpData} from "@/core/ipdb";

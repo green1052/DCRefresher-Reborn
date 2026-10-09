@@ -1,3 +1,4 @@
+// @vitest-environment node
 import {afterEach, describe, expect, it, vi} from "vitest";
 
 import {ajax, BlockedError, formBody, http, isAbortError, setBlockedHandler, setRequestConcurrency} from "@/core/http/client";
