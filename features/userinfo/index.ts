@@ -5,7 +5,7 @@ import {defineModule} from "@/core/module/define";
 import {type GallogActivity, getGallogActivity} from "@/core/gallog";
 import {ROWS_HIDDEN_EVENT} from "@/core/block";
 import {queryString} from "@/core/http/urls";
-import {ROW_SELECTOR} from "@/core/list";
+import {WRITER_ROW_SELECTOR} from "@/core/list";
 import {batchedSave} from "@/core/storage/batched";
 import {moduleDataKey, moduleDataStorage} from "@/core/storage/items";
 import {watchStorage} from "@/core/storage/sync";
@@ -152,7 +152,7 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
     if (lowActivity && action === "tag") badges.push(buildBadgeSpan("[깡계]", colors.ratioAlarm, `글댓합 ${ctx.settings.alarmRatio}개 이하`));
     // 글 보기 머리는 가리지 않는다. 머리만 가리면 본문은 그대로 보인다 (배지 색으로만 알린다).
     if (lowActivity && (action === "blur" || action === "hide") && !element.closest(".gallview_head")) {
-        (element.closest<HTMLElement>(ROW_SELECTOR) ?? element).classList.add(LOW_ACTIVITY_CLASSES[action]);
+        (element.closest<HTMLElement>(WRITER_ROW_SELECTOR) ?? element).classList.add(LOW_ACTIVITY_CLASSES[action]);
         notifyRowsHidden();
     }
 
@@ -198,7 +198,7 @@ const rebuildUsers = (ctx: Ctx, uids: string[]): void => {
     let cleared = false;
     for (const element of document.querySelectorAll<HTMLElement>(WRITER_SELECTOR)) {
         if (!changed.has(element.dataset.uid ?? "")) continue;
-        const row = element.closest<HTMLElement>(ROW_SELECTOR) ?? element;
+        const row = element.closest<HTMLElement>(WRITER_ROW_SELECTOR) ?? element;
         cleared ||= row.matches(LOW_ACTIVITY_SELECTOR);
         row.classList.remove(...LOW_ACTIVITY_CLASS_LIST);
         process(ctx, element);

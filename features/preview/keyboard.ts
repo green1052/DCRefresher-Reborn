@@ -1,10 +1,11 @@
+import {LIST_ROW_SELECTOR} from "@/core/list";
 import {postKey} from "@/core/preview/cache";
 import type {GalleryPreData} from "@/core/preview/types";
 import {smoothScroll} from "@/utils/dom";
 import {isTyping} from "@/utils/event";
 
 import type {Ctx} from "./meta";
-import {isBlurHidden, type ListRow, listRows, ROW_SELECTOR, rowPostKey} from "./rows";
+import {isBlurHidden, type ListRow, listRows, rowPostKey} from "./rows";
 import {usePreviewStore} from "./ui/previewStore";
 
 const SELECTED_CLASS = "refresherSelected";
@@ -63,7 +64,7 @@ export const bindListKeys = (ctx: Ctx, open: (preData: GalleryPreData) => void):
     };
     window.addEventListener("keydown", onKey, {signal: ctx.signal});
 
-    ctx.addFilter(ROW_SELECTOR, (row) => {
+    ctx.addFilter(LIST_ROW_SELECTOR, (row) => {
         if (selected && rowPostKey(row) === selected) row.classList.add(SELECTED_CLASS);
     });
 

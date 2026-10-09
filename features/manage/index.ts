@@ -1,6 +1,6 @@
 import {defineModule} from "@/core/module/define";
 import {rowPostNo, queryString} from "@/core/http/urls";
-import {ROW_SELECTOR} from "@/core/list";
+import {LIST_ROW_SELECTOR, WRITER_ROW_SELECTOR} from "@/core/list";
 import {deletePost} from "@/core/preview/request";
 import {whenDomReady} from "@/utils/dom";
 import {notifyManage} from "@/stores/notify";
@@ -10,7 +10,7 @@ import meta from "./meta";
 import {removeViewTools, renderViewTools} from "./view";
 
 /** 체크박스와 작성자 칸이 같이 든 칸. 목록 행에 더해 댓글은 작성자 칸(.cmt_nickbox)이다. */
-const CHECKBOX_ROW = `${ROW_SELECTOR}, .cmt_nickbox`;
+const CHECKBOX_ROW = `${WRITER_ROW_SELECTOR}, .cmt_nickbox`;
 
 const GIF_VIDEO = ".gallview_contents video";
 
@@ -111,7 +111,7 @@ export default defineModule({
         const deleting = new Set<string>();
 
         ctx.addFilter(
-            ".gall_list .ub-content",
+            LIST_ROW_SELECTOR,
             (element) => {
                 if (handled.has(element)) return;
                 handled.add(element);

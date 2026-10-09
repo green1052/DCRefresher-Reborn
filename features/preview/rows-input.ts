@@ -1,9 +1,10 @@
 import {dcinsideHref} from "@/core/http/urls";
+import {LIST_ROW_SELECTOR} from "@/core/list";
 import type {GalleryPreData} from "@/core/preview/types";
 
 import type {Ctx} from "./meta";
 import type {createMini} from "./mini";
-import {buildPreData, ROW_SELECTOR as ROW} from "./rows";
+import {buildPreData} from "./rows";
 import {usePreviewStore} from "./ui/previewStore";
 
 /** 미리보기를 여는 제목 칸과 행. 행 전체 인식이 꺼져 있으면 행은 댓글 수만 받는다. */
@@ -55,7 +56,7 @@ export const bindRows = (ctx: Ctx, {open, prefetch, mini}: RowHandlers): void =>
         const target = ev.target;
         if (!(target instanceof Element)) return null;
         // 제목 칸 안이면 제목 칸이, 아니면 행이 대상이다.
-        const element = target.closest<HTMLElement>(WORD) ?? target.closest<HTMLElement>(ROW);
+        const element = target.closest<HTMLElement>(WORD) ?? target.closest<HTMLElement>(LIST_ROW_SELECTOR);
         if (!element) return null;
 
         // 댓글 수 링크는 댓글만 보기로 연다. 행 전체 인식이 꺼져 있어도 열리게 아래 검사보다 먼저 본다.

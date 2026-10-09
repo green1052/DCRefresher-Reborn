@@ -1,7 +1,7 @@
 import {BLOCKED_TEXT, dcconCode, groupDuplicates, HIDDEN_ROW_SELECTOR, isAnyBlocked, isBlocked, ROWS_HIDDEN_EVENT} from "@/core/block";
 import {defineModule} from "@/core/module/define";
 import {isViewPage, queryString} from "@/core/http/urls";
-import {ROW_SELECTOR} from "@/core/list";
+import {WRITER_ROW_SELECTOR} from "@/core/list";
 import type {BlockType} from "@/core/storage/types";
 import {useBlocksStore} from "@/stores/blocks";
 import {openWriterBubble, useUiStore} from "@/stores/ui";
@@ -89,7 +89,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
         if (!WRITER_TYPES.some((type) => entries[type].length > 0)) return;
 
         // 제목·말머리는 작성자 칸이 아니라 같은 행의 다른 칸에 있다. 글 보기 머리(.gallview_head)도 ub-content다.
-        const row = element.closest<HTMLElement>(ROW_SELECTOR);
+        const row = element.closest<HTMLElement>(WRITER_ROW_SELECTOR);
         const {nick, uid, ip} = element.dataset;
 
         const blocked = isAnyBlocked(

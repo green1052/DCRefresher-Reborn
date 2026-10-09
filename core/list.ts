@@ -9,7 +9,10 @@ export const PAGING_SELECTOR = ".left_content article:has(.gall_listwrap) .botto
  * 작성자 칸(.ub-writer)이 든 행. 글 목록 행·글 보기 머리·댓글은 .ub-content이고,
  * 댓글 검색 결과의 댓글 행은 ub-content가 아니라 .search_comment다.
  */
-export const ROW_SELECTOR = ".ub-content, .search_comment";
+export const WRITER_ROW_SELECTOR = ".ub-content, .search_comment";
+
+/** 글 목록의 글 행. 글 보기 머리·댓글과 댓글 검색 결과의 댓글 행(.search_comment)은 들지 않는다. */
+export const LIST_ROW_SELECTOR = ".gall_list .ub-content";
 
 /**
  * 목록 행을 갈아끼우거나 붙인 뒤 부른다. 디시는 자체 차단·이용자 메모 표시를 로드 때만 걸므로, 배경이 페이지(MAIN world)에서 다시 건다
