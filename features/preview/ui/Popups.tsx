@@ -1,5 +1,5 @@
 import {ArrowBigUpDash, Ban, Megaphone, Star, Trash2} from "lucide-react";
-import {type ReactNode, useId, useRef, useState} from "react";
+import {Fragment, type ReactNode, useId, useRef, useState} from "react";
 
 import {DialogActions, ModalDialog, SubmitForm} from "@/components/dialogs";
 import {Button} from "@/components/ui/button";
@@ -9,6 +9,7 @@ import {Field, FieldLabel} from "@/components/ui/field";
 import {Input} from "@/components/ui/input";
 import {Kbd} from "@/components/ui/kbd";
 import {RadioGroup, RadioGroupItem} from "@/components/ui/radio-group";
+import {Separator} from "@/components/ui/separator";
 import {Spinner} from "@/components/ui/spinner";
 import {useModuleSettings} from "@/core/module/useModuleSettings";
 import {BLOCK_DAYS, BLOCK_REASONS, type BlockDay, type BlockReason} from "@/core/preview/types";
@@ -16,6 +17,7 @@ import {useUiStore} from "@/stores/ui";
 import {createDoublePress} from "@/utils/doublePress";
 import {focusOnMount} from "@/utils/focus";
 import {objectEntries} from "@/utils/typed";
+import {cn} from "cn";
 
 import {DcconInfoPopup} from "./DcconInfoPopup";
 import {ImageViewer} from "./ImageViewer";
@@ -211,23 +213,30 @@ export const AdminPanel = () => {
     };
 
     return (
-        <div className="pointer-events-auto fixed top-[20%] left-0 w-[150px] rounded-r-xl bg-card p-2 text-card-foreground shadow-md ring-1 ring-foreground/10 duration-150 animate-in fade-in">
-            <p className="mb-2 ml-1 text-xs font-medium text-muted-foreground">관리</p>
-            <div className="flex flex-col gap-1">
+        <div className="pointer-events-auto fixed top-[20%] left-0 w-40 rounded-r-xl bg-card p-1.5 text-card-foreground shadow-lg ring-1 ring-foreground/10 duration-150 animate-in fade-in slide-in-from-left-2">
+            <p className="px-2 pt-1 pb-1.5 text-xs font-medium text-muted-foreground">관리</p>
+            <div className="flex flex-col gap-0.5">
                 {actions.map((action) => (
-                    <Button
-                        key={action.id}
-                        // 상태는 색으로 보인다: 위험한 동작은 빨강, 켜진 공지·개념글은 강조색.
-                        variant={action.danger ? "destructive" : action.active ? "default" : "secondary"}
-                        className="justify-start"
-                        // 눌러도 포커스를 가져가지 않는다. 첫 클릭 뒤 스페이스로 스크롤하면 포커스된 버튼이 눌려 두 번째 확인이 된다.
-                        onMouseDown={(ev) => ev.preventDefault()}
-                        onClick={() => press(action)}
-                    >
-                        {action.icon}
-                        <span className="flex-1 text-left">{action.label}</span>
-                        {action.hint && <Kbd>{action.hint}</Kbd>}
-                    </Button>
+                    <Fragment key={action.id}>
+                        {/* 위험한 동작(차단·삭제)은 구분선 아래에 둔다. */}
+                        {action.id === "block" && <Separator className="my-1"/>}
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            aria-pressed={action.active}
+                            // 상태는 색으로 보인다: 위험한 동작은 빨간 글자, 켜진 공지·개념글은 강조색으로 옅게 칠한다.
+                            className={cn("w-full justify-start",
+                                          action.active && "bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary",
+                                          action.danger && "text-destructive hover:bg-destructive/10 hover:text-destructive dark:hover:bg-destructive/20")}
+                            // 눌러도 포커스를 가져가지 않는다. 첫 클릭 뒤 스페이스로 스크롤하면 포커스된 버튼이 눌려 두 번째 확인이 된다.
+                            onMouseDown={(ev) => ev.preventDefault()}
+                            onClick={() => press(action)}
+                        >
+                            {action.icon}
+                            <span className="flex-1 text-left">{action.label}</span>
+                            {action.hint && <Kbd>{action.hint}</Kbd>}
+                        </Button>
+                    </Fragment>
                 ))}
             </div>
         </div>
