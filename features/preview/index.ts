@@ -20,7 +20,7 @@ import {isRecord} from "@/utils/record";
 import {getEntry, postKey, setEntry} from "@/core/preview/cache";
 import {historyDoc, ownPreviewDepth, ownPreviewEntry, previewEntry, type PreviewEntry, type SavedHistory} from "@/core/preview/history";
 import {ADULT_ERROR, SECRET_ERROR} from "@/core/preview/parser";
-import {blockUser, type BlockOptions, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
+import {blockCommenters, blockUser, type BlockOptions, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
 import {bindListKeys} from "./keyboard";
 import meta, {type Ctx} from "./meta";
 import {createMini} from "./mini";
@@ -489,15 +489,21 @@ const controller = (ctx: Ctx) => {
     // 차단 요청도 한 번에 하나만. 차단 키를 네 번 누르면(두 번씩 두 차례) 같은 사람을 두 번 차단한다.
     let blocking = false;
 
-    /** 차단 키(프리셋)와 차단 창이 같이 쓴다. 글도 지웠으면 창을 닫는다. */
-    const block = async (target: GalleryPreData, options: BlockOptions): Promise<boolean> => {
+    /** 차단 키(프리셋)와 차단 창이 같이 쓴다. comments가 있으면 그 댓글 작성자를 차단한다. 글도 지웠으면 창을 닫는다. */
+    const block = async (target: GalleryPreData, options: BlockOptions, comments?: string[]): Promise<boolean> => {
         if (blocking) return false;
         blocking = true;
         const signal = store.getState().signalId;
         try {
-            const blocked = await notifyManage(blockUser(target, options), "차단했습니다.", "차단하지 못했습니다. 잠시 후 다시 시도해 주세요.");
-            // 그새 다른 글로 넘어갔으면 창을 닫지 않는다.
-            if (blocked && options.delChk && store.getState().signalId === signal) close();
+            const request = comments ? blockCommenters(target, comments, options) : blockUser(target, options);
+            const blocked = await notifyManage(request, "차단했습니다.", "차단하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+            // 그새 다른 글로 넘어갔으면 창을 닫지 않는다. 댓글 차단은 창을 두고 고른 댓글을 비운 뒤 댓글을 다시 받는다.
+            if (blocked && store.getState().signalId === signal) {
+                if (comments) {
+                    store.setState({selectedComments: NO_FRESH});
+                    void refreshComments();
+                } else if (options.delChk) close();
+            }
             void getModuleApi("refresh")?.reload();
             return blocked;
         } finally {

@@ -44,7 +44,8 @@ const RadioGrid = <T extends string, >({label, items, value, onChange}: {
     );
 };
 
-const BlockPopup = () => {
+/** comments: 고른 댓글의 작성자를 차단한다. 없으면 글쓴이를 차단한다. */
+const BlockPopup = ({comments}: { comments?: string[] }) => {
     const preData = usePreviewStore((s) => s.preData);
     const [day, setDay] = useState<BlockDay>("1");
     const [reason, setReason] = useState<BlockReason>("1");
@@ -60,7 +61,7 @@ const BlockPopup = () => {
         setSending(true);
         const signal = usePreviewStore.getState().signalId;
 
-        const done = await usePreviewStore.getState().requestBlock(preData, {avoidHour: day, avoidReason: reason, avoidReasonTxt: reason === "0" ? custom : "", delChk, userTypeChk});
+        const done = await usePreviewStore.getState().requestBlock(preData, {avoidHour: day, avoidReason: reason, avoidReasonTxt: reason === "0" ? custom : "", delChk, userTypeChk}, comments);
 
         // 그새 다른 글로 넘어갔으면 차단 창과 미리보기는 그 글 것이라 알림만 띄우고 건드리지 않는다. 글도 지웠으면 창은 이미 닫혔다.
         if (usePreviewStore.getState().signalId !== signal) return;
@@ -72,7 +73,7 @@ const BlockPopup = () => {
     return (
         <ModalDialog onClose={() => usePreviewStore.setState({blockPopup: false})} className="sm:max-w-[440px]" focusOnOpen="keyboard">
             <DialogHeader>
-                <DialogTitle>유저 차단</DialogTitle>
+                <DialogTitle>{comments ? `댓글 작성자 차단 (${comments.length}개)` : "유저 차단"}</DialogTitle>
             </DialogHeader>
 
             <div className="flex flex-col gap-2">
@@ -98,7 +99,7 @@ const BlockPopup = () => {
             <div className="flex flex-col gap-2">
                 <Field orientation="horizontal">
                     <Checkbox id={`${id}-del`} checked={delChk} onCheckedChange={setDelChk}/>
-                    <FieldLabel htmlFor={`${id}-del`} className="font-normal">선택한 글 삭제</FieldLabel>
+                    <FieldLabel htmlFor={`${id}-del`} className="font-normal">{comments ? "선택한 댓글 삭제" : "선택한 글 삭제"}</FieldLabel>
                 </Field>
                 <Field orientation="horizontal">
                     <Checkbox id={`${id}-ip`} checked={userTypeChk} onCheckedChange={setUserTypeChk}/>
@@ -190,7 +191,7 @@ export const AdminPanel = () => {
         {id: "notice", label: notice ? "공지 해제" : "공지 등록", confirm: MANAGE_LABELS.notice[notice ? 1 : 0], icon: <Megaphone data-icon="inline-start"/>, active: notice, run: () => requestManage("notice")},
         {id: "recommend", label: recommend ? "개념글 해제" : "개념글 등록", confirm: MANAGE_LABELS.recommend[recommend ? 1 : 0], icon: <Star data-icon="inline-start"/>, active: recommend, run: () => requestManage("recommend")},
         {id: "bump", label: "끌올", confirm: "게시글을 끌올", icon: <ArrowBigUpDash data-icon="inline-start"/>, run: () => requestManage("bump")},
-        {id: "block", label: "차단", hint: keys?.block, icon: <Ban data-icon="inline-start"/>, danger: true, instant: true, run: () => usePreviewStore.setState({blockPopup: true})},
+        {id: "block", label: "차단", hint: keys?.block, icon: <Ban data-icon="inline-start"/>, danger: true, instant: true, run: () => usePreviewStore.setState({blockPopup: "post"})},
         {id: "delete", label: "삭제", confirm: "게시글을 삭제", hint: keys?.delete, icon: <Trash2 data-icon="inline-start"/>, danger: true, run: () => requestManage("delete")}
     ];
 
@@ -235,13 +236,16 @@ export const AdminPanel = () => {
 
 export const Popups = () => {
     const blockPopup = usePreviewStore((s) => s.blockPopup);
+    // 창을 여는 동안 고른 댓글은 그대로다. 창이 열린 채 고른 것을 바꿀 수 없다 (모달).
+    const selected = usePreviewStore((s) => s.selectedComments);
     const captcha = usePreviewStore((s) => s.captcha);
     const dcconInfo = usePreviewStore((s) => s.dcconInfo);
     const viewer = usePreviewStore((s) => s.viewer);
 
     return (
         <>
-            {blockPopup && <BlockPopup/>}
+            {blockPopup === "post" && <BlockPopup/>}
+            {blockPopup === "comments" && <BlockPopup comments={[...selected]}/>}
             {captcha && <CaptchaPopup key={captcha.url} captcha={captcha}/>}
             {dcconInfo && <DcconInfoPopup key={dcconInfo} code={dcconInfo}/>}
             {viewer && <ImageViewer images={viewer.images} index={viewer.index}/>}

@@ -2,9 +2,10 @@ import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-react";
 import {useEffect, useLayoutEffect, useRef} from "react";
 
 import {Button} from "@/components/ui/button";
+import {Checkbox} from "@/components/ui/checkbox";
 import type {ProcessedComment} from "@/core/preview/comments";
 import type {User} from "@/core/preview/types";
-import {adminDeleteComment, userDeleteComment} from "@/core/preview/request";
+import {adminDeleteComments, userDeleteComment} from "@/core/preview/request";
 import {notifyManage} from "@/stores/notify";
 import {cn} from "cn";
 
@@ -52,6 +53,8 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
     const collapsed = usePreviewStore((s) => s.collapsed.has(comment.no));
     const fresh = usePreviewStore((s) => s.freshComments.has(comment.no));
     const toggleCollapse = usePreviewStore((s) => s.toggleCollapse);
+    const selected = usePreviewStore((s) => s.selectedComments.has(comment.no));
+    const toggleSelected = usePreviewStore((s) => s.toggleSelected);
     // 글 작성자 아이디만 구독한다. 글 객체째 구독하면 추천·새로고침마다 모든 댓글이 다시 그려진다.
     const authorId = usePreviewStore((s) => s.post?.user?.id);
     const allowReply = usePreviewStore((s) => s.allowReply);
@@ -90,7 +93,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
         }
 
         // 비밀번호가 틀려도 HTTP 200('false||메시지')이 오므로 결과를 확인해 알려야 한다.
-        const request = isAdmin ? adminDeleteComment(st.preData, comment.no) : userDeleteComment(st.preData, comment.no, password);
+        const request = isAdmin ? adminDeleteComments(st.preData, [comment.no]) : userDeleteComment(st.preData, comment.no, password);
         if (await notifyManage(request, "댓글을 삭제했습니다.", "댓글을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.")) void st.requestRefresh();
     };
 
@@ -119,6 +122,8 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
              data-deleted={isDeleted || undefined} data-blocked={comment.blocked} data-duplicate={comment.duplicates === 0 || undefined} data-fresh={fresh || undefined}>
             <div className="flex items-center justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-1">
+                    {/* 디시 댓글 목록처럼 관리자는 댓글을 골라 한 번에 지우거나 차단한다 (CommentList의 도구 줄). 지운 댓글은 고를 수 없다. */}
+                    {isAdmin && !isDeleted && <Checkbox className="mr-1" aria-label="댓글 선택" checked={selected} onCheckedChange={() => toggleSelected(comment.no)}/>}
                     <UserCard user={user} op={isOp}/>
                     {comment.duplicates ? <span className="text-xs whitespace-nowrap text-muted-foreground">같은 댓글 ×{comment.duplicates}</span> : null}
                     {/* 툴팁은 브라우저 기본(title)을 쓴다. 스레드마다 툴팁 부품을 달면 댓글이 많은 글을 열 때 느려진다. */}

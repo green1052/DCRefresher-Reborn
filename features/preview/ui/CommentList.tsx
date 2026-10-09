@@ -1,12 +1,19 @@
-import {Fragment} from "react";
+import {Ban, Trash2} from "lucide-react";
+import {Fragment, useId, useState} from "react";
 
+import {ConfirmDialog} from "@/components/dialogs";
+import {Button} from "@/components/ui/button";
+import {Checkbox} from "@/components/ui/checkbox";
 import {Collapsible, CollapsibleContent} from "@/components/ui/collapsible";
+import {Field, FieldLabel} from "@/components/ui/field";
 import type {ProcessedComment} from "@/core/preview/comments";
+import {adminDeleteComments} from "@/core/preview/request";
+import {notifyManage} from "@/stores/notify";
 import {useUiStore} from "@/stores/ui";
 import {isGalleryManager} from "@/utils/user";
 
 import {Comment} from "./Comment";
-import {usePreviewStore} from "./previewStore";
+import {NO_FRESH, usePreviewStore} from "./previewStore";
 
 /** 스레드 첫 댓글로 그릴 댓글. 10쪽 제한으로 부모를 받지 못한 답글도 넣는다. 빠뜨리면 머리의 스레드·총 댓글 수와 어긋난다. */
 export const threadParents = (comments: ProcessedComment[]): ProcessedComment[] => {
@@ -42,6 +49,57 @@ const Thread = ({parent, replies, isAdmin}: { parent: ProcessedComment; replies:
     );
 };
 
+/**
+ * 관리자가 고른 댓글을 한 번에 지우거나 작성자를 차단한다 (디시 댓글 목록 아래의 댓글 삭제·차단 버튼).
+ * 고른 것은 따로 구독한다. 목록이 구독하면 하나를 고를 때마다 댓글 전부를 다시 그린다.
+ * selectable: 체크박스가 있는 댓글 (보이고 지우지 않은 댓글). 새로고침으로 사라진 댓글은 골라 두었어도 세지 않는다.
+ */
+const SelectionTools = ({selectable}: { selectable: ProcessedComment[] }) => {
+    const selected = usePreviewStore((s) => s.selectedComments);
+    const picked = selectable.filter((comment) => selected.has(comment.no)).map((comment) => comment.no);
+    const all = picked.length > 0 && picked.length === selectable.length;
+    const id = useId();
+    const [confirming, setConfirming] = useState(false);
+
+    const remove = async (): Promise<void> => {
+        setConfirming(false);
+        const st = usePreviewStore.getState();
+        if (!st.preData) return;
+        const signal = st.signalId;
+        if (!await notifyManage(adminDeleteComments(st.preData, picked), "댓글을 삭제했습니다.", "댓글을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.")) return;
+        // 그새 다른 글로 넘어갔으면 그 글의 고른 댓글과 댓글 목록은 건드리지 않는다.
+        if (usePreviewStore.getState().signalId !== signal) return;
+        usePreviewStore.setState({selectedComments: NO_FRESH});
+        void st.requestRefresh();
+    };
+
+    return (
+        <div className="flex items-center gap-2 px-8 py-1">
+            <Field orientation="horizontal" className="w-auto">
+                <Checkbox id={id} checked={all} indeterminate={picked.length > 0 && !all}
+                          onCheckedChange={() => usePreviewStore.setState({selectedComments: all ? NO_FRESH : new Set(selectable.map((comment) => comment.no))})}/>
+                <FieldLabel htmlFor={id} className="font-normal">전체 선택</FieldLabel>
+            </Field>
+            {picked.length > 0 && <span className="text-xs text-muted-foreground">{picked.length}개 선택</span>}
+            <div className="ml-auto flex gap-1">
+                <Button size="xs" variant="destructive" disabled={picked.length === 0} onClick={() => setConfirming(true)}>
+                    <Trash2 data-icon="inline-start"/>삭제
+                </Button>
+                {/* 창을 여는 순간 고른 것을 지금 보이는 댓글로 좁힌다. 차단 창은 selectedComments를 그대로 보낸다. */}
+                <Button size="xs" variant="destructive" disabled={picked.length === 0}
+                        onClick={() => usePreviewStore.setState({selectedComments: new Set(picked), blockPopup: "comments"})}>
+                    <Ban data-icon="inline-start"/>차단
+                </Button>
+            </div>
+            {/* 미리보기 창 안에 그려 확인 창을 누를 때 미리보기가 바깥 클릭으로 닫히지 않는다. */}
+            {confirming && (
+                <ConfirmDialog title={`선택한 댓글 ${picked.length}개를 삭제할까요?`} confirmLabel="삭제" danger
+                               onConfirm={() => void remove()} onClose={() => setConfirming(false)}/>
+            )}
+        </div>
+    );
+};
+
 /** 스레드별 댓글과 접을 수 있는 답글. */
 export const CommentList = () => {
     const comments = usePreviewStore((s) => s.comments)!;
@@ -59,6 +117,7 @@ export const CommentList = () => {
 
     return (
         <div className="py-1">
+            {isAdmin && <SelectionTools selectable={comments.filter((comment) => shown.has(comment) && comment.is_delete !== "1")}/>}
             {parents.map((parent) => {
                 const replies = repliesOf.get(parent.no) ?? [];
 

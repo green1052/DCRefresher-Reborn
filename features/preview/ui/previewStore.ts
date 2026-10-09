@@ -57,7 +57,10 @@ interface PostState {
     notice: boolean;
     recommend: boolean;
     adminVisible: boolean;
-    blockPopup: boolean;
+    /** 차단 창. post는 글쓴이, comments는 고른 댓글(selectedComments)의 작성자를 차단한다. */
+    blockPopup: false | "post" | "comments";
+    /** 관리자가 체크한 댓글 번호. 디시 댓글 목록의 체크박스처럼 골라 한 번에 지우거나 차단한다. */
+    selectedComments: ReadonlySet<string>;
     /** 본문 이미지 크게 보기. 글을 넘기거나 닫으면 닫힌다. */
     viewer: { images: ViewerImage[]; index: number } | null;
 }
@@ -71,8 +74,8 @@ interface Hooks {
     /** 본문을 캐시 없이 다시 받고 댓글도 다시 받는다. */
     requestReload: () => Promise<void>;
     requestManage: (kind: ManageKind) => void;
-    /** 차단하고 성공 여부를 돌려준다. 글도 지웠으면 창을 닫는다. */
-    requestBlock: (preData: GalleryPreData, options: BlockOptions) => Promise<boolean>;
+    /** 차단하고 성공 여부를 돌려준다. comments가 있으면 그 댓글 작성자를 차단한다. 글도 지웠으면 창을 닫는다. */
+    requestBlock: (preData: GalleryPreData, options: BlockOptions, comments?: string[]) => Promise<boolean>;
 }
 
 interface PreviewState extends PostState, Hooks {
@@ -95,6 +98,7 @@ interface PreviewState extends PostState, Hooks {
     open: (preData: GalleryPreData, patch?: Partial<PostState>) => void;
     close: () => void;
     toggleCollapse: (no: string) => void;
+    toggleSelected: (no: string) => void;
     openCaptcha: (url: string) => Promise<string>;
     moveMini: (clientX: number, clientY: number) => void;
 }
@@ -135,7 +139,7 @@ export const miniPosition = (clientX: number, clientY: number): { x: number; y: 
 
 export const NO_REPLY: Reply = {commentNo: null, replyNo: null};
 
-/** 새 댓글이 없을 때 쓰는 빈 집합. 새로고침마다 새 객체를 넣지 않는다. */
+/** 새 댓글(고른 댓글)이 없을 때 쓰는 빈 집합. 새로고침마다 새 객체를 넣지 않는다. */
 export const NO_FRESH: ReadonlySet<string> = new Set();
 
 export const NO_HOOKS: Hooks = {
@@ -162,6 +166,7 @@ const freshPost = (): PostState => ({
     recommend: false,
     adminVisible: false,
     blockPopup: false,
+    selectedComments: NO_FRESH,
     viewer: null
 });
 
@@ -223,6 +228,13 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
             return {collapsed: next};
         }),
 
+    toggleSelected: (no) =>
+        set((state) => {
+            const next = new Set(state.selectedComments);
+            if (!next.delete(no)) next.add(no);
+            return {selectedComments: next};
+        }),
+
     openCaptcha: (url) => new Promise((resolve) => set({captcha: {url, resolve}})),
 
     moveMini: (clientX, clientY) => set((state) => (state.mini ? {mini: {...state.mini, ...miniPosition(clientX, clientY)}} : state))
@@ -230,4 +242,4 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
 
 // 미리보기 UI 중 하나라도 떠 있으면 오버레이를 띄운다 (components/overlay/demands). 새 미리보기 UI를 추가하면 여기에 넣는다.
 needOverlayWhen(usePreviewStore, (state) =>
-    state.visible || state.warm || state.mini !== null || state.captcha !== null || state.blockPopup || state.dcconInfo !== null);
+    state.visible || state.warm || state.mini !== null || state.captcha !== null || state.blockPopup !== false || state.dcconInfo !== null);

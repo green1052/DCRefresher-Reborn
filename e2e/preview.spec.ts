@@ -274,6 +274,25 @@ test.describe("댓글 쓰기·지우기", () => {
         await expect(frame.getByRole("textbox", {name: "댓글 입력", exact: true})).toBeEnabled();
     });
 
+    test("관리자는 댓글을 골라 한 번에 지운다", async ({listPage, site}) => {
+        site.manager = true;
+        await listPage.page.reload();
+        await listPage.refreshButton.waitFor();
+        await listPage.openPreview();
+        await listPage.frame.getByRole("checkbox", {name: "전체 선택"}).click();
+        await expect(listPage.frame.getByText("2개 선택")).toBeVisible();
+        await listPage.frame.getByRole("button", {name: "삭제", exact: true}).click();
+        await expect(listPage.dialog).toContainText("선택한 댓글 2개를 삭제할까요?");
+        await listPage.dialog.getByRole("button", {name: "삭제", exact: true}).click();
+
+        await expect(listPage.toast).toContainText("댓글을 삭제했습니다.");
+        await expect(listPage.comments.nth(0)).toHaveAttribute("data-deleted");
+        await expect(listPage.comments.nth(1)).toHaveAttribute("data-deleted");
+        const {path, body} = site.submitted[0]!;
+        expect(path).toBe("/ajax/minor_manager_board_ajax/delete_comment");
+        expect([body.get("id"), body.get("pno"), body.getAll("cmt_nos[]")]).toEqual(["test", "3", ["10", "11"]]);
+    });
+
     test("유동 댓글은 비밀번호를 물어 지우고, 지운 뒤 목록을 다시 받는다", async ({listPage, site}) => {
         await listPage.openPreview();
         // 대화상자는 뜨는 동안 페이지를 멈추므로 누르기 전에 처리기를 건다.

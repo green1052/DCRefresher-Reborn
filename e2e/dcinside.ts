@@ -66,6 +66,9 @@ export class FakeSite {
     /** 받은 쓰기 요청 (댓글 작성·삭제, 디시콘 댓글). */
     readonly submitted: { path: string; body: URLSearchParams }[] = [];
 
+    /** 갤러리 관리자로 본다. 목록 머리에 관리 체크박스 열을 그린다 (utils/user.ts의 isGalleryManager). */
+    manager = false;
+
     /** 받은 1쪽 목록 요청 수 (페이지 문서 포함). */
     listRequests = 0;
 
@@ -87,7 +90,7 @@ export class FakeSite {
             case "/board/lists": {
                 const page = url.searchParams.get("page") ?? "1";
                 if (page === "1") this.listRequests++;
-                return html(listPage(page === "1" ? this.rows : this.page2, page));
+                return html(listPage(page === "1" ? this.rows : this.page2, page, this.manager));
             }
             case "/board/view/":
                 return html(viewPage(url.searchParams.get("no") ?? "", this.pageComments));
@@ -113,6 +116,11 @@ export class FakeSite {
                 const target = this.comments.find((comment) => comment.no === form().get("re_no"));
                 if (target) target.is_delete = "1";
                 return text(target ? "true" : "false||댓글이 없습니다.");
+            }
+            case "/ajax/minor_manager_board_ajax/delete_comment": {
+                const nos = form().getAll("cmt_nos[]");
+                for (const comment of this.comments) if (nos.includes(comment.no)) comment.is_delete = "1";
+                return json({result: "success", msg: ""});
             }
             case "/dccon/lists":
                 return json({target: "icon", max_page: 0, list: [{package_idx: DCCON.package_idx, title: "테스트콘", main_img_url: DCCON.list_img, detail: [DCCON]}]});
@@ -142,11 +150,11 @@ const listRow = ({no, title, nick, uid, ip = "", replies}: FakeRow): string => `
 
 const paging = (page: string): string => (page === "1" ? "<em>1</em><a href=\"/board/lists/?id=test&page=2\">2</a>" : "<a href=\"/board/lists/?id=test&page=1\">1</a><em>2</em>");
 
-const listPage = (rows: FakeRow[], page: string): string => `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>테스트 갤러리</title></head><body>
+const listPage = (rows: FakeRow[], page: string, manager: boolean): string => `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>테스트 갤러리</title></head><body>
 <div class="page_head"><h2><a href="/board/lists/?id=test">테스트 갤러리</a></h2><div class="gall_issuebox"></div></div>
 <input type="hidden" id="e_s_n_o" value="token">
 <div class="left_content"><article><div class="gall_listwrap">
-<table class="gall_list"><thead><tr><th>번호</th><th>제목</th><th>글쓴이</th><th>작성일</th><th>조회</th><th>추천</th></tr></thead>
+<table class="gall_list"><thead><tr>${manager ? "<th class=\"chkbox_th\"></th>" : ""}<th>번호</th><th>제목</th><th>글쓴이</th><th>작성일</th><th>조회</th><th>추천</th></tr></thead>
 <tbody>${rows.map(listRow).join("")}</tbody></table>
 </div><div class="bottom_paging_box">${paging(page)}</div></article></div>
 </body></html>`;

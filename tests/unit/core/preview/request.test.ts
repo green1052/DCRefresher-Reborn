@@ -5,7 +5,7 @@ const fetchMock = vi.hoisted(() => (globalThis.fetch = vi.fn<typeof fetch>()));
 
 import {BlockedError} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
-import {fetchComments, fetchPost, viewUrl, vote} from "@/core/preview/request";
+import {adminDeleteComments, blockCommenters, fetchComments, fetchPost, viewUrl, vote} from "@/core/preview/request";
 import type {DcinsideComment, PostInfo} from "@/core/preview/types";
 
 import {preData} from "../../../helpers";
@@ -182,5 +182,24 @@ describe("vote", () => {
         stubCookies();
         serve(fetchMock, () => "false||이미 추천하셨습니다.");
         expect(await vote(preData(), post(), "U")).toEqual({success: false, message: "이미 추천하셨습니다."});
+    });
+});
+
+describe("댓글 관리", () => {
+    const target = () => preData({gallery: "a", id: "3", link: "https://gall.dcinside.com/mini/board/view/?id=a&no=3"});
+
+    it("고른 댓글을 한 번에 지운다", async () => {
+        const sent = serve(fetchMock, () => JSON.stringify({result: "success"}));
+        expect(await adminDeleteComments(target(), ["7", "8"])).toEqual({success: true, message: undefined});
+        expect(sent[0]?.url).toBe(`${urls.base}ajax/mini_manager_board_ajax/delete_comment`);
+        expect([...sent[0]?.body ?? []]).toEqual([["ci_t", ""], ["_GALLTYPE_", "MI"], ["id", "a"], ["pno", "3"], ["cmt_nos[]", "7"], ["cmt_nos[]", "8"]]);
+    });
+
+    it("댓글 작성자 차단은 글 번호를 parent로 보낸다", async () => {
+        const sent = serve(fetchMock, () => JSON.stringify({result: "success"}));
+        await blockCommenters(target(), ["7", "8"], {avoidHour: "1", avoidReason: "1", avoidReasonTxt: "", delChk: true, userTypeChk: false});
+        expect(sent[0]?.body.getAll("nos[]")).toEqual(["7", "8"]);
+        expect(sent[0]?.body.get("parent")).toBe("3");
+        expect(sent[0]?.body.get("del_chk")).toBe("1");
     });
 });

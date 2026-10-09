@@ -6,7 +6,7 @@ import {parsePostInfo} from "./parser";
 import {dcBody, resultMessage, submitResult} from "./response";
 import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} from "./types";
 
-export {type BlockOptions, type ManageResult, adminDeleteComment, blockUser, bump, captchaImage, deletePost, setNotice, setRecommend, userDeleteComment} from "./manage";
+export {type BlockOptions, type ManageResult, adminDeleteComments, blockCommenters, blockUser, bump, captchaImage, deletePost, setNotice, setRecommend, userDeleteComment} from "./manage";
 export {submitComment} from "./submit";
 export {TXTCON_BACKGROUNDS, TXTCON_COLORS, normalizeTxtcon, submitTxtcon} from "./txtcon";
 export {addDcconPackage, fetchDcconList, fetchDcconPackage} from "./dccon";

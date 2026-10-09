@@ -19,10 +19,11 @@ type ManageAction = "update_bump" | "delete_list" | "delete_comment" | "update_a
 
 /**
  * 관리 요청. 미니 갤러리는 mini_, 나머지(일반·마이너·인물)는 minor_ 관리 API를 쓴다.
- * 필드는 공통 필드(ci_t, _GALLTYPE_) 뒤에 준 순서대로 붙는다.
+ * 필드는 공통 필드(ci_t, _GALLTYPE_) 뒤에 준 순서대로 붙는다. 배열은 같은 이름으로 여러 번 붙인다 (jQuery가 보내는 nos[]=1&nos[]=2).
  */
-const manage = async (target: Pick<GalleryPreData, "link">, action: ManageAction, fields: Record<string, string>): Promise<ManageResult> => {
-    const body = await dcBody(target.link, fields);
+const manage = async (target: Pick<GalleryPreData, "link">, action: ManageAction, fields: Record<string, string | string[]>): Promise<ManageResult> => {
+    const body = await dcBody(target.link, {});
+    for (const [key, value] of Object.entries(fields)) for (const item of [value].flat()) body.append(key, item);
 
     const url = `${urls.base}ajax/${galleryKind(target.link) === "mini" ? "mini" : "minor"}_manager_board_ajax/${action}`;
     const text = (await ajax.post(url, {body}).text()).trim();
@@ -59,17 +60,27 @@ export interface BlockOptions {
     userTypeChk: boolean;
 }
 
-/** 유저 차단 (관리 팝업/프리셋). */
-export const blockUser = (preData: GalleryPreData, options: BlockOptions): Promise<ManageResult> => manage(preData, "update_avoid_list", {
+/**
+ * 차단 요청. nos는 차단할 글(parent 빈 값) 또는 댓글(parent에 글 번호) 번호다.
+ * 디시 댓글 차단 창(avoid_pop_cmt)은 avoid_submit에 글 번호와 댓글 여부를 넘긴다.
+ */
+const avoid = (preData: GalleryPreData, nos: string | string[], parent: string, options: BlockOptions): Promise<ManageResult> => manage(preData, "update_avoid_list", {
     id: preData.gallery,
-    "nos[]": preData.id,
-    parent: "",
+    "nos[]": nos,
+    parent,
     avoid_hour: options.avoidHour,
     avoid_reason: options.avoidReason,
     avoid_reason_txt: options.avoidReasonTxt,
     del_chk: options.delChk ? "1" : "0",
     avoid_type_chk: options.userTypeChk ? "1" : "0"
 });
+
+/** 유저 차단 (관리 팝업/프리셋). */
+export const blockUser = (preData: GalleryPreData, options: BlockOptions): Promise<ManageResult> => avoid(preData, preData.id, "", options);
+
+/** 고른 댓글 작성자를 차단한다 (디시 댓글 목록의 차단 버튼). delChk면 그 댓글도 지운다. */
+export const blockCommenters = (preData: GalleryPreData, commentIds: string[], options: BlockOptions): Promise<ManageResult> =>
+    avoid(preData, commentIds, preData.id, options);
 
 /** 공지 등록/해제. */
 export const setNotice = (preData: GalleryPreData, notice: boolean): Promise<ManageResult> =>
@@ -83,9 +94,9 @@ export const setRecommend = (preData: GalleryPreData, recommend: boolean): Promi
 export const captchaImage = (preData: GalleryPreData, type: "comment" | "recommend"): string =>
     `${urls.base}kcaptcha/image_v3/?gall_id=${preData.gallery}&kcaptcha_type=${type}&time=${Date.now()}&_GALLTYPE_=${galltypeOf(preData.link)}`;
 
-/** 관리자 댓글 삭제. */
-export const adminDeleteComment = (preData: GalleryPreData, commentId: string): Promise<ManageResult> =>
-    manage(preData, "delete_comment", {id: preData.gallery, pno: preData.id, "cmt_nos[]": commentId});
+/** 관리자 댓글 삭제. 여러 개를 한 번에 지운다 (디시 del_comment_manager). */
+export const adminDeleteComments = (preData: GalleryPreData, commentIds: string[]): Promise<ManageResult> =>
+    manage(preData, "delete_comment", {id: preData.gallery, pno: preData.id, "cmt_nos[]": commentIds});
 
 /** 유저 댓글 삭제. */
 export const userDeleteComment = async (preData: GalleryPreData, commentId: string, password: string): Promise<ManageResult> => {
