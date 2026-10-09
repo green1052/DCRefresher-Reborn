@@ -226,7 +226,7 @@ const controller = (ctx: Ctx) => {
             const before = shown?.signal === mySignal && ctx.settings.highlightNewComments ? new Set(shown.source.map((comment) => comment.no)) : null;
             const added = before ? source.filter((comment) => !before.has(comment.no) && comment.is_delete !== "1").map((comment) => comment.no) : [];
             shown = {signal: mySignal, source};
-            store.setState({comments: keepUnchanged(processComments(source, preData)), allowReply, freshComments: added.length > 0 ? new Set(added) : NO_FRESH});
+            store.setState({comments: keepUnchanged(processComments(source, preData, useUiStore.getState().blockView)), allowReply, freshComments: added.length > 0 ? new Set(added) : NO_FRESH});
             // 강조(3초)가 끝나면 지운다. 남겨 두면 답글을 접었다 펴는 등 다시 그릴 때마다 강조가 되풀이된다.
             window.clearTimeout(freshTimer);
             if (added.length > 0) {
@@ -248,7 +248,7 @@ const controller = (ctx: Ctx) => {
         const {processComments} = await import("@/core/preview/comments");
         store.setState((s) => (s.signalId !== signalId ? {} : {
             post: s.post && {...s.post, textBlocked: textBlockOf(preData, s.post)},
-            comments: shown?.signal === signalId ? keepUnchanged(processComments(shown.source, preData)) : s.comments
+            comments: shown?.signal === signalId ? keepUnchanged(processComments(shown.source, preData, useUiStore.getState().blockView)) : s.comments
         }));
         dropStaleReply();
     };
