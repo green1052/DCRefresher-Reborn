@@ -1,5 +1,6 @@
 // 유저 버블의 "차단" 처리. 차단 모듈이 꺼져 있어도 차단 목록(stores/blocks.ts)에는 넣으므로 모듈이 아닌 stores에 둔다.
 import {BlockedError} from "@/core/http/client";
+import {runningModuleSettings} from "@/core/module/registry";
 import {fetchDcconPackage} from "@/core/preview/request";
 import {TYPE_NAMES} from "@/core/storage/items";
 import type {BlockType} from "@/core/storage/types";
@@ -25,7 +26,7 @@ const blockUser = async (selected: SelectedUser): Promise<void> => {
     await useBlocksStore.getState().addEntry(type, {content: value, isRegex: false, extra: selected.nick || value, mode: blockMode(type)});
 
     // 유저 정보 모듈만 켜져 있어도 버블이 열린다. 목록에는 넣었지만 가리지는 않는다는 것을 알린다.
-    const off = useUiStore.getState().blockView === null ? " 콘텐츠 차단 모듈이 꺼져 있어 지금은 가리지 않습니다." : "";
+    const off = runningModuleSettings("block") === undefined ? " 콘텐츠 차단 모듈이 꺼져 있어 지금은 가리지 않습니다." : "";
     useUiStore.getState().showToast(`차단 목록에 추가했습니다. (${TYPE_NAMES[type]}: ${value})${off}`);
 };
 

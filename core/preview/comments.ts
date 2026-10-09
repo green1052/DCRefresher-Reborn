@@ -1,8 +1,8 @@
 import QuickLRU from "quick-lru";
 
-import {groupDuplicates, isAnyBlocked, isBlocked} from "@/core/block";
+import {duplicateOf, groupDuplicates, isAnyBlocked, isBlocked} from "@/core/block";
+import type {ModuleSettings} from "@/core/module/types";
 import {htmlToText, sanitizeHtml} from "@/utils/sanitize";
-import type {BlockView} from "@/stores/ui";
 
 import {restoreArchive} from "./cache";
 import type {DcinsideComment, GalleryPreData} from "./types";
@@ -73,9 +73,9 @@ export const prepareComments = (raw: DcinsideComment[], preData: GalleryPreData,
 
 /**
  * 정화 → 차단 표시 → 같은 댓글 묶기. 차단 목록이 바뀌면 같은 prepareComments 결과로 다시 부르므로
- * 입력(캐시된 원본)은 고치지 않고 복사본을 가공한다.
+ * 입력(캐시된 원본)은 고치지 않고 복사본을 가공한다. block은 차단 모듈 설정이다.
  */
-export const processComments = (source: DcinsideComment[], preData: GalleryPreData, view: BlockView | null): ProcessedComment[] => {
+export const processComments = (source: DcinsideComment[], preData: GalleryPreData, block: ModuleSettings["block"] | undefined): ProcessedComment[] => {
     const list: ProcessedComment[] = source.map((comment) => ({...comment}));
 
     // 음성 URL은 정화(재직렬화)하면 &가 &amp;로 바뀌므로 정화 전에 떼어 낸다.
@@ -87,8 +87,8 @@ export const processComments = (source: DcinsideComment[], preData: GalleryPreDa
         comment.memo = remember(cleaned, voice?.memo ?? memo, sanitizeMemo);
     }
 
-    // 차단 모듈이 꺼져 있으면 view(blockView)가 null이고 아무것도 가리지 않는다.
-    if (!view) return list;
+    // 차단 모듈이 꺼져 있으면 block이 없고 아무것도 가리지 않는다.
+    if (!block) return list;
     // 페이지 쪽 검사처럼 앞뒤 공백을 뗀다. 디시콘만 있는 댓글이 " "로 남아 빈 글과 달라지지 않게.
     const texts = new Map(list.map((comment) => [comment, plainTextOf(comment.memo)]));
 
@@ -109,18 +109,19 @@ export const processComments = (source: DcinsideComment[], preData: GalleryPreDa
                 preData.gallery
             ) || dcconNos.some((no) => isBlocked("DCCON", no, preData.gallery));
 
-        if (blocked) comment.blocked = view.blur ? "blur" : "hide";
+        if (blocked) comment.blocked = block.blur ? "blur" : "hide";
     }
 
-    if (view.replyRemove) {
+    if (block.replyRemove) {
         // 답글의 c_no는 스레드 첫 댓글 번호다.
         const blockedThreads = new Set(list.filter((comment) => comment.depth === 0 && comment.blocked).map((comment) => comment.no));
-        for (const comment of list) if (comment.depth === 1 && blockedThreads.has(comment.c_no)) comment.blocked ??= view.blur ? "blur" : "hide";
+        for (const comment of list) if (comment.depth === 1 && blockedThreads.has(comment.c_no)) comment.blocked ??= block.blur ? "blur" : "hide";
     }
 
-    if (view.duplicate) {
+    const duplicate = duplicateOf(block);
+    if (duplicate) {
         const candidates = list.filter((comment) => !comment.blocked && comment.is_delete !== "1");
-        for (const [comment, repeats] of groupDuplicates(candidates, (comment) => texts.get(comment) ?? "", view.duplicate)) comment.duplicates = repeats;
+        for (const [comment, repeats] of groupDuplicates(candidates, (comment) => texts.get(comment) ?? "", duplicate)) comment.duplicates = repeats;
     }
 
     return list;

@@ -231,6 +231,21 @@ test.describe("미리보기 댓글", () => {
         await expect(fresh).toHaveCount(1);
         await expect(fresh).toContainText("새 댓글");
     });
+
+    test("차단·유저 정보 모듈이 켜져 있는 동안만 그 설정대로 댓글을 가리고 작성자 아이디를 칠한다", async ({listPage, storage}) => {
+        await storage.setModuleSettings("block", {blur: true});
+        await storage.setModuleSettings("userinfo", {uidColor: "#123456"});
+        await storage.set({"refresher:block:ID": [{id: "a", content: "user1", isRegex: false}]});
+        const frame = await listPage.openPreview();
+        const blocked = listPage.comments.first();
+        const uid = frame.getByText("(user3)", {exact: true});
+        await expect(blocked).toHaveAttribute("data-blocked", "blur");
+        await expect(uid).toHaveCSS("color", "rgb(18, 52, 86)");
+
+        await storage.setModules({block: false, userinfo: false});
+        await expect(blocked).not.toHaveAttribute("data-blocked");
+        await expect(uid).not.toHaveCSS("color", "rgb(18, 52, 86)");
+    });
 });
 
 test.describe("댓글 쓰기·지우기", () => {

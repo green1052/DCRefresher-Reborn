@@ -1,10 +1,9 @@
 import {UserRound} from "lucide-react";
 
-import type {IpInfoFilter} from "@/core/database";
+import type {IpCategory, IpInfoFilter} from "@/core/database";
 import {defineModuleMeta} from "@/core/module/define";
 import type {ModuleContext, SettingGroup, SettingSchema, SettingsSchema} from "@/core/module/types";
 import {BOARD_PAGE} from "@/core/pages";
-import type {BadgeColorKey} from "@/stores/ui";
 
 /** 배지 색 기본값. 키마다 `${key}Color` 설정이 하나씩 생기고 옵션 화면에선 한 그룹으로 묶인다. IP 배지는 분류(korea…vpn)가 키다. */
 export const BADGE_COLORS = {
@@ -17,7 +16,7 @@ export const BADGE_COLORS = {
     china: ["IP 중국", "#f76b15"],
     foreign: ["IP 그 외 해외", "#12a594"],
     vpn: ["IP VPN", "#8e4ec6"]
-} satisfies Record<BadgeColorKey, [name: string, color: string]>;
+} satisfies Record<IpCategory | "uid" | "permBan" | "ratio" | "ratioAlarm", [name: string, color: string]>;
 
 export type BadgeColor = keyof typeof BADGE_COLORS;
 

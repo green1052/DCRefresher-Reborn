@@ -1,4 +1,4 @@
-import {BLOCKED_TEXT, dcconCode, groupDuplicates, HIDDEN_ROW_SELECTOR, isAnyBlocked, isBlocked, ROWS_HIDDEN_EVENT} from "@/core/block";
+import {BLOCKED_TEXT, dcconCode, duplicateOf, groupDuplicates, HIDDEN_ROW_SELECTOR, isAnyBlocked, isBlocked, ROWS_HIDDEN_EVENT} from "@/core/block";
 import {defineModule} from "@/core/module/define";
 import {isViewPage, queryString} from "@/core/http/urls";
 import {WRITER_ROW_SELECTOR} from "@/core/list";
@@ -24,9 +24,6 @@ const applyBlurStyle = (ctx: Ctx): void => {
     root.classList.toggle("refresherBlurReveal", ctx.settings.blurReveal);
 };
 
-const duplicateOf = (ctx: Ctx): { count: number; minLength: number } | null =>
-    ctx.settings.foldDuplicate ? {count: ctx.settings.duplicateCount, minLength: ctx.settings.duplicateMinLength} : null;
-
 /**
  * 이 페이지에서만 차단 내용 보기. 저장하지 않아 새로고침하면 다시 가린다.
  * 상태는 <html>의 이 클래스 하나뿐이라(assets/styles/content.css) 확장이 업데이트되어 다시 주입된 인스턴스도 같은 상태를 읽는다.
@@ -40,18 +37,8 @@ const HIDDEN_SELECTOR = HIDDEN_CLASSES.map((name) => `.${name}`).join(", ");
 /** '가린 내용 보기'가 보이는 요소. userinfo의 깡계 흐림·숨김도 같이 보인다 (assets/styles/content.css). */
 const REVEALED_SELECTOR = `${HIDDEN_ROW_SELECTOR}, .refresherDuplicate`;
 
-/** 미리보기도 페이지와 같은 방식으로 가리게 알린다. */
-const publishView = (ctx: Ctx): void => {
-    useUiStore.setState({
-        blockView: {
-            blur: ctx.settings.blur,
-            blurReveal: ctx.settings.blurReveal,
-            replyRemove: ctx.settings.replyRemove,
-            revealed: isRevealed(),
-            duplicate: duplicateOf(ctx)
-        }
-    });
-};
+/** 미리보기도 '가린 내용 보기'를 따르게 알린다. 가리는 방식은 미리보기가 이 모듈의 설정에서 바로 읽는다. */
+const publishRevealed = (): void => useUiStore.setState({blockRevealed: isRevealed()});
 
 /** setup()이 돌려주는 객체. 단축키와 팝업이 쓴다. */
 interface BlockApi {
@@ -144,7 +131,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
     // 가린 댓글이 바뀌면 다시 접으므로 지난 판정의 표시도 맞춰 뗀다. 같은 결과면 DOM을 건드리지 않는다.
     // 배지를 넣거나 빼면 조상인 목록에 필터가 다시 불리므로, 바꿀 것이 없을 때 아무것도 하지 않아야 끝없이 돌지 않는다.
     const foldDuplicates = (list: HTMLElement): void => {
-        const duplicate = duplicateOf(ctx);
+        const duplicate = duplicateOf(ctx.settings);
         if (!duplicate) return;
 
         const textOf = (item: HTMLElement): string => item.querySelector(".usertxt")?.textContent ?? "";
@@ -232,11 +219,10 @@ export default defineModule({
         const gallery = queryString("id") ?? undefined;
 
         applyBlurStyle(ctx);
-        publishView(ctx);
+        publishRevealed();
         const recheck = setupFilters(ctx, gallery);
         setupSelection(ctx);
         ctx.onSettingsChanged((keys) => {
-            publishView(ctx);
             if (!keys.isDisjointFrom(BLUR_KEYS)) applyBlurStyle(ctx);
             if (!keys.isSubsetOf(BLUR_KEYS)) recheck();
         });
@@ -246,7 +232,7 @@ export default defineModule({
             hiddenCount: () => document.querySelectorAll(REVEALED_SELECTOR).length,
             toggleReveal: () => {
                 document.documentElement.classList.toggle(REVEAL_CLASS);
-                publishView(ctx);
+                publishRevealed();
 
                 useUiStore.getState().showToast(isRevealed() ? `이 페이지에서 가린 내용을 보입니다. (${api.hiddenCount()}개)` : "가린 내용을 다시 숨겼습니다.");
             }
@@ -267,7 +253,7 @@ export default defineModule({
 
     revoke() {
         restoreHiddenElements();
-        useUiStore.setState({blockView: null});
+        useUiStore.setState({blockRevealed: false});
         document.documentElement.style.removeProperty("--refresher-blur");
         document.documentElement.classList.remove("refresherBlurReveal", REVEAL_CLASS);
     }

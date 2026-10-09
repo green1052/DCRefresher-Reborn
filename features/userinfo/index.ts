@@ -1,5 +1,6 @@
 import QuickLRU from "quick-lru";
 
+import {badgeViewOf, type BadgeView, DEFAULT_BADGE_VIEW, showsUid} from "@/core/badges";
 import {banReasonsOf, initDatabase, ipInfoOf, passesIpFilter, subscribeDatabase} from "@/core/database";
 import {defineModule} from "@/core/module/define";
 import {type GallogActivity, getGallogActivity, type RatioInfo} from "@/core/gallog";
@@ -10,7 +11,7 @@ import {batchedSave} from "@/core/storage/batched";
 import {moduleDataKey, moduleDataStorage} from "@/core/storage/items";
 import {watchStorage} from "@/core/storage/sync";
 import {findMemo, useMemosStore} from "@/stores/memos";
-import {type BadgeView, DEFAULT_BADGE_VIEW, isFresh, isLowActivity, openWriterBubble, showsUid, useUiStore} from "@/stores/ui";
+import {isFresh, isLowActivity, openWriterBubble, useUiStore} from "@/stores/ui";
 import {objectFromEntries, objectKeys} from "@/utils/typed";
 
 import meta, {BADGE_COLORS, type BadgeColor, type Ctx} from "./meta";
@@ -23,14 +24,7 @@ type BadgeColors = Partial<Record<BadgeColor, string>>;
 const colorsOf = (ctx: Ctx): BadgeColors =>
     objectFromEntries(objectKeys(BADGE_COLORS).map((key) => [key, ctx.settings[`${key}Color`]] as const));
 
-const badgeViewOf = (ctx: Ctx): BadgeView => ({
-    order: ctx.settings.badgeOrder,
-    fixedUid: ctx.settings.showFixedNickUID,
-    halfFixedUid: ctx.settings.showHalfFixedNickUID,
-    ipFilter: ctx.settings.ipInfoFilter
-});
-
-/** 설정에서 만든 배지 색·표시 조건. 작성자 칸마다(목록 새로고침마다 수십 개) 다시 만들지 않고 설정이 바뀔 때(publishBadges) 한 번 만든다. */
+/** 설정에서 만든 배지 색·표시 조건. 작성자 칸마다(목록 새로고침마다 수십 개) 다시 만들지 않고 설정이 바뀔 때(readBadgeSettings) 한 번 만든다. */
 let colors: BadgeColors = {};
 let view: BadgeView = DEFAULT_BADGE_VIEW;
 /** 이 문서의 갤러리 id. 미리보기가 pushState로 주소를 바꿔도 같은 갤러리다. */
@@ -157,19 +151,11 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
     }
 };
 
-/** 미리보기 작성자 표시가 같은 색·순서·표시 조건을 쓰도록 ui 스토어에 올린다. */
-const publishBadges = (ctx: Ctx): void => {
+/** 설정에서 배지 색·표시 조건을 만든다. 미리보기 작성자 표시(UserCard)는 같은 설정을 바로 읽어 같은 badgeViewOf로 만든다. */
+const readBadgeSettings = (ctx: Ctx): void => {
     colors = colorsOf(ctx);
-    view = badgeViewOf(ctx);
+    view = badgeViewOf(ctx.settings);
     gallery = queryString("id");
-    useUiStore.setState({
-        badgeColors: {
-            ...colors,
-            // 갱차 조회를 끄면 미리보기에서도 숨긴다.
-            permBan: ctx.settings.checkPermBan ? colors.permBan : undefined
-        },
-        badgeView: view
-    });
 };
 
 /** 미리보기도 같은 글댓비를 쓰도록 ui 스토어에 올린다. 지난 값은 미리보기·버블이 읽을 때 isFresh로 걸러 새로 조회한다. */
@@ -204,10 +190,10 @@ export default defineModule({
     ...meta,
 
     async setup(ctx) {
-        // await 전에 알린다. 뒤에 두면 기다리는 동안 모듈이 꺼졌을 때 revoke가 지운 값을 다시 쓴다.
-        publishBadges(ctx);
+        // await 전에 읽는다. 뒤에 두면 기다리는 동안 모듈이 꺼졌을 때 revoke가 지운 값을 다시 쓴다.
+        readBadgeSettings(ctx);
         ctx.onSettingsChanged(() => {
-            publishBadges(ctx);
+            readBadgeSettings(ctx);
             publishRatios(ctx);
             rebuildAll(ctx);
         });
@@ -308,7 +294,7 @@ export default defineModule({
     },
 
     revoke() {
-        useUiStore.setState({badgeColors: {}, badgeView: DEFAULT_BADGE_VIEW, ratios: null});
+        useUiStore.setState({ratios: null});
         clearLowActivity();
 
         // 파이어폭스 재주입으로 새 인스턴스가 setup될 때 옛 인스턴스의 값을 이어받지 않게 비운다.

@@ -1,7 +1,7 @@
 import {useEffect, useRef} from "react";
 
+import {useRunningModuleSettings} from "@/core/module/useModuleSettings";
 import {useBlocksStore} from "@/stores/blocks";
-import {useUiStore} from "@/stores/ui";
 
 import {markBlockedDccons} from "./blockedDccons";
 import {watchGifVideos} from "./gifVideos";
@@ -23,7 +23,7 @@ export const Mini = () => {
     useEffect(() => (contents.current ? watchGifVideos(contents.current) : undefined), [mini?.contents]);
 
     // 본문의 차단 디시콘을 가린다. 마우스를 올려 흐림을 걷을 수 없으니 흐리게 처리여도 숨긴다.
-    const blocking = useUiStore((s) => s.blockView !== null);
+    const blocking = useRunningModuleSettings("block") !== undefined;
     const blockEntries = useBlocksStore((s) => s.entries);
     const blockDefaults = useBlocksStore((s) => s.defaults);
     useEffect(() => {

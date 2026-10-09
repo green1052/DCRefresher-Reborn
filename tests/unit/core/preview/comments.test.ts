@@ -1,10 +1,10 @@
 import {beforeEach, describe, expect, it} from "vitest";
 
+import type {ModuleSettings} from "@/core/module/types";
 import {getEntry} from "@/core/preview/cache";
 import {prepareComments, type ProcessedComment, processComments} from "@/core/preview/comments";
 import type {DcinsideComment} from "@/core/preview/types";
 import type {BlockEntry} from "@/core/storage/types";
-import type {BlockView} from "@/stores/ui";
 
 import {preData, setBlockLists} from "../../../helpers";
 
@@ -17,7 +17,9 @@ const nextPost = () => preData({id: String(++seq)});
 
 const entry = (content: string, fields: Partial<BlockEntry> = {}): BlockEntry => ({id: content, content, isRegex: false, ...fields});
 
-const view = (fields: Partial<BlockView> = {}): BlockView => ({blur: false, blurReveal: false, replyRemove: false, revealed: false, duplicate: null, ...fields});
+const block = (fields: Partial<ModuleSettings["block"]> = {}): ModuleSettings["block"] => ({
+    replyRemove: false, blur: false, blurReveal: false, blurStrength: 5, foldDuplicate: false, duplicateCount: 3, duplicateMinLength: 5, ...fields
+});
 
 const blocked = (list: ProcessedComment[]) => Object.fromEntries(list.map((item) => [item.no, item.blocked ?? null]));
 
@@ -70,18 +72,18 @@ describe("prepareComments", () => {
 describe("processComments", () => {
     it("메모를 정화하고 원본은 고치지 않는다", () => {
         const source = [comment(1, {memo: "<b onclick=\"x()\">굵게</b><script>alert(1)</script>"})];
-        const [output] = processComments(source, preData(), null);
+        const [output] = processComments(source, preData(), undefined);
         expect(output?.memo).toBe("<b>굵게</b>");
         expect(source[0]?.memo).toContain("onclick");
     });
 
     it("남는 </div> 뒤의 내용도 남긴다", () => {
-        const [output] = processComments([comment(1, {memo: "앞</div>뒤"})], preData(), null);
+        const [output] = processComments([comment(1, {memo: "앞</div>뒤"})], preData(), undefined);
         expect(output?.memo).toContain("뒤");
     });
 
     it("붙어 온 디시콘 두 개를 두 태그로 나눈다", () => {
-        const [output] = processComments([comment(1, {memo: DOUBLE_DCCON})], preData(), null);
+        const [output] = processComments([comment(1, {memo: DOUBLE_DCCON})], preData(), undefined);
         const box = document.createElement("div");
         box.innerHTML = output?.memo ?? "";
         expect(Array.from(box.querySelectorAll("img.written_dccon"), (image) => image.getAttribute("src"))).toEqual([
@@ -91,13 +93,13 @@ describe("processComments", () => {
     });
 
     it("디시콘 오버 상태를 true로 맞춘다", () => {
-        const [output] = processComments([comment(1, {memo: "<img class=\"written_dccon\" data-dcconoverstatus=\"false\">"})], preData(), null);
+        const [output] = processComments([comment(1, {memo: "<img class=\"written_dccon\" data-dcconoverstatus=\"false\">"})], preData(), undefined);
         expect(output?.memo).toContain("data-dcconoverstatus=\"true\"");
     });
 
     describe("음성 댓글", () => {
         it("음성 경로를 떼고 글만 남긴다", () => {
-            const [output] = processComments([comment(1, {memo: "voice/a.mp3?x=1&y=2@^dc^@들어 봐"})], preData(), null);
+            const [output] = processComments([comment(1, {memo: "voice/a.mp3?x=1&y=2@^dc^@들어 봐"})], preData(), undefined);
             // 정화 전에 떼어 &가 &amp;로 바뀌지 않는다.
             expect(output?.voice).toEqual({src: "https://vr.dcinside.com/voice/a.mp3?x=1&y=2", iframe: false});
             expect(output?.memo).toBe("들어 봐");
@@ -105,20 +107,20 @@ describe("processComments", () => {
 
         it("음성 iframe은 플레이어 주소를 쓴다", () => {
             const memo = "<iframe src=\"https://vr.dcinside.com/player?no=1&k=2\"></iframe>@^dc^@글";
-            const [output] = processComments([comment(1, {memo})], preData(), null);
+            const [output] = processComments([comment(1, {memo})], preData(), undefined);
             expect(output?.voice).toEqual({src: "https://vr.dcinside.com/player?no=1&k=2", iframe: true});
             expect(output?.memo).toBe("글");
         });
 
         it("다른 호스트 iframe은 버리고 글만 남긴다", () => {
-            const [output] = processComments([comment(1, {memo: "<iframe src=\"https://evil.example/\"></iframe>@^dc^@글"})], preData(), null);
+            const [output] = processComments([comment(1, {memo: "<iframe src=\"https://evil.example/\"></iframe>@^dc^@글"})], preData(), undefined);
             expect(output?.voice).toBeUndefined();
             expect(output?.memo).toBe("글");
         });
 
         it("디시 응답의 voice: null은 음성 댓글로 보지 않는다 (답글 막힘을 따른다)", () => {
             const raw = {...comment(1, {memo: "글"}), voice: null};
-            const [output] = processComments([raw], preData(), null);
+            const [output] = processComments([raw], preData(), undefined);
             expect(output?.voice).toBeUndefined();
         });
     });
@@ -126,7 +128,7 @@ describe("processComments", () => {
     describe("차단", () => {
         it("차단 모듈이 꺼져 있으면 가리지 않는다", () => {
             setBlockLists({NICK: [entry("나쁜놈")]});
-            expect(blocked(processComments([comment(1, {name: "나쁜놈"})], preData(), null))).toEqual({1: null});
+            expect(blocked(processComments([comment(1, {name: "나쁜놈"})], preData(), undefined))).toEqual({1: null});
         });
 
         it("닉·아이디·IP·내용으로 가리고 blur 설정을 따른다", () => {
@@ -138,36 +140,36 @@ describe("processComments", () => {
                 comment(4, {memo: "<b>이건 욕이다</b>"}),
                 comment(5)
             ];
-            expect(blocked(processComments(source, preData(), view({blur: true})))).toEqual({1: "blur", 2: "blur", 3: "blur", 4: "blur", 5: null});
-            expect(processComments(source, preData(), view({blur: false}))[0]?.blocked).toBe("hide");
+            expect(blocked(processComments(source, preData(), block({blur: true})))).toEqual({1: "blur", 2: "blur", 3: "blur", 4: "blur", 5: null});
+            expect(processComments(source, preData(), block({blur: false}))[0]?.blocked).toBe("hide");
         });
 
         it("내용은 공백을 뗀 평문으로 본다", () => {
             setBlockLists({COMMENT: [entry("안녕")]}, {COMMENT: "SAME"});
-            expect(processComments([comment(1, {memo: "  <b>안녕</b> "})], preData(), view())[0]?.blocked).toBe("hide");
+            expect(processComments([comment(1, {memo: "  <b>안녕</b> "})], preData(), block())[0]?.blocked).toBe("hide");
         });
 
         it("삭제 표시된 댓글도 검사한다", () => {
             setBlockLists({NICK: [entry("닉")]});
-            expect(processComments([comment(1, {name: "닉", is_delete: "1"})], preData(), view())[0]?.blocked).toBe("hide");
+            expect(processComments([comment(1, {name: "닉", is_delete: "1"})], preData(), block())[0]?.blocked).toBe("hide");
         });
 
         it("두 번째 디시콘이 차단이어도 가린다", () => {
             setBlockLists({DCCON: [entry("bb")]});
-            expect(processComments([comment(1, {memo: DOUBLE_DCCON})], preData(), view())[0]?.blocked).toBe("hide");
+            expect(processComments([comment(1, {memo: DOUBLE_DCCON})], preData(), block())[0]?.blocked).toBe("hide");
         });
 
         it("갤러리 한정 차단은 그 갤러리만 가린다", () => {
             setBlockLists({NICK: [entry("닉", {gallery: "other"})]});
-            expect(processComments([comment(1, {name: "닉"})], preData(), view())[0]?.blocked).toBeUndefined();
-            expect(processComments([comment(1, {name: "닉"})], preData({gallery: "other"}), view())[0]?.blocked).toBe("hide");
+            expect(processComments([comment(1, {name: "닉"})], preData(), block())[0]?.blocked).toBeUndefined();
+            expect(processComments([comment(1, {name: "닉"})], preData({gallery: "other"}), block())[0]?.blocked).toBe("hide");
         });
 
         it("replyRemove면 답글도 가린다", () => {
             setBlockLists({NICK: [entry("닉")]});
             const source = [comment(1, {name: "닉"}), comment(2, {c_no: "1", depth: 1}), comment(3), comment(4, {c_no: "3", depth: 1})];
-            expect(blocked(processComments(source, preData(), view({replyRemove: true})))).toEqual({1: "hide", 2: "hide", 3: null, 4: null});
-            expect(blocked(processComments(source, preData(), view({replyRemove: false})))).toEqual({1: "hide", 2: null, 3: null, 4: null});
+            expect(blocked(processComments(source, preData(), block({replyRemove: true})))).toEqual({1: "hide", 2: "hide", 3: null, 4: null});
+            expect(blocked(processComments(source, preData(), block({replyRemove: false})))).toEqual({1: "hide", 2: null, 3: null, 4: null});
         });
     });
 
@@ -183,12 +185,12 @@ describe("processComments", () => {
                 comment(6, {memo: "ㅋ"}),
                 comment(7, {memo: "ㅋ"}),
                 comment(8, {memo: "ㅋ"})
-            ], preData(), view({duplicate: {count: 3, minLength: 2}}));
+            ], preData(), block({foldDuplicate: true, duplicateCount: 3, duplicateMinLength: 2}));
             expect(Object.fromEntries(output.map((item) => [item.no, item.duplicates ?? null]))).toEqual({1: 3, 2: 0, 3: null, 4: null, 5: 0, 6: null, 7: null, 8: null});
         });
 
         it("꺼져 있으면 묶지 않는다", () => {
-            const output = processComments([comment(1, {memo: "같은 글"}), comment(2, {memo: "같은 글"})], preData(), view());
+            const output = processComments([comment(1, {memo: "같은 글"}), comment(2, {memo: "같은 글"})], preData(), block());
             expect(output.every((item) => item.duplicates === undefined)).toBe(true);
         });
     });

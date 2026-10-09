@@ -1,45 +1,11 @@
 import {create} from "zustand";
 
 import {needOverlayWhen} from "@/components/overlay/demands";
-import type {IpCategory, IpInfoFilter} from "@/core/database";
 import type {GallogActivity, RatioInfo} from "@/core/gallog";
 import type {MemoType} from "@/core/storage/types";
 import {eventTarget} from "@/utils/event";
-import {nickType} from "@/utils/user";
 
 type ToastLevel = "info" | "error" | "warning";
-
-export type BadgeKey = "UID" | "MEMO" | "RATIO" | "PERMBAN";
-
-/** userinfo의 배지 순서·표시 조건. 미리보기 작성자 표시가 이것으로 페이지와 같게 그린다. */
-export interface BadgeView {
-    order: BadgeKey[];
-    /** 고정닉/반고정닉 아이디 표시. */
-    fixedUid: boolean;
-    halfFixedUid: boolean;
-    ipFilter: IpInfoFilter;
-}
-
-/** userinfo가 꺼져 있을 때의 값. 기본 순서이고 IP 정보(userinfo가 붙이는 배지)는 없다. */
-export const DEFAULT_BADGE_VIEW: BadgeView = {order: ["UID", "MEMO", "RATIO", "PERMBAN"], fixedUid: true, halfFixedUid: true, ipFilter: "none"};
-
-/** 닉콘(고정닉·반고정닉)에 따라 UID를 보일지. 닉콘이 없으면 늘 보인다. */
-export const showsUid = (view: BadgeView, icon?: string): boolean => {
-    const type = icon ? nickType(icon) : "UNFIXED";
-    return type === "FIXED" ? view.fixedUid : type === "HALF_FIXED" ? view.halfFixedUid : true;
-};
-
-/** 차단 모듈의 표시 방식. 미리보기도 이것으로 페이지와 같게 가린다. */
-export interface BlockView {
-    blur: boolean;
-    /** 블러에 마우스를 올리면 보기. */
-    blurReveal: boolean;
-    replyRemove: boolean;
-    /** 이 페이지에서만 차단 내용 보기 (저장하지 않음). */
-    revealed: boolean;
-    /** 같은 댓글 접기. 끄면 null이다. */
-    duplicate: { count: number; minLength: number } | null;
-}
 
 export interface ToastData {
     content: string;
@@ -71,22 +37,16 @@ export const isLowActivity = (ratio: GallogActivity, alarm: number): boolean => 
  */
 export const isFresh = <T extends { date: number }>(info?: T): info is T => info !== undefined && Date.now() - info.date <= 3600_000;
 
-/** 배지 색 키. userinfo의 BADGE_COLORS가 키마다 색 설정을 하나씩 둔다. IP 배지는 분류가 키다. */
-export type BadgeColorKey = IpCategory | "uid" | "permBan" | "ratio" | "ratioAlarm";
-
 interface UiState {
     /** 오버레이가 아직 받지 않은 토스트. 마지막이 가장 최근 것이다. 띄우고 닫는 것은 ToastHost(Base UI Toast)가 맡는다. */
     toasts: ToastData[];
     selected: SelectedUser | null;
     bubble: { x: number; y: number } | null;
     memo: MemoTargetState | null;
-    /** 배지 색 (userinfo 설정). 모듈이 꺼져 있으면 비어 있고, 갱차 조회를 끄면 permBan이 없다. */
-    badgeColors: Partial<Record<BadgeColorKey, string>>;
-    badgeView: BadgeView;
     /** 글댓비 캐시와 깡계 기준 (userinfo). 글댓비 표시를 끄거나 모듈이 꺼져 있으면 null. 지난 값도 있으니 isFresh로 가려 읽는다. */
     ratios: { cache: Record<string, RatioInfo>; alarm: number } | null;
-    /** 차단 모듈이 꺼져 있으면 null이고, 미리보기도 가리지 않는다. */
-    blockView: BlockView | null;
+    /** 차단 모듈의 '가린 내용 보기' (이 페이지에서만, 저장하지 않는다). 미리보기도 따른다. 모듈이 꺼져 있으면 false다. */
+    blockRevealed: boolean;
 
     showToast: (content: string, type?: ToastLevel, autoClose?: number, action?: ToastData["action"]) => void;
     /** user를 고르고 (x, y)에 유저 버블을 연다. 버블의 메모·차단은 고른 대상에 건다. */
@@ -102,10 +62,8 @@ export const useUiStore = create<UiState>((set, get) => ({
     selected: null,
     bubble: null,
     memo: null,
-    badgeColors: {},
-    badgeView: DEFAULT_BADGE_VIEW,
     ratios: null,
-    blockView: null,
+    blockRevealed: false,
 
     showToast: (content, type = "info", autoClose = 5000, action) => {
         set({toasts: [...get().toasts, {content, type, autoClose, action}]});
@@ -145,5 +103,5 @@ export const openWriterBubble = (ev: MouseEvent): void => {
     useUiStore.getState().openBubble({nick, uid, ip}, ev.clientX, ev.clientY);
 };
 
-// 토스트·유저 버블·메모 창이 뜨면 오버레이를 띄운다 (components/overlay/demands.ts). 배지 색·차단 보기처럼 setup이 늘 채우는 값은 넣지 않는다.
+// 토스트·유저 버블·메모 창이 뜨면 오버레이를 띄운다 (components/overlay/demands.ts). 글댓비·가린 내용 보기처럼 setup이 늘 채우는 값은 넣지 않는다.
 needOverlayWhen(useUiStore, ({toasts, bubble, memo}) => Boolean(toasts.length || bubble || memo));

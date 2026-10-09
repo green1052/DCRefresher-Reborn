@@ -159,6 +159,7 @@ describe("loadAll", () => {
         expect(revoke).toHaveBeenCalled();
         expect(other).toHaveBeenCalledTimes(1);
         expect(error).toHaveBeenCalled();
+        expect(registry.runningModulesStore.getState()).toEqual({broken: false, fine: true});
     });
 
     it("setup이 실패한 모듈은 껐다 켤 때만 다시 setup한다", async () => {
@@ -283,6 +284,7 @@ describe("켜기·끄기", () => {
             }
         })]);
         expect(registry.getModuleApi("preview")).toBe("api");
+        expect(registry.runningModuleSettings("preview")).toEqual({size: 5});
 
         await setEnables({preview: false});
         expect(signals[0]?.aborted).toBe(true);
@@ -290,15 +292,18 @@ describe("켜기·끄기", () => {
         expect(revoke).toHaveBeenCalledTimes(1);
         expect(registry.getModuleApi("preview")).toBeUndefined();
 
-        // 멈춘 실행의 설정 리스너는 부르지 않는다.
+        // 멈춘 실행의 설정 리스너는 부르지 않는다. 설정은 반영하지만 돌 때만 따르는 UI에는 주지 않는다.
         await setSettings("preview", {size: 2});
         expect(listener).not.toHaveBeenCalled();
+        expect(registry.moduleSettings("preview")).toEqual({size: 2});
+        expect(registry.runningModuleSettings("preview")).toBeUndefined();
 
         await setEnables({preview: true});
         await tick();
         expect(signals).toHaveLength(2);
         expect(signals[1]?.aborted).toBe(false);
         expect(registry.getModuleApi("preview")).toBe("api");
+        expect(registry.runningModuleSettings("preview")).toEqual({size: 2});
     });
 
     it("setup이 끝나기 전에는 api가 없다", async () => {

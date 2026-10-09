@@ -1,3 +1,4 @@
+import type {ModuleSettings} from "@/core/module/types";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {markUsed} from "@/core/usage";
 import {useBlocksStore} from "@/stores/blocks";
@@ -136,6 +137,10 @@ export const ROWS_HIDDEN_EVENT = "refresher:rowsHidden";
 
 /** 본문 차단 안내 문구. 페이지(block 모듈)와 미리보기(창·미니)가 같이 쓴다. */
 export const BLOCKED_TEXT = "게시글 내용이 차단되었습니다.";
+
+/** 차단 모듈 설정의 같은 댓글 접기 기준. 끄면 null이다. 페이지(차단 모듈)와 미리보기가 같이 쓴다. */
+export const duplicateOf = (settings: ModuleSettings["block"]): { count: number; minLength: number } | null =>
+    settings.foldDuplicate ? {count: settings.duplicateCount, minLength: settings.duplicateMinLength} : null;
 
 /**
  * 같은 댓글 묶기 (도배 접기). 공백만 다른 글도 같게 보고, minLength보다 짧은 글(ㅋㅋ 등)과 count번 미만 반복은 건너뛴다.

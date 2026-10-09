@@ -1,14 +1,15 @@
 import {HTTPError} from "ky";
 import {shallow} from "zustand/shallow";
 
-import {isBlocked} from "@/core/block";
+import {duplicateOf, isBlocked} from "@/core/block";
 import {BlockedError, isAbortError} from "@/core/http/client";
 import {defineModule} from "@/core/module/define";
-import {getModuleApi} from "@/core/module/registry";
+import {getModuleApi, moduleSettingsStore, runningModuleSettings, runningModulesStore} from "@/core/module/registry";
+import type {ModuleSettings} from "@/core/module/types";
 import type {ProcessedComment} from "@/core/preview/comments";
 import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
 import {useBlocksStore} from "@/stores/blocks";
-import {type BlockView, useUiStore} from "@/stores/ui";
+import {useUiStore} from "@/stores/ui";
 import {whenDomReady} from "@/utils/dom";
 import {messageOf} from "@/utils/error";
 import {isTyping, pressedKey} from "@/utils/event";
@@ -41,13 +42,13 @@ const errorOf = (error: unknown): ErrorState => ({
 // 제목 링크의 첫 텍스트 노드만 읽는다. h1(로고)엔 인라인 스크립트가, 링크 전체엔 마이너·미니 표시가 섞인다.
 const galName = (): string => document.querySelector(".page_head h2 a")?.firstChild?.textContent?.trim() || "디시인사이드";
 
-// 본문 차단은 차단 모듈 설정(blockView)을 따르고, 모듈이 꺼져 있으면 가리지 않는다.
+// 본문 차단은 차단 모듈 설정을 따르고, 모듈이 꺼져 있으면 가리지 않는다.
 // 원문은 지우지 않아 '가린 내용 보기'로 다시 볼 수 있다 (Frame.tsx).
 const textBlockOf = (preData: GalleryPreData, postInfo: PostInfo): PostInfo["textBlocked"] => {
-    const view = useUiStore.getState().blockView;
+    const block = runningModuleSettings("block");
     // block 모듈 checkText처럼 .write_div의 글자(writeText)로 검사한다. 본문 HTML을 풀어 쓰면 디시 스크립트 글자가 섞이고,
     // 태그 자리가 공백이 돼 '<b>광</b>고' 같은 글이 빠져나간다.
-    return view && postInfo.writeText !== undefined && isBlocked("TEXT", postInfo.writeText, preData.gallery) ? (view.blur ? "blur" : "hide") : undefined;
+    return block && postInfo.writeText !== undefined && isBlocked("TEXT", postInfo.writeText, preData.gallery) ? (block.blur ? "blur" : "hide") : undefined;
 };
 
 /** 받은 지 1분 안의 캐시 본문과 그 나이(ms). 댓글 보존·추천이 항목을 다시 저장해 수명을 늘리므로 받은 시각으로 본다. */
@@ -70,8 +71,8 @@ const recentComments = (preData: GalleryPreData): CommentListResponse | undefine
     return entry?.comments && Date.now() - (entry.commentsAt ?? 0) < COMMENTS_REUSE ? entry.comments : undefined;
 };
 
-// blockView에서 가공 결과가 읽는 값만 뽑은 비교 키 (아래 useUiStore 구독).
-const blockKeyOf = (view: BlockView | null): string => (view ? JSON.stringify([view.blur, view.replyRemove, view.duplicate]) : "");
+// 차단 모듈 설정에서 가공 결과가 읽는 값만 뽑은 비교 키 (아래 구독). 모듈이 꺼져 있으면 빈 문자열이다.
+const blockKeyOf = (block: ModuleSettings["block"] | undefined): string => (block ? JSON.stringify([block.blur, block.replyRemove, duplicateOf(block)]) : "");
 
 /** 새 댓글 강조 시간 (ms). assets/styles/tailwind.css의 fresh-comment 애니메이션 길이와 같다. */
 const FRESH_DURATION = 3000;
@@ -226,7 +227,7 @@ const controller = (ctx: Ctx) => {
             const before = shown?.signal === mySignal && ctx.settings.highlightNewComments ? new Set(shown.source.map((comment) => comment.no)) : null;
             const added = before ? source.filter((comment) => !before.has(comment.no) && comment.is_delete !== "1").map((comment) => comment.no) : [];
             shown = {signal: mySignal, source};
-            store.setState({comments: keepUnchanged(processComments(source, preData, useUiStore.getState().blockView)), allowReply, freshComments: added.length > 0 ? new Set(added) : NO_FRESH});
+            store.setState({comments: keepUnchanged(processComments(source, preData, runningModuleSettings("block"))), allowReply, freshComments: added.length > 0 ? new Set(added) : NO_FRESH});
             // 강조(3초)가 끝나면 지운다. 남겨 두면 답글을 접었다 펴는 등 다시 그릴 때마다 강조가 되풀이된다.
             window.clearTimeout(freshTimer);
             if (added.length > 0) {
@@ -248,7 +249,7 @@ const controller = (ctx: Ctx) => {
         const {processComments} = await import("@/core/preview/comments");
         store.setState((s) => (s.signalId !== signalId ? {} : {
             post: s.post && {...s.post, textBlocked: textBlockOf(preData, s.post)},
-            comments: shown?.signal === signalId ? keepUnchanged(processComments(shown.source, preData, useUiStore.getState().blockView)) : s.comments
+            comments: shown?.signal === signalId ? keepUnchanged(processComments(shown.source, preData, runningModuleSettings("block"))) : s.comments
         }));
         dropStaleReply();
     };
@@ -256,11 +257,17 @@ const controller = (ctx: Ctx) => {
     ctx.addCleanup(useBlocksStore.subscribe((state, previous) => {
         if (state.entries !== previous.entries || state.defaults !== previous.defaults) void reapplyBlocks();
     }));
-    // 가공 결과(processComments·textBlockOf)가 읽는 값만 본다. '가린 내용 보기'(revealed·blurReveal)는 창과 댓글 목록이 직접 구독하므로,
-    // 켜고 끌 때마다 댓글 수백 개를 다시 가공해 모두 다시 그리지 않는다. duplicate는 매번 새 객체라 값으로 비교한다.
-    ctx.addCleanup(useUiStore.subscribe((state, previous) => {
-        if (blockKeyOf(state.blockView) !== blockKeyOf(previous.blockView)) void reapplyBlocks();
-    }));
+    // 차단 모듈의 켜짐·설정 중 가공 결과(processComments·textBlockOf)가 읽는 값만 본다. '가린 내용 보기'(blockRevealed·blurReveal)는 창과 댓글 목록이
+    // 직접 구독하므로, 켜고 끌 때마다 댓글 수백 개를 다시 가공해 모두 다시 그리지 않는다. 모듈 설정은 하나만 바뀌어도 새 객체라 값으로 비교한다.
+    let blockKey = blockKeyOf(runningModuleSettings("block"));
+    const onBlockChange = (): void => {
+        const key = blockKeyOf(runningModuleSettings("block"));
+        if (key === blockKey) return;
+        blockKey = key;
+        void reapplyBlocks();
+    };
+    ctx.addCleanup(moduleSettingsStore.subscribe(onBlockChange));
+    ctx.addCleanup(runningModulesStore.subscribe(onBlockChange));
 
     /** report: 사용자가 누른 새로고침이면 실패를 알린다. 자동 갱신 실패는 조용히 넘긴다. */
     const refreshComments = async (report = false) => {

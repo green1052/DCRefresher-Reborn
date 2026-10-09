@@ -10,7 +10,7 @@ import type {SettingValue} from "@/core/storage/types";
 import {onBfcacheRestore} from "@/utils/dom";
 
 import {areEqual, enablesOf, isModuleEnabled, readModuleStorage, settingsOf} from "./settings";
-import type {AnyModule, ModuleApis, ModuleContext} from "./types";
+import type {AnyModule, ModuleApis, ModuleContext, ModuleSettings} from "./types";
 
 interface ModuleInstance {
     def: AnyModule;
@@ -28,6 +28,20 @@ const instances = new Map<string, ModuleInstance>();
  * UI가 구독한다 (core/module/useModuleSettings.ts). 모듈이 설정을 다른 스토어로 옮겨 적지 않아도 된다.
  */
 export const moduleSettingsStore = createStore<Record<string, Readonly<Record<string, SettingValue>>>>(() => ({}));
+/**
+ * 이 페이지에서 도는 모듈 (모듈 id → setup을 시작했고 아직 멈추지 않았는지). moduleSettingsStore는 꺼진 모듈의 설정도 채우므로
+ * 다른 모듈이 돌 때만 그 설정을 따르는 UI(미리보기의 차단·배지)는 이것으로 가린다 (runningModuleSettings).
+ */
+export const runningModulesStore = createStore<Record<string, boolean>>(() => ({}));
+
+/** 모듈의 설정 (state는 moduleSettingsStore의 값). 레지스트리는 모듈별 타입을 모르므로 그 모듈이 ModuleSettings에 선언한 것으로 단언한다. */
+export const moduleSettings = <Id extends keyof ModuleSettings>(id: Id, state = moduleSettingsStore.getState()): ModuleSettings[Id] | undefined =>
+    state[id] as ModuleSettings[Id] | undefined;
+
+/** 이 페이지에서 도는 모듈의 설정. 꺼져 있거나 이 페이지에서 돌지 않으면 undefined다. React에서는 useRunningModuleSettings를 쓴다. */
+export const runningModuleSettings = <Id extends keyof ModuleSettings>(id: Id): ModuleSettings[Id] | undefined =>
+    runningModulesStore.getState()[id] ? moduleSettings(id) : undefined;
+
 /**
  * stopAll 뒤에는 다시 켜지 않는다. 새 스크립트가 주입되어 무효화된 경우 확장은 살아 있다. on/off·설정 감시와 bfcache 처리는
  * 컨텍스트 signal로 풀리지만, 불러오는 중이던 register·sync는 그 뒤에도 끝까지 돈다. 여기서 켜면 새 스크립트의 모듈과 두 벌로 돈다.
@@ -64,6 +78,7 @@ const start = async (instance: ModuleInstance): Promise<void> => {
 
     const running: NonNullable<ModuleInstance["running"]> = {ctx, controller, ready: false, listeners};
     instance.running = running;
+    runningModulesStore.setState({[instance.def.id]: true});
 
     running.setup = (async () => {
         try {
@@ -89,6 +104,7 @@ const stop = (instance: ModuleInstance, keepDom = false): void => {
     const running = instance.running;
     if (!running) return;
     instance.running = undefined;
+    runningModulesStore.setState({[instance.def.id]: false});
 
     running.controller.abort();
     if (!keepDom) instance.def.revoke?.();

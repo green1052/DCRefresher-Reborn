@@ -103,7 +103,7 @@ const SelectionTools = ({selectable}: { selectable: ProcessedComment[] }) => {
 /** 스레드별 댓글과 접을 수 있는 답글. */
 export const CommentList = () => {
     const comments = usePreviewStore((s) => s.comments)!;
-    const revealed = useUiStore((s) => s.blockView?.revealed === true);
+    const revealed = useUiStore((s) => s.blockRevealed);
 
     // 숨김 차단과 접힌 같은 댓글은 '가린 내용 보기' 동안만 (흐리게) 그린다. 블러 차단은 그려 두고 features/preview/overlay.css가 흐린다.
     // 트리 선과 답글 수도 그리는 댓글만 센다.

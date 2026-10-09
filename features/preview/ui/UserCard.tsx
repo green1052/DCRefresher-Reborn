@@ -1,10 +1,12 @@
 import {Fragment, type MouseEvent, type ReactNode, useSyncExternalStore} from "react";
 import {useShallow} from "zustand/react/shallow";
 
+import {type BadgeKey, badgeViewOf, DEFAULT_BADGE_VIEW, showsUid} from "@/core/badges";
 import {banReasonsOf, databaseVersion, ipInfoOf, passesIpFilter, subscribeDatabase} from "@/core/database";
+import {useRunningModuleSettings} from "@/core/module/useModuleSettings";
 import type {User} from "@/core/preview/types";
 import {useUserMemo} from "@/stores/memos";
-import {type BadgeKey, isFresh, isLowActivity, showsUid, useUiStore} from "@/stores/ui";
+import {isFresh, isLowActivity, useUiStore} from "@/stores/ui";
 import {useGallogActivity} from "@/components/overlay/gallogActivity";
 import {cn} from "cn";
 
@@ -16,16 +18,17 @@ import {usePreviewStore} from "./previewStore";
  * op: 글쓴이가 단 댓글. v5처럼 작성자 칸을 파랗게 칠한다. 닉네임만 칩 색으로, 배지(아이디·IP·글댓비·갱차·메모)는 설정한 색 그대로 둔다.
  */
 export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: boolean; op?: boolean }) => {
-    // 배지 순서·표시 조건은 페이지와 같게 userinfo 설정을 따른다. 회원은 UID, 유동만 IP 정보를 단다.
-    const view = useUiStore((state) => state.badgeView);
+    // 배지 순서·표시 조건·색은 페이지와 같게 userinfo 설정을 따른다. 모듈이 꺼져 있으면 기본값이고 색이 없다. 회원은 UID, 유동만 IP 정보를 단다.
+    const userinfo = useRunningModuleSettings("userinfo");
+    const view = userinfo ? badgeViewOf(userinfo) : DEFAULT_BADGE_VIEW;
     // IP·밴 조회 식에 dbVersion을 넣는다. 빠지면 React Compiler가 인자만 보고 메모해 DB를 읽은 뒤에도 옛 값이 남는다.
     const dbVersion = useSyncExternalStore(subscribeDatabase, databaseVersion);
     const ipInfo = dbVersion > 0 && !user.id && user.ip ? ipInfoOf(user.ip) : undefined;
-    const ipColor = useUiStore((state) => (ipInfo ? state.badgeColors[ipInfo.category] : undefined));
-    const banColor = useUiStore((state) => state.badgeColors.permBan);
+    const ipColor = ipInfo ? userinfo?.[`${ipInfo.category}Color`] : undefined;
+    const banColor = userinfo?.checkPermBan ? userinfo.permBanColor : undefined;
     // 갱차 조회를 켰을 때(banColor)만 찾는다. 밴 색인(수 MB)은 처음 조회할 때 만든다.
     const banReasons = dbVersion > 0 && user.id && banColor ? banReasonsOf(user.id) : undefined;
-    const uidColor = useUiStore((state) => state.badgeColors.uid);
+    const uidColor = userinfo?.uidColor;
     const gallery = usePreviewStore((s) => s.preData?.gallery);
     const memo = useUserMemo({uid: user.id, ip: user.ip, nick: user.nick}, gallery);
     // 글댓비는 이 사람 것만 구독한다. 캐시 전체를 구독하면 누구 것이든 저장될 때마다 모든 댓글의 작성자가 다시 그려진다.
@@ -37,7 +40,7 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
         user.id && state.ratios && Object.hasOwn(state.ratios.cache, user.id) ? state.ratios.cache[user.id] : undefined));
     const fetched = useGallogActivity(fetchRatio && showsRatio && !isFresh(cached) ? user.id : undefined);
     const ratio = (typeof fetched === "object" ? fetched : undefined) ?? cached;
-    const ratioColor = useUiStore((state) => (ratio && isLowActivity(ratio, alarm) ? state.badgeColors.ratioAlarm : state.badgeColors.ratio));
+    const ratioColor = ratio && isLowActivity(ratio, alarm) ? userinfo?.ratioAlarmColor : userinfo?.ratioColor;
 
     const openBubble = (x: number, y: number): void => useUiStore.getState().openBubble({nick: user.nick, uid: user.id, ip: user.ip}, x, y);
 

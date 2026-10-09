@@ -7,7 +7,7 @@ import type {IpCategory} from "@/core/database";
 import type {GallogActivity, RatioInfo} from "@/core/gallog";
 import userinfo from "@/features/userinfo/index";
 import {useMemosStore} from "@/stores/memos";
-import {DEFAULT_BADGE_VIEW, useUiStore} from "@/stores/ui";
+import {useUiStore} from "@/stores/ui";
 
 import {stored, tick} from "../../../helpers";
 import {type Running, runModule} from "../module";
@@ -156,7 +156,6 @@ describe("메모·순서·갱차", () => {
         mountRows([{no: "1", uid: "member"}]);
         await start();
         expect(badges("1")).toEqual(["(member)"]);
-        expect(useUiStore.getState().badgeColors.permBan).toBeUndefined();
     });
 
     it("DB가 갱신되면 다시 그린다", async () => {
@@ -281,19 +280,16 @@ describe("글댓비·깡계", () => {
 });
 
 describe("미리보기 공유·끄기", () => {
-    it("배지 색·표시 조건을 ui 스토어에 올리고, 끄면 되돌린다", async () => {
+    it("끄면 배지를 떼고 미리보기에 올린 글댓비를 거둔다", async () => {
         db.ips.set("1.2", {label: "KT", title: "KT", category: "korea"});
         mountRows([{no: "1", ip: "1.2"}]);
-        const {stop} = await start({checkPermBan: true, uidColor: "#123456"});
-        const state = useUiStore.getState();
-        expect(state.badgeColors.uid).toBe("#123456");
-        expect(state.badgeColors.permBan).toBe("#e8645f");
-        expect(state.badgeView).toEqual({order: ["UID", "MEMO", "RATIO", "PERMBAN"], fixedUid: true, halfFixedUid: true, ipFilter: "all"});
+        const {stop} = await start({checkRatio: true});
+        expect(badges("1")).toEqual(["[KT]"]);
+        expect(useUiStore.getState().ratios).not.toBeNull();
 
         stop();
         running = undefined;
-        expect(useUiStore.getState().badgeColors).toEqual({});
-        expect(useUiStore.getState().badgeView).toBe(DEFAULT_BADGE_VIEW);
+        expect(useUiStore.getState().ratios).toBeNull();
         expect(document.querySelector(".refresher-user-badges")).toBeNull();
     });
 
