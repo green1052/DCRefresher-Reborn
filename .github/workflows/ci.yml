@@ -36,10 +36,8 @@ jobs:
             matrix:
                 include:
                     -   browser: chromium
-                        build: build
                         e2e: e2e
                     -   browser: firefox
-                        build: build:firefox
                         e2e: e2e:firefox
         name: e2e (${{ matrix.browser }})
         steps:
@@ -49,13 +47,11 @@ jobs:
 
             -   uses: ./.github/actions/setup
 
-            -   name: Build
-                run: bun run ${{ matrix.build }}
-
             -   name: Install browser
                 timeout-minutes: 3
                 run: bunx playwright install --with-deps ${{ matrix.browser }}
 
+            # e2e 스크립트가 먼저 빌드한다.
             -   name: E2E tests
                 run: bun run ${{ matrix.e2e }}
 

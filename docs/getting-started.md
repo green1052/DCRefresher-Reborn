@@ -24,8 +24,8 @@ bun run dev            # Chrome 개발 모드 (dev:firefox는 Firefox)
 bun run compile        # 타입 검사 (tsc --noEmit)
 bun run test           # 단위 테스트. test:watch는 지켜보며 다시 돈다
 bun run build          # .output/chrome-mv3 (build:firefox는 .output/firefox-mv2)
-bun run e2e            # E2E. 먼저 build, 처음 한 번 bunx playwright install chromium
-bun run e2e:firefox    # 파이어폭스 E2E. 먼저 build:firefox, 처음 한 번 bunx playwright install firefox
+bun run e2e            # 빌드하고 E2E. 처음 한 번 bunx playwright install chromium
+bun run e2e:firefox    # 파이어폭스로 빌드하고 E2E. 처음 한 번 bunx playwright install firefox
 bun run e2e:live       # 실제 디시 E2E. 디시 마크업·API가 바뀌었는지 본다
 bun run zip            # 배포용 zip (zip:firefox는 Firefox zip + 소스 zip)
 ```

@@ -25,7 +25,7 @@ export default defineConfig<{ live: boolean }>({
             testIgnore: "live/**",
             use: {...devices["Desktop Chrome"], viewport: {width: 1280, height: 900}}
         },
-        // bun run build:firefox로 빌드한 .output/firefox-mv2를 올린다 (e2e/firefox.ts). bunx playwright install firefox가 필요하다.
+        // bun run e2e:firefox가 빌드한 .output/firefox-mv2를 올린다 (e2e/firefox.ts). bunx playwright install firefox가 필요하다.
         // 플레이라이트의 파이어폭스는 moz-extension:// 페이지로 이동하지 못해(page.goto가 끝나지 않는다) 팝업·옵션 테스트는 뺀다.
         {
             name: "firefox",
