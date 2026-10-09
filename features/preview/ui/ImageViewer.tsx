@@ -2,6 +2,7 @@ import {Dialog} from "@base-ui/react/dialog";
 import {ChevronLeft, ChevronRight, ExternalLink, X} from "lucide-react";
 import {useRef, useState} from "react";
 
+import {keepTabInside} from "@/components/dialogs";
 import {overlay} from "@/components/overlay/shadow";
 import {Button} from "@/components/ui/button";
 import {dcinsideHref} from "@/core/http/urls";
@@ -44,6 +45,7 @@ export const ImageViewer = ({images, index}: { images: ViewerImage[]; index: num
                     ref={popup}
                     className="refresher-viewer fixed inset-0 flex overflow-y-auto px-18 py-14 outline-none duration-150 animate-in fade-in"
                     onKeyDown={(ev) => {
+                        keepTabInside(ev);
                         if (images.length < 2 || (ev.key !== "ArrowLeft" && ev.key !== "ArrowRight")) return;
                         ev.preventDefault();
                         go(ev.key === "ArrowLeft" ? -1 : 1);

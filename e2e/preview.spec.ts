@@ -135,6 +135,16 @@ test.describe("미리보기", () => {
         // 원본 보기는 디시 원본 주소(imgPop)가 있는 이미지에만 있다.
         await expect(viewer.getByRole("link", {name: "원본 보기"})).toHaveCount(0);
 
+        // 오버레이(shadow DOM) 안에서도 Tab·Shift+Tab이 뒤의 미리보기나 디시 페이지로 나가지 않는다.
+        await expect(viewer.getByRole("button", {name: "닫기"})).toBeFocused();
+        const focusInside = () => viewer.evaluate((element) => document.activeElement?.tagName === "REFRESHER-ROOT" && element.contains((element.getRootNode() as ShadowRoot).activeElement));
+        for (const key of ["Tab", "Shift+Tab"]) {
+            for (let i = 0; i < 3; i++) {
+                await listPage.page.keyboard.press(key);
+                expect(await focusInside()).toBe(true);
+            }
+        }
+
         await listPage.page.keyboard.press("Escape");
         await expect(viewer).toHaveCount(0);
         await expect(frame).toBeVisible();

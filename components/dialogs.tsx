@@ -21,7 +21,7 @@ const FOCUSABLE = "a[href], button:not([disabled]), input:not([disabled]), selec
  * Tab을 창 안에서 돌린다. Base UI의 포커스 가두기는 문서의 activeElement로 끝을 알아보는데, 오버레이(shadow DOM) 안에서는
  * 그것이 늘 호스트라 끝을 못 알아보고 포커스가 디시 페이지로 나간다. 문서에 그린 창에서는 Base UI가 먼저 막는다(defaultPrevented).
  */
-const keepTabInside = (ev: KeyboardEvent<HTMLDivElement>): void => {
+export const keepTabInside = (ev: KeyboardEvent<HTMLDivElement>): void => {
     if (ev.key !== "Tab" || ev.defaultPrevented) return;
     // 묶음(토글 묶음 등)의 고르지 않은 항목처럼 tabindex가 -1인 것은 Tab 순서에 없다.
     const items = [...ev.currentTarget.querySelectorAll<HTMLElement>(FOCUSABLE)]
