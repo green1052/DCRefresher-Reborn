@@ -73,8 +73,11 @@ const detectBlocked: AfterResponseHook = async ({request, response}) => {
 };
 
 export const http: KyInstance = ky.create({
-    // 시간 제한은 limitedFetch가 차례를 받은 뒤부터 잰다.
+    // 머리까지의 시간 제한은 limitedFetch가 차례를 받은 뒤부터 잰다.
     timeout: false,
+    // 요청 전체(차례 기다림·재시도·차단 검사·본문 읽기)의 상한. 머리를 받은 뒤 본문이 멈추면 끝나지 않아 진행 중 표시가 굳는다.
+    // 본문 읽기는 ky의 .text()/.json()으로 읽어야 이 상한에 묶인다.
+    totalTimeout: 60_000,
     fetch: limitedFetch,
     // jitter: 재시도가 한꺼번에 몰리지 않게 시점을 흩는다.
     // maxRetryAfter: Retry-After가 몇 분이어도 10초까지만 기다린다. 더 기다리면 화면이 멈춘 것처럼 보인다.

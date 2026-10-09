@@ -147,19 +147,13 @@ export default defineModule({
                 // 자동 새로고침은 재시도하지 않고, 실패하면 armNext가 주기를 늘린다. ky 재시도는 Retry-After를 최대 10초까지 기다려 그동안 목록 요청이 묶인다.
                 // retry: undefined는 기본값을 덮으므로 키 자체를 뺀다.
                 // 시간 제한을 주기보다 짧게 잡지 않는다. 큰 갤러리 목록(2~3초)이 조금만 늦어도 실패가 되어 주기가 1분까지 늘어난다.
-                // http의 시간 제한(15초)은 응답 머리까지만 잰다. 디시 GET은 임시 차단 검사(detectBlocked)가 http.get 안에서 본문까지 읽어,
-                // 본문이 멈추면 loading이 풀리지 않아 새로고침이 끝내 멈춘다. 그래서 요청 전체에 LIST_TIMEOUT을 걸고, 여기서 끊긴 것은 실패로 친다 (catch).
-                const stalled = new AbortController();
-                const stallTimer = window.setTimeout(() => stalled.abort(new DOMException("목록 요청 시간 초과", "TimeoutError")), LIST_TIMEOUT);
-                let response: string;
-                try {
-                    response = await (await http.get(listUrl(target), {
-                        signal: AbortSignal.any([controller.signal, stalled.signal]),
-                        ...(force ? {} : {retry: 0})
-                    })).text();
-                } finally {
-                    window.clearTimeout(stallTimer);
-                }
+                // 본문이 멈추면 loading이 풀리지 않아 새로고침이 끝내 멈추므로, 요청 전체에 http의 상한(60초)보다 짧은 LIST_TIMEOUT을 건다.
+                // 시간 초과(TimeoutError)는 실패로 친다 (catch).
+                const response = await http.get(listUrl(target), {
+                    signal: controller.signal,
+                    totalTimeout: LIST_TIMEOUT,
+                    ...(force ? {} : {retry: 0})
+                }).text();
                 // 그사이 주소가 바뀌었으면 지난 주소의 목록이라 버린다. finally에서 새 주소로 다시 받는다.
                 if (target !== originalLocation) return false;
 

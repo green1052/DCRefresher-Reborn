@@ -7,8 +7,13 @@ import {useUiStore} from "@/stores/ui";
 import {tick} from "../../../helpers";
 import {type Running, runModule} from "../module";
 
-const get = vi.hoisted(() => vi.fn<(url: string, options?: { signal?: AbortSignal; retry?: number }) => Promise<Response>>());
-vi.mock("@/core/http/client", async (importOriginal) => ({...await importOriginal<typeof import("@/core/http/client")>(), http: {get}}));
+type GetOptions = { signal?: AbortSignal; retry?: number; totalTimeout?: number };
+const get = vi.hoisted(() => vi.fn<(url: string, options?: GetOptions) => Promise<Response>>());
+// 모듈은 ky처럼 http.get(...).text()로 본문을 읽는다.
+vi.mock("@/core/http/client", async (importOriginal) => ({
+    ...await importOriginal<typeof import("@/core/http/client")>(),
+    http: {get: (url: string, options?: GetOptions) => ({text: async () => (await get(url, options)).text()})}
+}));
 
 const row = (no: string): string => `<tr class="ub-content" data-no="${no}"><td class="gall_num">${no}</td><td class="gall_tit"><a href="/board/view/?id=test&no=${no}">글 ${no}</a></td></tr>`;
 
@@ -199,9 +204,9 @@ describe("자동 새로고침", () => {
     it("응답이 멈추면 30초에 끊고 실패로 쳐서 다음 주기에 다시 받는다", async () => {
         vi.useFakeTimers();
         vi.spyOn(console, "error").mockImplementation(() => {});
-        // 디시 GET은 http.get 안에서 차단 검사로 본문까지 읽으므로 본문이 멈추면 끊어야만 실패로 끝난다.
+        // 응답이 오지 않으면 ky가 totalTimeout에 TimeoutError로 끊는다.
         get.mockImplementation((_, options) => new Promise((_, reject) => {
-            options?.signal?.addEventListener("abort", () => reject(options.signal?.reason));
+            setTimeout(() => reject(new DOMException("", "TimeoutError")), options?.totalTimeout);
         }));
         await start();
         await vi.advanceTimersByTimeAsync(5500);

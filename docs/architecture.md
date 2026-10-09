@@ -71,7 +71,8 @@ scripts/                IP DB 빌드 스크립트
 
 - 두 클라이언트가 p-limit 제한기 하나를 같이 써서 합친 동시 요청 수를 제한합니다. 제한 값은 "요청 제한" 모듈 설정이고 탭마다 따로 셉니다.
 - Firefox 콘텐츠 스크립트에서는 두 클라이언트 모두 `content.fetch`로 보냅니다. 페이지가 보낸 요청처럼 나가야 디시 ajax가 받아 줍니다.
-- 시간 제한(15초)은 동시 요청 수 제한의 차례를 받은 뒤부터 응답 머리를 받을 때까지만 잽니다. 그런데 dcinside.com GET은 임시 차단 검사(`detectBlocked`)가 `http.get` 안에서 본문을 다 읽어서 본문이 멈추면 `http.get`이 끝나지 않습니다. 멈추면 안 되는 요청은 호출하는 쪽이 `signal`로 제한을 겁니다(글 목록 새로고침의 `LIST_TIMEOUT`). ky의 `timeout`은 차례를 기다리는 시간까지 재므로 쓰지 않습니다(호출할 때도 주지 마세요). `AbortSignal.timeout`도 쓰지 않습니다([Firefox](firefox.md)).
+- 응답 머리의 시간 제한(15초)은 동시 요청 수 제한의 차례를 받은 뒤부터 머리를 받을 때까지만 잽니다. ky의 `timeout`은 차례를 기다리는 시간까지 재므로 쓰지 않습니다(호출할 때도 주지 마세요). `AbortSignal.timeout`도 쓰지 않습니다([Firefox](firefox.md)).
+- 요청 전체(차례 기다림·재시도·차단 검사·본문 읽기)에는 ky의 `totalTimeout`(60초)을 겁니다. 머리를 받은 뒤 본문이 멈춰도 요청이 끝나게 하려는 것입니다. 본문은 ky의 `.text()`·`.json()`으로 읽어야 이 제한에 묶입니다. 더 짧게 끊을 요청은 호출할 때 `totalTimeout`을 줍니다(글 목록 새로고침의 `LIST_TIMEOUT`). IP/밴 DB 받기는 `totalTimeout: false`로 뺍니다.
 - 재시도는 ky 기본값에 지터를 더하고 `Retry-After`는 최대 10초까지만 기다립니다. 시간 초과·`BlockedError`·POST는 재시도하지 않습니다.
 - 요청이 너무 많으면 디시는 200으로 빈 페이지를 줍니다. 클라이언트는 dcinside.com의 GET 응답과 `/board/comment/` 아래 요청이 비어 있을 때만 `BlockedError`를 던집니다. 콘텐츠 스크립트가 따로 안내를 띄우니 기능 쪽에서는 `e instanceof BlockedError`일 때 자기 오류 토스트를 건너뜁니다(`stores/notify.ts` 참고).
 - 갤러리 종류는 `core/http/urls.ts`의 `galleryKind(url)`로 다룹니다. 주소 경로와 `_GALLTYPE_` 값은 같은 파일의 표에만 두고 `galleryPath`·`galltypeOf`로 꺼냅니다.
