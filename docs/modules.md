@@ -125,7 +125,8 @@ getModuleApi("preview")?.archiveArticle() === true
 배경 스크립트에서 할 일(컨텍스트 메뉴 등)이 있으면 `features/<id>/background.ts`에서 `defineBackgroundModule`로 default 내보냅니다. `entrypoints/background/index.ts`가 glob으로 모아 실행합니다.
 
 - `listen()`: 배경이 뜰 때마다 동기로 실행됩니다. 서비스 워커를 깨울 이벤트 리스너는 여기서 겁니다.
-- `apply({enabled, settings})`: 모듈을 켜고 끄거나 설정이 바뀔 때, 설치·브라우저 시작 때(Firefox는 배경이 뜰 때마다) 실행됩니다.
+- `apply({enabled, settings})`: 모듈을 켜고 끄거나 설정이 바뀔 때, 설치·브라우저 시작 때(Firefox는 배경이 뜰 때마다) 실행됩니다. 맞출 상태 없이 리스너만 거는 모듈은 두지 않습니다(`features/write/background.ts`).
+- 탭이 메시지로 요청한 일을 그 페이지(MAIN world)에서 할 때는 `hasTab`으로 탭에서 온 것인지 보고 `runInPage`로 실행합니다.
 
 배경 번들에는 React가 들어가면 안 됩니다. `background.ts`는 `index.ts`·`meta.ts`(아이콘·React import)를 불러오지 않고, `id`·`settings`·`defaultEnable`처럼 양쪽이 같아야 하는 값은 React 없는 파일로 빼서 같이 씁니다(`features/imagesearch/engines.ts`). `defaultEnable`이 다르면 옵션에서는 꺼져 있는데 배경은 켜진 것으로 봅니다. 페이지에서 할 일이 없는 모듈은 `index.ts`를 두지 않습니다.
 

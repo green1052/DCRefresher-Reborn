@@ -1,5 +1,5 @@
 import {onMessage} from "@/core/messaging/protocol";
-import {hookUploads, UPLOAD_OPTIONS_KEY} from "@/features/write/images";
+import {hasTab, runInPage} from "@/core/module/background";
 
 const GRECAPTCHA_SITE_KEY = "6Lc-Fr0UAAAAAOdqLYqPy53MxlRMIXpNXFvBliwI";
 /** api.js가 막히면(광고 차단 등) 끝나지 않으므로 이 시간까지만 기다린다. */
@@ -47,22 +47,6 @@ const rerunListScripts = (gallery: string): void => {
     if (typeof scope.UserMemo?.renderWriterMemoBadges === "function") scope.UserMemo.renderWriterMemoBadges(null);
 };
 
-/** 탭에서 온 메시지의 보낸 쪽. 팝업·옵션 같은 확장 페이지는 tab이 없다. */
-type TabSender = Browser.runtime.MessageSender & { tab: { id: number } };
-
-const hasTab = (sender: Browser.runtime.MessageSender): sender is TabSender => sender.tab?.id !== undefined;
-
-/**
- * 메시지를 보낸 문서의 페이지(MAIN world)에서 func를 실행한다.
- * 크롬은 문서(documentId)로 집는다. 프레임 번호로 집으면 그사이 다른 페이지로 넘어갔거나 보낸 쪽이 프리렌더 중인 페이지일 때
- * 지금 보이는 다른 문서에서 돈다. 파이어폭스는 documentId를 주지 않아 프레임 번호로 집는다.
- */
-const runInPage = <Args extends unknown[], Result>(sender: TabSender, func: (...args: Args) => Result, args: Args) => {
-    const {tab: {id: tabId}, frameId, documentId} = sender;
-    const target = documentId ? {tabId, documentIds: [documentId]} : {tabId, frameIds: [frameId ?? 0]};
-    return browser.scripting.executeScript({target, world: "MAIN", func, args});
-};
-
 /** 콘텐츠 스크립트가 요청하면 그 탭의 페이지(MAIN world)에서 대신 실행한다. */
 export const listenPageMessages = (): void => {
     // reCAPTCHA: 디시가 v3 토큰을 요구할 때만 받아 온다. 토큰은 디시 도메인에서 실행해야 유효하다. 상주 스크립트 없이 필요할 때 한 번만 주입한다.
@@ -86,12 +70,5 @@ export const listenPageMessages = (): void => {
         if (!hasTab(sender)) return;
 
         await runInPage(sender, rerunListScripts, [gallery]).catch(() => {});
-    });
-
-    // 글쓰기: 올리는 이미지를 바꾸는 리스너를 넣는다.
-    onMessage("refresher:hookUploads", async ({sender}) => {
-        if (!hasTab(sender)) return;
-
-        await runInPage(sender, hookUploads, [UPLOAD_OPTIONS_KEY]).catch(console.error);
     });
 };

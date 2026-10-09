@@ -17,7 +17,7 @@ const backgroundModules = Object.values(import.meta.glob<{ default: BackgroundMo
 
 /**
  * 배경 스크립트. 서비스 워커(크롬)는 언제든 멈췄다 다시 뜨므로 리스너는 모두 여기서 동기로 걸고, 상태는 저장소에 둔다.
- * - page.ts: 콘텐츠 스크립트 대신 탭의 페이지(MAIN world)에서 실행하는 것 (reCAPTCHA, 목록 스크립트, 이미지 변환)
+ * - page.ts: 콘텐츠 스크립트 대신 탭의 페이지(MAIN world)에서 실행하는 것 (reCAPTCHA, 목록 스크립트)
  * - database.ts: IP·밴 DB 주기 갱신
  * - backup.ts: 자동 클라우드 백업.
  */
