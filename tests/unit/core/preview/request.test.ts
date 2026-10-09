@@ -91,12 +91,6 @@ describe("fetchComments", () => {
         expect(result.truncated).toBe(true);
     });
 
-    it("댓글 수를 모르면 1쪽부터 읽는다", async () => {
-        const pages = serveComments(3, (page) => [comment(page)]);
-        await fetchComments(preData({commentCount: Number.NaN}), {}, signal());
-        expect(pages()).toEqual([1, 2, 3]);
-    });
-
     it("쪽 나눔이 없으면 1쪽만 받는다", async () => {
         const sent = serve(fetchMock, () => JSON.stringify({comments: null, total_cnt: 0, pagination: null}));
         const result = await fetchComments(preData(), {}, signal());

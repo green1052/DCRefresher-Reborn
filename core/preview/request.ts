@@ -58,8 +58,7 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: Pick<Post
     // 목록의 수는 삭제된 댓글을 빼고 세어 모자랄 수 있으므로, 1쪽의 쪽 나눔(viewComments(n, …))에서 마지막 쪽 번호를 읽어 남은 쪽을 마저 받는다.
     // 1쪽을 먼저 요청해야 동시 요청 수(요청 제한 모듈)에 막혀도 쪽 나눔을 먼저 받는다. 1쪽이 실패하면 어림한 쪽의 실패는 버린다.
     // 10쪽(1000개)까지만 받는다. 더 많은 글은 드물고, 자동 갱신 때마다 전부 다시 받기 때문이다.
-    // 옛 기록(history.state)에서 되살린 글은 댓글 수가 없을 수 있다. NaN이면 쪽 수 계산이 통째로 빠지므로 0으로 본다.
-    const guessed = Math.min(10, Math.max(1, Math.ceil((Number(preData.commentCount) || 0) / 100)));
+    const guessed = Math.min(10, Math.max(1, Math.ceil(preData.commentCount / 100)));
     const firstPage = fetchPage(1);
     const early = Promise.all(Array.from({length: guessed - 1}, (_, index) => fetchPage(index + 2)));
     early.catch(() => {});
