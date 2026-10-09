@@ -203,7 +203,14 @@ export const Frame = () => {
                     return;
                 }
                 // Esc는 위에 뜬 것(유저 버블·다이얼로그)부터 닫는다. 그것들은 미리보기와 따로 그려져 Base UI가 미리보기를 맨 위로 보므로,
-                // 위에 뭔가 떠 있으면 미리보기는 닫지 않고 키를 흘려보내 그쪽이 닫히게 한다.
+                // 위에 뭔가 떠 있으면 미리보기는 닫지 않는다.
+                // 버블은 여기서 닫는다. Base UI는 Esc 리스너를 effect로 거는데 Preact는 effect를 그린 뒤에 돌려, 막 뜬 버블은 아직 Esc를 받지 못한다.
+                if (details.reason === "escape-key" && useUiStore.getState().bubble) {
+                    details.cancel();
+                    useUiStore.getState().closeBubble();
+                    return;
+                }
+                // 다이얼로그는 키를 흘려보내 그쪽이 닫히게 한다.
                 if (details.reason === "escape-key" && overlay.portal?.querySelector("[data-slot=dialog-overlay], [data-slot=popover-content]")) {
                     details.cancel();
                     details.allowPropagation();
