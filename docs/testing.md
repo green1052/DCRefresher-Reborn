@@ -11,6 +11,7 @@
 - `tests/setup.ts`는 Node·jsdom·fake-browser에 없는 API(`cookieStore`, `navigator.locks` 등)를 채웁니다. 확장이 실행되는 브라우저에는 다 있는 것들이라 소스는 그대로 둡니다. `Uint8Array`의 `toBase64`·`fromBase64`·`toHex`는 Node 25부터 있어 채우지 않고 CI가 최신 Node를 받습니다.
 - 공통 도우미는 `tests/helpers.ts`에, 한 영역에서만 쓰는 도우미는 해당 테스트 파일이나 폴더에 둡니다. 시간을 정해 기다리는 대신(`setTimeout(…, 10)`) `tick()`이나 `expect.poll`을 씁니다.
 - 기본 환경은 jsdom입니다. jsdom이 방해하는 테스트(`core/backup`의 gzip, `tests/unit/modules/`의 빌드 모듈)는 파일 머리에 `// @vitest-environment node`를 둡니다.
+- 테스트는 `vmThreads` 풀에서 돕니다. 파일마다 워커를 새로 띄우지 않고 vm 컨텍스트만 새로 만들어 빠릅니다. 대신 Node 내장 모듈(`fs` 등)이 던진 오류는 realm이 달라 `instanceof Error`가 어긋납니다. 그런 실패가 나면 `vitest.config.ts`의 `pool`을 지웁니다.
 - WXT API만 자동 import됩니다. `components`·`utils`는 직접 import합니다.
 - WXT의 `#imports`를 mock할 때는 실제 경로(`wxt/utils/storage` 등)로 합니다. `.wxt/types/imports-module.d.ts`에 있습니다.
 - 모듈 레지스트리·스토어처럼 모듈 단위 싱글턴이 있는 코드는 테스트마다 다른 모듈 id를 쓰거나 한 테스트 안에서 이어서 봅니다.
