@@ -41,6 +41,9 @@ interface ProtocolMap {
     /** 옵션 → 배경: 사용 기록을 지금 목록에 맞추고 그 종류의 기록을 돌려준다 (core/usage.ts의 syncUsage). */
     "refresher:syncUsage"(data: { kind: UsageKind; ids: string[] }): Record<string, number>;
 
+    /** 옵션 → 배경: IP·밴 DB "지금 갱신". 같은 버전이어도 다시 받는다. 배경 한 곳에서 받아야 진행 중인 갱신과 겹쳐 두 번 받지 않는다. */
+    "refresher:updateDatabase"(): void;
+
     /** 팝업 → 탭: 이 페이지의 토글 상태. */
     "refresher:pageState"(): PageToggleState[];
 

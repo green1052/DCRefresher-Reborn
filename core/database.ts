@@ -20,7 +20,7 @@ import {isRecord} from "@/utils/record";
 const get = (url: string): Promise<string> => http.get(url, {retry: 0, cache: "no-cache", totalTimeout: false}).text();
 
 /**
- * IP/밴 DB를 내려받아 저장한다. 배경(설치·주기)과 옵션 페이지(지금 갱신)가 부른다.
+ * IP/밴 DB를 내려받아 저장한다. 배경이 부른다 (설치·주기, 옵션 페이지의 "지금 갱신" 메시지).
  * 서버 버전이 저장된 것과 같으면 본문(ip·ban 각각 수백 KB)은 받지 않고 확인 시각만 갱신한다. 다시 쓰면 열린 탭마다 IP DB를 다시 풀기 때문이다.
  * force: 사용자가 누른 "지금 갱신". 같은 버전이어도 다시 받는다.
  */

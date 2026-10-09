@@ -9,7 +9,7 @@ import {Switch} from "@/components/ui/switch";
 import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
 import {focusPanel, panelOf} from "@/components/useReturnFocus";
 import {type BackupSlot, clearCloudBackups, type CloudBackupStatus, collectLocalData, readBackupTargets, readCloudBackup, readCloudBackupStatus, runBackup} from "@/core/backup";
-import {updateDatabase} from "@/core/database";
+import {sendMessage} from "@/core/messaging/protocol";
 import {mergeBackup, parseImport, writeSettings} from "@/core/settings-transfer";
 import {backupStorage, dbStorage} from "@/core/storage/items";
 import {friendlyMessage} from "@/utils/error";
@@ -77,7 +77,7 @@ export function DataTab() {
         setLoading(false);
     };
 
-    const forceUpdate = () => run(() => updateDatabase(true).then(() => "데이터베이스를 갱신했습니다."), "데이터베이스를 갱신하지 못했습니다.");
+    const forceUpdate = () => run(() => sendMessage("refresher:updateDatabase").then(() => "데이터베이스를 갱신했습니다."), "데이터베이스를 갱신하지 못했습니다.");
 
     const backupCloud = () => run(() => runBackup("manual").then(() => "데이터를 클라우드에 백업했습니다."), "클라우드에 백업하지 못했습니다.");
 

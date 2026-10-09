@@ -6,6 +6,7 @@ import {onMessage, sendMessage} from "@/core/messaging/protocol";
 import {type BackgroundModule, startBackgroundModules} from "@/core/module/background";
 import {dbStorage, moduleDataKey} from "@/core/storage/items";
 import {recordUsage, syncUsage} from "@/core/usage";
+import {friendlyMessage} from "@/utils/error";
 
 import {startAutoBackup} from "./backup";
 import {startDatabaseUpdates} from "./database";
@@ -47,6 +48,11 @@ export default defineBackground(() => {
     onMessage("refresher:syncUsage", ({data: {kind, ids}}) => syncUsage(kind, ids));
 
     const updateDatabase = startDatabaseUpdates();
+    // 옵션의 "지금 갱신". ky 오류는 메시지로 건너가면 종류(상태 코드 등)를 잃으므로 여기서 안내 문구로 바꿔 던진다.
+    onMessage("refresher:updateDatabase", () => updateDatabase(true).catch((e: unknown) => {
+        console.error(e);
+        throw new Error(friendlyMessage(e));
+    }));
 
     browser.runtime.onInstalled.addListener(async () => {
         await applyBackgroundModules();
