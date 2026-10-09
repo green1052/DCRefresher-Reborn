@@ -211,7 +211,7 @@ export const AdminPanel = () => {
     };
 
     return (
-        <div className="pointer-events-auto fixed top-1/2 left-0 w-[150px] -translate-y-1/2 rounded-r-xl bg-card p-2 text-card-foreground shadow-md ring-1 ring-foreground/10 duration-150 animate-in fade-in">
+        <div className="pointer-events-auto fixed top-[20%] left-0 w-[150px] rounded-r-xl bg-card p-2 text-card-foreground shadow-md ring-1 ring-foreground/10 duration-150 animate-in fade-in">
             <p className="mb-2 ml-1 text-xs font-medium text-muted-foreground">관리</p>
             <div className="flex flex-col gap-1">
                 {actions.map((action) => (
