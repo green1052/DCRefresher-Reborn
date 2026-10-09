@@ -178,8 +178,8 @@ interface AdminAction {
  * 한 번 클릭에 창 닫기와 관리 동작이 같이 일어나지 않는다.
  */
 export const AdminPanel = () => {
-    const notice = usePreviewStore((s) => s.notice);
-    const recommend = usePreviewStore((s) => s.recommend);
+    const notice = usePreviewStore((s) => s.preData?.notice === true);
+    const recommend = usePreviewStore((s) => s.preData?.recommend === true);
     const requestManage = usePreviewStore((s) => s.requestManage);
     const {useKeyPress, deleteKey, blockKey} = useContentModuleSettings("preview");
     const keys = useKeyPress ? {delete: deleteKey.toUpperCase(), block: blockKey.toUpperCase()} : null;

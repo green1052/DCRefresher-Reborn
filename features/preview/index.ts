@@ -412,8 +412,6 @@ const controller = (ctx: Ctx) => {
             commentsOnly,
             // 목록에 이미지 아이콘이 없는 글만 본문 이미지를 숨긴다.
             imageBlocked: ctx.settings.blockImage && isTextPost(preData),
-            notice: preData.notice,
-            recommend: preData.recommend,
             adminVisible: ctx.settings.toggleAdminPanel && isGalleryManager()
         });
 
@@ -462,11 +460,11 @@ const controller = (ctx: Ctx) => {
         const stillOpen = (): boolean => store.getState().signalId === st.signalId;
         managing = true;
 
-        // 바뀐 공지·개념글 상태를 글 정보와 지금 기록에도 넣는다. 다른 글로 넘어갔다 뒤로 가기로 돌아오면
+        // 바뀐 공지·개념글 상태를 글 정보와 지금 기록에 넣는다. 다른 글로 넘어갔다 뒤로 가기로 돌아오면
         // 기록에 남은 옛 상태로 버튼이 반대로 보여, 두 번 누르면 반대 요청이 나간다.
         const toggled = (field: "notice" | "recommend", value: boolean): void => {
             const preData = {...target, [field]: value};
-            store.setState(field === "notice" ? {notice: value, preData} : {recommend: value, preData});
+            store.setState({preData});
             const state: unknown = history.state;
             if (isRecord(state) && isRecord(state.preData) && state.preData.id === target.id) history.replaceState({...state, preData}, "");
         };
@@ -475,7 +473,7 @@ const controller = (ctx: Ctx) => {
         try {
             // 공지·개념글 표시는 성공했을 때만 바꾼다.
             if (kind === "notice" || kind === "recommend") {
-                const on = st[kind];
+                const on = target[kind];
                 const request = kind === "notice" ? setNotice(target, !on) : setRecommend(target, !on);
                 if (await notifyManage(request, `${MANAGE_LABELS[kind][on ? 1 : 0]}했습니다.`, failure) && stillOpen()) toggled(kind, !on);
             } else if (kind === "delete") {

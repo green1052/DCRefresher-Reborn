@@ -54,8 +54,6 @@ interface PostState {
     /** 본문 이미지 차단 (blockImage). */
     imageBlocked: boolean;
 
-    notice: boolean;
-    recommend: boolean;
     adminVisible: boolean;
     /** 차단 창. post는 글쓴이, comments는 고른 댓글(selectedComments)의 작성자를 차단한다. */
     blockPopup: false | "post" | "comments";
@@ -162,8 +160,6 @@ const freshPost = (): PostState => ({
     reply: NO_REPLY,
     commentsOnly: false,
     imageBlocked: false,
-    notice: false,
-    recommend: false,
     adminVisible: false,
     blockPopup: false,
     selectedComments: NO_FRESH,
