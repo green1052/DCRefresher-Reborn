@@ -13,8 +13,9 @@ test.describe("유저 버블", () => {
         await bubble.getByRole("button", {name: "유저 차단"}).click();
 
         await expect(listPage.toast).toContainText("차단 목록에 추가했습니다.");
-        // 스크린 리더 알림 칸에도 들어간다.
-        await expect(listPage.overlay.getByRole("status")).toContainText("차단 목록에 추가했습니다.");
+        // 스크린 리더가 읽는 알림 칸(aria-live) 안에 뜬다.
+        await expect(listPage.overlay.getByRole("region", {name: "알림"})).toHaveAttribute("aria-live", "polite");
+        await expect(listPage.overlay.getByRole("region", {name: "알림"})).toContainText("차단 목록에 추가했습니다.");
         await expect(listPage.row(3)).toHaveClass(/refresherBlocked/);
         expect(await storage.get("refresher:block:ID")).toMatchObject([{content: "user3", extra: "고닉"}]);
     });
@@ -31,6 +32,21 @@ test.describe("유저 버블", () => {
         // 허용 목록(고닉만 보기)의 항목을 지우면 이 사람은 그대로 막히고 고닉까지 막힌다.
         await expect(bubble.getByText("허용 목록에 없음")).toBeVisible();
         await expect(bubble.getByRole("button", {name: "닉네임 고닉 차단 해제"})).toHaveCount(0);
+    });
+
+    test("규칙을 해제하면 토스트의 되돌리기로 다시 걸고 토스트를 닫는다", async ({listPage, storage}) => {
+        await storage.setModuleSettings("block", {blur: true});
+        await storage.set({"refresher:block:NICK": [{id: "b", content: "ㅇㅇ", isRegex: false, mode: "SAME"}]});
+        await expect(listPage.row(2)).toHaveClass(/refresherBlur/);
+        await listPage.row(2).locator(".ub-writer").click({button: "right"});
+        await listPage.bubble.getByRole("button", {name: "닉네임 ㅇㅇ 차단 해제"}).click();
+
+        const {toast} = listPage;
+        await expect(toast).toContainText("차단을 해제했습니다.");
+        await toast.getByRole("button", {name: "되돌리기"}).click();
+
+        await expect(toast).toHaveCount(0);
+        await expect.poll(() => storage.get("refresher:block:NICK")).toMatchObject([{content: "ㅇㅇ", mode: "SAME"}]);
     });
 
     test("미리보기 위에 띄운 버블은 Esc에 버블만 닫히고 미리보기는 남는다", async ({listPage}) => {

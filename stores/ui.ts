@@ -41,7 +41,6 @@ export interface BlockView {
 }
 
 export interface ToastData {
-    id: number;
     content: string;
     type: ToastLevel;
     autoClose: number;
@@ -75,7 +74,7 @@ export const isFresh = <T extends { date: number }>(info?: T): info is T => info
 export type BadgeColorKey = IpCategory | "uid" | "permBan" | "ratio" | "ratioAlarm";
 
 interface UiState {
-    /** 화면에 떠 있는 토스트. 마지막이 가장 최근 것이다. 되돌리기 등 액션이 다음 토스트에 지워지지 않게 여러 개를 쌓는다 (최대 3개). */
+    /** 오버레이가 아직 받지 않은 토스트. 마지막이 가장 최근 것이다. 띄우고 닫는 것은 ToastHost(Base UI Toast)가 맡는다. */
     toasts: ToastData[];
     selected: SelectedUser | null;
     bubble: { x: number; y: number } | null;
@@ -89,7 +88,6 @@ interface UiState {
     blockView: BlockView | null;
 
     showToast: (content: string, type?: ToastLevel, autoClose?: number, action?: ToastData["action"]) => void;
-    dismissToast: (id: number) => void;
     /** user를 고르고 (x, y)에 유저 버블을 연다. 버블의 메모·차단은 고른 대상에 건다. */
     openBubble: (user: SelectedUser, x: number, y: number) => void;
     closeBubble: () => void;
@@ -97,10 +95,6 @@ interface UiState {
     openMemo: (user: SelectedUser) => void;
     closeMemo: () => void;
 }
-
-let toastSeq = 0;
-
-const TOAST_MAX = 3;
 
 export const useUiStore = create<UiState>((set, get) => ({
     toasts: [],
@@ -113,11 +107,7 @@ export const useUiStore = create<UiState>((set, get) => ({
     blockView: null,
 
     showToast: (content, type = "info", autoClose = 5000, action) => {
-        set({toasts: [...get().toasts, {id: ++toastSeq, content, type, autoClose, action}].slice(-TOAST_MAX)});
-    },
-
-    dismissToast: (id) => {
-        set({toasts: get().toasts.filter((toast) => toast.id !== id)});
+        set({toasts: [...get().toasts, {content, type, autoClose, action}]});
     },
 
     openBubble: (selected, x, y) => set({selected, bubble: {x, y}}),
