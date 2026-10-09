@@ -96,8 +96,11 @@ export const isWholeFirstPage = (url: string): boolean => {
     return (params.get("page") ?? "1") === "1" && !params.has("exception_mode") && !params.has("search_head");
 };
 
-/** 받아온 목록(newList)을 지금 목록(oldList) 자리에 넣고, 새로 들어온 글 행을 돌려준다. */
-export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigated, search, searchType, fadeIn, keepDeleted}: ReplaceOptions): HTMLTableRowElement[] => {
+/**
+ * 받아온 목록(newList)을 지금 목록(oldList) 자리에 넣고, 새로 들어온 글 행(added)과 행을 넣거나 빼거나 갈아끼웠는지(changed)를 돌려준다.
+ * 수 칸 글자만 고친 것은 바뀐 것이 아니다.
+ */
+export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigated, search, searchType, fadeIn, keepDeleted}: ReplaceOptions): { added: HTMLTableRowElement[]; changed: boolean } => {
     const oldRows = Array.from(oldList.querySelectorAll<HTMLTableRowElement>(":scope > tr"));
     const oldKeys = oldRows.map(rowKey);
     const oldCacheSet = new Set(oldKeys);
@@ -148,18 +151,24 @@ export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigat
     const shift = !navigated && search === undefined ? insertionOf(oldKeys, newKeys) : null;
     if (shift && (!keepDeleted || (shift.count === 0 && oldKeys.length === newKeys.length))) {
         const {at, count} = shift;
-        for (const row of oldRows.slice(newRows.length - count)) row.remove();
+        const removed = oldRows.slice(newRows.length - count);
+        for (const row of removed) row.remove();
         const anchor = at < newRows.length - count ? oldRows[at]! : null;
         for (const row of newRows.slice(at, at + count)) oldList.insertBefore(row, anchor);
+        let changed = count > 0 || removed.length > 0;
         for (const [index, row] of newRows.entries()) {
             if (index >= at && index < at + count) continue;
             const old = oldRows[index < at ? index : index - count]!;
-            if (rowFrames.get(old) !== rowFrames.get(row)) old.replaceWith(row);
-            else syncCounts(old, row);
+            if (rowFrames.get(old) === rowFrames.get(row)) {
+                syncCounts(old, row);
+                continue;
+            }
+            old.replaceWith(row);
+            changed = true;
         }
-    } else {
-        oldList.replaceWith(newList);
+        return {added: newPostList, changed};
     }
 
-    return newPostList;
+    oldList.replaceWith(newList);
+    return {added: newPostList, changed: true};
 };

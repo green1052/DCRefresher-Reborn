@@ -183,7 +183,7 @@ export default defineModule({
                 if (!oldList || !newList) return fail();
                 failures = 0;
 
-                const newPostList = replaceList(oldList, newList, {
+                const {added: newPostList, changed} = replaceList(oldList, newList, {
                     navigated: Boolean(customURL),
                     search: queryString("s_keyword") ? document.querySelector<HTMLInputElement>("#sch_q")?.value ?? "" : undefined,
                     searchType: new URL(target).searchParams.get("s_type"),
@@ -195,7 +195,8 @@ export default defineModule({
                 });
                 // 복사해 둔다. slice한 문자열은 응답 전체(수백 KB)를 붙잡아 다음 교체까지 남는다.
                 lastListHtml = structuredClone(listHtml);
-                notifyListReplaced(gallery);
+                // 수만 고쳤으면 디시 차단·메모 표시를 다시 걸 행이 없다. 주기마다 배경 왕복·페이지 주입을 하지 않는다.
+                if (changed) notifyListReplaced(gallery);
 
                 if (target === scrollAfter) {
                     scrollAfter = null;

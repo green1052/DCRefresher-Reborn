@@ -47,11 +47,12 @@ describe("replaceList", () => {
         const list = mount([row("n", {notice: true}), row("3"), row("2"), row("1")]);
         const [notice, three, two] = Array.from(list.children);
 
-        const added = replaceList(list, tbody([row("n", {notice: true}), row("5"), row("4"), row("3"), row("2")]), OPTIONS);
+        const {added, changed} = replaceList(list, tbody([row("n", {notice: true}), row("5"), row("4"), row("3"), row("2")]), OPTIONS);
 
         expect(current()).toBe(list);
         expect(nos(list)).toEqual(["n", "5", "4", "3", "2"]);
         expect(added.map((element) => element.dataset.no)).toEqual(["5", "4"]);
+        expect(changed).toBe(true);
         // 그대로인 행은 같은 요소로 남는다 (hover·리스너 유지).
         expect(list.children[0]).toBe(notice);
         expect(list.children[3]).toBe(three);
@@ -61,7 +62,7 @@ describe("replaceList", () => {
     it("새 글에 효과를 넣고 지연에 상한을 둔다", () => {
         const list = mount([row("1")]);
         const fresh = Array.from({length: 12}, (_, index) => row(String(100 - index)));
-        const added = replaceList(list, tbody([...fresh, row("1")]), OPTIONS);
+        const {added} = replaceList(list, tbody([...fresh, row("1")]), OPTIONS);
         expect(added).toHaveLength(12);
         expect(added.every((element) => element.classList.contains("refresherNewPost"))).toBe(true);
         expect(added[0]?.style.animationDelay).toBe("500ms");
@@ -70,14 +71,15 @@ describe("replaceList", () => {
 
     it("fadeIn을 끄면 효과를 넣지 않는다", () => {
         const list = mount([row("1")]);
-        const [added] = replaceList(list, tbody([row("2"), row("1")]), {...OPTIONS, fadeIn: false});
+        const {added: [added]} = replaceList(list, tbody([row("2"), row("1")]), {...OPTIONS, fadeIn: false});
         expect(added?.classList.contains("refresherNewPost")).toBe(false);
     });
 
     it("수만 바뀐 행은 갈아끼우지 않고 글자만 고친다", () => {
         const list = mount([row("2"), row("1")]);
         const first = list.children[0]!;
-        replaceList(list, tbody([row("2", {count: 9, replies: 3}), row("1")]), OPTIONS);
+        const {changed} = replaceList(list, tbody([row("2", {count: 9, replies: 3}), row("1")]), OPTIONS);
+        expect(changed).toBe(false);
         expect(list.children[0]).toBe(first);
         expect(first.querySelector(".gall_count")?.textContent).toBe("9");
         expect(first.querySelector(".reply_num")?.textContent).toBe("[3]");
@@ -87,7 +89,8 @@ describe("replaceList", () => {
         const list = mount([row("2"), row("1")]);
         const first = list.children[0]!;
         const second = list.children[1]!;
-        replaceList(list, tbody([row("2", {title: "고친 제목"}), row("1")]), OPTIONS);
+        const {changed} = replaceList(list, tbody([row("2", {title: "고친 제목"}), row("1")]), OPTIONS);
+        expect(changed).toBe(true);
         expect(list.children[0]).not.toBe(first);
         expect(list.children[0]?.textContent).toContain("고친 제목");
         expect(list.children[1]).toBe(second);
@@ -103,14 +106,14 @@ describe("replaceList", () => {
 
     it("위 글이 지워져 아래에서 올라온 행은 새 글이 아니다", () => {
         const list = mount([row("5"), row("4"), row("3")]);
-        const added = replaceList(list, tbody([row("6"), row("5"), row("3"), row("2")]), OPTIONS);
+        const {added} = replaceList(list, tbody([row("6"), row("5"), row("3"), row("2")]), OPTIONS);
         expect(added.map((element) => element.dataset.no)).toEqual(["6"]);
         expect(nos(current())).toEqual(["6", "5", "3", "2"]);
     });
 
     it("겹치는 글이 없으면 모두 새 글이다", () => {
         const list = mount([row("2"), row("1")]);
-        const added = replaceList(list, tbody([row("9"), row("8")]), OPTIONS);
+        const {added} = replaceList(list, tbody([row("9"), row("8")]), OPTIONS);
         expect(added.map((element) => element.dataset.no)).toEqual(["9", "8"]);
     });
 
@@ -134,7 +137,7 @@ describe("replaceList", () => {
     it("페이지를 넘긴 로드는 통째로 바꾸고 효과를 넣지 않는다", () => {
         const list = mount([row("2"), row("1")]);
         const fresh = tbody([row("3"), row("2"), row("1")]);
-        const added = replaceList(list, fresh, {...OPTIONS, navigated: true});
+        const {added} = replaceList(list, fresh, {...OPTIONS, navigated: true});
         expect(current()).toBe(fresh);
         expect(added[0]?.classList.contains("refresherNewPost")).toBe(false);
     });
