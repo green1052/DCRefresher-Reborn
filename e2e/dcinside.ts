@@ -63,10 +63,13 @@ export class FakeSite {
     /** 글 페이지를 직접 열었을 때 디시가 그려 둔 댓글 (.cmt_list). */
     pageComments: FakeComment[] = [];
 
-    /** 받은 쓰기 요청 (댓글 작성·삭제, 디시콘 댓글). */
+    /** 받은 쓰기 요청 (댓글 작성·삭제, 디시콘 댓글, 관리자 글 삭제). */
     readonly submitted: { path: string; body: URLSearchParams }[] = [];
 
-    /** 갤러리 관리자로 본다. 목록 머리에 관리 체크박스 열을 그린다 (utils/user.ts의 isGalleryManager). */
+    /**
+     * 갤러리 관리자로 본다. 목록 머리와 행에 관리 체크박스 열을 그린다 (utils/user.ts의 isGalleryManager).
+     * 디시가 주는 행에는 체크박스 칸이 없고 디시 JS가 붙인다 (core/list.ts). 여기서는 처음부터 넣어 둔다.
+     */
     manager = false;
 
     /** 받은 1쪽 목록 요청 수 (페이지 문서 포함). */
@@ -122,6 +125,12 @@ export class FakeSite {
                 for (const comment of this.comments) if (nos.includes(comment.no)) comment.is_delete = "1";
                 return json({result: "success", msg: ""});
             }
+            case "/ajax/minor_manager_board_ajax/delete_list": {
+                // 지운 글은 목록에서 뺀다. 남겨 두면 새로고침이 행을 되살린다.
+                const nos = form().getAll("nos[]");
+                this.rows = this.rows.filter(({no}) => !nos.includes(String(no)));
+                return json({result: "success"});
+            }
             case "/dccon/lists":
                 return json({target: "icon", max_page: 0, list: [{package_idx: DCCON.package_idx, title: "테스트콘", main_img_url: DCCON.list_img, detail: [DCCON]}]});
         }
@@ -138,8 +147,9 @@ export class FakeSite {
     }
 }
 
-const listRow = ({no, title, nick, uid, ip = "", replies}: FakeRow): string => `
+const listRow = ({no, title, nick, uid, ip = "", replies}: FakeRow, manager: boolean): string => `
 <tr class="ub-content us-post" data-no="${no}" data-type="icon_txt">
+  ${manager ? `<td><input type="checkbox" class="article_chkbox" value="${no}"></td>` : ""}
   <td class="gall_num">${no}</td>
   <td class="gall_tit ub-word"><a href="/board/view/?id=test&no=${no}&page=1"><em class="icon_img icon_txt"></em>${title}</a>${replies ? `<a class="reply_numbox" href="/board/view/?id=test&no=${no}&t=cv"><span class="reply_num">[${replies}]</span></a>` : ""}</td>
   <td class="gall_writer ub-writer" data-nick="${nick}" data-uid="${uid}" data-ip="${ip}"><span class="nickname"><em>${nick}</em></span>${uid ? "<a class=\"writer_nikcon\"><img src=\"https://nstatic.dcinside.com/dc/w/images/fix_nik.gif\"></a>" : `<span class="ip">(${ip})</span>`}</td>
@@ -155,7 +165,7 @@ const listPage = (rows: FakeRow[], page: string, manager: boolean): string => `<
 <input type="hidden" id="e_s_n_o" value="token">
 <div class="left_content"><article><div class="gall_listwrap">
 <table class="gall_list"><thead><tr>${manager ? "<th class=\"chkbox_th\"></th>" : ""}<th>번호</th><th>제목</th><th>글쓴이</th><th>작성일</th><th>조회</th><th>추천</th></tr></thead>
-<tbody>${rows.map(listRow).join("")}</tbody></table>
+<tbody>${rows.map((row) => listRow(row, manager)).join("")}</tbody></table>
 </div><div class="bottom_paging_box">${paging(page)}</div></article></div>
 </body></html>`;
 
