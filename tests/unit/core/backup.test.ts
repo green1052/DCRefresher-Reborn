@@ -20,7 +20,7 @@ beforeEach(() => {
 describe("isBackupTarget", () => {
     it("설정·차단·메모만 대상이다", () => {
         const targets = ["refresher:modules", "refresher:block:defaults", "refresher:block:NICK", "refresher:block:TAB", "refresher:memo:UID", "refresher:module:preview:settings"];
-        const others = ["refresher:db:ip", "refresher:db:meta", "refresher:module:userinfo:data", "refresher:backup:auto", "refresher:usage", "refresher:block:UNKNOWN", "refresher:memo:X", "other"];
+        const others = ["refresher:db:ip", "refresher:db:meta", "refresher:module:userinfo:data", "refresher:module:zzz:settings", "refresher:backup:auto", "refresher:usage", "refresher:block:UNKNOWN", "refresher:memo:X", "other"];
         expect(targets.filter(isBackupTarget)).toEqual(targets);
         expect(others.filter(isBackupTarget)).toEqual([]);
     });
@@ -42,6 +42,11 @@ describe("readBackupTargets / collectLocalData", () => {
             "refresher:block:NICK": [{content: "닉", isRegex: false}, "깨진 항목"],
             "refresher:memo:UID": {a: {text: "메모", color: "red"}}
         });
+    });
+
+    it("없어진 모듈의 설정은 내보내기·백업에 넣지 않는다", async () => {
+        await browser.storage.local.set({"refresher:module:preview:settings": {width: 900}, "refresher:module:zzz:settings": {width: 1}});
+        expect(await collectLocalData()).toEqual({"refresher:module:preview:settings": {width: 900}});
     });
 
     it("대상이 없으면 빈 객체다", async () => {

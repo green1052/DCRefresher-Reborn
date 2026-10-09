@@ -6,6 +6,7 @@
  * 조각 수와 해시를 담은 <칸> 키와 함께 set 한 번으로 쓴다. 쓰기가 실패하면 이전 백업이 그대로 남는다.
  */
 
+import MODULE_IDS from "@/.wxt/module-ids";
 import {
     BLOCK_DEFAULTS_KEY,
     BLOCK_TYPES,
@@ -15,8 +16,8 @@ import {
     MEMO_TYPES,
     memoMapKey,
     MODULES_KEY,
-    rawKey,
-    settingsKeyModule
+    moduleSettingsKey,
+    rawKey
 } from "@/core/storage/items";
 import {friendlyMessage} from "@/utils/error";
 import {isRecord} from "@/utils/record";
@@ -45,19 +46,21 @@ interface BackupMeta {
     createdAt: number;
 }
 
-/** 백업하는 로컬 키 (local: 없이). 모듈 설정(refresher:module:<id>:settings)은 settingsKeyModule로 가린다. */
+/** 백업하는 로컬 키 (local: 없이). 모듈 설정은 지금 있는 모듈(MODULE_IDS) 것만 넣는다. */
 const BACKUP_KEYS = new Set<string>([
     rawKey(MODULES_KEY),
     rawKey(BLOCK_DEFAULTS_KEY),
     ...BLOCK_TYPES.map((type) => rawKey(blockListKey(type))),
-    ...MEMO_TYPES.map((type) => rawKey(memoMapKey(type)))
+    ...MEMO_TYPES.map((type) => rawKey(memoMapKey(type))),
+    ...MODULE_IDS.map((id) => rawKey(moduleSettingsKey(id)))
 ]);
 
 /**
  * 백업·내보내기 대상인 로컬 키: 모듈 on/off와 설정, 차단 목록과 기본 차단 모드, 메모.
- * 그 밖의 키(IP/밴 DB, 백업 상태, 모듈 캐시, 사용 기록, 예전 버전이 남긴 키)는 크거나 기기마다 다르거나 읽지 않는 값이라 뺀다.
+ * 그 밖의 키(IP/밴 DB, 백업 상태, 모듈 캐시, 사용 기록, 없어진 모듈의 설정, 예전 버전이 남긴 키)는 크거나 기기마다 다르거나 읽지 않는 값이라 뺀다.
+ * 가져오기·복원(core/settings-transfer.ts)도 이것으로 걸러 없는 모듈의 설정을 저장하지 않는다.
  */
-export const isBackupTarget = (key: string): boolean => BACKUP_KEYS.has(key) || settingsKeyModule(key) !== undefined;
+export const isBackupTarget = (key: string): boolean => BACKUP_KEYS.has(key);
 
 /** 백업 대상 키(isBackupTarget)의 값만 읽는다. get(null)은 수백 KB짜리 IP·밴 DB까지 읽는다. */
 export const readBackupTargets = async (): Promise<Record<string, unknown>> => {

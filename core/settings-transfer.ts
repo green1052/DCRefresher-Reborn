@@ -34,7 +34,7 @@ export const pinDefaultMode = (list: BlockEntry[], from: DetectMode, local: Dete
 export const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "merge"): Promise<void> => {
     // 아래에서 쓰는 이전 값(기본 차단 모드·설정 객체·지울 키·되돌릴 키)은 모두 백업 대상 키다.
     const previous = await readBackupTargets();
-    // 설정 키가 아닌 값(차단/메모 내보내기의 "NICK" 등)은 저장하지 않는다.
+    // 설정 키가 아닌 값(차단/메모 내보내기의 "NICK" 등)과 없는 모듈의 설정은 저장하지 않는다.
     const next = Object.fromEntries(Object.entries(data).filter(([key]) => isBackupTarget(key)));
     // 백업·내보내기는 용량 때문에 차단 항목 id를 빼므로 저장할 때 다시 붙인다.
     for (const [key, value] of Object.entries(next)) {

@@ -59,7 +59,7 @@ scripts/                IP DB 빌드 스크립트
   - 모듈 on/off와 설정은 `core/module/settings.ts`의 `readModuleStorage(ids)`로 읽고 `enablesOf`·`settingsOf`로 맞춥니다.
 - 예외: IP·밴 DB(`DB_KEYS`)는 수백 KB라 항목을 아예 만들지 않고 `storage.getItem`·`storage.watch`로 다룹니다.
 - 모듈 캐시(계속 불어나는 데이터)는 `moduleDataStorage(id, fallback)`로 `setup` 안에서 만듭니다. 이 키는 백업 대상에서 빠집니다. 개수 상한을 두세요 (글댓비 캐시는 500명).
-- 백업 대상은 `core/backup.ts`의 `BACKUP_KEYS`(모듈 on/off와 설정, 차단 목록과 기본 차단 모드, 메모)입니다. 새 키를 백업·내보내기에 넣으려면 여기에 추가합니다. `storage.sync` 한도는 숫자로 적지 않고 `storage.sync.QUOTA_BYTES`·`QUOTA_BYTES_PER_ITEM`에서 읽습니다.
+- 백업 대상은 `core/backup.ts`의 `BACKUP_KEYS`(모듈 on/off와 설정, 차단 목록과 기본 차단 모드, 메모)입니다. 새 키를 백업·내보내기에 넣으려면 여기에 추가합니다. 모듈 설정은 지금 있는 모듈 것만 넣고 가져올 때도 그것만 씁니다. 배경이 `meta.ts`(React)를 불러오지 않도록 모듈 id는 `modules/module-types.ts`가 만드는 `.wxt/module-ids.ts`에서 읽습니다. `storage.sync` 한도는 숫자로 적지 않고 `storage.sync.QUOTA_BYTES`·`QUOTA_BYTES_PER_ITEM`에서 읽습니다.
 - 차단 항목의 `mode`가 비어 있으면 그 기기의 기본 차단 모드를 따릅니다. 그래서 차단 목록을 다른 기기로 옮기는 곳은 내보낸 쪽의 기본 모드가 다르면 그 모드를 항목에 적어 둡니다. 새로 옮기는 경로를 만들 때도 같은 규칙을 따릅니다.
 - 설정을 없애거나 이름을 바꿀 때 옛 값을 옮기는 코드는 두지 않습니다. 옵션·팝업을 열면 `stores/modules.ts`의 `pruneStaleSettings`가 스키마에 없는 설정을 지워서 이름을 바꾼 설정은 기본값으로 돌아갑니다.
 - 차단·메모의 마지막 사용 시각(`refresher:usage`, `core/usage.ts`)은 여러 탭이 함께 고치는 값이라 쓰기는 배경이 메시지를 받아 차례로 합니다. 기기마다 다른 값이라 백업하지 않습니다.

@@ -12,6 +12,8 @@ const TITLE = "refresher:block:TITLE";
 const DEFAULTS = "refresher:block:defaults";
 const MODULES = "refresher:modules";
 const SETTINGS = "refresher:module:preview:settings";
+/** 없는 모듈(없어졌거나 다른 버전의 모듈)의 설정. */
+const UNKNOWN_SETTINGS = "refresher:module:zzz:settings";
 
 const entry = (content: string, fields: Partial<BlockEntry> = {}): BlockEntry => ({id: content, content, isRegex: false, ...fields});
 
@@ -125,9 +127,15 @@ describe("writeSettings", () => {
         expect(contents(await stored(TITLE))).toEqual([{content: "ㅋ", isRegex: false, mode: "CONTAIN"}]);
     });
 
+    it("없는 모듈의 설정은 저장하지 않는다", async () => {
+        await writeSettings({[SETTINGS]: {width: 1000}, [UNKNOWN_SETTINGS]: {width: 1}}, "merge");
+        expect(await browser.storage.local.get(null)).toEqual({[SETTINGS]: {width: 1000}});
+    });
+
     it("쓸 수 있는 설정이 없으면 던지고 아무것도 바꾸지 않는다", async () => {
         await browser.storage.local.set({[MODULES]: {a: true}});
         await expect(writeSettings({NICK: []}, "replace")).rejects.toThrow("쓸 수 있는 설정이 없습니다.");
+        await expect(writeSettings({[UNKNOWN_SETTINGS]: {width: 1}}, "merge")).rejects.toThrow("쓸 수 있는 설정이 없습니다.");
         // 기본 모드만 든 JSON은 merge에서 기본 모드가 빠지므로 쓸 것이 없다.
         await expect(writeSettings({[DEFAULTS]: {NICK: "SAME"}}, "merge")).rejects.toThrow("쓸 수 있는 설정이 없습니다.");
         expect(await browser.storage.local.get(null)).toEqual({[MODULES]: {a: true}});
