@@ -10,7 +10,7 @@ import {Input} from "@/components/ui/input";
 import {Kbd} from "@/components/ui/kbd";
 import {RadioGroup, RadioGroupItem} from "@/components/ui/radio-group";
 import {Spinner} from "@/components/ui/spinner";
-import {useModuleSettings} from "@/core/module/useModuleSettings";
+import {useContentModuleSettings} from "@/core/module/useModuleSettings";
 import {BLOCK_DAYS, BLOCK_REASONS, type BlockDay, type BlockReason} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 import {createDoublePress} from "@/utils/doublePress";
@@ -181,7 +181,7 @@ export const AdminPanel = () => {
     const notice = usePreviewStore((s) => s.notice);
     const recommend = usePreviewStore((s) => s.recommend);
     const requestManage = usePreviewStore((s) => s.requestManage);
-    const {useKeyPress, deleteKey, blockKey} = useModuleSettings("preview");
+    const {useKeyPress, deleteKey, blockKey} = useContentModuleSettings("preview");
     const keys = useKeyPress ? {delete: deleteKey.toUpperCase(), block: blockKey.toUpperCase()} : null;
     // 두 번 누르기 확인 상태. 바뀌어도 다시 그릴 필요가 없어 ref에 둔다.
     const confirmPress = useRef(createDoublePress(CONFIRM_WINDOW)).current;
