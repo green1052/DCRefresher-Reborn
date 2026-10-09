@@ -20,8 +20,12 @@ export const RefresherSelect = <T extends string>({value, options, disabled, onC
         value={value || NONE}
         items={Object.fromEntries(Object.entries<string>(options).map(([key, label]) => [key || NONE, label]))}
         disabled={disabled}
-        // 선택지는 options의 키뿐이라 T로 단언해도 된다. 고른 것을 다시 누르면 null이 올 수 있어 무시한다.
-        onValueChange={(next) => next !== null && onChange((next === NONE ? "" : next) as T)}
+        // 받은 값을 options의 키에서 찾아 넘긴다. 목록이 바뀌어 지금 값이 빠지면 null이 오는데, 어느 키와도 맞지 않아 무시된다.
+        onValueChange={(next) => {
+            for (const key in options) {
+                if ((key || NONE) === next) onChange(key);
+            }
+        }}
     >
         <SelectTrigger {...aria} className="min-w-[140px]">
             <SelectValue/>

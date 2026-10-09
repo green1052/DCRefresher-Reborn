@@ -60,14 +60,21 @@ test.describe("옵션 - 차단 탭", () => {
         await page.getByRole("button", {name: "추가", exact: true}).click();
         const {dialog} = options;
         // 차단 모드의 '기본값'은 고른 값으로 보인다 (빈 값이 자리표시자로 흐려지지 않는다).
-        await expect(dialog.getByRole("combobox", {name: "차단 모드", exact: true})).not.toHaveAttribute("data-placeholder");
+        const mode = dialog.getByRole("combobox", {name: "차단 모드", exact: true});
+        await expect(mode).not.toHaveAttribute("data-placeholder");
         const input = dialog.getByPlaceholder("닉네임 값을 입력해 주세요");
         await expect(input).toBeFocused();
         await input.fill("차단닉");
+        // 다른 모드를 골랐다가 '기본값'으로 되돌리면 모드 없이 저장된다.
+        await mode.click();
+        await page.getByRole("option", {name: "포함", exact: true}).click();
+        await expect(mode.getByText("포함", {exact: true})).toBeVisible();
+        await mode.click();
+        await page.getByRole("option", {name: "기본값", exact: true}).click();
         await dialog.getByRole("button", {name: "추가", exact: true}).click();
 
         await expect(options.table.getByText("차단닉", {exact: true})).toBeVisible();
-        await expect.poll(() => storage.get("refresher:block:NICK")).toMatchObject([{content: "차단닉", isRegex: false}]);
+        await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([{id: expect.any(String), content: "차단닉", isRegex: false}]);
     });
 
     test("갤러리·마지막 사용으로 걸러 보이는 항목만 지우고, 지운 항목의 사용 기록도 정리한다", async ({page, extensionId, storage}) => {
