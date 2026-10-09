@@ -2,7 +2,7 @@ import {beforeEach, describe, expect, it} from "vitest";
 
 import type {ModuleSettings} from "@/core/module/types";
 import {getEntry} from "@/core/preview/cache";
-import {prepareComments, type ProcessedComment, processComments} from "@/core/preview/comments";
+import {prepareComments, type ProcessedComment, processComments, sameComments} from "@/core/preview/comments";
 import type {DcinsideComment} from "@/core/preview/types";
 import type {BlockEntry} from "@/core/storage/types";
 
@@ -66,6 +66,23 @@ describe("prepareComments", () => {
         const pre = nextPost();
         prepareComments([comment(1), comment(5)], pre, true);
         expect(prepareComments([comment(5)], pre, true, true).map((item) => item.no)).toEqual(["5"]);
+    });
+});
+
+describe("sameComments", () => {
+    it("따로 받은 같은 목록은 같다", () => {
+        expect(sameComments([comment(1), comment(2)], [comment(1), comment(2)])).toBe(true);
+        expect(sameComments([], [])).toBe(true);
+    });
+
+    it("수·순서·필드 값이 다르거나 필드가 하나 더 있으면 다르다", () => {
+        const list = [comment(1), comment(2)];
+        expect(sameComments(list, [comment(1)])).toBe(false);
+        expect(sameComments(list, [comment(2), comment(1)])).toBe(false);
+        // 답글 달린 댓글은 지워져도 삭제 표시로 남아 수가 그대로다.
+        expect(sameComments(list, [comment(1, {is_delete: "1"}), comment(2)])).toBe(false);
+        expect(sameComments(list, [comment(1), comment(2, {del_yn: "Y"})])).toBe(false);
+        expect(sameComments([comment(1, {del_yn: "Y"})], [comment(1)])).toBe(false);
     });
 });
 

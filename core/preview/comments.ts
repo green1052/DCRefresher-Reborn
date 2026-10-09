@@ -72,6 +72,27 @@ export const prepareComments = (raw: DcinsideComment[], preData: GalleryPreData,
 };
 
 /**
+ * 받은 두 댓글 목록이 같은지. 자동 새로고침이 같은 목록을 다시 받으면 다시 그리지 않으려고 쓴다.
+ * 목록을 JSON 문자열로 만들어 비교하면 댓글이 1000개일 때 주기마다 1MB가 넘는 문자열을 만든다. 필드 값을 차례로 비교하고 다르면 바로 멈춘다.
+ * 디시 댓글 필드는 문자열·숫자 같은 값이다. 객체 값이 오면 내용이 같아도 다르다고 보지만 다시 그릴 뿐이다.
+ * T로 받아야 for...in의 키로 형 변환 없이 읽는다.
+ */
+export const sameComments = <T extends object>(a: T[], b: T[]): boolean => {
+    if (a.length !== b.length) return false;
+    for (const [index, comment] of a.entries()) {
+        const other = b[index];
+        if (other === undefined) return false;
+        let fields = 0;
+        for (const key in comment) {
+            if (comment[key] !== other[key]) return false;
+            fields++;
+        }
+        if (fields !== Object.keys(other).length) return false;
+    }
+    return true;
+};
+
+/**
  * 정화 → 차단 표시 → 같은 댓글 묶기. 차단 목록이 바뀌면 같은 prepareComments 결과로 다시 부르므로
  * 입력(캐시된 원본)은 고치지 않고 복사본을 가공한다. block은 차단 모듈 설정이다.
  */

@@ -162,9 +162,8 @@ const controller = (ctx: Ctx) => {
     // 받는 중인 댓글 요청 수. 응답이 느릴 때 자동 갱신이 요청을 겹쳐 보내지 않게 한다.
     let pulling = 0;
     // 마지막으로 그린 댓글 원본 (보존 처리까지 마친 것). 차단 목록·방식이 바뀌면 다시 받지 않고 이것으로 다시 가린다.
-    let shown: { signal: number; source: DcinsideComment[] } | null = null;
-    /** shown을 만든 받은 목록의 JSON. 같은 목록을 다시 받으면 다시 그리지 않는다. */
-    let shownRaw = "";
+    // raw는 source를 만든 받은 목록이다. 같은 목록을 다시 받으면 다시 그리지 않는다.
+    let shown: { signal: number; source: DcinsideComment[]; raw: DcinsideComment[] } | null = null;
     let freshTimer = 0;
     ctx.addCleanup(() => window.clearTimeout(freshTimer));
 
@@ -205,7 +204,7 @@ const controller = (ctx: Ctx) => {
 
         try {
             // 댓글 가공(정화·차단)도 처음 쓸 때 불러온다.
-            const [{prepareComments, processComments}, {list: raw, allowReply, truncated}] = await Promise.all([
+            const [{prepareComments, processComments, sameComments}, {list: raw, allowReply, truncated}] = await Promise.all([
                 import("@/core/preview/comments"),
                 // 건너뛸 때는 지금 알고 있는 댓글 허용(멤버만 댓글)을 그대로 둔다.
                 skip ? {list: [], allowReply: store.getState().allowReply, truncated: false} : Promise.resolve(given).then((list) => list ?? fetchComments(preData, post, signal))
@@ -217,16 +216,14 @@ const controller = (ctx: Ctx) => {
             // 보존 기록은 받을 때마다 갱신해야 하므로 prepareComments는 같은 목록이어도 부른다.
             const source = prepareComments(raw, preData, ctx.settings.archiveArticle, truncated);
             // 자동 새로고침으로 같은 목록을 다시 받았으면 정화·다시 그리기를 건너뛴다. 댓글이 수백 개면 정화만 수십 ms다.
-            const rawKey = JSON.stringify(raw);
-            if (!skip && shown?.signal === mySignal && rawKey === shownRaw) {
+            if (!skip && shown?.signal === mySignal && sameComments(raw, shown.raw)) {
                 if (store.getState().allowReply !== allowReply) store.setState({allowReply});
                 return;
             }
-            shownRaw = rawKey;
             // 같은 글의 목록을 다시 받았으면 새로 들어온 댓글을 표시한다. 글을 처음 열 때는 표시하지 않는다.
             const before = shown?.signal === mySignal && ctx.settings.highlightNewComments ? new Set(shown.source.map((comment) => comment.no)) : null;
             const added = before ? source.filter((comment) => !before.has(comment.no) && comment.is_delete !== "1").map((comment) => comment.no) : [];
-            shown = {signal: mySignal, source};
+            shown = {signal: mySignal, source, raw};
             store.setState({comments: keepUnchanged(processComments(source, preData, runningModuleSettings("block"))), allowReply, freshComments: added.length > 0 ? new Set(added) : NO_FRESH});
             // 강조(3초)가 끝나면 지운다. 남겨 두면 답글을 접었다 펴는 등 다시 그릴 때마다 강조가 되풀이된다.
             window.clearTimeout(freshTimer);
@@ -332,7 +329,7 @@ const controller = (ctx: Ctx) => {
 
         try {
             // 본문을 방금 받았어도(fresh) 방금 받은 댓글은 쓴다. 그 밖에 캐시로 연 글은 받는 동안 지난번 댓글을 먼저 보인다.
-            // 새로 받은 목록이 같으면 다시 그리지 않는다 (shownRaw).
+            // 새로 받은 목록이 같으면 다시 그리지 않는다 (shown.raw).
             const last = recent ?? (fresh ? undefined : getEntry(preData)?.comments);
             if (last) await pullComments(preData, post, mySignal, false, last, true);
             if (!recent) {
@@ -380,7 +377,6 @@ const controller = (ctx: Ctx) => {
         window.clearTimeout(refreshTimer);
         // 지난 글의 댓글 원본(수백 개면 수백 KB)을 다음 글을 열 때까지 들고 있지 않는다. 다음 글은 새 signalId라 어차피 다시 그린다.
         shown = null;
-        shownRaw = "";
 
         restoreHistory(fromHistory);
         store.getState().close();
