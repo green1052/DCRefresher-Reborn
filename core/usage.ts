@@ -64,14 +64,23 @@ export const markUsed = (kind: UsageKind, id: string): void => {
 
 const writes = pLimit(1);
 
-/** 탭이 보낸 기록을 합친다. 더 늦은 시각을 남긴다. */
+/**
+ * 탭이 보낸 기록을 합친다. 새 항목이나 RECORD_GAP 넘게 지난 기록만 고치고, 고친 것이 없으면 쓰지 않는다.
+ * 페이지를 새로 열 때마다 같은 기록이 다시 오므로 매번 쓰면 모든 탭에 바뀜이 퍼진다.
+ */
 export const recordUsage = (batch: UsageData): Promise<void> =>
     writes(async () => {
         const usage = await readUsage();
+        let changed = false;
         for (const kind of ["block", "memo"] as const) {
-            for (const [id, time] of Object.entries(normalizeTimes(batch[kind]))) usage[kind][id] = Math.max(usage[kind][id] ?? 0, time);
+            for (const [id, time] of Object.entries(normalizeTimes(batch[kind]))) {
+                const prev = usage[kind][id];
+                if (prev !== undefined && time - prev < RECORD_GAP) continue;
+                usage[kind][id] = time;
+                changed = true;
+            }
         }
-        await storage.setItem(USAGE_KEY, usage);
+        if (changed) await storage.setItem(USAGE_KEY, usage);
     });
 
 /**
