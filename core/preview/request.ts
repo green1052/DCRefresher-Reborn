@@ -1,6 +1,7 @@
 /** 게시글·댓글 받기와 추천. 나머지 디시 요청은 각 파일(manage·submit·txtcon·dccon)로 나뉘어 있고 여기서 다시 내보낸다. */
 import {ajax, http} from "@/core/http/client";
 import {galleryPath, urls} from "@/core/http/urls";
+import {isRecord} from "@/utils/record";
 
 import {parsePostInfo} from "./parser";
 import {dcBody, resultMessage, submitResult} from "./response";
@@ -24,6 +25,9 @@ export const fetchPost = async (preData: GalleryPreData, signal: AbortSignal): P
     return postInfo;
 };
 
+// 번호로 묶어 정렬하므로 번호가 문자열인 항목만 댓글로 받는다. memo는 비어 올 수 있어 comments.ts에서 문자열로 바꾼다.
+const isComment = (value: unknown): value is DcinsideComment => isRecord(value) && typeof value.no === "string";
+
 /** 댓글 목록. 한 쪽에 100개씩이라 여러 쪽을 받아 합친다. */
 export const fetchComments = async (preData: GalleryPreData, postInfo: Pick<PostInfo, "commentId" | "commentNo" | "esno">, signal: AbortSignal): Promise<CommentListResponse> => {
     const body = await dcBody(preData.link, {
@@ -42,12 +46,14 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: Pick<Post
     const fetchPage = (page: number) => {
         const pageBody = new URLSearchParams(body);
         pageBody.set("comment_page", String(page));
-        return ajax.post(urls.comments, {body: pageBody, signal: pageSignal}).json<{
-            comments: DcinsideComment[] | null;
-            total_cnt: number | string;
-            pagination: string | null;
-            allow_reply?: number | string | null;
-        }>().catch((e: unknown) => {
+        return ajax.post(urls.comments, {body: pageBody, signal: pageSignal}).json<unknown>().then((parsed) => {
+            // 다른 모양(실패 응답 등)이면 쪽 나눔을 읽다 깨지므로 실패로 넘긴다 (dccon.ts의 fetchPage와 같다).
+            if (!isRecord(parsed)) throw new Error("댓글 목록이 아닙니다.");
+            const {comments, pagination, allow_reply} = parsed;
+            if (comments !== null && !Array.isArray(comments)) throw new Error("댓글 목록이 아닙니다.");
+            // 디시 comment.js처럼 0일 때만 막는다 (멤버만 댓글).
+            return {comments: comments?.filter(isComment) ?? [], pagination: typeof pagination === "string" ? pagination : null, allowReply: String(allow_reply) !== "0"};
+        }).catch((e: unknown) => {
             failure ??= e;
             pageAbort.abort();
             throw failure;
@@ -71,11 +77,10 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: Pick<Post
     // 1쪽이 가장 최근 댓글이고 뒤쪽일수록 오래된 댓글이다. 쪽 사이에 같은 댓글이 겹쳐 올 수 있어 번호로 하나만 남기고 번호(등록)순으로 맞춘다.
     const byNo = new Map<string, DcinsideComment>();
     for (const response of [first, ...earlyPages, ...restPages]) {
-        for (const comment of response.comments ?? []) byNo.set(comment.no, comment);
+        for (const comment of response.comments) byNo.set(comment.no, comment);
     }
 
-    // 디시 comment.js처럼 0일 때만 막는다 (멤버만 댓글).
-    return {list: [...byNo.values()].sort((a, b) => Number(a.no) - Number(b.no)), allowReply: String(first.allow_reply) !== "0", truncated: pages > 10};
+    return {list: [...byNo.values()].sort((a, b) => Number(a.no) - Number(b.no)), allowReply: first.allowReply, truncated: pages > 10};
 };
 
 interface VoteResult {

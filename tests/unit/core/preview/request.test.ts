@@ -5,7 +5,7 @@ const fetchMock = vi.hoisted(() => (globalThis.fetch = vi.fn<typeof fetch>()));
 
 import {BlockedError} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
-import {adminDeleteComments, blockCommenters, fetchComments, fetchPost, viewUrl, vote} from "@/core/preview/request";
+import {adminDeleteComments, blockCommenters, fetchComments, fetchDcconList, fetchDcconPackage, fetchPost, viewUrl, vote} from "@/core/preview/request";
 import type {DcinsideComment, PostInfo} from "@/core/preview/types";
 
 import {preData} from "../../../helpers";
@@ -105,6 +105,20 @@ describe("fetchComments", () => {
         expect((await fetchComments(preData(), {}, signal())).allowReply).toBe(true);
     });
 
+    it("댓글 목록이 아닌 응답은 던진다", async () => {
+        for (const reply of ["null", "[]", "\"error\"", JSON.stringify({comments: "x", pagination: null})]) {
+            serve(fetchMock, () => reply);
+            await expect(fetchComments(preData(), {}, signal())).rejects.toThrow("댓글 목록이 아닙니다.");
+        }
+    });
+
+    it("모양이 다른 댓글과 쪽 나눔은 버린다", async () => {
+        const sent = serve(fetchMock, () => JSON.stringify({comments: [comment(1), null, {no: 2}, {no: "3", memo: null}, {...comment(4), no: 4}], pagination: 5}));
+        const result = await fetchComments(preData(), {}, signal());
+        expect(sent).toHaveLength(1);
+        expect(result.list.map((item) => item.no)).toEqual(["1", "3"]);
+    });
+
     it("댓글 요청 값을 보낸다", async () => {
         const sent = serve(fetchMock, () => JSON.stringify({comments: [], total_cnt: 0, pagination: ""}));
         await fetchComments(preData({gallery: "a", id: "3", link: "https://gall.dcinside.com/mgallery/board/view/?id=a&no=3"}), {commentId: "cid", commentNo: "9", esno: "tok"}, signal());
@@ -176,6 +190,29 @@ describe("vote", () => {
         stubCookies();
         serve(fetchMock, () => "false||이미 추천하셨습니다.");
         expect(await vote(preData(), post(), "U")).toEqual({success: false, message: "이미 추천하셨습니다."});
+    });
+});
+
+describe("디시콘", () => {
+    it("패키지 정보가 아닌 응답은 던진다", async () => {
+        for (const reply of ["null", "[]", JSON.stringify({info: null, detail: [], tags: []}), JSON.stringify({info: {}, detail: {}, tags: []})]) {
+            serve(fetchMock, () => reply);
+            await expect(fetchDcconPackage("1")).rejects.toThrow("디시콘 정보가 아닙니다.");
+        }
+    });
+
+    it("목록이 아닌 응답은 던진다", async () => {
+        for (const reply of ["null", "[]", JSON.stringify({target: "icon", list: null})]) {
+            serve(fetchMock, () => reply);
+            await expect(fetchDcconList(signal())).rejects.toThrow("디시콘 목록이 아닙니다.");
+        }
+    });
+
+    it("상점 안내와 비로그인을 알린다", async () => {
+        serve(fetchMock, () => JSON.stringify({target: "shop"}));
+        expect(await fetchDcconList(signal())).toBe("shop");
+        serve(fetchMock, () => "not_login");
+        expect(await fetchDcconList(signal())).toBe("not_login");
     });
 });
 

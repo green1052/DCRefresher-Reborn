@@ -97,7 +97,8 @@ export interface DcinsideDcconDetailList {
 }
 
 export interface DcinsideDcconDetail {
-    list: DcinsideDcconDetailList[];
+    /** 디시콘이 하나도 없으면(target "shop") 오지 않는다. */
+    list?: DcinsideDcconDetailList[];
     /** 마지막 쪽 번호 (0부터). 문자열로 오기도 한다. */
     max_page: number | string;
     target: string;
