@@ -1,5 +1,6 @@
+import QuickLRU from "quick-lru";
+
 import {galleryKind} from "@/core/http/urls";
-import {LruCache} from "@/utils/lru";
 
 import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} from "./types";
 
@@ -15,9 +16,9 @@ interface CacheEntry {
     commentsAt?: number;
 }
 
-// 게시글 캐시: 수명 1분, 최대 50개. 저장할 때마다 수명이 다시 1분으로 늘어난다.
-// autopurge가 없으면 만료된 항목(본문 HTML 포함)이 50개에 밀려날 때까지 메모리에 남는다.
-const entries = new LruCache<string, CacheEntry>({max: 50, ttl: 60_000, autopurge: true});
+// 게시글 캐시: 수명 1분. 저장할 때마다 수명이 다시 1분으로 늘어난다.
+// quick-lru는 두 세대로 나눠 두어 maxSize의 두 배 가까이(49개) 남기고, 만료된 항목(본문 HTML 포함)도 밀려날 때까지 메모리에 둔다. 그래서 25로 둔다.
+const entries = new QuickLRU<string, CacheEntry>({maxSize: 25, maxAge: 60_000});
 
 /**
  * 글 하나를 가리키는 키. 번호는 갤러리마다 따로 매겨진다. 일반·마이너·미니·인물 갤러리는 id가 겹칠 수 있어 종류도 넣는다.

@@ -1,3 +1,4 @@
+import QuickLRU from "quick-lru";
 import {type MouseEvent, useEffect, useState} from "react";
 
 import {ConfirmDialog, DialogCloseButton, ModalDialog} from "@/components/dialogs";
@@ -11,7 +12,6 @@ import {urls} from "@/core/http/urls";
 import {addDcconPackage, fetchDcconPackage} from "@/core/preview/request";
 import type {DcinsideDcconPackage} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
-import {LruCache} from "@/utils/lru";
 
 import {clearDcconListCache} from "./DcconPopup";
 import {usePreviewStore} from "./previewStore";
@@ -20,7 +20,7 @@ import {usePreviewStore} from "./previewStore";
  * 디시콘 코드별 패키지 정보. 같은 디시콘을 다시 눌러도 받지 않는다 (디시콘 목록 캐시처럼 10분).
  * 디시콘을 추가하면 가진 여부(residual)가 바뀌므로 비운다. 같은 패키지의 다른 디시콘도 코드가 달라 따로 담기기 때문이다.
  */
-const packageCache = new LruCache<string, DcinsideDcconPackage>({max: 100, ttl: 10 * 60_000});
+const packageCache = new QuickLRU<string, DcinsideDcconPackage>({maxSize: 100, maxAge: 10 * 60_000});
 
 const close = (): void => usePreviewStore.setState({dcconInfo: null});
 

@@ -1,10 +1,11 @@
+import QuickLRU from "quick-lru";
+
 import {BlockedError, http} from "@/core/http/client";
 import {queryString} from "@/core/http/urls";
 import {checkboxFiller, highlightSearchResults, LIST_SELECTOR, notifyListReplaced, PAGING_SELECTOR} from "@/core/list";
 import {defineModule} from "@/core/module/define";
 import {useUiStore} from "@/stores/ui";
 import {whenDomReady} from "@/utils/dom";
-import {LruCache} from "@/utils/lru";
 
 import meta from "./meta";
 
@@ -29,7 +30,7 @@ export default defineModule({
         const gallery = queryString("id") ?? "";
         // 새로고침 모듈이 목록을 갈아끼우면 다시 이어 붙이는데, 이미 받은 검색 페이지는 다시 요청하지 않는다.
         // 페이지 HTML을 통째로 담으므로 최대 다음 검색 횟수(30)만큼만 남겨 검색 페이지를 넘길수록 쌓이지 않게 한다.
-        const pages = new LruCache<string, string>({max: 30});
+        const pages = new QuickLRU<string, string>({maxSize: 30});
         // 행을 붙이면 같은 tbody로 필터가 다시 불리므로 한 번만 채운다.
         const filled = new WeakSet<HTMLElement>();
         let running: AbortController | null = null;

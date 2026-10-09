@@ -1,7 +1,8 @@
+import QuickLRU from "quick-lru";
+
 import {groupDuplicates, isAnyBlocked, isBlocked} from "@/core/block";
 import {htmlToText, sanitizeHtml} from "@/utils/sanitize";
 import {useUiStore} from "@/stores/ui";
-import {LruCache} from "@/utils/lru";
 
 import {restoreArchive} from "./cache";
 import type {DcinsideComment, GalleryPreData} from "./types";
@@ -24,12 +25,22 @@ const GALLOG_DCCON = /dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/g;
 const splitDccons = (memo: string): string => memo.replace(/"\s*(img|video) class="written_dccon/g, "\"><$1 class=\"written_dccon");
 
 // 정화 결과는 입력에만 달려 있어 기억해 둔다. 자동 새로고침·차단 변경·가린 내용 보기마다 댓글 수백 개를 다시 정화하지 않는다.
-const cleaned = new LruCache<string, string>({max: 2000});
+const cleaned = new QuickLRU<string, string>({maxSize: 2000});
 const sanitizeMemo = (memo: string): string => sanitizeHtml(splitDccons(memo).replace(/data-dcconoverstatus="?\w+"?/g, "data-dcconoverstatus=\"true\""));
 
 // 정화된 댓글의 평문(차단 검사용)도 마찬가지로 입력에만 달려 있어 함께 기억한다.
-const plainTexts = new LruCache<string, string>({max: 2000});
-const plainTextOf = (html: string): string => plainTexts.memo(html, (text) => htmlToText(text).trim());
+const plainTexts = new QuickLRU<string, string>({maxSize: 2000});
+
+/** 있으면 기억한 값, 없으면 compute로 만들어 기억한다. */
+const remember = (cache: QuickLRU<string, string>, key: string, compute: (key: string) => string): string => {
+    const cached = cache.get(key);
+    if (cached !== undefined) return cached;
+    const value = compute(key);
+    cache.set(key, value);
+    return value;
+};
+
+const plainTextOf = (html: string): string => remember(plainTexts, html, (text) => htmlToText(text).trim());
 
 const extractVoice = (memo: string): { memo: string; voice?: ProcessedComment["voice"] } | undefined => {
     if (!memo.includes("@^dc^@")) return;
@@ -73,7 +84,7 @@ export const processComments = (source: DcinsideComment[], preData: GalleryPreDa
         const voice = extractVoice(memo);
         // 늘 덮어쓴다. 디시 응답에도 voice 필드가 있어(보통 null) 그대로 두면 음성 댓글이 아닌데도 음성 댓글로 보인다(답글 막힘을 무시한다).
         comment.voice = voice?.voice;
-        comment.memo = cleaned.memo(voice?.memo ?? memo, sanitizeMemo);
+        comment.memo = remember(cleaned, voice?.memo ?? memo, sanitizeMemo);
     }
 
     // 차단 모듈이 꺼져 있으면 blockView가 없고 아무것도 가리지 않는다.

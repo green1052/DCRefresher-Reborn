@@ -1,6 +1,7 @@
+import QuickLRU from "quick-lru";
+
 import {ajax} from "@/core/http/client";
 import {csrfBody} from "@/core/http/cookie";
-import {LruCache} from "@/utils/lru";
 
 const GALLOG_API = "https://gall.dcinside.com/api/gallog_user_layer/gallog_content_reple";
 
@@ -22,7 +23,7 @@ const fetchGallogActivity = async (uid: string): Promise<GallogActivity | undefi
 };
 
 /** uid별 요청. 1시간 캐시하고, 받는 중인 요청은 같이 기다린다. */
-const activityCache = new LruCache<string, Promise<GallogActivity | undefined>>({max: 500, ttl: 3_600_000});
+const activityCache = new QuickLRU<string, Promise<GallogActivity | undefined>>({maxSize: 500, maxAge: 3_600_000});
 
 /**
  * 캐시를 거친 갤로그 글/댓글 수. 실패하면 undefined다.

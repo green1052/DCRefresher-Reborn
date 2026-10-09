@@ -28,6 +28,7 @@
         "ky": "^2.2.0",
         "lucide-react": "^1.54.0",
         "preact": "^11.0.1",
+        "quick-lru": "^7.3.0",
         "react-compiler-runtime": "^1.0.0",
         "zustand": "^5.0.15"
     },

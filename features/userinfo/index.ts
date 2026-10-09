@@ -1,3 +1,5 @@
+import QuickLRU from "quick-lru";
+
 import {banReasonsOf, initDatabase, ipInfoOf, passesIpFilter, subscribeDatabase} from "@/core/database";
 import {defineModule} from "@/core/module/define";
 import {type GallogActivity, getGallogActivity} from "@/core/gallog";
@@ -9,7 +11,6 @@ import {moduleDataKey, moduleDataStorage} from "@/core/storage/items";
 import {watchStorage} from "@/core/storage/sync";
 import {findMemo, useMemosStore} from "@/stores/memos";
 import {type BadgeView, DEFAULT_BADGE_VIEW, isFresh, isLowActivity, openWriterBubble, showsUid, useUiStore} from "@/stores/ui";
-import {LruCache} from "@/utils/lru";
 import {objectFromEntries, objectKeys} from "@/utils/typed";
 
 import meta, {BADGE_COLORS, type BadgeColor, type Ctx} from "./meta";
@@ -61,7 +62,7 @@ const trimRatios = (all: Record<string, RatioInfo>): Record<string, RatioInfo> =
     Object.fromEntries(Object.entries(all).sort(([, a], [, b]) => b.date - a.date).slice(0, MAX_RATIOS));
 
 /** 글댓비를 받지 못한 유저 (임시 차단 포함). 디시가 막거나 실패하는 동안 새 목록마다 다시 묻지 않게 5분 동안 건너뛴다. */
-const failedRatios = new LruCache<string, true>({max: 500, ttl: 5 * 60_000});
+const failedRatios = new QuickLRU<string, true>({maxSize: 500, maxAge: 5 * 60_000});
 
 const buildBadgeSpan = (text: string, color?: string, title?: string, className = "refresherUserData"): HTMLElement => {
     const span = Object.assign(document.createElement("span"), {className, textContent: text});
