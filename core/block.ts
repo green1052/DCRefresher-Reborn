@@ -41,18 +41,50 @@ const matches = (entry: BlockEntry, mode: DetectMode, content: string): boolean 
 type BlockLists = Pick<ReturnType<typeof useBlocksStore.getState>, "entries" | "defaults">;
 type BlockValues = Partial<Record<BlockType, string | null | undefined>>;
 
+interface Index {
+    /** 만들 때의 기본 모드. 바뀌면 모드 없는 항목이 일치 항목인지가 달라져 다시 만든다. */
+    defaultMode: DetectMode;
+    /** 정규식이 아닌 SAME 항목: 내용 → 항목들. 가져오기로 수천 개 넣은 닉네임·아이디를 하나씩 비교하지 않고 찾는다. */
+    exact: Map<string, BlockEntry[]>;
+    /** 나머지 항목 (CONTAIN·NOT_*·정규식). 목록 순서대로 하나씩 본다. */
+    rest: BlockEntry[];
+}
+
+// 유형의 항목 배열 → 색인. 스토어는 목록이 바뀌면 그 유형의 배열을 새로 만드므로 바뀐 유형만 다시 만든다.
+const indexes = new WeakMap<BlockEntry[], Index>();
+
+const indexFor = (lists: BlockLists, type: BlockType): Index => {
+    const entries = lists.entries[type];
+    const defaultMode = lists.defaults[type];
+    let index = indexes.get(entries);
+    if (index?.defaultMode !== defaultMode) {
+        const isExact = (entry: BlockEntry): boolean => !entry.isRegex && (entry.mode ?? defaultMode) === "SAME";
+        index = {defaultMode, exact: Map.groupBy(entries.filter(isExact), (entry) => entry.content), rest: entries.filter((entry) => !isExact(entry))};
+        indexes.set(entries, index);
+    }
+    return index;
+};
+
 /**
  * 한 유형의 항목으로 내용이 막히는지 판정한다 (갤러리 한정 항목은 그 갤러리에서만). SAME/CONTAIN은 맞는 항목마다 막는다.
  * NOT_*(불일치·불포함)는 한 유형의 항목을 묶어 허용 목록으로 본다: 어느 것에도 맞지 않으면 그 항목들 전부로 막는다.
  * 항목마다 뒤집으면 둘만 돼도 서로를 막아(A는 B와 다르다) 모두 막힌다. 잘못된 정규식은 NOT_*로도 걸지 않는다.
  * onEntry: 맞은 SAME/CONTAIN("hit"), 맞은 NOT_*("allow"), 맞지 않은 NOT_*("miss"). 목록 행·댓글마다 불리므로 판정만 할 때는 배열을 만들지 않는다.
+ * 정규식이 아닌 SAME 항목은 색인에서 찾아 먼저 넘기고, 나머지는 목록 순서대로 본다.
  */
 const scan = (lists: BlockLists, type: BlockType, content: string, gallery: string | undefined, onEntry?: (entry: BlockEntry, kind: "hit" | "allow" | "miss") => void): boolean => {
+    const {exact, rest} = indexFor(lists, type);
     let blocked = false;
     let hasAllowList = false;
     let allowed = false;
 
-    for (const entry of lists.entries[type]) {
+    for (const entry of exact.get(content) ?? []) {
+        if (entry.gallery && entry.gallery !== gallery) continue;
+        blocked = true;
+        onEntry?.(entry, "hit");
+    }
+
+    for (const entry of rest) {
         if (entry.gallery && entry.gallery !== gallery) continue;
 
         const mode = entry.mode ?? lists.defaults[type];
@@ -73,15 +105,17 @@ const scan = (lists: BlockLists, type: BlockType, content: string, gallery: stri
 
 /** 내용을 막은 항목들: 걸린 SAME/CONTAIN과, 허용 목록에 맞지 않았으면 그 NOT_* 항목 전부. */
 const blockingIn = (lists: BlockLists, type: BlockType, content: string, gallery?: string): BlockEntry[] => {
-    const hits: BlockEntry[] = [];
+    const hits = new Set<BlockEntry>();
     const allowList: BlockEntry[] = [];
     let allowed = false;
     scan(lists, type, content, gallery, (entry, kind) => {
-        if (kind === "hit") hits.push(entry);
+        if (kind === "hit") hits.add(entry);
         else allowList.push(entry);
         allowed ||= kind === "allow";
     });
-    return allowed ? hits : [...hits, ...allowList];
+    // scan은 색인에서 찾은 SAME 항목을 먼저 넘긴다. 유저 버블에는 걸린 항목을 목록 순서대로 보인다.
+    const blocking = lists.entries[type].filter((entry) => hits.has(entry));
+    return allowed ? blocking : [...blocking, ...allowList];
 };
 
 /**

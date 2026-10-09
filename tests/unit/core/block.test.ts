@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
 import {blockingEntries, dcconCode, groupDuplicates, isAnyBlocked, isBlocked, isBlockedHidden} from "@/core/block";
+import {DETECT_MODES} from "@/core/storage/items";
 import type {BlockEntry} from "@/core/storage/types";
 import {markUsed} from "@/core/usage";
 import {useBlocksStore} from "@/stores/blocks";
@@ -106,7 +107,8 @@ describe("isBlocked", () => {
         const unused = entry("다른닉");
         setBlockLists({NICK: [byNick, byExact, unused]});
         expect(isBlocked("NICK", "닉네임")).toBe(true);
-        expect(usedIds()).toEqual([byNick.id, byExact.id]);
+        // 색인에서 찾는 일치 항목이 먼저 적히므로 순서는 보지 않는다.
+        expect(usedIds().toSorted()).toEqual([byNick.id, byExact.id].toSorted());
 
         vi.mocked(markUsed).mockClear();
         const allow = entry("가", {mode: "NOT_SAME"});
@@ -160,6 +162,30 @@ describe("blockingEntries", () => {
         setBlockLists({NICK: [entry("닉")]});
         blockingEntries({NICK: "닉"});
         expect(markUsed).not.toHaveBeenCalled();
+    });
+});
+
+describe("일치 항목 색인", () => {
+    it("항목을 하나씩 볼 때와 결과가 같다", () => {
+        // 정규식이 아닌 항목을 같은 뜻의 이스케이프한 정규식으로 바꾸면 색인에 들지 않고 하나씩 본다.
+        const nicks = [
+            entry("가", {mode: "CONTAIN"}), entry("가나"), entry("가", {gallery: "a"}), entry("가"), entry("가나", {mode: "SAME", gallery: "b"}),
+            entry("다", {mode: "NOT_SAME"}), entry("라", {mode: "NOT_CONTAIN", gallery: "b"}), entry("마\\d", {isRegex: true}), entry("(", {isRegex: true})
+        ];
+        const linear = nicks.map((item) => (item.isRegex ? item : {...item, content: RegExp.escape(item.content), isRegex: true}));
+        const result = (value: string, gallery?: string): { blocked: boolean; ids: string[] } => ({blocked: isBlocked("NICK", value, gallery), ids: blockingEntries({NICK: value}, gallery).map(({entry}) => entry.id)});
+
+        for (const mode of DETECT_MODES) {
+            for (const gallery of [undefined, "a", "b"]) {
+                for (const value of ["가", "가나", "가나다", "다", "라라", "마1", "(", "바"]) {
+                    // 같은 배열이어도 기본 모드가 바뀌면 색인을 다시 만들어야 한다.
+                    setBlockLists({NICK: nicks}, {NICK: mode});
+                    const indexed = result(value, gallery);
+                    setBlockLists({NICK: linear}, {NICK: mode});
+                    expect(indexed).toEqual(result(value, gallery));
+                }
+            }
+        }
     });
 });
 
