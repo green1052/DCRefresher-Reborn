@@ -28,9 +28,11 @@ export default defineModule({
         if (!queryString("s_keyword")) return;
 
         const gallery = queryString("id") ?? "";
-        // 새로고침 모듈이 목록을 갈아끼우면 다시 이어 붙이는데, 이미 받은 검색 페이지는 다시 요청하지 않는다.
-        // 페이지 HTML을 통째로 담으므로 최대 다음 검색 횟수(30)만큼만 남겨 검색 페이지를 넘길수록 쌓이지 않게 한다.
-        const pages = new QuickLRU<string, string>({maxSize: 30});
+        // 새로고침 모듈이 목록을 갈아끼우면 다시 이어 붙이는데, 이미 받은 검색 페이지는 다시 요청·파싱하지 않는다. 검색어를 칠한 결과 행과 페이징 HTML만 담는다.
+        // 다시 이을 때 같은 다음 검색을 처음부터 따라가므로 최대 다음 검색 횟수만큼 둔다. 더 작으면 따라가는 동안 앞 페이지가 밀려나 하나도 맞지 않는다.
+        // quick-lru는 두 세대로 나눠 두어 그 두 배 가까이 남긴다.
+        const pages = new QuickLRU<string, { rows: HTMLTableRowElement[]; paging: string }>({maxSize: ctx.settings.maxSearches});
+        ctx.onSettingsChanged(() => pages.resize(ctx.settings.maxSearches));
         // 행을 붙이면 같은 tbody로 필터가 다시 불리므로 한 번만 채운다.
         const filled = new WeakSet<HTMLElement>();
         let running: AbortController | null = null;
@@ -66,23 +68,24 @@ export default defineModule({
                     if (!next) break;
 
                     status.textContent = `다음 검색 중… (${step}/${max})`;
-                    let html = pages.get(next.href);
-                    if (html === undefined) {
-                        html = await http.get(next.href, {signal}).text();
-                        pages.set(next.href, html);
+                    let page = pages.get(next.href);
+                    if (!page) {
+                        const dom = new DOMParser().parseFromString(await http.get(next.href, {signal}).text(), "text/html");
+                        const newList = dom.querySelector<HTMLElement>(LIST_SELECTOR);
+                        const newPaging = dom.querySelector<HTMLElement>(PAGING_SELECTOR);
+                        // 알림 페이지 같은 것은 캐시에 두지 않는다. 두면 다시 채울 때마다 같은 오류가 난다.
+                        if (!newList || !newPaging) throw new Error("검색 결과 페이지에 목록이 없습니다.");
+
+                        highlightSearchResults(newList, keyword);
+                        // 행은 이 문서로 옮겨 담는다. 받은 문서의 노드를 잡고 있으면 그 문서 전체가 남는다.
+                        const rows = Array.from(newList.querySelectorAll<HTMLTableRowElement>(RESULT_ROW), (row) => document.adoptNode(row));
+                        page = {rows, paging: newPaging.innerHTML};
+                        pages.set(next.href, page);
                     }
 
-                    const dom = new DOMParser().parseFromString(html, "text/html");
-                    const newList = dom.querySelector<HTMLElement>(LIST_SELECTOR);
-                    const newPaging = dom.querySelector<HTMLElement>(PAGING_SELECTOR);
-                    if (!newList || !newPaging) {
-                        // 알림 페이지 같은 것을 캐시에 두면 다시 채울 때마다 같은 오류가 난다. 다음에 다시 받게 지운다.
-                        pages.delete(next.href);
-                        throw new Error("검색 결과 페이지에 목록이 없습니다.");
-                    }
-
-                    highlightSearchResults(newList, keyword);
-                    for (const row of newList.querySelectorAll<HTMLTableRowElement>(RESULT_ROW)) {
+                    // 붙이면 노드가 옮겨 가므로 복제해 붙인다. 캐시의 행은 다른 모듈이 고치지 않은 채로 다시 이을 때 쓴다.
+                    for (const cached of page.rows) {
+                        const row = document.importNode(cached, true);
                         fillCheckbox(row);
                         list.append(row);
                         if (row.dataset.no) count++;
@@ -90,7 +93,7 @@ export default defineModule({
                     }
 
                     // 페이징은 마지막으로 받은 구간 것으로 바꾼다. 다음 검색·페이지 링크가 거기서 이어진다.
-                    paging.innerHTML = newPaging.innerHTML;
+                    paging.innerHTML = page.paging;
                     if (!isLastPage(paging)) break;
                 }
             } catch (e) {
