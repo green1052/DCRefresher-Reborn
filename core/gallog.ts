@@ -10,6 +10,11 @@ export interface GallogActivity {
     comment: number;
 }
 
+/** 글댓비 캐시(userinfo)의 한 사람 값. date는 받은 시각이다. */
+export interface RatioInfo extends GallogActivity {
+    date: number;
+}
+
 /** 갤로그의 글/댓글 수 ("글,댓글" 텍스트 응답). */
 const fetchGallogActivity = async (uid: string): Promise<GallogActivity | undefined> => {
     const text = await ajax.post(GALLOG_API, {

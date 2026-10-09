@@ -2,6 +2,7 @@ import {create} from "zustand";
 
 import {needOverlayWhen} from "@/components/overlay/demands";
 import type {IpCategory, IpInfoFilter} from "@/core/database";
+import type {GallogActivity, RatioInfo} from "@/core/gallog";
 import type {MemoType} from "@/core/storage/types";
 import {eventTarget} from "@/utils/event";
 import {nickType} from "@/utils/user";
@@ -62,7 +63,7 @@ export interface MemoTargetState {
 }
 
 /** 깡계인지: 글댓합이 기준(alarm) 이하다. 기준이 0이면 끈 것이다. 페이지(userinfo)와 미리보기가 같은 판정을 쓴다. */
-export const isLowActivity = (ratio: { article: number; comment: number }, alarm: number): boolean => alarm > 0 && ratio.article + ratio.comment <= alarm;
+export const isLowActivity = (ratio: GallogActivity, alarm: number): boolean => alarm > 0 && ratio.article + ratio.comment <= alarm;
 
 /**
  * 글댓비가 1시간 안에 받은 값인지. 지난 값은 미리보기·버블이 새로 조회하고, userinfo는 그 유저의 새 글이 올라오면 다시 조회한다.
@@ -83,7 +84,7 @@ interface UiState {
     badgeColors: Partial<Record<BadgeColorKey, string>>;
     badgeView: BadgeView;
     /** 글댓비 캐시와 깡계 기준 (userinfo). 글댓비 표시를 끄거나 모듈이 꺼져 있으면 null. 지난 값도 있으니 isFresh로 가려 읽는다. */
-    ratios: { cache: Record<string, { article: number; comment: number; date: number }>; alarm: number } | null;
+    ratios: { cache: Record<string, RatioInfo>; alarm: number } | null;
     /** 차단 모듈이 꺼져 있으면 null이고, 미리보기도 가리지 않는다. */
     blockView: BlockView | null;
 

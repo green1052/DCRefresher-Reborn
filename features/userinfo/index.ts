@@ -2,7 +2,7 @@ import QuickLRU from "quick-lru";
 
 import {banReasonsOf, initDatabase, ipInfoOf, passesIpFilter, subscribeDatabase} from "@/core/database";
 import {defineModule} from "@/core/module/define";
-import {type GallogActivity, getGallogActivity} from "@/core/gallog";
+import {type GallogActivity, getGallogActivity, type RatioInfo} from "@/core/gallog";
 import {ROWS_HIDDEN_EVENT} from "@/core/block";
 import {queryString} from "@/core/http/urls";
 import {WRITER_ROW_SELECTOR} from "@/core/list";
@@ -14,12 +14,6 @@ import {type BadgeView, DEFAULT_BADGE_VIEW, isFresh, isLowActivity, openWriterBu
 import {objectFromEntries, objectKeys} from "@/utils/typed";
 
 import meta, {BADGE_COLORS, type BadgeColor, type Ctx} from "./meta";
-
-interface RatioInfo {
-    article: number;
-    comment: number;
-    date: number;
-}
 
 /** 저장소의 글댓비 캐시 (moduleDataStorage). */
 type RatioData = { ratio?: Record<string, RatioInfo> };

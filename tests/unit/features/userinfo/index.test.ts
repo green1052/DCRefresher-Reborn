@@ -4,7 +4,7 @@ import {fakeBrowser} from "wxt/testing/fake-browser";
 
 import {ROWS_HIDDEN_EVENT} from "@/core/block";
 import type {IpCategory} from "@/core/database";
-import type {GallogActivity} from "@/core/gallog";
+import type {GallogActivity, RatioInfo} from "@/core/gallog";
 import userinfo from "@/features/userinfo/index";
 import {useMemosStore} from "@/stores/memos";
 import {DEFAULT_BADGE_VIEW, useUiStore} from "@/stores/ui";
@@ -169,7 +169,7 @@ describe("메모·순서·갱차", () => {
 });
 
 describe("글댓비·깡계", () => {
-    const saveRatio = async (ratio: Record<string, { article: number; comment: number; date: number }>): Promise<void> =>
+    const saveRatio = async (ratio: Record<string, RatioInfo>): Promise<void> =>
         fakeBrowser.storage.local.set({[RATIO_KEY]: {ratio}});
 
     it("저장된 글댓비를 붙인다", async () => {
