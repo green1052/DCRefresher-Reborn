@@ -17,11 +17,8 @@ export const urls = {
         /** 디시콘 상점. 뒤에 /nick_name/{제작자}, /tags/{태그}를 붙인다. */
         shop: "https://dccon.dcinside.com/hot/1"
     },
-    // data 브랜치는 .github/workflows/db.yml이 만들고, Cloudflare Pages가 그대로 배포한다. CORS를 열어 두어 호스트 권한이 필요 없다.
-    // 6.0.3 이하는 raw.githubusercontent.com에서 받으므로 data 브랜치 게시는 계속 유지한다.
     database: {
         version: "https://dcrefresher.green1052.com/version",
-        // 저장 형식 그대로다 (core/ipdb.ts의 CompactIpData).
         ip: "https://dcrefresher.green1052.com/ip.json",
         ban: "https://dcrefresher.green1052.com/ban.json"
     }
