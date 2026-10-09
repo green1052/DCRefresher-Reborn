@@ -17,7 +17,7 @@ export const defaultValue = (schema: SettingSchema): SettingValue => (schema.typ
 
 /**
  * 저장값을 스키마에 맞춘다. 타입이 틀리면 기본값을 쓰고, range는 슬라이더처럼 step 단위로 맞춰 min~max로 자른다
- * (가져온 설정의 소수 등. 동시 요청 수는 정수가 아니면 utils/limit이 던진다).
+ * (가져온 설정의 소수 등. 동시 요청 수는 정수가 아니면 p-limit이 던진다).
  * order는 스키마에 없거나 겹친 항목을 빼고, 새로 생긴 항목을 덧붙인다.
  */
 export const normalizeSetting = (schema: SettingSchema, value: unknown): SettingValue => {

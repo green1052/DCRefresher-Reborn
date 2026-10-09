@@ -27,6 +27,7 @@
         "dompurify": "^3.4.16",
         "ky": "^2.2.0",
         "lucide-react": "^1.54.0",
+        "p-limit": "^7.3.3",
         "preact": "^11.0.1",
         "quick-lru": "^7.3.0",
         "react-compiler-runtime": "^1.0.0",

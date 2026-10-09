@@ -1,7 +1,7 @@
 import ky, {type AfterResponseHook, type KyInstance} from "ky";
+import pLimit from "p-limit";
 
 import {isBlockedPage} from "@/core/pages";
-import {createLimiter} from "@/utils/limit";
 
 type Fetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
@@ -19,11 +19,11 @@ const baseFetch: Fetch = pageWindow
     : globalThis.fetch.bind(globalThis);
 
 /** 동시 요청 수. 요청 제한 모듈(features/requests)이 설정값으로 바꾸고, 모듈이 꺼져 있거나 배경·옵션 페이지면 무제한이다. */
-const limiter = createLimiter(Number.POSITIVE_INFINITY);
+const limiter = pLimit(Number.POSITIVE_INFINITY);
 
 /** 1 이상의 정수나 Infinity여야 한다 (아니면 던진다). 설정값은 normalizeSetting이 step 단위로 맞춘다. */
 export const setRequestConcurrency = (concurrency: number): void => {
-    limiter.setConcurrency(concurrency);
+    limiter.concurrency = concurrency;
 };
 
 /** 요청 한 번의 시간 제한 (ms). */
@@ -36,7 +36,7 @@ const REQUEST_TIMEOUT = 15_000;
  * 요청을 끊는 신호(ky·호출한 쪽)는 Request에 들어 있어 함께 건다.
  */
 const limitedFetch: Fetch = (input, init) =>
-    limiter.run(() => {
+    limiter(() => {
         // AbortSignal.timeout은 파이어폭스 콘텐츠 스크립트에서 "Could not find window"로 던진다 (전역이 창이 아니라 샌드박스다).
         const timeout = new AbortController();
         const timer = setTimeout(() => timeout.abort(new DOMException("요청 시간 초과", "TimeoutError")), REQUEST_TIMEOUT);

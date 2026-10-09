@@ -69,7 +69,7 @@ scripts/                IP DB 빌드 스크립트
 
 `core/http/client.ts`의 `http`(일반 요청)와 `ajax`(`X-Requested-With` 헤더를 붙인 디시 ajax 요청)를 씁니다.
 
-- 두 클라이언트가 `utils/limit.ts`의 제한기 하나를 같이 써서 합친 동시 요청 수를 제한합니다. 제한 값은 "요청 제한" 모듈 설정이고 탭마다 따로 셉니다.
+- 두 클라이언트가 p-limit 제한기 하나를 같이 써서 합친 동시 요청 수를 제한합니다. 제한 값은 "요청 제한" 모듈 설정이고 탭마다 따로 셉니다.
 - Firefox 콘텐츠 스크립트에서는 두 클라이언트 모두 `content.fetch`로 보냅니다. 페이지가 보낸 요청처럼 나가야 디시 ajax가 받아 줍니다.
 - 시간 제한(15초)은 동시 요청 수 제한의 차례를 받은 뒤부터 응답 머리를 받을 때까지만 잽니다. 그런데 dcinside.com GET은 임시 차단 검사(`detectBlocked`)가 `http.get` 안에서 본문을 다 읽어서 본문이 멈추면 `http.get`이 끝나지 않습니다. 멈추면 안 되는 요청은 호출하는 쪽이 `signal`로 제한을 겁니다(글 목록 새로고침의 `LIST_TIMEOUT`). ky의 `timeout`은 차례를 기다리는 시간까지 재므로 쓰지 않습니다(호출할 때도 주지 마세요). `AbortSignal.timeout`도 쓰지 않습니다([Firefox](firefox.md)).
 - 재시도는 ky 기본값에 지터를 더하고 `Retry-After`는 최대 10초까지만 기다립니다. 시간 초과·`BlockedError`·POST는 재시도하지 않습니다.

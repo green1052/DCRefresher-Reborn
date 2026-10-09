@@ -10,7 +10,7 @@
 | UI | [Preact](https://preactjs.com) 11 + React Compiler, [shadcn/ui](https://ui.shadcn.com)(Base UI) + [Tailwind CSS](https://tailwindcss.com) v4. 코드는 `react`에서 import합니다([UI](ui.md#부품)) |
 | 상태 | zustand |
 | 저장소 | WXT storage (`wxt/utils/storage`) |
-| HTTP | ky + `utils/limit.ts`(동시 요청 수 제한) |
+| HTTP | ky + p-limit(동시 요청 수 제한) |
 | HTML 정화 | DOMPurify (`utils/sanitize.ts`) |
 | 메시징 | @webext-core/messaging |
 | 패키지 관리·실행 | Bun 1.4 이상. `scripts/`는 Bun에서 돌아 Bun API를 씁니다. WXT·Vitest·Playwright는 Node에서 돌므로 빌드 모듈(`modules/`)과 E2E는 Node API를 씁니다 |
@@ -35,7 +35,7 @@ bun run zip            # 배포용 zip (zip:firefox는 Firefox zip + 소스 zip)
 ## 코드 규칙
 
 - 반복은 `for...of`를 씁니다 (`forEach` 대신). catch 변수는 `e`, 이벤트 매개변수는 `ev`입니다.
-- 브라우저 기본 기능과 WXT 기능으로 되면 그것을 씁니다. 라이브러리는 직접 만들면 위험하거나 큰 것(DOMPurify, ky 등)만 두고 몇 줄로 대신할 수 있는 것은 `utils/`에 둡니다(`typed.ts`, `limit.ts`). 라이브러리 코드는 패치하지 않습니다.
+- 브라우저 기본 기능과 WXT 기능으로 되면 그것을 씁니다. 그다음은 직접 만들지 않고 관리되는 라이브러리를 씁니다(DOMPurify, ky, quick-lru, p-limit 등). `utils/`에는 라이브러리로 대신할 수 없는 작은 도우미만 둡니다(`typed.ts` 등). 라이브러리 코드는 패치하지 않습니다.
 - 기능 하나를 고칠 때 여러 화면을 건드리지 않도록 모듈 구조를 따릅니다([모듈](modules.md)). 옵션·팝업은 모듈 정의(스키마, `extensionPageVars`, `pageToggles`)만 보고 그립니다.
 - 타입은 정확하게 씁니다. 경계에서 `unknown`을 넘기거나 `as`로 덮지 말고 값을 검사해 좁힙니다.
 - 주석은 한국어로, 코드만 봐서는 알 수 없는 이유(디시·브라우저 동작, 순서 제약, 성능 이유)를 적습니다.
