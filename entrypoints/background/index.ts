@@ -1,8 +1,10 @@
+import {storage} from "wxt/utils/storage";
+
 import {http} from "@/core/http/client";
 import {postSearchUrl} from "@/core/http/urls";
 import {onMessage, sendMessage} from "@/core/messaging/protocol";
 import {type BackgroundModule, startBackgroundModules} from "@/core/module/background";
-import {dbStorage} from "@/core/storage/items";
+import {dbStorage, moduleDataKey} from "@/core/storage/items";
 import {recordUsage, syncUsage} from "@/core/usage";
 
 import {startAutoBackup} from "./backup";
@@ -48,6 +50,8 @@ export default defineBackground(() => {
 
     browser.runtime.onInstalled.addListener(async () => {
         await applyBackgroundModules();
+        // 미리보기로 읽은 글 기록. 이제 브라우저 방문 기록(:visited)으로 표시해 쓰지 않는다.
+        await storage.removeItem(moduleDataKey("preview"));
 
         // 개발 빌드는 DB가 없을 때만 받는다.
         if (import.meta.env.PROD || !(await dbStorage.meta.getValue()).version) {

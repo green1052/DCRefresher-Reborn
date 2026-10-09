@@ -76,7 +76,7 @@ export const settings = {
         step: 50,
         unit: "ms"
     },
-    colorPreviewLink: {type: "check", name: "주소창에 게시글 주소 표시", desc: "미리보기를 여는 동안 주소창과 탭 제목을 그 게시글로 바꿉니다.", default: true},
+    colorPreviewLink: {type: "check", name: "주소창에 게시글 주소 표시", desc: "미리보기를 여는 동안 주소창과 탭 제목을 그 게시글로 바꿉니다. 연 글은 방문 기록에 남아 목록에서 방문한 글 색으로 보입니다.", default: true},
     autoRefreshComment: {type: "check", name: "댓글 자동 새로고침", desc: "일정 주기로 댓글을 자동으로 새로고침합니다.", default: false},
     highlightNewComments: {type: "check", name: "새 댓글 강조", desc: "댓글을 새로고침했을 때 새로 들어온 댓글을 잠깐 강조합니다.", default: true},
     commentRefreshInterval: {
@@ -106,7 +106,6 @@ export const settings = {
     },
     expandRecognizeRange: {type: "check", name: "게시글 인식 범위 확장", desc: "행 전체를 클릭해도 미리보기가 열리게 합니다.", default: false},
     imageViewer: {type: "check", name: "이미지 크게 보기", desc: "본문 이미지를 누르면 미리보기 안에서 크게 봅니다. ←/→로 넘깁니다. 끄면 원본 보기를 새 탭으로 엽니다.", default: true},
-    markRead: {type: "check", name: "미리보기로 읽은 글 표시", desc: "미리보기로 연 글을 목록에서 흐리게 표시합니다. 최근 3000개까지 기억합니다.", default: true},
     listKeyboard: {
         type: "check",
         name: "목록 키보드 이동",

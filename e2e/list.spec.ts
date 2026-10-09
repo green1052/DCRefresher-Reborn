@@ -157,19 +157,6 @@ test.describe("목록 키보드", () => {
     });
 });
 
-test.describe("읽은 글", () => {
-    test("미리보기로 연 글은 닫은 뒤 목록에서 흐려지고, 모아서 저장한다", async ({listPage, storage}) => {
-        await listPage.openPreview();
-        await expect(listPage.frameTitle).toHaveText("[말머리] 글 3 제목");
-        await listPage.page.keyboard.press("Escape");
-
-        await expect(listPage.row(3)).toHaveClass(/refresherRead/);
-        await expect(listPage.row(2)).not.toHaveClass(/refresherRead/);
-        // 저장은 5초 모아서 한다 (read.ts의 SAVE_DELAY).
-        await expect.poll(() => storage.get("refresher:module:preview:data"), {timeout: 10_000}).toEqual({read: ["test:3"]});
-    });
-});
-
 test.describe("스텔스 모드", () => {
     test("켜면 미리보기 본문 이미지를 숨기고, 버튼으로 잠시 보였다가 끄면 되돌린다", async ({listPage, storage}) => {
         await storage.setModules({stealth: true});

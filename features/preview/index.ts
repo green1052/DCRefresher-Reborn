@@ -24,7 +24,6 @@ import {blockCommenters, blockUser, type BlockOptions, bump, deletePost, fetchCo
 import {bindListKeys} from "./keyboard";
 import meta, {type Ctx} from "./meta";
 import {createMini} from "./mini";
-import {createReadMarks} from "./read";
 import {bindRows} from "./rows-input";
 import {adjacentPreData, isTextPost} from "./rows";
 import {type ErrorState, MANAGE_LABELS, type ManageKind, NO_FRESH, NO_HOOKS, NO_REPLY, usePreviewStore} from "./ui/previewStore";
@@ -402,8 +401,6 @@ const controller = (ctx: Ctx) => {
         // 두 번 누르기는 글마다 새로 센다. 이전 글에서 한 번 누른 키로 다음 글이 바로 지워지면 안 된다.
         confirmPress = createDoublePress(1000);
 
-        readMarks.markRead(preData);
-
         store.getState().open(preData, {
             commentsOnly,
             // 목록에 이미지 아이콘이 없는 글만 본문 이미지를 숨긴다.
@@ -417,6 +414,7 @@ const controller = (ctx: Ctx) => {
 
         // 이미 열린 창에서 다음 글로 넘어갈 때는 처음 저장한 위치를 유지한다. 덮어쓰면 닫을 때 미리보기 주소로 되돌아간다.
         if (!historySkip && !st.visible) savedHistory = {title: document.title, url: location.href, state: history.state};
+        // 글 주소를 기록에 쌓으면 브라우저가 방문한 글로 쳐 목록 링크가 :visited 색이 된다 (미리보기로 읽은 글 표시).
         if (ctx.settings.colorPreviewLink) {
             const newTitle = `${preData.title ?? document.title} - ${galName()}`;
             // 돌아갈 위치(back)도 같이 넣는다. 없으면 뒤로 가기로 다시 연 미리보기는 닫아도 글 주소에 남는다.
@@ -548,9 +546,6 @@ const controller = (ctx: Ctx) => {
 
         if (store.getState().visible) close(true);
     };
-
-    // 미리보기로 읽은 글 표시 (read.ts).
-    const readMarks = createReadMarks(ctx);
 
     // 목록 키보드 이동 (keyboard.ts).
     bindListKeys(ctx, (preData) => open(preData));
