@@ -55,21 +55,33 @@ test.describe("미리보기", () => {
 
     test("받는 중에 넘기거나 닫아 끊은 요청은 콘솔에 오류를 남기지 않는다", async ({listPage, context}) => {
         const {page} = listPage;
-        // 본문·댓글 응답을 늦춰 받는 도중에 끊기게 한다. 파이어폭스에서 content.fetch의 AbortError가 처리되지 않은 오류로 남았다.
-        await context.route(/\/board\/(view|comment)\//, async (route) => {
-            await new Promise((resolve) => setTimeout(resolve, 150));
-            await route.fallback().catch(() => {});
+        // 본문·댓글 응답을 창을 닫을 때까지 붙잡아 늘 받는 도중에 끊기게 한다. 파이어폭스에서 content.fetch의 AbortError가 처리되지 않은 오류로 남았다.
+        let stall = Promise.withResolvers<void>();
+        const settled: Promise<void>[] = [];
+        await context.route(/\/board\/(view|comment)\//, (route) => {
+            const handled = stall.promise.then(() => route.fallback()).catch(() => {});
+            settled.push(handled);
+            return handled;
         });
-        for (const index of [0, 1, 2]) {
-            await listPage.openPreview(index);
-            await page.waitForTimeout(75);
+        const postRequest = (no: number) => page.waitForRequest(new RegExp(`/board/view/\\?id=test&no=${no}$`));
+        const scroller = listPage.overlay.locator(".refresher-frame-scroll");
+        // 마지막 행(1번 글)은 PageDown으로 넘어갈 글이 없다.
+        for (const no of [3, 2]) {
+            stall = Promise.withResolvers();
+            let requested = postRequest(no);
+            await listPage.openPreview(3 - no);
+            await requested;
+            // 본문 요청은 우클릭을 누를 때 나가 창이 뜨기 전이다. 스크롤 칸에 포커스가 오면 같은 효과 차례에 PageDown 처리기도 붙어 있다.
+            await expect(scroller).toBeFocused();
+            requested = postRequest(no - 1);
             await page.keyboard.press("PageDown");
-            await page.waitForTimeout(75);
+            await requested;
             await page.keyboard.press("Escape");
+            await expect(listPage.frame).toHaveCount(0);
+            stall.resolve();
         }
         // 끊긴 응답이 다 돌아올 때까지 기다린다. 오류는 errors 픽스처가 본다.
-        await page.waitForTimeout(500);
-        await expect(listPage.frame).toHaveCount(0);
+        await Promise.all(settled);
     });
 
     test("뒤로 가기로 닫으면 목록 주소로 돌아간다", async ({listPage}) => {
@@ -91,6 +103,8 @@ test.describe("미리보기", () => {
         for (let i = 0; i < 3; i++) {
             await listPage.openPreview();
             await expect(listPage.comments).toHaveCount(2);
+            // 캐시 hit이면 댓글이 바로 그려진다. Base UI는 Esc 리스너를 effect로 걸어, 스크롤 칸 포커스(같은 effect 차례)를 본 뒤에 누른다.
+            await expect(listPage.overlay.locator(".refresher-frame-scroll")).toBeFocused();
             await listPage.page.keyboard.press("Escape");
             await expect(listPage.frame).toHaveCount(0);
         }
