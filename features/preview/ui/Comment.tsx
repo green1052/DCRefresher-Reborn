@@ -68,6 +68,8 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
     };
     // 회원 아이디가 같을 때만 글쓴이로 본다. 유동은 닉과 IP 앞자리가 같아도 다른 사람일 수 있다.
     const isOp = Boolean(user.id) && user.id === authorId;
+    // 댓글마다 되풀이되는 버튼은 스크린 리더의 버튼 목록에서 구별되게 작성자를 이름에 넣는다 (UserCard가 보여 주는 이름).
+    const who = user.nick ?? user.id ?? user.ip;
 
     const isDeleted = comment.is_delete === "1";
     // 디시처럼 멤버만 댓글(allow_reply)이면 답글도 막고, 답글이 막힌 댓글(reply_w)엔 버튼을 두지 않는다.
@@ -128,12 +130,14 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
             <div className="flex items-center justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-1">
                     {/* 디시 댓글 목록처럼 관리자는 댓글을 골라 한 번에 지우거나 차단한다 (CommentList의 도구 줄). 지운 댓글은 고를 수 없다. */}
-                    {isAdmin && !isDeleted && <Checkbox className="mr-1" aria-label="댓글 선택" checked={selected} onCheckedChange={() => toggleSelected(comment.no)}/>}
+                    {isAdmin && !isDeleted && <Checkbox className="mr-1" aria-label={`${who} 댓글 선택`} checked={selected} onCheckedChange={() => toggleSelected(comment.no)}/>}
                     <UserCard user={user} op={isOp}/>
                     {comment.duplicates ? <span className="text-xs whitespace-nowrap text-muted-foreground">같은 댓글 ×{comment.duplicates}</span> : null}
                     {/* 툴팁은 브라우저 기본(title)을 쓴다. 스레드마다 툴팁 부품을 달면 댓글이 많은 글을 열 때 느려진다. */}
+                    {/* 펼친 상태는 aria-expanded로 알린다. ghost 버튼이 펼친 상태에 까는 배경은 지워 보이는 모습은 그대로 둔다. */}
                     {depth === 0 && replyCount > 1 && (
-                        <Button size="icon-xs" variant="ghost" aria-label={collapsed ? "답글 펼치기" : "답글 접기"}
+                        <Button size="icon-xs" variant="ghost" className="aria-expanded:not-hover:bg-transparent"
+                                aria-label={`${who} 댓글의 답글 ${replyCount}개`} aria-expanded={!collapsed}
                                 title={collapsed ? "답글 펼치기" : "답글 접기"} onClick={() => toggleCollapse(comment.no)}>
                             <ChevronDown className={cn("transition-transform motion-reduce:transition-none", collapsed && "-rotate-90")}/>
                         </Button>
@@ -146,7 +150,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                             size="icon-xs"
                             variant="ghost"
                             className={cn(replying && "text-link")}
-                            aria-label="답글"
+                            aria-label={`${who} 댓글에 답글`}
                             aria-pressed={replying}
                             onClick={() =>
                                 // 같은 댓글을 다시 누르면 취소한다. 답글의 부모는 스레드 첫 댓글(c_no)이고, 첫 댓글이면 자기 자신이다.
@@ -159,7 +163,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                         </Button>
                     )}
                     {canDelete && (
-                        <Button size="icon-xs" variant="ghost" aria-label="댓글 삭제" onClick={() => void onDelete()}>
+                        <Button size="icon-xs" variant="ghost" aria-label={`${who} 댓글 삭제`} onClick={() => void onDelete()}>
                             <X/>
                         </Button>
                     )}

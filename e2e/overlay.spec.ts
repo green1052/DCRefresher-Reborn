@@ -104,8 +104,10 @@ test.describe("오버레이 포커스", () => {
             await expect(nick).toBeFocused({timeout: 100});
         }).toPass();
 
+        await expect(nick).toHaveAttribute("aria-expanded", "false");
         await page.keyboard.press("Enter");
         await expect(bubble).toBeVisible();
+        await expect(nick).toHaveAttribute("aria-expanded", "true");
         // 키보드로 열면 버블 안으로 포커스가 옮겨 간다.
         await expect.poll(() => bubble.evaluate((element) => element.contains((element.getRootNode() as ShadowRoot).activeElement))).toBe(true);
         await page.keyboard.press("Escape");

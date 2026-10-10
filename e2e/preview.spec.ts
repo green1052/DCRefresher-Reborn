@@ -221,12 +221,17 @@ test.describe("미리보기 댓글", () => {
         const second = frame.getByText("답글 둘", {exact: true});
         await expect(second).toBeVisible();
 
-        await frame.getByRole("button", {name: "답글 접기"}).click();
+        // 접기 버튼은 이름을 바꾸지 않고 aria-expanded로 상태를 알린다.
+        const toggle = frame.getByRole("button", {name: "고닉 댓글의 답글 2개", exact: true});
+        await expect(toggle).toHaveAttribute("aria-expanded", "true");
+        await toggle.click();
+        await expect(toggle).toHaveAttribute("aria-expanded", "false");
         await expect(second).toBeHidden();
         await expect(frame.getByText("답글", {exact: true})).toBeHidden();
         await expect(frame.getByText("댓글 하나", {exact: true})).toBeVisible();
 
-        await frame.getByRole("button", {name: "답글 펼치기"}).click();
+        await toggle.click();
+        await expect(toggle).toHaveAttribute("aria-expanded", "true");
         await expect(second).toBeVisible();
     });
 
@@ -281,7 +286,7 @@ test.describe("댓글 쓰기·지우기", () => {
     test("답글은 스레드 첫 댓글 번호와 답할 댓글 번호를 같이 보낸다", async ({listPage, site}) => {
         const frame = await listPage.openPreview();
         // 답글(11)에 답한다. 부모는 스레드 첫 댓글(10)이다.
-        await listPage.comments.nth(1).getByRole("button", {name: "답글", exact: true}).click();
+        await listPage.comments.nth(1).getByRole("button", {name: "ㅇㅇ 댓글에 답글", exact: true}).click();
         await frame.getByRole("textbox", {name: "답글 입력", exact: true}).fill("답글에 단 답글");
         await frame.getByRole("button", {name: "작성", exact: true}).click();
 
@@ -295,8 +300,8 @@ test.describe("댓글 쓰기·지우기", () => {
     test("디시가 답글을 막은 댓글(reply_w N)에는 답글 버튼이 없다", async ({listPage, site}) => {
         site.comments = [fakeComment(10, {reply_w: "N"}), fakeComment(12)];
         await listPage.openPreview();
-        await expect(listPage.comments.nth(1).getByRole("button", {name: "답글", exact: true})).toBeVisible();
-        await expect(listPage.comments.nth(0).getByRole("button", {name: "답글", exact: true})).toHaveCount(0);
+        await expect(listPage.comments.nth(1).getByRole("button", {name: "ㅇㅇ 댓글에 답글", exact: true})).toBeVisible();
+        await expect(listPage.comments.nth(0).getByRole("button", {name: "ㅇㅇ 댓글에 답글", exact: true})).toHaveCount(0);
     });
 
     test("디시콘 창에서 고른 디시콘을 CSRF 토큰과 함께 디시콘 댓글로 보낸다", async ({listPage, site, context}) => {
@@ -374,7 +379,7 @@ test.describe("댓글 쓰기·지우기", () => {
             dialogs.push(dialog.type());
             void dialog.accept("pw1234");
         });
-        await listPage.comments.nth(1).getByRole("button", {name: "댓글 삭제", exact: true}).click();
+        await listPage.comments.nth(1).getByRole("button", {name: "ㅇㅇ 댓글 삭제", exact: true}).click();
 
         await expect(listPage.toast).toContainText("댓글을 삭제했습니다.");
         await expect(listPage.comments.nth(1)).toHaveAttribute("data-deleted");

@@ -42,6 +42,9 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
     const ratio = (typeof fetched === "object" ? fetched : undefined) ?? cached;
     const ratioColor = ratio && isLowActivity(ratio, alarm) ? userinfo?.ratioAlarmColor : userinfo?.ratioColor;
 
+    // 이 사람의 버블이 열려 있는지 (닉네임 버튼의 aria-expanded). 열렸는지만 구독해 버블을 여닫을 때 다른 작성자는 다시 그리지 않는다.
+    const expanded = useUiStore(({bubble, selected}) =>
+        bubble !== null && selected?.nick === user.nick && selected?.uid === user.id && selected?.ip === user.ip);
     const openBubble = (x: number, y: number): void => useUiStore.getState().openBubble({nick: user.nick, uid: user.id, ip: user.ip}, x, y);
 
     const openMenu = (ev: MouseEvent): void => {
@@ -68,7 +71,7 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
         <div className={cn("refresher-user flex min-w-0 cursor-context-menu items-center gap-1", op && "rounded-md bg-primary/15 px-1.5 py-px text-link")}
              onContextMenu={openMenu}>
             {/* 버블은 닉네임 바로 아래에 띄운다. 키보드로 열면 버블 안으로 포커스가 옮겨 간다 (components/overlay/UserBubble.tsx의 useReturnFocus). */}
-            <button type="button" aria-haspopup="dialog"
+            <button type="button" aria-haspopup="dialog" aria-expanded={expanded}
                     className="cursor-pointer truncate rounded-sm text-sm font-bold outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                     onClick={(ev) => {
                         const rect = ev.currentTarget.getBoundingClientRect();
