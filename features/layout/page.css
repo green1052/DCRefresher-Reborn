@@ -8,7 +8,8 @@
     /* 머리글, 최근 방문 줄, 본문이 같이 쓰는 최대 폭. */
     --refresher-compact-width: 1000px;
 
-    /* 글쓰기 페이지는 .wrap_inner가 없고 폼이 1160px에 맞춰져 있어서 디시 원래 폭을 쓴다. */
+    /* #container가 .dcwrap의 바로 아래에 있는 페이지 — .wrap_inner가 없는 글쓰기 페이지와 갤 메인(갤러리 디렉터리 루트)이다.
+     * 글쓰기 폼은 1160px에 맞춰져 있어 디시 원래 폭을 쓴다. 갤 메인 상자들은 1050px 설계라 이 폭이 실질 차이를 만들지 않는다. */
     &:has(.dcwrap > #container) {
         --refresher-compact-width: 1160px;
     }
@@ -67,6 +68,8 @@
             left: auto !important;
 
             &::after {
+                /* 꼬리 오른쪽 끝을 .darkmodebox의 오른쪽에서 23px에 두는 손맞춤 값: '야간모드' 글자 위에 온다. */
+                /* 글꼴을 바꾸면 글자 폭이 변해 몇 픽셀 어긋난다. */
                 right: 23px !important;
                 left: auto !important;
             }
