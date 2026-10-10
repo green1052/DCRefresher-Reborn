@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useMemo, useState} from "react";
 
 import {pinDefaultMode} from "@/core/settings-transfer";
 import {BLOCK_TYPES, DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
@@ -36,7 +36,7 @@ export function BlockTab() {
     const setDefault = useBlocksStore((state) => state.setDefault);
     const addEntries = useBlocksStore((state) => state.addEntries);
 
-    const ids = BLOCK_TYPES.flatMap((type) => entries[type].map((entry) => entry.id));
+    const ids = useMemo(() => BLOCK_TYPES.flatMap((type) => entries[type].map((entry) => entry.id)), [entries]);
     const used = useUsage("block", ids);
 
     const [dialog, setDialog] = useState<{ type: BlockType; initial: BlockEntry | null } | null>(null);

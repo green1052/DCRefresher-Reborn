@@ -1,5 +1,5 @@
 import {ClipboardCopy, Smartphone} from "lucide-react";
-import {useId, useRef, useState} from "react";
+import {useId, useMemo, useRef, useState} from "react";
 
 import {ColorInput} from "@/components/ColorInput";
 import {DialogActions, ModalDialog, SubmitForm} from "@/components/dialogs";
@@ -159,7 +159,7 @@ export function MemoTab() {
     const removeMemo = useMemosStore((state) => state.removeMemo);
     const setMemos = useMemosStore((state) => state.setMemos);
     const updateMemos = useMemosStore((state) => state.updateMemos);
-    const ids = MEMO_TYPES.flatMap((type) => Object.keys(memos[type]).map((user) => memoUsageKey(type, user)));
+    const ids = useMemo(() => MEMO_TYPES.flatMap((type) => Object.keys(memos[type]).map((user) => memoUsageKey(type, user))), [memos]);
     const used = useUsage("memo", ids);
 
     const [form, setForm] = useState<MemoFormState | null>(null);
