@@ -302,12 +302,9 @@ export const WriteComment = () => {
 
             <p className="mt-2 text-xs text-muted-foreground">
                 {login ? (accountId ?? "회원 계정") : (
-                    <a href="#" className="text-link underline-offset-4 hover:underline" aria-expanded={showInputs} onClick={(ev) => {
-                        ev.preventDefault();
-                        toggleInputs();
-                    }}>
+                    <Button variant="link" size="xs" className="h-auto p-0 text-xs text-link" aria-expanded={showInputs} onClick={toggleInputs}>
                         {nick}
-                    </a>
+                    </Button>
                 )}
                 (으)로 {mode} 작성 중
             </p>
