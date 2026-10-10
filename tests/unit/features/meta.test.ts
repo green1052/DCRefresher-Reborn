@@ -1,5 +1,6 @@
 import {describe, expect, it} from "vitest";
 
+import type {BackgroundModule} from "@/core/module/background";
 import {defaultValue, normalizeSetting, settingsOf} from "@/core/module/settings";
 import features from "@/features/index";
 import metas from "@/features/meta";
@@ -33,6 +34,21 @@ describe("모듈 메타", () => {
     it("페이지에서 할 일이 없는 모듈만 index.ts가 없다", () => {
         const withIndex = new Set(features.map((module) => module.id));
         expect(metas.filter((meta) => !withIndex.has(meta.id)).map((meta) => meta.id)).toEqual(["imagesearch"]);
+    });
+
+    it("배경 모듈(background.ts)은 메타와 id가 같고, apply가 있으면 설정 키·defaultEnable도 같다", () => {
+        // 배경은 meta.ts를 불러오지 않으므로 값이 따로 적힌다. 설정·defaultEnable은 apply에 넘길 때만 쓴다.
+        const backgrounds = Object.values(import.meta.glob<{ default: BackgroundModule }>("../../../features/*/background.ts", {eager: true}))
+            .map((module) => module.default);
+        const byId = new Map(metas.map((meta) => [meta.id, meta]));
+        expect(backgrounds.length).toBeGreaterThan(0);
+        for (const module of backgrounds) {
+            const meta = byId.get(module.id);
+            expect(meta, module.id).toBeDefined();
+            if (!module.apply) continue;
+            expect(Object.keys(module.settings ?? {}), module.id).toEqual(Object.keys(meta?.settings ?? {}));
+            expect(module.defaultEnable, module.id).toBe(meta?.defaultEnable);
+        }
     });
 });
 
