@@ -92,9 +92,11 @@
         padding: 0 12px !important;
     }
 
-    /* 최근 방문 줄, 글쓰기 페이지 본문. */
+    /* 최근 방문 줄, .wrap_inner 없는 페이지(글쓰기·갤 메인)의 본문, 푸터 두 줄(.info_policy·.copyright)도 머리글과 같은 최대 폭을 쓴다. */
     .visit_bookmark,
-    .dcwrap > #container {
+    .dcwrap > #container,
+    .info_policy,
+    .copyright {
         max-width: var(--refresher-compact-width) !important;
     }
 
