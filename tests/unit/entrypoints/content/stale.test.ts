@@ -59,6 +59,17 @@ describe("cleanUpStaleInstance", () => {
         expect([sibling.hasAttribute("aria-hidden"), sibling.hasAttribute("inert"), sibling.hasAttribute("data-base-ui-inert")]).toEqual([false, false, false]);
     });
 
+    it("미리보기만 잠갔어도 스크롤바 자리(scrollbar-gutter)까지 걷어 낸다", () => {
+        document.body.append(document.createElement("refresher-root"));
+        html.style.overflow = "hidden";
+        html.style.scrollbarGutter = "stable";
+
+        cleanUpStaleInstance();
+
+        expect(html.getAttribute("style") ?? "").toBe("");
+        expect(document.getElementById("page")?.inert).toBe(false);
+    });
+
     it("<html>이 잠기지 않았으면 페이지의 inert는 그대로 둔다", () => {
         document.body.append(document.createElement("refresher-root"));
 

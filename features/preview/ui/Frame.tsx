@@ -136,13 +136,16 @@ export const Frame = () => {
         const focused = focusedElement();
         const opener = focused?.matches(":focus-visible") ? focused : null;
         const html = document.documentElement;
-        const previous = html.style.overflow;
+        const previous = {overflow: html.style.overflow, gutter: html.style.scrollbarGutter};
+        // 스크롤바가 실제로 있을 때만 그 자리를 남겨, 잠가도 뒤 페이지가 옆으로 밀리지 않게 한다. 짧은 페이지에 걸면 오히려 빈 홈이 생긴다.
+        if (window.innerWidth > html.clientWidth) html.style.scrollbarGutter = "stable";
         html.style.overflow = "hidden";
         const blocked = document.body.querySelectorAll<HTMLElement>(":scope > :not(refresher-root, [data-refresher-ui], [inert])");
         for (const element of blocked) element.inert = true;
 
         return () => {
-            html.style.overflow = previous;
+            html.style.overflow = previous.overflow;
+            html.style.scrollbarGutter = previous.gutter;
             for (const element of blocked) element.inert = false;
             opener?.focus({preventScroll: true});
         };

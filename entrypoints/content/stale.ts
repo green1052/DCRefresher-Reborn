@@ -11,9 +11,10 @@ export const cleanUpStaleInstance = (): void => {
 
     stale.remove();
     const {documentElement: html, body} = document;
-    // 미리보기 창은 <html> 스크롤과 뒤 페이지(inert)를 잠근다.
+    // 미리보기 창은 <html> 스크롤(스크롤바 자리는 scrollbar-gutter로 남긴다)과 뒤 페이지(inert)를 잠근다.
     if (html.style.overflow === "hidden") {
         html.style.overflow = "";
+        html.style.removeProperty("scrollbar-gutter");
         for (const element of body.querySelectorAll<HTMLElement>(":scope > [inert]")) element.inert = false;
     }
     // Base UI 모달은 나머지 페이지에 aria-hidden(표시 속성 data-base-ui-inert)을 단다. Base UI가 모듈 변수로 추적해 새 인스턴스가 지우지 않는다.

@@ -26,6 +26,29 @@ test.describe("미리보기", () => {
         await expect(page).toHaveTitle("테스트 갤러리");
     });
 
+    test("창을 열어 페이지 스크롤을 잠가도 스크롤바 자리를 남겨 뒤 페이지가 옆으로 밀리지 않고, 스크롤바가 없던 페이지에는 자리를 만들지 않는다", async ({listPage, browserName}) => {
+        test.skip(browserName === "firefox", "headless 파이어폭스는 자리를 차지하는 스크롤바를 그리지 않는다.");
+        const {page, frame} = listPage;
+        const layout = () => page.evaluate(() => ({width: document.body.getBoundingClientRect().width, gutter: document.documentElement.style.scrollbarGutter}));
+        const short = await layout();
+        await listPage.openPreview();
+        await expect(frame).toBeVisible();
+        expect(await layout()).toEqual(short);
+        await page.keyboard.press("Escape");
+        await expect(frame).toHaveCount(0);
+
+        // 페이지를 늘려 스크롤바를 세운다 (fixtures에서 크로미엄의 스크롤바 숨김을 끈다).
+        await page.evaluate(() => document.body.style.setProperty("min-height", "300vh"));
+        const long = await layout();
+        expect(long.width).toBeLessThan(short.width);
+        await listPage.openPreview();
+        await expect(frame).toBeVisible();
+        expect(await layout()).toEqual({width: long.width, gutter: "stable"});
+        await page.keyboard.press("Escape");
+        await expect(frame).toHaveCount(0);
+        expect(await layout()).toEqual(long);
+    });
+
     test("PageDown·PageUp으로 옆 글로 넘기고, 뒤로 가기는 앞서 본 글을 다시 열며, 닫으면 쌓은 주소를 모두 걷는다", async ({listPage}) => {
         const {page} = listPage;
         const shows = async (no: number): Promise<void> => {

@@ -89,6 +89,8 @@ export const test = base.extend<{ live: boolean }>({
             } else {
                 context = await chromium.launchPersistentContext("", {
                     headless: true,
+                    // 실제 브라우저처럼 자리를 차지하는 스크롤바를 그린다. 스크롤을 잠가도 페이지가 옆으로 밀리지 않는지 확인한다.
+                    ignoreDefaultArgs: ["--hide-scrollbars"],
                     ...(process.env.PLAYWRIGHT_CHROMIUM ? {executablePath: process.env.PLAYWRIGHT_CHROMIUM} : {channel: "chromium"}),
                     args: [`--disable-extensions-except=${CHROME_EXTENSION}`, `--load-extension=${CHROME_EXTENSION}`]
                 });
