@@ -15,8 +15,8 @@ export const pressedKey = (ev: Pick<KeyboardEvent, "code" | "key">): string =>
  * 다이얼로그는 포커스가 입력칸 밖에 있어도 막아야 뒤의 글을 지우거나 넘기지 않는다.
  */
 export const isTyping = (ev: Event): boolean => {
-    // 모달 다이얼로그(components/ui/dialog.tsx)의 배경. 미리보기 창(비모달)과 이미지 크게 보기는 저마다 키를 받으므로 세지 않는다.
-    if (overlay.portal?.querySelector("[data-slot=dialog-overlay]")) return true;
+    // 모달 다이얼로그(components/ui/dialog.tsx·alert-dialog.tsx)의 배경. 미리보기 창(비모달)과 이미지 크게 보기는 저마다 키를 받으므로 세지 않는다.
+    if (overlay.portal?.querySelector("[data-slot=dialog-overlay], [data-slot=alert-dialog-overlay]")) return true;
 
     const target = eventTarget(ev);
     return target instanceof HTMLElement && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
