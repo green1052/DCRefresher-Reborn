@@ -295,7 +295,7 @@ test.describe("댓글 쓰기·지우기", () => {
 
         const popup = listPage.dialog;
         await expect(popup.getByRole("heading", {name: "디시콘", exact: true})).toBeVisible();
-        await expect(popup.getByRole("button", {name: "테스트콘"})).toHaveAttribute("aria-pressed", "true");
+        await expect(popup.getByRole("group", {name: "디시콘 패키지", exact: true}).getByRole("button", {name: "테스트콘"})).toHaveAttribute("aria-pressed", "true");
         await popup.getByRole("button", {name: DCCON.title, exact: true}).click();
         await expect(popup).toHaveCount(0);
 
@@ -311,6 +311,29 @@ test.describe("댓글 쓰기·지우기", () => {
         expect(body.get("ci_t")).toBe("csrf-token");
         // 보내면 디시콘을 비워 다시 글을 쓸 수 있다.
         await expect(frame.getByRole("textbox", {name: "댓글 입력", exact: true})).toBeEnabled();
+    });
+
+    test("글자콘 색은 묶음마다 Tab 정지점이 하나이고 화살표로 옮겨 Space로 고른다", async ({listPage}) => {
+        const frame = await listPage.openPreview();
+        await frame.getByRole("button", {name: "글자콘", exact: true}).click();
+
+        const backgrounds = frame.getByRole("group", {name: "배경색", exact: true});
+        const first = backgrounds.getByRole("button", {name: "배경색 #3b4890", exact: true});
+        const second = backgrounds.getByRole("button", {name: "배경색 #b4b4e1", exact: true});
+        await expect(first).toHaveAttribute("aria-pressed", "true");
+        await first.focus();
+        await listPage.page.keyboard.press("ArrowRight");
+        await expect(second).toBeFocused();
+        await listPage.page.keyboard.press("Space");
+        await expect(second).toHaveAttribute("aria-pressed", "true");
+        await expect(first).toHaveAttribute("aria-pressed", "false");
+
+        // 남은 배경색을 건너뛰고 글자색 묶음의 고른 색으로 간다.
+        await listPage.page.keyboard.press("Tab");
+        await expect(frame.getByRole("group", {name: "글자색", exact: true}).getByRole("button", {name: "글자색 #ffffff", exact: true})).toBeFocused();
+        // 되돌아가면 배경색 묶음에서 새로 고른 색에 선다.
+        await listPage.page.keyboard.press("Shift+Tab");
+        await expect(second).toBeFocused();
     });
 
     test("관리자는 댓글을 골라 한 번에 지운다", async ({listPage, site}) => {

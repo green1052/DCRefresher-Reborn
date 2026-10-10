@@ -6,6 +6,7 @@ import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Spinner} from "@/components/ui/spinner";
 import {Textarea} from "@/components/ui/textarea";
+import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
 import {WithTooltip} from "@/components/WithTooltip";
 import {captchaImage, normalizeTxtcon, TXTCON_BACKGROUNDS, TXTCON_COLORS} from "@/core/preview/request";
 import {postKey, setEntry} from "@/core/preview/cache";
@@ -21,20 +22,13 @@ import {NO_REPLY, usePreviewStore} from "./previewStore";
 /** 비회원 댓글 비밀번호 (영문 소문자·숫자 8자). */
 const randomPassword = (): string => Array.from(crypto.getRandomValues(new Uint8Array(8)), (byte) => (byte % 36).toString(36)).join("");
 
-/** 글자콘 색 스와치. */
-const Swatch = ({color, selected, label, onClick}: {
-    color: string;
-    selected: boolean;
-    label: string;
-    onClick: () => void
-}) => (
-    // 고른 색은 한 칸 띄운 링으로 보인다. outline은 비워 두어야 키보드 포커스 링이 보인다.
-    <button
-        type="button"
+/** 글자콘 색 스와치. ToggleGroup 안에 둔다. */
+const Swatch = ({color, label}: { color: string; label: string }) => (
+    // 고른 색은 한 칸 띄운 테두리(outline)로 보인다. 키보드 포커스 링(box-shadow)은 그 틈을 채워 고른 색에 포커스가 있어도 구분된다.
+    <ToggleGroupItem
+        value={color}
         aria-label={label}
-        aria-pressed={selected}
-        onClick={onClick}
-        className="size-[18px] cursor-pointer rounded-full border border-foreground/25 aria-pressed:ring-2 aria-pressed:ring-primary aria-pressed:ring-offset-1 aria-pressed:ring-offset-background"
+        className="size-[18px] min-w-0 cursor-pointer rounded-full border border-foreground/25 p-0 aria-pressed:outline-2 aria-pressed:outline-offset-2 aria-pressed:outline-solid aria-pressed:outline-primary"
         style={{background: `#${color}`}}
     />
 );
@@ -294,16 +288,15 @@ export const WriteComment = () => {
 
             {txtcon && (
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span className="text-xs text-muted-foreground">배경</span>
-                    {TXTCON_BACKGROUNDS.map((bg) => (
-                        <Swatch key={bg} color={bg} label={`배경색 #${bg}`} selected={txtconColors.bg === bg}
-                                onClick={() => setTxtconColors((prev) => ({...prev, bg}))}/>
-                    ))}
-                    <span className="ml-2 text-xs text-muted-foreground">글자</span>
-                    {TXTCON_COLORS.map((txt) => (
-                        <Swatch key={txt} color={txt} label={`글자색 #${txt}`} selected={txtconColors.txt === txt}
-                                onClick={() => setTxtconColors((prev) => ({...prev, txt}))}/>
-                    ))}
+                    <span className="text-xs text-muted-foreground" aria-hidden>배경</span>
+                    {/* 다시 눌러 빈 값이 오면 고른 색을 그대로 둔다. */}
+                    <ToggleGroup aria-label="배경색" value={[txtconColors.bg]} onValueChange={([bg]) => bg && setTxtconColors((prev) => ({...prev, bg}))}>
+                        {TXTCON_BACKGROUNDS.map((bg) => <Swatch key={bg} color={bg} label={`배경색 #${bg}`}/>)}
+                    </ToggleGroup>
+                    <span className="ml-2 text-xs text-muted-foreground" aria-hidden>글자</span>
+                    <ToggleGroup aria-label="글자색" value={[txtconColors.txt]} onValueChange={([txt]) => txt && setTxtconColors((prev) => ({...prev, txt}))}>
+                        {TXTCON_COLORS.map((txt) => <Swatch key={txt} color={txt} label={`글자색 #${txt}`}/>)}
+                    </ToggleGroup>
                 </div>
             )}
 

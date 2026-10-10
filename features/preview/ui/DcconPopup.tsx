@@ -6,6 +6,7 @@ import {DialogTitle} from "@/components/ui/dialog";
 import {Field, FieldLabel} from "@/components/ui/field";
 import {Skeleton} from "@/components/ui/skeleton";
 import {Switch} from "@/components/ui/switch";
+import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
 import {fetchDcconList} from "@/core/preview/request";
 import type {DcinsideDccon, DcinsideDcconDetailList} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
@@ -109,21 +110,25 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
             <div className="flex gap-1 overflow-x-auto pb-2 aria-busy:overflow-hidden" aria-busy={loading}>
                 {loading
                     ? Array.from({length: 12}, (_, index) => <Skeleton key={index} className="size-12 flex-none"/>)
-                    : packages.map((pack) => (
-                        <button
-                            type="button"
-                            key={pack.package_idx}
-                            aria-pressed={activePackage === pack.package_idx}
-                            title={pack.title}
-                            className="cursor-pointer rounded-lg p-0.5 hover:bg-muted [&>img]:size-full [&>img]:object-contain size-12 flex-none border-2 border-transparent aria-pressed:border-primary"
-                            onClick={(ev) => {
-                                openPackage(pack);
-                                ev.currentTarget.scrollIntoView({behavior: smoothScroll(), block: "nearest", inline: "center"});
-                            }}
-                        >
-                            <img src={pack.main_img_url} alt={pack.title}/>
-                        </button>
-                    ))}
+                    : (
+                        // 하나만 고르는 묶음이라 Tab 정지점은 하나이고 패키지 사이는 화살표로 옮긴다. 고른 패키지를 다시 눌러 빈 값이 오면 그대로 둔다.
+                        <ToggleGroup aria-label="디시콘 패키지" spacing={1} value={activePackage ? [activePackage] : []} onValueChange={([value]) => {
+                            const pack = packages.find((p) => p.package_idx === value);
+                            if (pack) openPackage(pack);
+                        }}>
+                            {packages.map((pack) => (
+                                <ToggleGroupItem
+                                    key={pack.package_idx}
+                                    value={pack.package_idx}
+                                    title={pack.title}
+                                    className="cursor-pointer rounded-lg p-0.5 [&>img]:size-full [&>img]:object-contain size-12 flex-none border-2 border-transparent aria-pressed:border-primary aria-pressed:bg-transparent"
+                                    onClick={(ev) => ev.currentTarget.scrollIntoView({behavior: smoothScroll(), block: "nearest", inline: "center"})}
+                                >
+                                    <img src={pack.main_img_url} alt={pack.title}/>
+                                </ToggleGroupItem>
+                            ))}
+                        </ToggleGroup>
+                    )}
             </div>
 
             <div className="grid h-80 grid-cols-[repeat(auto-fill,minmax(72px,1fr))] content-start gap-1 overflow-y-auto aria-busy:overflow-hidden" aria-busy={loading}>
