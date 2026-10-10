@@ -41,6 +41,8 @@ export async function openListPage(page: Page, url = FAKE_LIST_URL) {
         bubble: overlay.locator("[data-slot=popover-content]"),
         /** 오버레이의 다이얼로그 (메모·디시콘 등). */
         dialog: overlay.locator("[data-slot=dialog-content]"),
+        /** 오버레이의 확인 창 (ConfirmDialog). */
+        alert: overlay.locator("[data-slot=alert-dialog-content]"),
         toast: overlay.locator("[data-slot=toast]"),
         /** index번째 제목을 우클릭해 미리보기를 연다. */
         openPreview: async (index = 0): Promise<Locator> => {

@@ -212,7 +212,7 @@ export const Frame = () => {
                     return;
                 }
                 // 다이얼로그는 키를 흘려보내 그쪽이 닫히게 한다.
-                if (details.reason === "escape-key" && overlay.portal?.querySelector("[data-slot=dialog-overlay], [data-slot=popover-content]")) {
+                if (details.reason === "escape-key" && overlay.portal?.querySelector("[data-slot=dialog-overlay], [data-slot=alert-dialog-overlay], [data-slot=popover-content]")) {
                     details.cancel();
                     details.allowPropagation();
                     return;

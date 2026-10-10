@@ -87,7 +87,7 @@ test.describe("옵션 - 차단 탭", () => {
             ],
             "refresher:usage": {block: {a: Date.now() - 100 * day, b: Date.now() - 100 * day, c: Date.now()}, memo: {}}
         });
-        const {table, dialog} = await openOptions(page, extensionId, "block");
+        const {table, alert} = await openOptions(page, extensionId, "block");
         await expect(table.getByText("공통닉")).toBeVisible();
         await expect(table.getByText("100일 전").first()).toBeVisible();
 
@@ -102,7 +102,7 @@ test.describe("옵션 - 차단 탭", () => {
         await expect(table.getByText("오래된닉")).toBeVisible();
 
         await page.getByRole("button", {name: "보이는 1개 삭제"}).click();
-        await dialog.getByRole("button", {name: "삭제", exact: true}).click();
+        await alert.getByRole("button", {name: "삭제", exact: true}).click();
         await expect.poll(() => storage.get("refresher:block:NICK")).toMatchObject([{id: "b"}, {id: "c"}]);
         // 보이는 항목이 없어 삭제 버튼이 막히므로 포커스는 그 버튼이 아니라 탭 패널로 돌아간다.
         await expect(page.getByRole("tabpanel")).toBeFocused();
@@ -111,7 +111,7 @@ test.describe("옵션 - 차단 탭", () => {
     });
 
     test("가져오기 창은 가져온 뒤 닫히고, 알림을 닫으면 포커스가 가져오기 버튼으로 돌아온다", async ({page, extensionId, storage}) => {
-        const {dialog} = await openOptions(page, extensionId, "block");
+        const {dialog, alert} = await openOptions(page, extensionId, "block");
         const importButton = page.getByRole("button", {name: "가져오기", exact: true});
         await importButton.click();
 
@@ -120,7 +120,7 @@ test.describe("옵션 - 차단 탭", () => {
         await json.fill(JSON.stringify({NICK: [{content: "가져온닉", isRegex: false}]}));
         await dialog.getByRole("button", {name: "가져오기", exact: true}).click();
 
-        await expect(page.getByRole("dialog", {name: "차단 목록을 가져왔습니다."})).toBeVisible();
+        await expect(alert.filter({hasText: "차단 목록을 가져왔습니다."})).toBeVisible();
         await expect.poll(() => storage.get("refresher:block:NICK")).toMatchObject([{content: "가져온닉"}]);
         await page.getByRole("button", {name: "확인", exact: true}).click();
         await expect(dialog).toHaveCount(0);

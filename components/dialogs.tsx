@@ -3,8 +3,9 @@ import {X} from "lucide-react";
 import {type KeyboardEvent, type ReactNode, type RefObject, useRef, useState} from "react";
 
 import {useReturnFocus} from "@/components/useReturnFocus";
+import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogTitle} from "@/components/ui/alert-dialog";
 import {Button} from "@/components/ui/button";
-import {Dialog, DialogClose, DialogContent, DialogFooter, DialogTitle} from "@/components/ui/dialog";
+import {Dialog, DialogClose, DialogContent, DialogFooter} from "@/components/ui/dialog";
 import {useModuleSettings} from "@/core/module/useModuleSettings";
 
 /**
@@ -38,6 +39,36 @@ export const keepTabInside = (ev: KeyboardEvent<HTMLDivElement>): void => {
     }
 };
 
+/** 열 때만 마운트하는 창(ModalDialog·ConfirmDialog)의 열림 상태와 Root·Popup에 넘길 포커스·배경 흐림. */
+const useModal = (onClose: () => void, focusOnOpen: AutoFocus) => {
+    const [open, setOpen] = useState(true);
+    const popup = useRef<HTMLDivElement>(null);
+    const focus = useReturnFocus(popup);
+    // 옵션 페이지에는 모듈 설정이 없어 기본(흐림)이다.
+    const blur = useModuleSettings("preview")?.popupBlur ?? true;
+
+    return {
+        close: () => setOpen(false),
+        root: {
+            open,
+            // 애니메이션이 끝났을 때 Base UI는 아직 포커스를 돌려주지 않았다(body). onClose가 알림 창을 띄우면 body를 연 요소로 기억하므로 먼저 돌려준다.
+            onOpenChangeComplete: (next: boolean) => {
+                if (next) return;
+                focus.restoreFocus();
+                onClose();
+            }
+        },
+        popup: {
+            ref: popup,
+            onKeyDown: keepTabInside,
+            // 미리보기 안에서 연 창(디시콘 등)은 Base UI가 겹친 창으로 보고 바깥 배경을 그리지 않으므로 흐릴 때는 늘 그린다.
+            overlayProps: blur ? {forceRender: true} : {className: "supports-backdrop-filter:backdrop-blur-none"},
+            initialFocus: typeof focusOnOpen === "object" ? focusOnOpen : focusOnOpen === "first" || focus.keyboard,
+            finalFocus: focus.finalFocus
+        }
+    };
+};
+
 /**
  * 열 때만 마운트하는 다이얼로그. Esc·바깥 클릭·닫기 버튼이 닫고, 닫으면 연 요소로 포커스를 돌려준다.
  * onClose는 닫힘 애니메이션이 끝나 포커스가 돌아간 뒤에 불린다. 그 안에서 알림 창을 띄워도 알림이 닫히면 연 요소로 돌아온다.
@@ -55,32 +86,13 @@ export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true,
     className?: string;
     children: ReactNode;
 }) => {
-    const [open, setOpen] = useState(true);
-    const popup = useRef<HTMLDivElement>(null);
-    const focus = useReturnFocus(popup);
-    // 옵션 페이지에는 모듈 설정이 없어 기본(흐림)이다.
-    const blur = useModuleSettings("preview")?.popupBlur ?? true;
+    const modal = useModal(onClose, focusOnOpen);
 
     return (
         // actionsRef.close()(일을 마친 창이 스스로 닫기)는 dismissible과 상관없이 닫는다. 끝난 직후라 dismissible이 아직 옛 값일 수 있다.
-        <Dialog open={open} actionsRef={actionsRef} disablePointerDismissal={disablePointerDismissal}
-                onOpenChange={(next, {reason}) => !next && (dismissible || reason === "imperative-action") && setOpen(false)}
-                // 애니메이션이 끝났을 때 Base UI는 아직 포커스를 돌려주지 않았다(body). onClose가 알림 창을 띄우면 body를 연 요소로 기억하므로 먼저 돌려준다.
-                onOpenChangeComplete={(next) => {
-                    if (next) return;
-                    focus.restoreFocus();
-                    onClose();
-                }}>
-            <DialogContent
-                ref={popup}
-                onKeyDown={keepTabInside}
-                showCloseButton={false}
-                className={className}
-                // 미리보기 안에서 연 창(디시콘 등)은 Base UI가 겹친 창으로 보고 바깥 배경을 그리지 않으므로 흐릴 때는 늘 그린다.
-                overlayProps={blur ? {forceRender: true} : {className: "supports-backdrop-filter:backdrop-blur-none"}}
-                initialFocus={typeof focusOnOpen === "object" ? focusOnOpen : focusOnOpen === "first" || focus.keyboard}
-                finalFocus={focus.finalFocus}
-            >
+        <Dialog {...modal.root} actionsRef={actionsRef} disablePointerDismissal={disablePointerDismissal}
+                onOpenChange={(next, {reason}) => !next && (dismissible || reason === "imperative-action") && modal.close()}>
+            <DialogContent {...modal.popup} showCloseButton={false} className={className}>
                 {children}
             </DialogContent>
         </Dialog>
@@ -113,10 +125,10 @@ export const DialogCloseButton = () => (
 );
 
 /**
- * confirm()/alert() 대체. 바깥 클릭이나 Esc로 닫힌다.
+ * confirm()/alert() 대체. role이 alertdialog라 바깥 클릭으로는 닫히지 않고 Esc나 버튼으로 닫힌다.
  * 열 때만 마운트해야 닫힘 애니메이션 동안 비워진 제목("null" 등)이 비치지 않는다.
  */
-export const ConfirmDialog = ({title, confirmLabel = "확인", cancelLabel, danger, onConfirm, onClose}: {
+export const ConfirmDialog = ({title, confirmLabel = "확인", cancelLabel = "취소", danger, onConfirm, onClose}: {
     title: string;
     confirmLabel?: string;
     /** null이면 취소 버튼 없음 (알림 전용). */
@@ -124,14 +136,22 @@ export const ConfirmDialog = ({title, confirmLabel = "확인", cancelLabel, dang
     danger?: boolean;
     onConfirm: () => void;
     onClose: () => void;
-}) => (
-    <ModalDialog onClose={onClose} className="sm:max-w-[440px]">
-        <DialogTitle>{title}</DialogTitle>
-        <DialogActions cancelLabel={cancelLabel}>
-            <Button variant={danger ? "destructive" : "default"} onClick={onConfirm}>{confirmLabel}</Button>
-        </DialogActions>
-    </ModalDialog>
-);
+}) => {
+    const modal = useModal(onClose, "first");
+
+    return (
+        <AlertDialog {...modal.root} onOpenChange={(next) => !next && modal.close()}>
+            {/* 생김새는 다른 창(DialogContent·DialogTitle)과 맞춘다. */}
+            <AlertDialogContent {...modal.popup} className="text-sm data-[size=default]:max-w-[calc(100%-2rem)] data-[size=default]:sm:max-w-[440px]">
+                <AlertDialogTitle className="text-sm leading-none">{title}</AlertDialogTitle>
+                <AlertDialogFooter>
+                    {cancelLabel !== null && <AlertDialogCancel>{cancelLabel}</AlertDialogCancel>}
+                    <AlertDialogAction variant={danger ? "destructive" : "default"} onClick={onConfirm}>{confirmLabel}</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    );
+};
 
 /** 확인 버튼만 있는 알림. message가 없으면 그리지 않는다. */
 export const Notice = ({message, onClose}: { message: string | null; onClose: () => void }) =>

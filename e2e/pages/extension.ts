@@ -20,6 +20,8 @@ export async function openOptions(page: Page, extensionId: string, tab: OptionsT
         /** 모듈 카드 (제목으로 찾는다). */
         card: (name: string) => cards.filter({has: page.getByRole("heading", {name, exact: true})}),
         dialog: page.getByRole("dialog"),
+        /** 확인·알림 창 (ConfirmDialog·Notice). */
+        alert: page.getByRole("alertdialog"),
         table: page.locator("table")
     };
 }

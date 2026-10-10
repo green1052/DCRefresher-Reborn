@@ -321,8 +321,8 @@ test.describe("댓글 쓰기·지우기", () => {
         await listPage.frame.getByRole("checkbox", {name: "전체 선택"}).click();
         await expect(listPage.frame.getByText("2개 선택")).toBeVisible();
         await listPage.frame.getByRole("button", {name: "삭제", exact: true}).click();
-        await expect(listPage.dialog).toContainText("선택한 댓글 2개를 삭제할까요?");
-        await listPage.dialog.getByRole("button", {name: "삭제", exact: true}).click();
+        await expect(listPage.alert).toContainText("선택한 댓글 2개를 삭제할까요?");
+        await listPage.alert.getByRole("button", {name: "삭제", exact: true}).click();
 
         await expect(listPage.toast).toContainText("댓글을 삭제했습니다.");
         await expect(listPage.comments.nth(0)).toHaveAttribute("data-deleted");
