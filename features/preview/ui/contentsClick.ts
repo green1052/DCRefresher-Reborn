@@ -66,7 +66,9 @@ export const markPressable = (root: HTMLElement, imageViewer: boolean): void => 
         if (label) {
             media.tabIndex = 0;
             media.setAttribute("role", "button");
-            media.setAttribute("aria-label", label);
+            // aria-label은 alt를 가리므로 디시콘 이름 등 alt를 앞에 남긴다.
+            const alt = media.getAttribute("alt")?.trim();
+            media.setAttribute("aria-label", alt ? `${alt} (${label})` : label);
         } else {
             // 크게 보기를 끄면 열 것이 없어지는 이미지가 있다.
             for (const name of ["tabindex", "role", "aria-label"]) media.removeAttribute(name);
