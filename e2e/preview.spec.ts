@@ -429,8 +429,10 @@ test.describe("댓글 쓰기·지우기", () => {
         expect([body.get("id"), body.get("pno"), body.getAll("cmt_nos[]")]).toEqual(["test", "3", ["10", "11"]]);
     });
 
-    test("삭제 확인 창이 떠 있는 동안에는 PageDown으로 옆 글로 넘어가지 않는다", async ({listPage, site}) => {
+    // 배경을 흐리지 않아도 겹친 창의 배경은 그려야 단축키를 막는다.
+    for (const popupBlur of [true, false]) test(`삭제 확인 창이 떠 있는 동안에는 PageDown으로 옆 글로 넘어가지 않는다 (흐림 ${popupBlur ? "켬" : "끔"})`, async ({listPage, site, storage}) => {
         site.manager = true;
+        await storage.setModuleSettings("preview", {popupBlur});
         await listPage.page.reload();
         await listPage.refreshButton.waitFor();
         await listPage.openPreview();

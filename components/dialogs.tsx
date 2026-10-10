@@ -61,8 +61,9 @@ const useModal = (onClose: () => void, focusOnOpen: AutoFocus) => {
         popup: {
             ref: popup,
             onKeyDown: keepTabInside,
-            // 미리보기 안에서 연 창(디시콘 등)은 Base UI가 겹친 창으로 보고 바깥 배경을 그리지 않으므로 흐릴 때는 늘 그린다.
-            overlayProps: blur ? {forceRender: true} : {className: "supports-backdrop-filter:backdrop-blur-none"},
+            // 미리보기 안에서 연 창(디시콘·확인 창 등)은 Base UI가 겹친 창으로 보고 바깥 배경을 그리지 않으므로 늘 그린다.
+            // 단축키 막기(isTyping)와 미리보기의 Esc 전달이 이 배경으로 창이 떠 있는지 안다. 흐리지 않을 때는 흐림만 뺀다.
+            overlayProps: {forceRender: true, className: blur ? undefined : "supports-backdrop-filter:backdrop-blur-none"},
             initialFocus: typeof focusOnOpen === "object" ? focusOnOpen : focusOnOpen === "first" || focus.keyboard,
             finalFocus: focus.finalFocus
         }
