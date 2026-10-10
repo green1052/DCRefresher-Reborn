@@ -15,7 +15,6 @@
         "p-limit": "^7.3.3",
         "preact": "^11.0.1",
         "quick-lru": "^7.3.0",
-        "react-compiler-runtime": "^1.0.0",
         "zustand": "^5.0.15",
       },
       "devDependencies": {
@@ -25,12 +24,10 @@
         "@types/bun": "^1.4.2",
         "@types/react": "^19.3.0",
         "@types/react-dom": "^19.3.0",
-        "@vitejs/plugin-react": "^6.1.2",
         "@wxt-dev/auto-icons": "^1.1.2",
         "jsdom": "^30.1.2",
         "mmdb-lib": "^3.0.3",
         "netmask": "^2.1.1",
-        "oxc-transform-react": "^0.153.0",
         "shadcn": "^4.21.4",
         "tailwindcss": "^4.3.3",
         "tw-animate-css": "^1.4.0",
@@ -267,44 +264,6 @@
 
     "@oxc-project/types": ["@oxc-project/types@0.153.0", "", {}, "sha512-jSNrRIyvPVLL5E1z/tS5zLAprosGz/FuI1PWwEOz59j3E4TTTzSpqKb/RDGqJhhW0QHYISGXxq582wGx6T11Tw=="],
 
-    "@oxc-transform-react/binding-android-arm-eabi": ["@oxc-transform-react/binding-android-arm-eabi@0.153.0", "", { "os": "android", "cpu": "arm" }, "sha512-VxhI7In+VRTemKyq9D1mztsDSo/nzRzhDLaMi3NobklIbFfLZYOYYPFM0knL4hQKZi1jFfMPHiP5Y/WjP4DGkw=="],
-
-    "@oxc-transform-react/binding-android-arm64": ["@oxc-transform-react/binding-android-arm64@0.153.0", "", { "os": "android", "cpu": "arm64" }, "sha512-JBv/BQvt84KRH63M4t296rGtt3X3awHZQ5jtK8zBwXLvH5FhpW/FtPaSUbCMI2x9sqI5/c94snOIPAX+dKb2qA=="],
-
-    "@oxc-transform-react/binding-darwin-arm64": ["@oxc-transform-react/binding-darwin-arm64@0.153.0", "", { "os": "darwin", "cpu": "arm64" }, "sha512-Yvq5H8B2WPfwXo42ZCkmq0E5yOepxNTCwBmSZVKjze7/Buqa6OupyKw5YuZa7B/S+HyBJVQ5mXsDLKGSsXPoGQ=="],
-
-    "@oxc-transform-react/binding-darwin-x64": ["@oxc-transform-react/binding-darwin-x64@0.153.0", "", { "os": "darwin", "cpu": "x64" }, "sha512-A/NArh1lZX5dvwvZEnRXYl1O+xKiw5N8Qz8gJYKkRbHT8XvD8XU/hP7DO5j8Vzfm+N8EYK/iHUqnf370wwS+yw=="],
-
-    "@oxc-transform-react/binding-freebsd-x64": ["@oxc-transform-react/binding-freebsd-x64@0.153.0", "", { "os": "freebsd", "cpu": "x64" }, "sha512-ZpVCiJKiQBd98TDSSvrcFjCKAhi/EZETxe5KRHgX0JgXffPQMfP3ICPPCTvMK4YjIozZIhvKb7j8hLeC831PHw=="],
-
-    "@oxc-transform-react/binding-linux-arm-gnueabihf": ["@oxc-transform-react/binding-linux-arm-gnueabihf@0.153.0", "", { "os": "linux", "cpu": "arm" }, "sha512-UA/u81e7E9DHVD2tdFRgXwzriEgRWpU4emBfYYt45DS2s93CIf5ht8swqc69DKZtexknpa4PshBWH1nJE5mqeg=="],
-
-    "@oxc-transform-react/binding-linux-arm-musleabihf": ["@oxc-transform-react/binding-linux-arm-musleabihf@0.153.0", "", { "os": "linux", "cpu": "arm" }, "sha512-PfEJ6ccNSfkdYQ8eFGzFvEJQEVcSYy924Rpd1qvLF8xpu0riem8mNSPrytPmAGXNhM9aavRakoT8k9Sv1D0mAA=="],
-
-    "@oxc-transform-react/binding-linux-arm64-gnu": ["@oxc-transform-react/binding-linux-arm64-gnu@0.153.0", "", { "os": "linux", "cpu": "arm64" }, "sha512-1f8YX+9uPrFpPbg5pH6oN7j+0i2GbGxhZiRkTPLmYcpAJvPqVruWPfXdDiH6M3/dklgTfPjsydIcIiY7ORV6Ug=="],
-
-    "@oxc-transform-react/binding-linux-arm64-musl": ["@oxc-transform-react/binding-linux-arm64-musl@0.153.0", "", { "os": "linux", "cpu": "arm64" }, "sha512-GnN2R0H6KSjbr6RP/fjXoMG6MeFlbeqru1bkahnLoYjpqtKGiuGlWh4oTYgaxoPiE3AJciCr123rxHBUFQKUPA=="],
-
-    "@oxc-transform-react/binding-linux-ppc64-gnu": ["@oxc-transform-react/binding-linux-ppc64-gnu@0.153.0", "", { "os": "linux", "cpu": "ppc64" }, "sha512-iveCsZ524m57Ke9E0vpD2zgOFtzTcORd8YmM8xCAkU0llWPg5gtn37g5lLGYhH983yKzK0dJwIWXfpWrGpvXXw=="],
-
-    "@oxc-transform-react/binding-linux-riscv64-gnu": ["@oxc-transform-react/binding-linux-riscv64-gnu@0.153.0", "", { "os": "linux", "cpu": "none" }, "sha512-DxPNVE+XuWWUw9GMqDuEKz4yF6pZenATAEhlZjQo+0bLtkUW7zch8pwX3lhasqJu94MhYpww33y1hBCPsn6yRA=="],
-
-    "@oxc-transform-react/binding-linux-riscv64-musl": ["@oxc-transform-react/binding-linux-riscv64-musl@0.153.0", "", { "os": "linux", "cpu": "none" }, "sha512-nvXxNdHVwwsRNwKfymDo34PuVun1sRi1XD2A5DAwO3xokyFEz9aGK0/FdQnmOixTtouE/NEFb7jT6g5x3Y170w=="],
-
-    "@oxc-transform-react/binding-linux-s390x-gnu": ["@oxc-transform-react/binding-linux-s390x-gnu@0.153.0", "", { "os": "linux", "cpu": "s390x" }, "sha512-O9Gcu3zuzkn0JYV4Teosp4BYtlAVhL78r9EawRA1W63pULu3TdnKqPjVNBI7Mn8goqNiDbrQaug6wLFbKnaNaQ=="],
-
-    "@oxc-transform-react/binding-linux-x64-gnu": ["@oxc-transform-react/binding-linux-x64-gnu@0.153.0", "", { "os": "linux", "cpu": "x64" }, "sha512-r1Pek4cpycy8Ju7UM033+RbXyKgS9FS0DH0mar/yVMs+44r/tJDa96eN6ov7138gJ6MQIQj3lKjUSZoSdGfu2Q=="],
-
-    "@oxc-transform-react/binding-linux-x64-musl": ["@oxc-transform-react/binding-linux-x64-musl@0.153.0", "", { "os": "linux", "cpu": "x64" }, "sha512-d5aS8XA3wYNLrLALGGXaS1Q6NIDmbd54+xxCk0RZFM9iLGDiowXj3ObsuNFqmTn8ljjHkiosz+QZJW5YCu90+A=="],
-
-    "@oxc-transform-react/binding-openharmony-arm64": ["@oxc-transform-react/binding-openharmony-arm64@0.153.0", "", { "os": "none", "cpu": "arm64" }, "sha512-7D81GeqwiJNdxnLSJnqqlKSqOmEEy+xmqZlKrviveQJr2SE30V5d8CQdT1Ye3uM6qyEzncFsW2jSgHmof+F8zw=="],
-
-    "@oxc-transform-react/binding-win32-arm64-msvc": ["@oxc-transform-react/binding-win32-arm64-msvc@0.153.0", "", { "os": "win32", "cpu": "arm64" }, "sha512-0usRzLDKvY3+SYQs9mLNlP9x3sTaWjHOpudUcgSKTob/dfXL2xUysujSsht23ooV3XtNo8K02xDbq/ov/wgGzA=="],
-
-    "@oxc-transform-react/binding-win32-ia32-msvc": ["@oxc-transform-react/binding-win32-ia32-msvc@0.153.0", "", { "os": "win32", "cpu": "ia32" }, "sha512-280xKSNDYfpEnlZOi7nuQ4+tQL5SYl9M/14FQkq95CvkpFIJLYAyJYZxT9XJhPO7BGAsuIrZNO9sMoqKjakvhw=="],
-
-    "@oxc-transform-react/binding-win32-x64-msvc": ["@oxc-transform-react/binding-win32-x64-msvc@0.153.0", "", { "os": "win32", "cpu": "x64" }, "sha512-EatiBeAhQJRdUEGZ1aDBMc+P1rzMgPiElnB2oTkLK3nZ4y8jnP+xhT2Gsolg8EEH9sSfazAq4HJaQFdUByX7mg=="],
-
     "@pinojs/redact": ["@pinojs/redact@0.4.0", "", {}, "sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg=="],
 
     "@playwright/test": ["@playwright/test@1.64.0", "", { "dependencies": { "playwright": "1.64.0" }, "bin": { "playwright": "cli.js" } }, "sha512-oTN9FNYuN6bqQMwiho6jJKLCG2/QOYCixGXuCjRmzOq23eODeukuY2XiAVoVpAECbuezMt1MHQjAiQxK8F+Y+g=="],
@@ -466,8 +425,6 @@
     "@typescript/typescript-win32-arm64": ["@typescript/typescript-win32-arm64@7.0.2", "", { "os": "win32", "cpu": "arm64" }, "sha512-Gyl1Vy6OsWesLzmq+EP0Fb7b4Nid5232AvcA2SFcdYreldpNtYFFofPjnt62y9hQy7VTaZp65ICJjuAQRaVcIQ=="],
 
     "@typescript/typescript-win32-x64": ["@typescript/typescript-win32-x64@7.0.2", "", { "os": "win32", "cpu": "x64" }, "sha512-0BQ3HkAHHlKLSp1qRvf3SUhGpGsDuhB/jgFw75guyqbxJqEaS0Cw/VFO8i2nHglJUzQCRtMMR/IBAKE3ETMC4g=="],
-
-    "@vitejs/plugin-react": ["@vitejs/plugin-react@6.1.2", "", { "dependencies": { "@rolldown/pluginutils": "^1.0.1" }, "peerDependencies": { "@rolldown/plugin-babel": "^0.1.7 || ^0.2.0", "babel-plugin-react-compiler": "^1.0.0", "oxc-transform-react": "^0.152.0", "vite": "^8.0.0" }, "optionalPeers": ["@rolldown/plugin-babel", "babel-plugin-react-compiler", "oxc-transform-react"] }, "sha512-fhJNGUdscQa4HkI0xFxwonWyhnVReCPDbXI7FH7jmzpnVCrFQI7PRrhWecO263610vOrs9tr2Y4xcf8uAdFxbw=="],
 
     "@vitest/mocker": ["@vitest/mocker@5.0.3", "", { "dependencies": { "@jridgewell/trace-mapping": "0.3.31", "@vitest/spy": "5.0.3", "estree-walker": "^3.0.3", "magic-string": "^1.2.3" }, "peerDependencies": { "msw": "^2.4.9", "vite": "^6.0.0 || ^7.0.0 || ^8.0.0" }, "optionalPeers": ["msw", "vite"] }, "sha512-T8sWAIbkSyAjkwTcaEc3Iu0o9A27X1/kdXrizhZkGuSKScRQtRzclfAMpOTcGdXCsqxeWlpGy3XjqaW8CpLORg=="],
 
@@ -1149,8 +1106,6 @@
 
     "ora": ["ora@8.2.0", "", { "dependencies": { "chalk": "^5.3.0", "cli-cursor": "^5.0.0", "cli-spinners": "^2.9.2", "is-interactive": "^2.0.0", "is-unicode-supported": "^2.0.0", "log-symbols": "^6.0.0", "stdin-discarder": "^0.2.2", "string-width": "^7.2.0", "strip-ansi": "^7.1.0" } }, "sha512-weP+BZ8MVNnlCm8c0Qdc1WSWq4Qn7I+9CJGm7Qali6g44e/PUzbjNqJX5NJ9ljlNMosfJvg1fKEGILklK9cwnw=="],
 
-    "oxc-transform-react": ["oxc-transform-react@0.153.0", "", { "optionalDependencies": { "@oxc-transform-react/binding-android-arm-eabi": "0.153.0", "@oxc-transform-react/binding-android-arm64": "0.153.0", "@oxc-transform-react/binding-darwin-arm64": "0.153.0", "@oxc-transform-react/binding-darwin-x64": "0.153.0", "@oxc-transform-react/binding-freebsd-x64": "0.153.0", "@oxc-transform-react/binding-linux-arm-gnueabihf": "0.153.0", "@oxc-transform-react/binding-linux-arm-musleabihf": "0.153.0", "@oxc-transform-react/binding-linux-arm64-gnu": "0.153.0", "@oxc-transform-react/binding-linux-arm64-musl": "0.153.0", "@oxc-transform-react/binding-linux-ppc64-gnu": "0.153.0", "@oxc-transform-react/binding-linux-riscv64-gnu": "0.153.0", "@oxc-transform-react/binding-linux-riscv64-musl": "0.153.0", "@oxc-transform-react/binding-linux-s390x-gnu": "0.153.0", "@oxc-transform-react/binding-linux-x64-gnu": "0.153.0", "@oxc-transform-react/binding-linux-x64-musl": "0.153.0", "@oxc-transform-react/binding-openharmony-arm64": "0.153.0", "@oxc-transform-react/binding-win32-arm64-msvc": "0.153.0", "@oxc-transform-react/binding-win32-ia32-msvc": "0.153.0", "@oxc-transform-react/binding-win32-x64-msvc": "0.153.0" } }, "sha512-9p/BCIQj12y8Uble3WWUxVeZy88RjqOU7cVp18cLV7PTbNYVaWOyxC2+J9g+EdC9/AOKXzX/z1l92NZ9rvvgVQ=="],
-
     "p-limit": ["p-limit@7.3.3", "", { "dependencies": { "yocto-queue": "^1.2.1" } }, "sha512-SKgVvDU5TNIxQ4r30U75BNLC6a+6GOEjngrk/ysM5+Zu3oJuk1SC5ApzIzY/7PjCEjoVPMWJ0zho/4QUiEB7TQ=="],
 
     "p-locate": ["p-locate@5.0.0", "", { "dependencies": { "p-limit": "^3.0.2" } }, "sha512-LaNjtRWUBY++zB5nE/NwcaoMylSPk+S+ZHNB1TzdbMJMny6dynpAGt7X/tl/QYq3TIeE6nxHppbo2LGymrG5Pw=="],
@@ -1258,8 +1213,6 @@
     "rc9": ["rc9@3.1.0", "", { "dependencies": { "defu": "^6.1.7", "destr": "^2.0.5" } }, "sha512-ufjkNVzbRHKcCOmTahZkmVsyc3W+MSk3jY03m+a7tGHkIsdVMG9l10/3HvFbWkkKzY5VFp3pkRsIo/UYgmFL7Q=="],
 
     "react": ["react@19.3.0", "", {}, "sha512-E8LUcbtBWt20bbl2YoHfx4ZDBdxVTfOKtCZn9cDSJ4l6/nuoApcpIBcj47t2wZoVX8g2ZHuMHbiShgCR1T5Sog=="],
-
-    "react-compiler-runtime": ["react-compiler-runtime@1.0.0", "", { "peerDependencies": { "react": "^17.0.0 || ^18.0.0 || ^19.0.0 || ^0.0.0-experimental" } }, "sha512-rRfjYv66HlG8896yPUDONgKzG5BxZD1nV9U6rkm+7VCuvQc903C4MjcoZR4zPw53IKSOX9wMQVpA1IAbRtzQ7w=="],
 
     "react-dom": ["react-dom@19.3.0", "", { "dependencies": { "scheduler": "^0.28.0" }, "peerDependencies": { "react": "^19.3.0" } }, "sha512-JDk8dgif51OjFoDE70+OT9ICyYr+69HlmihNwp1+Nsfbna3t5sIiCa9ZJktDmQ4/1b/rn26hIAR2uYXDMr5r0Q=="],
 

@@ -193,8 +193,8 @@ export const groupDuplicates = <T>(items: T[], textOf: (item: T) => string, {cou
 
 /**
  * 값에 걸린 차단 항목들 (유저 버블의 "걸린 차단 규칙").
- * React에서는 구독한 목록을 lists로 넘긴다. 기본값(getState)에 맡기면 React Compiler가 인자만 보고 이전 결과를 재사용해
- * 차단 목록이 바뀌어도 다시 계산하지 않는다.
+ * React에서는 구독한 목록을 lists로 넘긴다. 기본값(getState)은 구독하지 않아
+ * 차단 목록이 바뀌어도 다시 그리지 않는다.
  */
 export const blockingEntries = (values: BlockValues, gallery?: string, lists: BlockLists = useBlocksStore.getState()): { type: BlockType; entry: BlockEntry }[] =>
     objectEntries(values).flatMap(([type, value]) =>

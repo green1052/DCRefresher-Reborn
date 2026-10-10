@@ -7,7 +7,7 @@
 | 항목 | 사용 |
 |------|------|
 | 확장 프레임워크 | [WXT](https://wxt.dev). Chrome은 MV3, Firefox는 MV2. manifest의 최소 버전(Chrome 140, Firefox 144)은 코드가 쓰는 API 중 가장 늦게 들어온 것에 맞춥니다. 빌드가 바꿔 주지 않으므로 더 새 API를 쓰면 `wxt.config.ts`에서 같이 올립니다 |
-| UI | [Preact](https://preactjs.com) 11 + React Compiler, [shadcn/ui](https://ui.shadcn.com)(Base UI) + [Tailwind CSS](https://tailwindcss.com) v4. 코드는 `react`에서 import합니다([UI](ui.md#부품)) |
+| UI | [Preact](https://preactjs.com) 11, [shadcn/ui](https://ui.shadcn.com)(Base UI) + [Tailwind CSS](https://tailwindcss.com) v4. 코드는 `react`에서 import합니다([UI](ui.md#부품)) |
 | 상태 | zustand |
 | 저장소 | WXT storage (`wxt/utils/storage`) |
 | HTTP | ky + p-limit(동시 요청 수 제한) |

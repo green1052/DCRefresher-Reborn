@@ -4,7 +4,7 @@
 
 ## 단위 테스트 (Vitest)
 
-`bun run test`. jsdom이 Bun에서 뜨지 않아 Vitest는 Node에서 실행됩니다. 확장 API는 WXT의 `WxtVitest` 플러그인이 [`@webext-core/fake-browser`](https://webext-core.aklinker1.io/fake-browser/installation)로 바꿔 인메모리 저장소로 동작합니다. 저장소를 직접 넣을 때는 `fakeBrowser.storage.local.set({"refresher:modules": …})`처럼 `local:` 없는 키를 씁니다. `WxtVitest`는 `wxt.config.ts`의 vite 플러그인을 불러오지 않으므로 `vitest.config.ts`가 `@preact/preset-vite`를 따로 넣습니다. React Compiler는 테스트에서 돌아가지 않습니다.
+`bun run test`. jsdom이 Bun에서 뜨지 않아 Vitest는 Node에서 실행됩니다. 확장 API는 WXT의 `WxtVitest` 플러그인이 [`@webext-core/fake-browser`](https://webext-core.aklinker1.io/fake-browser/installation)로 바꿔 인메모리 저장소로 동작합니다. 저장소를 직접 넣을 때는 `fakeBrowser.storage.local.set({"refresher:modules": …})`처럼 `local:` 없는 키를 씁니다. `WxtVitest`는 `wxt.config.ts`의 vite 플러그인을 불러오지 않으므로 `vitest.config.ts`가 `@preact/preset-vite`를 따로 넣습니다.
 
 - 테스트는 `tests/unit/`에 소스 경로를 따라 둡니다 (`core/block.ts` → `tests/unit/core/block.test.ts`). `modules/`에 두면 WXT가 WXT 모듈로 불러오므로 소스 옆에 두지 않습니다.
 - 목·스파이·fake 저장소·타이머는 테스트마다 되돌리므로(`tests/setup.ts`, `vitest.config.ts`의 `mockReset`·`restoreMocks`) 테스트 파일에서 `restoreAllMocks`·`mockReset`·`useRealTimers`를 따로 부르지 않습니다.

@@ -107,7 +107,7 @@ export function App() {
     return (
         <div className="flex min-h-screen flex-col md:flex-row">
             <Sidebar tab={current.id} onSelect={(id) => (location.hash = id)}/>
-            {/* 누를 때마다 새로 마운트한다. React Compiler가 Math.random으로 그린 결과를 기억해 같은 모양이 반복되기 때문이다. */}
+            {/* 누를 때마다 새로 마운트해 무작위 배치와 끝내는 타이머를 처음부터 다시 건다. */}
             {rain > 0 && <Suspense><DcconRain key={rain}/></Suspense>}
             <Notice message={notice} onClose={() => useOptionsStore.setState({notice: null})}/>
 

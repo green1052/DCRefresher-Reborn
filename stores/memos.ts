@@ -81,7 +81,7 @@ const lookupMemo = (memos: Record<MemoType, MemoMap>, user: MemoUser, gallery?: 
 export const findMemo = (user: MemoUser, gallery?: string | null): MemoEntry | undefined =>
     lookupMemo(useMemosStore.getState().memos, user, gallery);
 
-/** React용 findMemo. 구독한 memos로 찾아야 React Compiler가 메모가 바뀔 때 다시 계산한다. */
+/** React용 findMemo. 구독한 memos로 찾아야 메모가 바뀔 때 다시 그린다. */
 export const useUserMemo = (user: MemoUser, gallery?: string | null): MemoEntry | undefined =>
     lookupMemo(useMemosStore((state) => state.memos), user, gallery);
 

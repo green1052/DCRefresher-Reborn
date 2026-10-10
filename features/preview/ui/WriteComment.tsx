@@ -123,7 +123,7 @@ export const WriteComment = () => {
         const signal = st.signalId;
         // 안쪽 함수에서도 null이 아닌 값으로 쓰도록 미리 꺼내 둔다.
         const {preData, post} = st;
-        // 보내기는 안쪽 함수에 두고 끝나면(성공·실패·캡차 취소 모두) 정리한다. try…finally는 React Compiler가 아직 다루지 못해 컴포넌트 전체가 컴파일되지 않는다.
+        // 보내기는 안쪽 함수에 두고 끝나면(성공·실패·캡차 취소 모두) 정리한다.
         const submit = async (): Promise<void> => {
             try {
                 let code: string | undefined;

@@ -1,6 +1,5 @@
 import preact from "@preact/preset-vite";
 import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
 import {defineConfig} from "wxt";
 
 import {CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES} from "./core/pages";
@@ -9,7 +8,6 @@ export default defineConfig({
     modules: ["@wxt-dev/auto-icons"],
     vite: () => ({
         plugins: [
-            ...react({compiler: {target: "18"}, jsxImportSource: "preact"}).filter((plugin) => plugin.name === "vite:react-compiler"),
             preact(),
             tailwindcss()
         ]

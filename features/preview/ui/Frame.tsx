@@ -250,7 +250,6 @@ export const Frame = () => {
                     // 창 바깥을 누르면 닫는다. pointerdown에서 닫으면 칸이 곧바로 사라져 이어지는 click/contextmenu가 아래 목록에 떨어진다
                     // (우클릭으로 닫으면 다른 글 미리보기가 열린다). 그래서 click/contextmenu에서 닫는다.
                     onPointerDown={(ev) => (pressedOutside.current = ev.target === ev.currentTarget)}
-                    // &&=는 React Compiler가 지원하지 않아 창 전체가 컴파일되지 않는다.
                     onPointerUp={(ev) => (pressedOutside.current = pressedOutside.current && ev.target === ev.currentTarget)}
                     onClick={(ev) => {
                         if (pressedOutside.current && ev.target === ev.currentTarget) usePreviewStore.getState().requestClose();

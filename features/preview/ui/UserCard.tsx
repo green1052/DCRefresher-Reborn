@@ -21,7 +21,7 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
     // 배지 순서·표시 조건·색은 페이지와 같게 userinfo 설정을 따른다. 모듈이 꺼져 있으면 기본값이고 색이 없다. 회원은 UID, 유동만 IP 정보를 단다.
     const userinfo = useRunningModuleSettings("userinfo");
     const view = userinfo ? badgeViewOf(userinfo) : DEFAULT_BADGE_VIEW;
-    // IP·밴 조회 식에 dbVersion을 넣는다. 빠지면 React Compiler가 인자만 보고 메모해 DB를 읽은 뒤에도 옛 값이 남는다.
+    // DB를 읽을 때마다 오르는 번호를 구독해 다시 그린다. 0이면 아직 읽지 않아 IP·밴을 찾지 않는다.
     const dbVersion = useSyncExternalStore(subscribeDatabase, databaseVersion);
     const ipInfo = dbVersion > 0 && !user.id && user.ip ? ipInfoOf(user.ip) : undefined;
     const ipColor = ipInfo ? userinfo?.[`${ipInfo.category}Color`] : undefined;

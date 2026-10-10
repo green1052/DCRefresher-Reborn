@@ -131,7 +131,7 @@ const Bubble = ({bubble, selected, onBlockPackage}: BubbleProps) => {
     const entries = useBlocksStore((s) => s.entries);
     const defaults = useBlocksStore((s) => s.defaults);
     const rules = blockingEntries(selected.dccon ? {DCCON: selected.dccon} : {NICK: selected.nick, ID: selected.uid, IP: selected.ip}, gallery ?? undefined, {entries, defaults});
-    // IP/밴 조회 식에 이 번호를 넣는다. 빠지면 React Compiler가 인자만 보고 메모해 DB를 읽은 뒤에도 옛 값이 남는다.
+    // DB를 읽을 때마다 오르는 번호를 구독해 다시 그린다. 0이면 아직 읽지 않아 IP·밴을 찾지 않는다.
     const dbVersion = useSyncExternalStore(subscribeDatabase, databaseVersion);
 
     // Popover는 스크롤을 따라가지 않으므로 스크롤하면 닫는다.

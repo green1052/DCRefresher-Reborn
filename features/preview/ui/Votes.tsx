@@ -44,7 +44,6 @@ export const Votes = ({post}: { post: PostInfo }) => {
         if (cached) setEntry(target, {post: {...cached, ...counts}});
     };
 
-    // try/finally는 React Compiler가 컴파일하지 못해 .finally로 푼다.
     const onVote = (mode: "U" | "D"): void => {
         if (!preData || voting) return;
         setVoting(mode);

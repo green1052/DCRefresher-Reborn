@@ -84,7 +84,6 @@ const stampOf = ({version, format}: DatabaseMeta): string => `${version}
 ${format ?? ""}`;
 
 // DB를 읽을 때마다 올리는 번호 (0이면 아직 안 읽음). 렌더 중에 조회하는 곳은 useSyncExternalStore로 이것을 구독한다.
-// React Compiler는 인자만 보고 메모하므로 이 번호를 식에 넣어야 DB가 바뀐 뒤 다시 계산한다.
 // 이 파일은 배경도 불러오므로 React 훅은 쓰는 쪽에 두고, 번호는 React가 없는 zustand/vanilla 스토어에 둔다 (React가 배경 번들에 딸려 가지 않게).
 const versionStore = createStore(() => 0);
 
