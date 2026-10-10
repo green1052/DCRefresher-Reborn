@@ -40,38 +40,61 @@ const formatUsed = (time: number | undefined): string => {
     return days < 1 ? "오늘" : `${days}일 전`;
 };
 
-/** 표 한 줄. 줄을 누르면 편집하고, 휴지통 버튼으로 삭제한다. */
-export const ListRow = ({head, info, used, onEdit, onRemove}: {
+/** 표 한 줄. 줄을 누르면 편집하고, 휴지통 버튼은 확인을 받고 삭제한다. */
+export const ListRow = ({head, label, info, used, onEdit, onRemove}: {
     head: ReactNode;
+    /** 항목 이름 (내용/유저). 삭제 버튼 이름과 확인 문구에 쓴다. */
+    label: string;
     info: ReactNode;
     /** 마지막으로 쓰인 시각 (useUsage). */
     used?: number;
     onEdit: () => void;
     onRemove: () => void;
-}) => (
-    <TableRow className="cursor-pointer" onClick={onEdit}>
-        <TableHead scope="row" className="font-normal">
-            {/* 줄(tr)은 버튼이 될 수 없어 키보드·스크린 리더에는 첫 칸을 편집 버튼으로 알린다.
-                따로 onClick을 달지 않는다. 누르면(Enter/Space 포함) click이 줄로 올라가 편집이 열린다. */}
-            <button type="button" title="수정"
-                    className="block w-full cursor-pointer rounded-sm text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
-                {head}
-            </button>
-        </TableHead>
-        <TableCell className="whitespace-normal">{info}</TableCell>
-        <TableCell className="text-muted-foreground">{formatUsed(used)}</TableCell>
-        <TableCell className="text-right">
-            {/* 툴팁은 브라우저 기본(title)을 쓴다. 줄마다 툴팁 부품을 달면 수천 줄 목록을 열거나 검색할 때마다 느려진다. */}
-            <Button variant="ghost" size="icon-sm" className="text-destructive" aria-label="삭제" title="삭제"
-                    onClick={(ev) => {
-                        ev.stopPropagation();
+}) => {
+    // 확인 창을 연 휴지통 버튼. 지우면 버튼이 사라져 확인 창이 포커스를 돌려줄 곳이 없으므로 지우기 전에 탭 패널로 옮겨 둔다.
+    const [opener, setOpener] = useState<HTMLElement | null>(null);
+
+    return (
+        <>
+            <TableRow className="cursor-pointer" onClick={onEdit}>
+                <TableHead scope="row" className="font-normal">
+                    {/* 줄(tr)은 버튼이 될 수 없어 키보드·스크린 리더에는 첫 칸을 편집 버튼으로 알린다.
+                        따로 onClick을 달지 않는다. 누르면(Enter/Space 포함) click이 줄로 올라가 편집이 열린다. */}
+                    <button type="button" title="수정"
+                            className="block w-full cursor-pointer rounded-sm text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+                        {head}
+                    </button>
+                </TableHead>
+                <TableCell className="whitespace-normal">{info}</TableCell>
+                <TableCell className="text-muted-foreground">{formatUsed(used)}</TableCell>
+                <TableCell className="text-right">
+                    {/* 툴팁은 브라우저 기본(title)을 쓴다. 줄마다 툴팁 부품을 달면 수천 줄 목록을 열거나 검색할 때마다 느려진다. */}
+                    <Button variant="ghost" size="icon-sm" className="text-destructive" aria-label={`${label} 삭제`} title="삭제"
+                            onClick={(ev) => {
+                                ev.stopPropagation();
+                                setOpener(ev.currentTarget);
+                            }}>
+                        <Trash2/>
+                    </Button>
+                </TableCell>
+            </TableRow>
+            {/* 확인 창은 줄(tr) 밖에 둔다. 창 안의 클릭이 줄로 올라가 편집이 열리지 않게 한다. */}
+            {opener && (
+                <ConfirmDialog
+                    title={`"${label}" 삭제할까요?`}
+                    confirmLabel="삭제"
+                    danger
+                    onConfirm={() => {
+                        focusPanel(opener);
                         onRemove();
-                    }}>
-                <Trash2/>
-            </Button>
-        </TableCell>
-    </TableRow>
-);
+                        setOpener(null);
+                    }}
+                    onClose={() => setOpener(null)}
+                />
+            )}
+        </>
+    );
+};
 
 /**
  * 차단/메모 탭 공용 틀. 종류별 탭, 검색, 클립보드 내보내기/가져오기, 전체 삭제/추가, 빈 목록 안내, 표 머리를 그린다.

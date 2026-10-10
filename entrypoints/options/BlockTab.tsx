@@ -104,6 +104,7 @@ export function BlockTab() {
                         ) : (
                             <span className="font-medium">{entry.content}</span>
                         )}
+                        label={type === "DCCON" ? (entry.extra ?? entry.content) : entry.content}
                         info={<span className="text-muted-foreground">{entryInfo(entry)}</span>}
                         used={used[entry.id]}
                         onEdit={() => setDialog({type, initial: entry})}

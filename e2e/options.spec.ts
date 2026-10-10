@@ -77,6 +77,27 @@ test.describe("옵션 - 차단 탭", () => {
         await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([{id: expect.any(String), content: "차단닉", isRegex: false}]);
     });
 
+    test("줄의 휴지통은 항목 이름을 달고, 확인해야 그 항목만 지운다", async ({page, extensionId, storage}) => {
+        await storage.set({"refresher:block:NICK": [{id: "a", content: "남길닉", isRegex: false}, {id: "b", content: "지울닉", isRegex: false}]});
+        const {table, alert, dialog} = await openOptions(page, extensionId, "block");
+        const remove = table.getByRole("button", {name: "지울닉 삭제", exact: true});
+
+        // 취소하면 지우지 않고 포커스가 휴지통으로 돌아온다. 편집 창도 열리지 않는다.
+        await remove.click();
+        await expect(alert).toContainText("\"지울닉\" 삭제할까요?");
+        await alert.getByRole("button", {name: "취소", exact: true}).click();
+        await expect(remove).toBeFocused();
+        await expect(dialog).toHaveCount(0);
+        expect(await storage.get("refresher:block:NICK")).toHaveLength(2);
+
+        await remove.click();
+        await alert.getByRole("button", {name: "삭제", exact: true}).click();
+        await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([{id: "a", content: "남길닉", isRegex: false}]);
+        await expect(table.getByText("지울닉", {exact: true})).toHaveCount(0);
+        await expect(dialog).toHaveCount(0);
+        await expect(page.getByRole("tabpanel")).toBeFocused();
+    });
+
     test("갤러리·마지막 사용으로 걸러 보이는 항목만 지우고, 지운 항목의 사용 기록도 정리한다", async ({page, extensionId, storage}) => {
         const day = 24 * 60 * 60 * 1000;
         await storage.set({

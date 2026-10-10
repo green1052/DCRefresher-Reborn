@@ -253,6 +253,7 @@ export function MemoTab() {
                                 {entry.gallery && <Badge variant="secondary">{entry.gallery}</Badge>}
                             </span>
                         }
+                        label={user}
                         info={<span className="text-muted-foreground">{entry.text}</span>}
                         used={used[memoUsageKey(type, user)]}
                         onEdit={() => setForm({type, user, text: entry.text, color: entry.color, gallery: entry.gallery ?? ""})}
