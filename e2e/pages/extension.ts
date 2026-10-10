@@ -22,6 +22,8 @@ export async function openOptions(page: Page, extensionId: string, tab: OptionsT
         dialog: page.getByRole("dialog"),
         /** 확인·알림 창 (ConfirmDialog·Notice). */
         alert: page.getByRole("alertdialog"),
+        /** 성공 알림 토스트가 뜨는 칸 (ToastHost). */
+        toasts: page.getByRole("region", {name: "알림"}),
         table: page.locator("table")
     };
 }

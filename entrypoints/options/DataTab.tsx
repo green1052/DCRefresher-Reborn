@@ -16,7 +16,7 @@ import {friendlyMessage} from "@/utils/error";
 import {arrayIncludes, objectKeys} from "@/utils/typed";
 
 import {formatTime, ImportDialog, Section, useStorageItem} from "./Layout";
-import {notify} from "./optionsStore";
+import {notify, notifyDone} from "./optionsStore";
 
 type RestoreMode = "replace" | "merge";
 
@@ -65,15 +65,18 @@ export function DataTab() {
         if (document.activeElement !== document.body) focusPanel(document.activeElement);
         setLoading(true);
         let message: string;
+        let done = false;
         try {
             message = await action();
+            done = true;
         } catch (e) {
             console.error(e);
             message = `${failure} ${friendlyMessage(e)}`;
         }
-        // 확인 창 안에서 부르면(초기화) 창이 닫히며 포커스가 body로 떨어지고, 알림이 그 body를 돌아갈 곳으로 기억한다.
+        // 확인 창 안에서 부르면(초기화) 창이 닫히며 포커스가 body로 떨어지고, 실패 알림이 그 body를 돌아갈 곳으로 기억한다.
         if (document.activeElement === document.body) focusPanel(restoreRef.current);
-        notify(message);
+        if (done) notifyDone(message);
+        else notify(message);
         setLoading(false);
     };
 

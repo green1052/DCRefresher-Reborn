@@ -11,7 +11,7 @@ import {useMemosStore} from "@/stores/memos";
 import {useModulesStore} from "@/stores/modules";
 
 import {formatBytes, formatTime, Section} from "./Layout";
-import {notify} from "./optionsStore";
+import {notify, notifyDone} from "./optionsStore";
 
 const REPO = "https://github.com/green1052/DCRefresher-Reborn";
 
@@ -66,7 +66,7 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
         ];
         try {
             await navigator.clipboard.writeText(lines.join("\n"));
-            notify("진단 정보를 복사했습니다. 버그 제보에 붙여 넣어 주세요.");
+            notifyDone("진단 정보를 복사했습니다. 버그 제보에 붙여 넣어 주세요.");
         } catch {
             notify("복사하지 못했습니다.");
         }

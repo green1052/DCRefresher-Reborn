@@ -15,7 +15,7 @@ import {friendlyMessage, SAVE_FAILED} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 
 import {ImportDialog} from "./Layout";
-import {notify} from "./optionsStore";
+import {notify, notifyDone} from "./optionsStore";
 import {RefresherSelect} from "./RefresherSelect";
 
 const EmptyList = ({children}: { children: ReactNode }) => (
@@ -186,7 +186,7 @@ export const ListTabs = <T extends string, I>({
     const exportList = async (): Promise<void> => {
         try {
             await navigator.clipboard.writeText(JSON.stringify(exportData()));
-            notify(`${object} 클립보드로 내보냈습니다.`);
+            notifyDone(`${object} 클립보드로 내보냈습니다.`);
         } catch {
             notify(`${object} 내보내지 못했습니다.`);
         }

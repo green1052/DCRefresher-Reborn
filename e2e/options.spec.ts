@@ -161,8 +161,8 @@ test.describe("옵션 - 차단 탭", () => {
         await expect(more).toHaveText("더 보기 (+200)");
     });
 
-    test("가져오기 창은 가져온 뒤 닫히고, 알림을 닫으면 포커스가 가져오기 버튼으로 돌아온다", async ({page, extensionId, storage}) => {
-        const {dialog, alert} = await openOptions(page, extensionId, "block");
+    test("가져오기 창은 가져온 뒤 닫혀 포커스가 가져오기 버튼으로 돌아오고, 성공은 막지 않는 토스트로 알린다", async ({page, extensionId, storage}) => {
+        const {dialog, alert, toasts} = await openOptions(page, extensionId, "block");
         const importButton = page.getByRole("button", {name: "가져오기", exact: true});
         await importButton.click();
 
@@ -171,11 +171,18 @@ test.describe("옵션 - 차단 탭", () => {
         await json.fill(JSON.stringify({NICK: [{content: "가져온닉", isRegex: false}]}));
         await dialog.getByRole("button", {name: "가져오기", exact: true}).click();
 
-        await expect(alert.filter({hasText: "차단 목록을 가져왔습니다."})).toBeVisible();
+        await expect(toasts).toContainText("차단 목록을 가져왔습니다.");
         await expect.poll(() => storage.get("refresher:block:NICK")).toMatchObject([{content: "가져온닉"}]);
-        await page.getByRole("button", {name: "확인", exact: true}).click();
-        await expect(dialog).toHaveCount(0);
+        // 토스트도 role=dialog라 다이얼로그는 입력칸으로 확인한다.
+        await expect(json).toHaveCount(0);
+        await expect(alert).toHaveCount(0);
         await expect(importButton).toBeFocused();
+
+        // 실패는 확인해야 하는 알림 창으로 남는다.
+        await importButton.click();
+        await json.fill("{");
+        await dialog.getByRole("button", {name: "가져오기", exact: true}).click();
+        await expect(alert).toContainText("차단 목록을 가져오지 못했습니다.");
     });
 });
 

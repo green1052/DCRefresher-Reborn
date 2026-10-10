@@ -12,7 +12,7 @@ import {sendMessage} from "@/core/messaging/protocol";
 import {USAGE_KEY} from "@/core/storage/items";
 import type {UsageKind} from "@/core/usage";
 
-import {notify} from "./optionsStore";
+import {notifyDone} from "./optionsStore";
 
 /** 저장소 항목 하나의 값. 배경·다른 탭에서 바뀌어도 따라가고, 읽기 전에는 fallback이다. */
 export const useStorageItem = <T, >(item: WxtStorageItem<T, {}>): T => {
@@ -98,24 +98,20 @@ export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 
 }) => {
     const [text, setText] = useState("");
     const [busy, setBusy] = useState(false);
-    const done = useRef<string>(undefined);
     const actions = useRef<DialogPrimitive.Root.Actions>(null);
     const input = useRef<HTMLTextAreaElement>(null);
 
     const submit = async (): Promise<void> => {
         setBusy(true);
-        done.current = await onSubmit(text).finally(() => setBusy(false));
-        if (done.current) actions.current?.close();
+        const done = await onSubmit(text).finally(() => setBusy(false));
+        if (!done) return;
+        actions.current?.close();
+        notifyDone(done);
     };
 
-    // 가져오는 중에는 닫지 않는다. 닫으면 가져오기는 끝나도 알림이 뜨지 않는다.
-    // 가져왔다는 알림은 포커스를 가져오기 버튼에 돌려준 뒤(onClose)에 띄운다.
-    // 먼저 띄우면 알림이 곧 사라질 이 다이얼로그의 버튼을 연 요소로 기억해, 알림을 닫을 때 포커스가 body로 떨어진다.
+    // 가져오는 중에는 닫지 않는다. 다 들어가기 전에 닫혀 끝난 줄 알지 않게 한다.
     return (
-        <ModalDialog actionsRef={actions} dismissible={!busy} focusOnOpen={input} className="sm:max-w-[520px]" onClose={() => {
-            onClose();
-            if (done.current) notify(done.current);
-        }}>
+        <ModalDialog actionsRef={actions} dismissible={!busy} focusOnOpen={input} className="sm:max-w-[520px]" onClose={onClose}>
             <DialogHeader>
                 <DialogTitle>{title}</DialogTitle>
                 <DialogDescription>{desc}</DialogDescription>

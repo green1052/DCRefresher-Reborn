@@ -1,5 +1,7 @@
 import {create} from "zustand";
 
+import {useUiStore} from "@/stores/ui";
+
 interface OptionsState {
     /** 디시콘 비(로고 이스터에그). 누를 때마다 새 값(Date.now())이 들어가 비를 다시 마운트한다. 0이면 없다. */
     rain: number;
@@ -21,5 +23,8 @@ export const useOptionsStore = create<OptionsState>()((set) => ({
     endRain: () => set({rain: 0})
 }));
 
-/** 옵션 페이지 알림을 띄운다. 탭마다 알림 상태를 따로 두지 않고 이것을 쓴다. */
+/** 확인해야 하는 옵션 페이지 알림(실패 등)을 띄운다. 탭마다 알림 상태를 따로 두지 않고 이것을 쓴다. */
 export const notify = (message: string): void => useOptionsStore.setState({notice: message});
+
+/** 성공을 알린다. 확인할 것이 없으니 막지 않는 토스트로 띄운다 (App의 ToastHost). */
+export const notifyDone = (message: string): void => useUiStore.getState().showToast(message);

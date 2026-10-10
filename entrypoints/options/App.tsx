@@ -2,6 +2,7 @@ import {Ban, Database, Info, Keyboard, type LucideIcon, NotebookPen, Settings} f
 import {lazy, Suspense, useEffect, useState, useSyncExternalStore} from "react";
 
 import {Notice} from "@/components/dialogs";
+import {ToastHost} from "@/components/overlay/Toasts";
 import {Button} from "@/components/ui/button";
 import {Separator} from "@/components/ui/separator";
 import {initBlocksStore} from "@/stores/blocks";
@@ -110,6 +111,7 @@ export function App() {
             {/* 누를 때마다 새로 마운트해 무작위 배치와 끝내는 타이머를 처음부터 다시 건다. */}
             {rain > 0 && <Suspense><DcconRain key={rain}/></Suspense>}
             <Notice message={notice} onClose={() => useOptionsStore.setState({notice: null})}/>
+            <ToastHost/>
 
             <div className="min-w-0 grow px-4 py-8 md:px-8">
                 {/* 탭마다 새로 마운트해 들어오는 애니메이션을 다시 건다.

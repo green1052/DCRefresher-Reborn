@@ -18,7 +18,7 @@ import {isRecord} from "@/utils/record";
 import {formatAppMemos, parseAppMemos} from "./appMemo";
 import {ImportDialog, useUsage} from "./Layout";
 import {ListRow, ListTabs} from "./ListTabs";
-import {notify} from "./optionsStore";
+import {notify, notifyDone} from "./optionsStore";
 import {RefresherSelect} from "./RefresherSelect";
 
 interface MemoFormState {
@@ -196,7 +196,7 @@ export function MemoTab() {
         }
         try {
             await navigator.clipboard.writeText(text);
-            notify(`공앱 형식으로 메모 ${count}개를 복사했습니다.${skipped ? ` 닉네임 메모 ${skipped}개는 공앱에 없는 종류라 뺐습니다.` : ""}`);
+            notifyDone(`공앱 형식으로 메모 ${count}개를 복사했습니다.${skipped ? ` 닉네임 메모 ${skipped}개는 공앱에 없는 종류라 뺐습니다.` : ""}`);
         } catch {
             notify("복사하지 못했습니다.");
         }
