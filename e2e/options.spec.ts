@@ -131,6 +131,36 @@ test.describe("옵션 - 차단 탭", () => {
         await expect.poll(() => storage.get("refresher:usage")).toEqual({block: {b: expect.any(Number), c: expect.any(Number)}, memo: {}});
     });
 
+    test("긴 목록은 200줄씩 그리고 더 보기로 펼치며, 검색은 그리지 않은 줄까지 찾는다", async ({page, extensionId, storage}) => {
+        await storage.set({"refresher:block:NICK": Array.from({length: 450}, (_, i) => ({id: `n${i}`, content: `닉${i}번`, isRegex: false}))});
+        const {table} = await openOptions(page, extensionId, "block");
+        const rows = table.locator("tbody tr");
+        const more = page.getByRole("button", {name: /^더 보기/});
+        await expect(rows).toHaveCount(200);
+        await expect(table.getByText("닉0번", {exact: true})).toHaveCount(0);
+
+        // 가장 오래된 항목은 처음 200줄 밖이지만 검색하면 나온다.
+        const search = page.getByRole("searchbox", {name: "차단 목록 검색", exact: true});
+        await search.fill("닉0번");
+        await expect(rows).toHaveCount(1);
+        await expect(more).toHaveCount(0);
+        await search.fill("");
+
+        await more.click();
+        await expect(rows).toHaveCount(400);
+        await expect(more).toHaveText("더 보기 (+50)");
+        // 마지막 묶음을 펼치면 버튼이 사라지므로 포커스는 탭 패널로 간다.
+        await more.click();
+        await expect(rows).toHaveCount(450);
+        await expect(more).toHaveCount(0);
+        await expect(page.getByRole("tabpanel")).toBeFocused();
+
+        // 검색어가 바뀌면 다시 200줄부터 그린다.
+        await search.fill("닉");
+        await expect(rows).toHaveCount(200);
+        await expect(more).toHaveText("더 보기 (+200)");
+    });
+
     test("가져오기 창은 가져온 뒤 닫히고, 알림을 닫으면 포커스가 가져오기 버튼으로 돌아온다", async ({page, extensionId, storage}) => {
         const {dialog, alert} = await openOptions(page, extensionId, "block");
         const importButton = page.getByRole("button", {name: "가져오기", exact: true});

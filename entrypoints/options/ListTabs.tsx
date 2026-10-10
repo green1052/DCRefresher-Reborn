@@ -33,6 +33,9 @@ const objectParticle = (word: string): string => ((word.charCodeAt(word.length -
 
 const DAY = 24 * 60 * 60 * 1000;
 
+/** 표에 한 번에 그리는 줄 수. 수천 줄을 다 그리면 검색어를 칠 때마다 느려진다(5,000줄에서 한 글자에 50ms쯤). 검색은 전체에서 한다. */
+const PAGE = 200;
+
 /** 마지막으로 쓰인 시각 표시 ("오늘", "3일 전"). */
 const formatUsed = (time: number | undefined): string => {
     if (time === undefined) return "—";
@@ -150,6 +153,8 @@ export const ListTabs = <T extends string, I>({
     const [gallery, setGallery] = useState("all");
     // 이만큼(일) 넘게 안 쓰인 항목만. 0이면 거르지 않는다.
     const [unusedDays, setUnusedDays] = useState("0");
+    // 표에 그리는 줄 수. 거르는 조건이 바뀌면 처음 PAGE줄로 돌린다.
+    const [limit, setLimit] = useState(PAGE);
     const galleries = [...new Set(types.flatMap((type) => items(type).map(galleryOf)).filter((id): id is string => Boolean(id)))].sort();
     const galleryOptions: Record<string, string> = {all: "모든 항목", common: "갤러리 공통", ...Object.fromEntries(galleries.map((id) => [`g:${id}`, id]))};
     // 고르던 갤러리의 항목을 다 지우면 선택지에서 빠지므로 전체로 돌린다.
@@ -243,8 +248,14 @@ export const ListTabs = <T extends string, I>({
                         return (
                             <TabsContent key={type} value={type} className="tab-enter">
                                 <div ref={filterRow} className="flex flex-wrap items-center gap-2 pt-2">
-                                    <RefresherSelect value={galleryFilter} options={galleryOptions} aria-label="갤러리" onChange={setGallery}/>
-                                    <RefresherSelect value={unusedDays} options={UNUSED_OPTIONS} aria-label="마지막 사용" onChange={setUnusedDays}/>
+                                    <RefresherSelect value={galleryFilter} options={galleryOptions} aria-label="갤러리" onChange={(value) => {
+                                        setGallery(value);
+                                        setLimit(PAGE);
+                                    }}/>
+                                    <RefresherSelect value={unusedDays} options={UNUSED_OPTIONS} aria-label="마지막 사용" onChange={(value) => {
+                                        setUnusedDays(value);
+                                        setLimit(PAGE);
+                                    }}/>
                                     {filtering && list.length > 0 && (
                                         <Button variant="destructive" onClick={() => setRemoveShownConfirm(type)}>
                                             <Trash2 data-icon="inline-start"/> 보이는 {list.length}개 삭제
@@ -259,7 +270,10 @@ export const ListTabs = <T extends string, I>({
                                                 <Search/>
                                             </InputGroupAddon>
                                             <InputGroupInput type="search" placeholder="검색" aria-label={`${label} 검색`} value={query}
-                                                             onChange={(ev) => setQuery(ev.target.value)}/>
+                                                             onChange={(ev) => {
+                                                                 setQuery(ev.target.value);
+                                                                 setLimit(PAGE);
+                                                             }}/>
                                         </InputGroup>
                                         {/* 검색 중에도 걸러진 것만이 아니라 이 종류 전부를 지우므로 확인 문구에 전체 개수를 적는다. */}
                                         <WithTooltip tip="전체 삭제" trigger={<Button variant="destructive" size="icon" aria-label="전체 삭제" disabled={total === 0}
@@ -269,6 +283,7 @@ export const ListTabs = <T extends string, I>({
                                         <WithTooltip tip="추가" trigger={<Button size="icon" aria-label="추가" onClick={() => {
                                             // 검색어에 안 맞는 새 항목이 바로 숨어 추가가 안 된 것처럼 보이지 않게 검색어를 비운다.
                                             setQuery("");
+                                            setLimit(PAGE);
                                             onAdd(type);
                                         }}/>}>
                                             <Plus/>
@@ -281,19 +296,32 @@ export const ListTabs = <T extends string, I>({
                                 ) : list.length === 0 ? (
                                     <EmptyList>{needle ? `"${query.trim()}" 검색 결과 없음` : "조건에 맞는 항목 없음"}</EmptyList>
                                 ) : (
-                                    <div className="overflow-hidden rounded-lg border">
-                                        <Table>
-                                            <TableHeader className="bg-muted/50">
-                                                <TableRow>
-                                                    <TableHead>{columns[0]}</TableHead>
-                                                    <TableHead>{columns[1]}</TableHead>
-                                                    <TableHead title="이 기기에서 마지막으로 걸리거나 보인 때">최근 사용</TableHead>
-                                                    <TableHead className="w-12"/>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>{list.map((item) => row(type, item))}</TableBody>
-                                        </Table>
-                                    </div>
+                                    <>
+                                        <div className="overflow-hidden rounded-lg border">
+                                            <Table>
+                                                <TableHeader className="bg-muted/50">
+                                                    <TableRow>
+                                                        <TableHead>{columns[0]}</TableHead>
+                                                        <TableHead>{columns[1]}</TableHead>
+                                                        <TableHead title="이 기기에서 마지막으로 걸리거나 보인 때">최근 사용</TableHead>
+                                                        <TableHead className="w-12"/>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>{list.slice(0, limit).map((item) => row(type, item))}</TableBody>
+                                            </Table>
+                                        </div>
+                                        {list.length > limit && (
+                                            <div className="flex justify-center pt-4">
+                                                <Button variant="outline" onClick={(ev) => {
+                                                    // 마지막 묶음을 펼치면 버튼이 사라지므로 포커스를 탭 패널로 옮겨 둔다.
+                                                    if (list.length <= limit + PAGE) focusPanel(ev.currentTarget);
+                                                    setLimit(limit + PAGE);
+                                                }}>
+                                                    더 보기 (+{Math.min(PAGE, list.length - limit)})
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </TabsContent>
                         );
