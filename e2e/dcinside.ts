@@ -132,7 +132,11 @@ export class FakeSite {
                 return json({result: "success"});
             }
             case "/dccon/lists":
-                return json({target: "icon", max_page: 0, list: [{package_idx: DCCON.package_idx, title: "테스트콘", main_img_url: DCCON.list_img, detail: [DCCON]}]});
+                // 패키지 줄을 키보드로 옮겨 보도록 패키지를 둘 준다.
+                return json({target: "icon", max_page: 0, list: [
+                    {package_idx: DCCON.package_idx, title: "테스트콘", main_img_url: DCCON.list_img, detail: [DCCON]},
+                    {package_idx: "8", title: "둘째콘", main_img_url: "https://dcimg5.dcinside.com/dccon.php?no=81", detail: [{package_idx: "8", detail_idx: "81", title: "인사", list_img: "https://dcimg5.dcinside.com/dccon.php?no=81"}]}
+                ]});
         }
         // 갤로그 글/댓글 수 (유저 버블·글댓비). POST지만 읽기다.
         if (url.pathname.startsWith("/api/gallog_user_layer")) return text("12,34");

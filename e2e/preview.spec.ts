@@ -352,6 +352,39 @@ test.describe("댓글 쓰기·지우기", () => {
         await expect(frame.getByRole("textbox", {name: "댓글 입력", exact: true})).toBeEnabled();
     });
 
+    test("디시콘 패키지 줄은 Tab 정지점이 하나이고 화살표로 옮겨 Enter·Space로 고른다", async ({listPage}) => {
+        const frame = await listPage.openPreview();
+        await frame.getByRole("button", {name: "디시콘", exact: true}).click();
+
+        const popup = listPage.dialog;
+        const packages = popup.getByRole("group", {name: "디시콘 패키지", exact: true});
+        const first = packages.getByRole("button", {name: "테스트콘", exact: true});
+        const second = packages.getByRole("button", {name: "둘째콘", exact: true});
+        await expect(first).toHaveAttribute("aria-pressed", "true");
+        // 닫기 버튼 다음 Tab은 고른 패키지에 선다.
+        await popup.getByRole("button", {name: "닫기", exact: true}).focus();
+        await listPage.page.keyboard.press("Tab");
+        await expect(first).toBeFocused();
+
+        await listPage.page.keyboard.press("ArrowRight");
+        await expect(second).toBeFocused();
+        await listPage.page.keyboard.press("Enter");
+        await expect(second).toHaveAttribute("aria-pressed", "true");
+        await expect(first).toHaveAttribute("aria-pressed", "false");
+        await expect(popup.getByRole("button", {name: "인사", exact: true})).toBeVisible();
+        await expect(popup.getByRole("button", {name: DCCON.title, exact: true})).toHaveCount(0);
+
+        await listPage.page.keyboard.press("ArrowLeft");
+        await expect(first).toBeFocused();
+        await listPage.page.keyboard.press("Space");
+        await expect(first).toHaveAttribute("aria-pressed", "true");
+        await expect(popup.getByRole("button", {name: DCCON.title, exact: true})).toBeVisible();
+
+        // 남은 패키지를 건너뛰고 디시콘 칸으로 간다.
+        await listPage.page.keyboard.press("Tab");
+        await expect(popup.getByRole("button", {name: DCCON.title, exact: true})).toBeFocused();
+    });
+
     test("글자콘 색은 묶음마다 Tab 정지점이 하나이고 화살표로 옮겨 Space로 고른다", async ({listPage}) => {
         const frame = await listPage.openPreview();
         await frame.getByRole("button", {name: "글자콘", exact: true}).click();
