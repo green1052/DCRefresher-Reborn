@@ -5,6 +5,14 @@
  * 고정폭 상자는 auto로 풀고, 오른쪽 사이드바·큰 머리글·줄어들지 않는 광고는 숨긴다.
  */
 .refresherCompact {
+    /* 머리글, 최근 방문 줄, 본문이 같이 쓰는 최대 폭. */
+    --refresher-compact-width: 1000px;
+
+    /* 글쓰기 페이지는 .wrap_inner가 없고 폼이 1160px에 맞춰져 있어서 디시 원래 폭을 쓴다. */
+    &:has(.dcwrap > #container) {
+        --refresher-compact-width: 1160px;
+    }
+
     /* 페이지 전체 틀(#top.dcwrap)에 min-width 1515px가 걸려 있다. */
     &,
     body,
@@ -19,6 +27,7 @@
     /* 머리글: 로고·파란 메뉴줄을 빼고 오른쪽 위 링크 한 줄과 통합검색 창만. */
     .dchead {
         width: auto !important;
+        max-width: var(--refresher-compact-width) !important;
         height: auto !important;
         padding: 8px 12px !important;
     }
@@ -59,9 +68,15 @@
     /* 본문 폭: 창에 맞추되 너무 넓어지지 않게. */
     .wrap_inner {
         width: auto !important;
-        max-width: 1000px !important;
+        max-width: var(--refresher-compact-width) !important;
         margin: 0 auto !important;
         padding: 0 12px !important;
+    }
+
+    /* 최근 방문 줄, 글쓰기 페이지 본문. */
+    .visit_bookmark,
+    .dcwrap > #container {
+        max-width: var(--refresher-compact-width) !important;
     }
 
     /* 1160px 등으로 고정된 상자들. */
