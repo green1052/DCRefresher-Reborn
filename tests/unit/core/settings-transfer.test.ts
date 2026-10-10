@@ -92,8 +92,20 @@ describe("writeSettings", () => {
         });
     });
 
-    it("빈 객체로 replace하면 설정을 모두 지운다", async () => {
-        await browser.storage.local.set({[MODULES]: {a: true}, [NICK]: [entry("a")]});
+    it("replace는 없어진 모듈이 남긴 설정도 지운다", async () => {
+        await browser.storage.local.set({[MODULES]: {a: true}, [UNKNOWN_SETTINGS]: {width: 1}});
+        await writeSettings({[MODULES]: {b: true}}, "replace");
+        expect(await browser.storage.local.get(null)).toEqual({[MODULES]: {b: true}});
+    });
+
+    it("merge는 없어진 모듈이 남긴 설정을 그대로 둔다", async () => {
+        await browser.storage.local.set({[UNKNOWN_SETTINGS]: {width: 1}});
+        await writeSettings({[MODULES]: {b: true}}, "merge");
+        expect(await browser.storage.local.get(null)).toEqual({[MODULES]: {b: true}, [UNKNOWN_SETTINGS]: {width: 1}});
+    });
+
+    it("빈 객체로 replace하면(초기화) 없어진 모듈의 설정까지 모두 지운다", async () => {
+        await browser.storage.local.set({[MODULES]: {a: true}, [NICK]: [entry("a")], [UNKNOWN_SETTINGS]: {width: 1}});
         await writeSettings({}, "replace");
         expect(await browser.storage.local.get(null)).toEqual({});
     });
@@ -130,6 +142,8 @@ describe("writeSettings", () => {
     it("없는 모듈의 설정은 저장하지 않는다", async () => {
         await writeSettings({[SETTINGS]: {width: 1000}, [UNKNOWN_SETTINGS]: {width: 1}}, "merge");
         expect(await browser.storage.local.get(null)).toEqual({[SETTINGS]: {width: 1000}});
+        await writeSettings({[SETTINGS]: {width: 900}, [UNKNOWN_SETTINGS]: {width: 1}}, "replace");
+        expect(await browser.storage.local.get(null)).toEqual({[SETTINGS]: {width: 900}});
     });
 
     it("쓸 수 있는 설정이 없으면 던지고 아무것도 바꾸지 않는다", async () => {
@@ -143,7 +157,7 @@ describe("writeSettings", () => {
 
     it("쓰다 실패하면 건드린 키만 이전 값으로 되돌린다", async () => {
         vi.spyOn(console, "error").mockImplementation(() => {});
-        await browser.storage.local.set({[MODULES]: {a: true}, [SETTINGS]: {width: 900}});
+        await browser.storage.local.set({[MODULES]: {a: true}, [SETTINGS]: {width: 900}, [UNKNOWN_SETTINGS]: {width: 1}});
         const set = vi.spyOn(browser.storage.local, "set");
         set.mockImplementationOnce(async (items) => {
             // 일부만 쓴 채 실패한 것처럼 한다.
@@ -152,7 +166,7 @@ describe("writeSettings", () => {
         });
 
         await expect(writeSettings({[MODULES]: {b: true}, [NICK]: [entry("a")]}, "replace")).rejects.toThrow("QUOTA_BYTES");
-        expect(await browser.storage.local.get(null)).toEqual({[MODULES]: {a: true}, [SETTINGS]: {width: 900}});
+        expect(await browser.storage.local.get(null)).toEqual({[MODULES]: {a: true}, [SETTINGS]: {width: 900}, [UNKNOWN_SETTINGS]: {width: 1}});
     });
 
     it("되돌리기도 실패하면 원래 실패를 알린다", async () => {

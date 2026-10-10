@@ -26,14 +26,19 @@ export const pinDefaultMode = (list: BlockEntry[], from: DetectMode, local: Dete
 
 /**
  * 설정(백업 대상 키)을 저장소에 쓴다. IP/밴 DB·백업 상태·모듈 캐시는 건드리지 않는다.
- * - replace(클라우드 복원·초기화): 백업은 완전한 스냅숏이므로 거기 없는 설정 키는 지운다.
+ * - replace(클라우드 복원·초기화): 백업은 완전한 스냅숏이므로 거기 없는 설정 키는 지운다. 없어진 모듈이 남긴 설정도 지운다.
  * - merge(가져오기): 붙여넣은 JSON은 일부만 담을 수 있으므로 든 키만 쓴다. 설정만 든 JSON이 차단/메모 목록을 지우지 않게 한다.
  *   설정 객체(isMapKey)도 기존 값에 얕게 합쳐, 설정 몇 개만 든 JSON이 나머지 설정을 기본값으로 돌리지 않게 한다.
  * 쓰다가 실패하면 이전 값으로 되돌린다.
  */
 export const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "merge"): Promise<void> => {
-    // 아래에서 쓰는 이전 값(기본 차단 모드·설정 객체·지울 키·되돌릴 키)은 모두 백업 대상 키다.
+    // 아래에서 쓰는 이전 값(기본 차단 모드·설정 객체·지울 키·되돌릴 키)은 백업 대상 키다.
     const previous = await readBackupTargets();
+    if (mode === "replace") {
+        // 없어진 모듈의 설정은 백업 대상이 아니지만 replace에서는 지운다. 되돌릴 수 있게 값도 읽어 둔다.
+        const leftovers = (await browser.storage.local.getKeys()).filter((key) => settingsKeyModule(key) !== undefined && !isBackupTarget(key));
+        if (leftovers.length > 0) Object.assign(previous, await browser.storage.local.get(leftovers));
+    }
     // 설정 키가 아닌 값(차단/메모 내보내기의 "NICK" 등)과 없는 모듈의 설정은 저장하지 않는다.
     const next = Object.fromEntries(Object.entries(data).filter(([key]) => isBackupTarget(key)));
     // 백업·내보내기는 용량 때문에 차단 항목 id를 빼므로 저장할 때 다시 붙인다.
@@ -58,7 +63,7 @@ export const writeSettings = async (data: Record<string, unknown>, mode: "replac
     // 거르고 나서 남은 키가 없으면(가져온 JSON에 기본 차단 모드만 든 경우 등)
     // 복원은 모든 설정을 지우고 가져오기는 아무것도 쓰지 않으므로 실패로 알린다. 설정을 비우는 것은 초기화({})만 허용한다.
     if (Object.keys(data).length > 0 && Object.keys(next).length === 0) throw new Error("쓸 수 있는 설정이 없습니다.");
-    const removed = mode === "replace" ? Object.keys(previous).filter((key) => isBackupTarget(key) && !(key in next)) : [];
+    const removed = mode === "replace" ? Object.keys(previous).filter((key) => !(key in next)) : [];
 
     try {
         await browser.storage.local.remove(removed);
