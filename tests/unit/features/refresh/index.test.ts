@@ -1,6 +1,7 @@
 // @vitest-environment-options {"url": "https://gall.dcinside.com/board/lists/?id=test"}
 import {afterEach, beforeEach, describe, expect, it, onTestFinished, vi} from "vitest";
 
+import {LIST_SELECTOR} from "@/core/list";
 import refresh from "@/features/refresh/index";
 import {useUiStore} from "@/stores/ui";
 
@@ -155,6 +156,23 @@ describe("자동 새로고침", () => {
         api.togglePause();
         await vi.advanceTimersByTimeAsync(20_000);
         expect(get).not.toHaveBeenCalled();
+    });
+
+    it("목록 위에서 쉬기를 켜면 커서가 목록에 있는 동안 받지 않고, 떠나면 다음 주기에 받는다", async () => {
+        vi.useFakeTimers();
+        respond(["2", "1"]);
+        // jsdom은 커서가 없어 :hover만 목록 위에 있는 것으로 답한다.
+        let hovered = true;
+        const list = document.querySelector(LIST_SELECTOR)!;
+        const matches = list.matches.bind(list);
+        vi.spyOn(list, "matches").mockImplementation((selectors) => (selectors === ":hover" ? hovered : matches(selectors)));
+        await start({pauseOnHover: true});
+        await vi.advanceTimersByTimeAsync(20_000);
+        expect(get).not.toHaveBeenCalled();
+
+        hovered = false;
+        await vi.advanceTimersByTimeAsync(5500);
+        expect(get).toHaveBeenCalledTimes(1);
     });
 
     it("뒤 페이지는 받지 않는다", async () => {

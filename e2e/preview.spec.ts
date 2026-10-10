@@ -221,16 +221,18 @@ test.describe("미리보기", () => {
         await listPage.openPreview(1);
         await expect(listPage.frameTitle).toHaveText("[말머리] 글 2 제목");
 
-        const box = await listPage.overlay.locator(".refresher-frame-scroll").boundingBox();
+        const scroll = listPage.overlay.locator(".refresher-frame-scroll");
+        const box = await scroll.boundingBox();
         await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
-        // 끝에 닿은 그 동작(관성 포함)으로는 넘어가지 않는다.
-        for (let i = 0; i < 5; i++) {
-            await page.mouse.wheel(0, 2000);
-            await page.waitForTimeout(50);
-        }
+        await page.mouse.wheel(0, 2000);
+        await expect.poll(() => scroll.evaluate((el) => el.scrollTop + el.clientHeight >= el.scrollHeight - 2)).toBe(true);
+        // 끝에 닿은 그 동작(관성 포함)으로는 넘어가지 않는다. 이어지는 휠은 동작 간격(250ms) 안에 곧바로 보낸다.
+        for (let i = 0; i < 4; i++) await page.mouse.wheel(0, 2000);
         await expect(listPage.overlay.locator(".refresher-skip-hint")).toBeVisible();
         await expect(listPage.frameTitle).toHaveText("[말머리] 글 2 제목");
 
+        // 휠 사이가 동작 간격(250ms)보다 벌어져야 새 동작이다. 시간이 지나는 것 자체가 입력이라 기다릴 사건이 없고,
+        // 간격은 휠 이벤트의 timeStamp로 재 page.clock으로 넘길 수 없다.
         await page.waitForTimeout(400);
         await page.mouse.wheel(0, 300);
         await expect(listPage.frameTitle).toHaveText("[말머리] 글 1 제목");

@@ -108,16 +108,12 @@ test.describe("자동 새로고침", () => {
         await expect(listPage.rows.nth(1)).toHaveAttribute("data-no", "2");
     });
 
-    test("목록 위에서 쉬기를 켜면 마우스가 목록에 있는 동안 새로고침하지 않는다", async ({listPage, site, storage}) => {
+    test("목록 위에서 쉬기를 켜도 마우스가 목록을 떠나면 다시 새로고침한다", async ({listPage, site, storage}) => {
+        // 목록 위에 있는 동안 받지 않는 것은 단위 테스트(tests/unit/features/refresh)가 가짜 타이머로 본다.
+        // 콘텐츠 스크립트의 타이머는 page.clock이 닿지 않아, 여기서 보려면 한 주기를 그대로 기다려야 한다.
         await storage.setModuleSettings("refresh", {refreshRate: 3000, pauseOnHover: true});
         await listPage.rows.nth(1).hover();
-        const requests = site.listRequests;
         site.rows = [{no: 4, title: "네 번째 글", nick: "새닉", uid: "user4"}, ...site.rows];
-
-        // 한 주기(3000 + 500 + 최대 1500ms)가 지나도 목록을 요청하지 않는다. 일어나지 않아야 하는 일이라 기다릴 사건이 없다.
-        await listPage.page.waitForTimeout(5500);
-        expect(site.listRequests).toBe(requests);
-        await expect(listPage.row(4)).toHaveCount(0);
 
         await listPage.leave();
         await expect(listPage.rows.first()).toHaveAttribute("data-no", "4", {timeout: 15_000});
