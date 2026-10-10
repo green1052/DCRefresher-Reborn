@@ -394,6 +394,26 @@ test.describe("댓글 쓰기·지우기", () => {
         expect([body.get("id"), body.get("pno"), body.getAll("cmt_nos[]")]).toEqual(["test", "3", ["10", "11"]]);
     });
 
+    test("삭제 확인 창이 떠 있는 동안에는 PageDown으로 옆 글로 넘어가지 않는다", async ({listPage, site}) => {
+        site.manager = true;
+        await listPage.page.reload();
+        await listPage.refreshButton.waitFor();
+        await listPage.openPreview();
+        await listPage.frame.getByRole("checkbox", {name: "전체 선택"}).click();
+        await listPage.frame.getByRole("button", {name: "삭제", exact: true}).click();
+        await expect(listPage.alert).toBeVisible();
+
+        // 포커스가 입력칸이 아니어도 확인 창이 떠 있으면 단축키를 막는다.
+        await listPage.page.keyboard.press("PageDown");
+        await listPage.page.keyboard.press("Escape");
+        await expect(listPage.alert).toHaveCount(0);
+        // 닫은 뒤 한 번 더 넘겨 2번 글에 서면 앞의 PageDown은 막힌 것이다 (넘어갔다면 1번 글).
+        await listPage.page.keyboard.press("PageDown");
+        await expect(listPage.frameTitle).toHaveText("[말머리] 글 2 제목");
+        await expect(listPage.page).toHaveURL(viewUrl(2));
+        expect(site.submitted).toEqual([]);
+    });
+
     test("유동 댓글은 비밀번호를 물어 지우고, 지운 뒤 목록을 다시 받는다", async ({listPage, site}) => {
         await listPage.openPreview();
         // 대화상자는 뜨는 동안 페이지를 멈추므로 누르기 전에 처리기를 건다.
