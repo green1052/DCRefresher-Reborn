@@ -4,7 +4,7 @@
 
 ## 새 기능 추가하기
 
-기능은 모듈 폴더 하나에 모으고 다른 곳의 목록에는 등록하지 않습니다.
+기능은 모듈 폴더 하나에 모으고 다른 곳의 목록에는 등록하지 않습니다. 오버레이 호스트 컴포넌트만 예외로 `components/overlay/ContentRoot.tsx`에 직접 넣습니다.
 
 | 하려는 것 | 고치는 곳 |
 |---|---|
@@ -13,7 +13,7 @@
 | 단축키 | `meta.ts`의 `commands`와 `index.ts`의 `shortcuts` |
 | 팝업 '현재 페이지' 토글 | `meta.ts`의 `toggles`와 `index.ts`의 `pageToggles` |
 | 디시 페이지 CSS | `features/<id>/page.css` |
-| 오버레이 UI | 컴포넌트와 그 스토어. 스토어에 `needOverlayWhen(store, (state) => …)`로 띄울 조건을 등록한다. CSS는 `features/<id>/overlay.css` |
+| 오버레이 UI | 컴포넌트와 그 스토어. 호스트 컴포넌트는 `components/overlay/ContentRoot.tsx`에 넣는다 (예: `features/preview/ui/PreviewHost`). 스토어에 `needOverlayWhen(store, (state) => …)`로 띄울 조건을 등록한다. CSS는 `features/<id>/overlay.css` |
 | 배경에서 할 일 | `features/<id>/background.ts` ([배경 모듈](#배경-모듈)) |
 | 다른 모듈에 줄 api | setup의 반환값. 받는 쪽은 `getModuleApi(id)` |
 
