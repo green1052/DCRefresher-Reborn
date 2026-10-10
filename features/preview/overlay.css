@@ -12,6 +12,40 @@
 .refresher-html {
     word-break: break-word;
 
+    /* 디시 다크모드는 본문 상자를 통째로 반전 필터로 뒤집는다 (dark.css의 .darkmode .write_div) — 필터는 캐스케이드를
+       무시해 글쓴이가 넣은 인라인 color:#000000도 뒤집는다. 미리보기는 페이지 CSS가 안 닿으니 여기서 똑같이 뒤집는다.
+       아니면 그 인라인 검은 글자가 확장 프레임의 검은 배경 위에 그대로 남는다 (#275). */
+    .dark & {
+        /* 테마 글자색(밝음)을 물려받으면 뒤집혀 검어진다. 검정을 넣어 뒤집히면 흰 글자가 된다. */
+        color: #000;
+        filter: invert(1);
+
+        /* 안의 미디어는 다시 뒤집어 원래 색으로 (dark.css가 write_div의 img·video·iframe·embed·object를 다시 뒤집는 것과 같다). */
+        :is(img, video, iframe, embed, object) {
+            filter: invert(1);
+        }
+
+        /* 글자콘 상자 — dark.css가 .writing_view_box .coment_dccon_txt를 다시 뒤집는 것과 같다. */
+        .coment_dccon_txt {
+            filter: invert(1);
+        }
+
+        /* 첨부 이미지 번호 표지도 다시 뒤집어 검은 바탕 흰 글자를 유지한다. */
+        .refresher-imgnum::before {
+            filter: invert(1);
+        }
+
+        /* 링크색은 미리 뒤집어 반전 후 테마 링크색으로 보이게 한다 (dark.css는 링크 재반전을 주석처리해 그냥 뒤집힌 채로 둔다). */
+        a {
+            color: rgb(from var(--link) calc(255 - r) calc(255 - g) calc(255 - b));
+        }
+    }
+
+    /* 지운 댓글의 회색 글자(Comment.tsx) — 미리 뒤집어 반전 후에도 본문용 회색으로 보인다. */
+    .dark &.text-muted-foreground {
+        color: rgb(from var(--muted-foreground) calc(255 - r) calc(255 - g) calc(255 - b));
+    }
+
     img,
     video,
     iframe,
@@ -57,7 +91,7 @@
         display: inline-block;
         box-sizing: border-box;
         overflow: hidden;
-        /* 디시 본문 글자색. 흰 바탕이 인라인으로 남으므로 다크 테마에서도 어둡게 둔다. */
+        /* 디시 본문 글자색. 흰 바탕은 인라인으로 남는다 — 다크 테마에서는 위의 상자 반전이 알아서 어둡게 뒤집는다. */
         color: #333;
         text-decoration: none;
     }
