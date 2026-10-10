@@ -10,6 +10,7 @@ import {notifyManage} from "@/stores/notify";
 import {cn} from "cn";
 
 import {savedNonmember} from "../nonmember";
+import {markPressable, pressContents} from "./contentsClick";
 import {openDcconInfo} from "./DcconInfoPopup";
 import {fitTxtcon} from "./fitTxtcon";
 import {watchGifVideos} from "./gifVideos";
@@ -110,6 +111,10 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
     }, [html, isDccon]);
     // 깨진 디시콘 mp4는 디시처럼 gif로 바꾼다.
     useEffect(() => (isDccon && body.current ? watchGifVideos(body.current) : undefined), [html, isDccon]);
+    // 디시콘 정보 창을 키보드로도 연다 (pressContents).
+    useEffect(() => {
+        if (isDccon && body.current) markPressable(body.current, false);
+    }, [html, isDccon]);
 
     return (
         // 화면 밖 댓글은 레이아웃·스타일 계산을 건너뛴다 (댓글 수백 개인 글을 열 때 레이아웃이 크게 준다).
@@ -175,6 +180,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
             {/* 지운 댓글은 읽을 수 있게 본문용 회색을 쓴다. */}
             <div ref={body} className={cn("refresher-html refresher-comment-html mt-1", isDeleted && "text-muted-foreground")} data-dccon={isDccon || undefined}
                  onClick={isDccon ? openDcconInfo : undefined}
+                 onKeyDown={isDccon ? pressContents : undefined}
                  dangerouslySetInnerHTML={{__html: html}}/>
         </div>
     );

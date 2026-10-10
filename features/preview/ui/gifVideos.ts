@@ -19,7 +19,8 @@ const toGif = (video: HTMLVideoElement, gif: string): void => {
     image.src = gif;
     // 스텔스·이미지 차단으로 숨긴 것은 받지 않게 (utils/sanitize.ts와 같다).
     image.loading = "lazy";
-    for (const name of ["alt", "title", "data-block", "data-blocked"]) {
+    // 키보드로 누르는 버튼 표시(contentsClick.ts의 markPressable)도 옮긴다.
+    for (const name of ["alt", "title", "data-block", "data-blocked", "tabindex", "role", "aria-label"]) {
         const value = video.getAttribute(name);
         if (value !== null) image.setAttribute(name, value);
     }

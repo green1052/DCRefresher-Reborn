@@ -167,6 +167,17 @@ test.describe("미리보기", () => {
         await expect(frame).toHaveCount(0);
     });
 
+    test("본문 이미지는 키보드로 골라 Enter로 크게 본다", async ({listPage}) => {
+        const frame = await listPage.openPreview();
+        const image = frame.getByRole("button", {name: "이미지 크게 보기"});
+        await expect(image).toHaveJSProperty("complete", true);
+        await image.focus();
+        await listPage.page.keyboard.press("Enter");
+
+        const viewer = listPage.overlay.locator(".refresher-viewer");
+        await expect(viewer.locator("img")).toHaveAttribute("src", /viewimage\.php\?id=test&no=3/);
+    });
+
     test("세로로 긴 이미지는 크게 보기에서 높이에 맞춰 줄이지 않고 폭 그대로 세로로 스크롤한다", async ({listPage}) => {
         await listPage.page.context().route(/viewimage\.php/, (route) => route.fulfill({
             contentType: "image/svg+xml",

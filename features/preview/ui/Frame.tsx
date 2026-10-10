@@ -23,7 +23,7 @@ import {adjacentPreData} from "../rows";
 import {TimeStamp} from "./TimeStamp";
 import {UserCard} from "./UserCard";
 import {CommentList, threadParents} from "./CommentList";
-import {clickContents} from "./contentsClick";
+import {clickContents, markPressable, pressContents} from "./contentsClick";
 import {CountDown} from "./CountDown";
 import {ErrorBlock} from "./ErrorBlock";
 import {fitMovies} from "./fitMovies";
@@ -120,6 +120,10 @@ export const Frame = () => {
     }, [mounted, contents, commentsOnly, error, postKey, hideText, block, blockEntries, blockDefaults, gallery]);
     // 깨진 움짤·디시콘 mp4는 디시처럼 gif로 바꾼다. 본문 칸이 새로 그려지는 때가 위와 같다.
     useEffect(() => (contentsBox.current ? watchGifVideos(contentsBox.current) : undefined), [mounted, contents, commentsOnly, error, postKey, hideText]);
+    // 이미지 크게 보기와 디시콘 정보 창을 키보드로도 연다 (pressContents).
+    useEffect(() => {
+        if (contentsBox.current) markPressable(contentsBox.current, imageViewer);
+    }, [mounted, contents, commentsOnly, error, postKey, hideText, imageViewer]);
 
     // 창은 비모달이라(아래 Dialog.Root) 포커스를 가두지 않는다. 연 동안 뒤 페이지를 inert로 막아 Tab·스크린 리더가 가려진 목록으로 나가지 않게 한다.
     // 오버레이(refresher-root)는 남긴다. 버블·토스트·관리 패널이 거기 있다. body에 직접 붙인 확장 UI(스텔스 버튼 등)도 data-refresher-ui로 남긴다.
@@ -315,6 +319,7 @@ export const Frame = () => {
                                     className={cn("refresher-html refresher-preview-contents grow", imageBlocked && "refresher-preview-block-media")}
                                     data-blocked={hideText ? undefined : post?.textBlocked}
                                     onClick={(ev) => clickContents(ev, imageViewer)}
+                                    onKeyDown={pressContents}
                                     dangerouslySetInnerHTML={{__html: hideText ? BLOCKED_TEXT : contents ?? ""}}
                                 />
                                 {post && <Votes post={post}/>}
