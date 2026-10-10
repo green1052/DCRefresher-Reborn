@@ -34,9 +34,9 @@ export const moduleSettingsStore = createStore<Record<string, Readonly<Record<st
  */
 export const runningModulesStore = createStore<Record<string, boolean>>(() => ({}));
 
-/** 모듈의 설정 (state는 moduleSettingsStore의 값). 레지스트리는 모듈별 타입을 모르므로 그 모듈이 ModuleSettings에 선언한 것으로 단언한다. */
-export const moduleSettings = <Id extends keyof ModuleSettings>(id: Id, state = moduleSettingsStore.getState()): ModuleSettings[Id] | undefined =>
-    state[id] as ModuleSettings[Id] | undefined;
+/** 모듈의 설정 (state는 moduleSettingsStore의 값). 레지스트리는 모듈별 타입을 모르므로 state를 ModuleSettings 모양으로 받아 그 모듈이 선언한 타입으로 읽는다. */
+export const moduleSettings = <Id extends keyof ModuleSettings>(id: Id, state: Partial<ModuleSettings> = moduleSettingsStore.getState()): ModuleSettings[Id] | undefined =>
+    state[id];
 
 /** 이 페이지에서 도는 모듈의 설정. 꺼져 있거나 이 페이지에서 돌지 않으면 undefined다. React에서는 useRunningModuleSettings를 쓴다. */
 export const runningModuleSettings = <Id extends keyof ModuleSettings>(id: Id): ModuleSettings[Id] | undefined =>
