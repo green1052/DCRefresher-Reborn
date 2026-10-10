@@ -5,6 +5,15 @@
  * 고정폭 상자는 auto로 풀고, 오른쪽 사이드바·큰 머리글·줄어들지 않는 광고는 숨긴다.
  */
 .refresherCompact {
+    /* 머리글, 최근 방문 줄, 본문이 같이 쓰는 최대 폭. */
+    --refresher-compact-width: 1000px;
+
+    /* #container가 .dcwrap의 바로 아래에 있는 페이지 — .wrap_inner가 없는 글쓰기 페이지와 갤 메인(갤러리 디렉터리 루트)이다.
+     * 글쓰기 폼은 1160px에 맞춰져 있어 디시 원래 폭을 쓴다. 갤 메인 상자들은 1050px 설계라 이 폭이 실질 차이를 만들지 않는다. */
+    &:has(.dcwrap > #container) {
+        --refresher-compact-width: 1160px;
+    }
+
     /* 페이지 전체 틀(#top.dcwrap)에 min-width 1515px가 걸려 있다. */
     &,
     body,
@@ -19,6 +28,7 @@
     /* 머리글: 로고·파란 메뉴줄을 빼고 오른쪽 위 링크 한 줄과 통합검색 창만. */
     .dchead {
         width: auto !important;
+        max-width: var(--refresher-compact-width) !important;
         height: auto !important;
         padding: 8px 12px !important;
     }
@@ -46,6 +56,24 @@
             float: none !important;
             position: static !important;
         }
+
+        /* 야간 모드 말풍선은 이 상자 기준으로 뜬다. static으로 풀리면 머리글 왼쪽 위로 튀어 나간다. */
+        > .darkmodebox {
+            position: relative !important;
+        }
+
+        /* 말풍선이 창 밖으로 넘치지 않게 오른쪽 끝에 맞추고, 꼬리는 야간모드 버튼 아래로 옮긴다. */
+        .join_tip {
+            right: 0 !important;
+            left: auto !important;
+
+            &::after {
+                /* 꼬리 오른쪽 끝을 .darkmodebox의 오른쪽에서 23px에 두는 손맞춤 값: '야간모드' 글자 위에 온다. */
+                /* 글꼴을 바꾸면 글자 폭이 변해 몇 픽셀 어긋난다. */
+                right: 23px !important;
+                left: auto !important;
+            }
+        }
     }
 
     .wrap_search {
@@ -59,9 +87,17 @@
     /* 본문 폭: 창에 맞추되 너무 넓어지지 않게. */
     .wrap_inner {
         width: auto !important;
-        max-width: 1000px !important;
+        max-width: var(--refresher-compact-width) !important;
         margin: 0 auto !important;
         padding: 0 12px !important;
+    }
+
+    /* 최근 방문 줄, .wrap_inner 없는 페이지(글쓰기·갤 메인)의 본문, 푸터 두 줄(.info_policy·.copyright)도 머리글과 같은 최대 폭을 쓴다. */
+    .visit_bookmark,
+    .dcwrap > #container,
+    .info_policy,
+    .copyright {
+        max-width: var(--refresher-compact-width) !important;
     }
 
     /* 1160px 등으로 고정된 상자들. */
