@@ -55,6 +55,22 @@
             float: none !important;
             position: static !important;
         }
+
+        /* 야간 모드 말풍선은 이 상자 기준으로 뜬다. static으로 풀리면 머리글 왼쪽 위로 튀어 나간다. */
+        > .darkmodebox {
+            position: relative !important;
+        }
+
+        /* 말풍선이 창 밖으로 넘치지 않게 오른쪽 끝에 맞추고, 꼬리는 야간모드 버튼 아래로 옮긴다. */
+        .join_tip {
+            right: 0 !important;
+            left: auto !important;
+
+            &::after {
+                right: 23px !important;
+                left: auto !important;
+            }
+        }
     }
 
     .wrap_search {
