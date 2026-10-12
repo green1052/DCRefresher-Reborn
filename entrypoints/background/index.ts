@@ -9,6 +9,7 @@ import {recordUsage, syncUsage} from "@/core/usage";
 import {friendlyMessage} from "@/utils/error";
 
 import {startAutoBackup} from "./backup";
+import {fillMissingBlockIds} from "./blocks";
 import {startDatabaseUpdates} from "./database";
 import {listenPageMessages} from "./page";
 
@@ -58,6 +59,7 @@ export default defineBackground(() => {
         await applyBackgroundModules();
         // 미리보기로 읽은 글 기록. 이제 브라우저 방문 기록(:visited)으로 표시해 쓰지 않는다.
         await storage.removeItem(moduleDataKey("preview"));
+        await fillMissingBlockIds();
 
         // 개발 빌드는 DB가 없을 때만 받는다.
         if (import.meta.env.PROD || !(await dbStorage.meta.getValue()).version) {
