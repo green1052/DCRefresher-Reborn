@@ -10,9 +10,10 @@ const page = ({head = "", body = "<div class=\"write_div\">본문</div>", tail =
 <div class="view_content_wrap">
   <div class="gallview_head">
     <h3><span class="title_headtext">[잡담]</span><span class="title_subject">제목<script>document.write("광고")</script></span></h3>
-    <div class="gall_writer" data-nick="닉" data-uid="uid1" data-ip=""><img src="https://nstatic.dcinside.com/nik.gif"></div>
-    <span class="gall_date" title="2026-09-26 02:29:40">2026.09.26 02:29:40</span>
-    <div class="fr"><span class="gall_count">조회 1234</span><span class="gall_reply_num">추천 5</span><span class="gall_comment">댓글 7</span></div>
+    <div class="gall_writer" data-nick="닉" data-uid="uid1" data-ip="">
+      <div class="fl"><img src="https://nstatic.dcinside.com/nik.gif"><span class="gall_date" title="2026-09-26 02:29:40">2026.09.26 02:29:40</span></div>
+      <div class="fr"><span class="gall_count">조회 1234</span><span class="gall_reply_num">추천 5</span><span class="gall_comment">댓글 7</span></div>
+    </div>
     ${head}
   </div>
   <div class="writing_view_box">${body}</div>

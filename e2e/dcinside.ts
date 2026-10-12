@@ -200,8 +200,10 @@ const viewPage = (no: string, comments: FakeComment[], target: { id: string; no:
 <input type="hidden" id="e_s_n_o" value="token">
 <div class="view_content_wrap"><header><div class="gallview_head clear ub-content">
 <h3 class="title ub-word"><span class="title_headtext">[말머리]</span><span class="title_subject">글 ${no} 제목</span></h3>
-<div class="gall_writer ub-writer" data-nick="고닉" data-uid="user${no}" data-ip=""><span class="nickname"><em>고닉</em></span></div>
-<div class="fr"><span class="gall_date" title="2026-09-30 12:00:00">2026.09.30 12:00:00</span><span class="gall_count">조회 10</span><span class="gall_reply_num">추천 1</span><span class="gall_comment">댓글 ${commentCount}</span></div>
+<div class="gall_writer ub-writer" data-nick="고닉" data-uid="user${no}" data-ip="">
+<div class="fl"><span class="nickname"><em>고닉</em></span><span class="gall_date" title="2026-09-30 12:00:00">2026.09.30 12:00:00</span></div>
+<div class="fr"><span class="gall_count">조회 10</span><span class="gall_reply_num">추천 1</span><span class="gall_comment">댓글 ${commentCount}</span></div>
+</div>
 </div></header>
 <div class="writing_view_box"><div class="write_div">본문 ${no} 내용입니다. <img src="https://dcimg1.dcinside.com/viewimage.php?id=test&no=${no}" width="40" height="40"></div></div>
 </div>

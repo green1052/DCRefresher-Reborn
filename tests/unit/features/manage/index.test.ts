@@ -2,6 +2,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import manage from "@/features/manage/index";
+import {useUiStore} from "@/stores/ui";
 
 import {tick} from "../../../helpers";
 import {type Running, runModule} from "../module";
@@ -9,6 +10,8 @@ import {type Running, runModule} from "../module";
 const deletePost = vi.hoisted(() => vi.fn(async () => ({success: true})));
 vi.mock("@/core/preview/request", async (importOriginal) => ({...await importOriginal<typeof import("@/core/preview/request")>(), deletePost}));
 vi.mock("@/stores/notify", () => ({notifyManage: async (request: Promise<{ success: boolean }>) => (await request).success}));
+const searchPosts = vi.hoisted(() => vi.fn<(query: string) => Promise<string>>());
+vi.mock("@/core/messaging/protocol", () => ({sendMessage: (_type: string, query: string) => searchPosts(query)}));
 
 let running: Running<unknown> | undefined;
 const start = async (patch = {}) => (running = await runModule(manage, patch));
@@ -89,5 +92,29 @@ describe("이미지 출처", () => {
         await start({imageOrigin: true});
         await tick();
         expect(origin()).toBeUndefined();
+    });
+});
+
+describe("같은 제목 찾기", () => {
+    /** 디시 글 머리: 작성자 칸 안에 닉네임·날짜(.fl)와 조회·추천 수(.fr)가 있다. */
+    const mountView = (): void => {
+        document.body.innerHTML = "<div class=\"gallview_head\"><h3><span class=\"title_subject\">같은 제목</span></h3>" +
+            "<div class=\"gall_writer\"><div class=\"fl\"><span class=\"nickname\">닉</span></div><div class=\"fr\"><span class=\"gall_count\">조회 1</span></div></div></div>";
+    };
+    const result = (title: string, id: string, no: string, gallery: string): string =>
+        `<li><a class="tit_txt" href="https://gall.dcinside.com/board/view/?id=${id}&no=${no}">${title}</a><span class="sub_txt">${gallery}</span></li>`;
+
+    it("조회 수 칸에 버튼을 달고, 제목이 똑같은 다른 글의 갤러리를 알린다", async () => {
+        useUiStore.setState({toasts: []});
+        searchPosts.mockResolvedValue(`<ul class="sch_result_list">${result("같은 제목", "a", "1", "갤A") + result("같은 제목 아님", "b", "2", "갤B") + result("같은 제목", "c", "3", "갤C")}</ul>`);
+        mountView();
+        await start({titleSearch: true});
+        await tick();
+
+        const button = document.querySelector<HTMLButtonElement>(".gall_writer .fr > button");
+        expect(button?.textContent).toBe("같은 제목 찾기");
+        button!.click();
+        await vi.waitFor(() => expect(useUiStore.getState().toasts.map((toast) => toast.content)).toEqual(["제목이 같은 글 2개: 갤A, 갤C"]));
+        expect(searchPosts).toHaveBeenCalledWith("같은 제목");
     });
 });
