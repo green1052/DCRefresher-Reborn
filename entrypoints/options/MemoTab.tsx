@@ -175,9 +175,14 @@ export function MemoTab() {
         }
         try {
             for (const type of ["UID", "IP"] as const) {
+                // 새 메모의 색은 밖에서 한 번 정한다. updateMemos의 change는 스토어와 저장소 값에 두 번 불려, 안에서 고르면 두 색이 달라
+                // 저장소 값이 돌아올 때 화면의 색이 한 번 바뀐다.
+                const colors = new Map(Object.keys(parsed[type]).map((target) => [target, randomColor()]));
                 await updateMemos(type, (current) => {
                     const merged = {...current};
-                    for (const [target, memo] of Object.entries(parsed[type])) merged[target] = {...(ownMemo(merged, target) ?? {color: randomColor()}), text: memo};
+                    for (const [target, memo] of Object.entries(parsed[type])) {
+                        merged[target] = {...(ownMemo(merged, target) ?? {color: colors.get(target) ?? randomColor()}), text: memo};
+                    }
                     return merged;
                 });
             }
