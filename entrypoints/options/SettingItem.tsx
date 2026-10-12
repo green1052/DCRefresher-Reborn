@@ -1,5 +1,5 @@
 import {ChevronDown, ChevronUp, GripVertical, Undo2} from "lucide-react";
-import {useId, useState} from "react";
+import {useId, useLayoutEffect, useRef, useState} from "react";
 
 import {ColorInput} from "@/components/ColorInput";
 import {WithTooltip} from "@/components/WithTooltip";
@@ -182,9 +182,30 @@ const RangeControl = ({schema, value, descId, onChange}: NarrowProps<"range">) =
     );
 };
 
+/** 포커스를 받을 수 있는 요소 (막힌 것과 tabindex -1은 뺀다). */
+const FOCUSABLE = ":is(button, input, [tabindex]:not([tabindex='-1'])):not(:disabled)";
+
+/**
+ * 누른 버튼이 막히거나 사라져 포커스가 빠졌으면(body) within 안의 포커스 받을 곳으로 옮긴다.
+ * 그대로 두면 키보드 사용자가 페이지 맨 위로 돌아간다. 다시 그린 뒤에 부른다.
+ */
+const refocus = (within: Element | null | undefined): void => {
+    const active = document.activeElement;
+    if (active && active !== document.body && !(active instanceof HTMLButtonElement && active.disabled)) return;
+    within?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+};
+
 const OrderControl = ({schema, value: order, descId, onChange}: NarrowProps<"order">) => {
     const [dragging, setDragging] = useState<number | null>(null);
     const [over, setOver] = useState<number | null>(null);
+    const group = useRef<HTMLDivElement>(null);
+    // 버튼으로 옮긴 항목. 끝으로 옮기면 누른 버튼이 막히므로 다시 그린 뒤 같은 항목의 다른 버튼으로 옮긴다.
+    const moved = useRef<string | null>(null);
+    useLayoutEffect(() => {
+        if (moved.current === null) return;
+        refocus(group.current?.querySelector(`[data-key="${CSS.escape(moved.current)}"]`));
+        moved.current = null;
+    }, [order]);
 
     const label = (key: string): string => schema.items[key] ?? key;
 
@@ -202,10 +223,11 @@ const OrderControl = ({schema, value: order, descId, onChange}: NarrowProps<"ord
     };
 
     return (
-        <div className="flex min-w-50 flex-col gap-1" role="group" aria-label={schema.name} aria-describedby={descId}>
+        <div ref={group} className="flex min-w-50 flex-col gap-1" role="group" aria-label={schema.name} aria-describedby={descId}>
             {order.map((key, index) => (
                 <div
                     key={key}
+                    data-key={key}
                     className={cn(
                         "flex cursor-grab items-center gap-2 rounded-md border bg-background py-1 pr-1 pl-2",
                         dragging === index && "opacity-40",
@@ -236,11 +258,17 @@ const OrderControl = ({schema, value: order, descId, onChange}: NarrowProps<"ord
                     <span className="flex-1">{label(key)}</span>
                     {/* 버튼마다 항목 이름을 붙인다. '위로'만 있으면 어느 항목을 옮기는지 들리지 않는다. */}
                     <Button variant="ghost" size="icon-xs" aria-label={`${label(key)} 위로`}
-                            disabled={index === 0} onClick={() => move(index, index - 1)}>
+                            disabled={index === 0} onClick={() => {
+                                moved.current = key;
+                                move(index, index - 1);
+                            }}>
                         <ChevronUp/>
                     </Button>
                     <Button variant="ghost" size="icon-xs" aria-label={`${label(key)} 아래로`}
-                            disabled={index === order.length - 1} onClick={() => move(index, index + 1)}>
+                            disabled={index === order.length - 1} onClick={() => {
+                                moved.current = key;
+                                move(index, index + 1);
+                            }}>
                         <ChevronDown/>
                     </Button>
                 </div>
@@ -251,6 +279,8 @@ const OrderControl = ({schema, value: order, descId, onChange}: NarrowProps<"ord
 
 export const SettingItem = ({schema, value, compact, takenKeys, onChange}: SettingItemProps) => {
     const descId = useId();
+    // 기본값으로 되돌리면 그 버튼이 사라진다. 포커스는 이 설정의 컨트롤로 옮긴다.
+    const control = useRef<HTMLDivElement>(null);
     // 스토어가 normalizeSetting으로 스키마에 맞춰 둔 값이다. 모양이 다르면(있을 수 없지만) 기본값으로 그린다.
     const text = typeof value === "string" ? value : String(defaultValue(schema));
     const title = (
@@ -259,7 +289,11 @@ export const SettingItem = ({schema, value, compact, takenKeys, onChange}: Setti
             {/* 다른 단축키가 기본값 키를 쓰고 있으면 되돌리지 못하게 한다. 되돌리면 두 단축키가 같은 키가 된다. */}
             {!areEqual(value, defaultValue(schema)) && !(schema.type === "key" && takenKeys?.includes(schema.default)) && (
                 <WithTooltip tip={`기본값으로 되돌리기 (${formatDefault(schema)})`}
-                             trigger={<Button variant="ghost" size="icon-xs" aria-label={`${schema.name} 기본값으로 되돌리기`} onClick={() => onChange(defaultValue(schema))}/>}>
+                             trigger={<Button variant="ghost" size="icon-xs" aria-label={`${schema.name} 기본값으로 되돌리기`} onClick={() => {
+                                 onChange(defaultValue(schema));
+                                 // 이 버튼은 다시 그리며 사라진다.
+                                 requestAnimationFrame(() => refocus(control.current));
+                             }}/>}>
                     <Undo2/>
                 </WithTooltip>
             )}
@@ -278,7 +312,7 @@ export const SettingItem = ({schema, value, compact, takenKeys, onChange}: Setti
                 )}
             </div>
 
-            <div className="shrink-0">
+            <div ref={control} className="shrink-0">
                 {schema.type === "check" && (
                     <Switch aria-label={schema.name} aria-describedby={descId} checked={value === true}
                             onCheckedChange={(checked) => onChange(checked)}/>

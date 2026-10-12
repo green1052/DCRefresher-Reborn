@@ -31,10 +31,23 @@ test.describe("옵션 - 설정 탭", () => {
         await expect(fadeIn).not.toBeChecked();
         await expect.poll(() => storage.get("refresher:module:refresh:settings")).toEqual({fadeIn: false});
 
-        await reset.click();
+        // 키보드로 되돌리면 사라진 버튼 대신 그 설정의 컨트롤로 포커스가 간다.
+        await reset.focus();
+        await page.keyboard.press("Enter");
         await expect(fadeIn).toBeChecked();
         await expect(reset).toHaveCount(0);
+        await expect(fadeIn).toBeFocused();
         await expect.poll(() => storage.get("refresher:module:refresh:settings")).toEqual({fadeIn: true});
+    });
+
+    test("순서 버튼으로 항목을 끝까지 옮겨도 포커스가 그 항목에 남는다", async ({page, extensionId, storage}) => {
+        await openOptions(page, extensionId, "general");
+        const order = page.getByRole("group", {name: "정보 배치 순서", exact: true});
+        await order.getByRole("button", {name: "메모 위로", exact: true}).focus();
+        await page.keyboard.press("Enter");
+        await expect.poll(() => storage.get("refresher:module:userinfo:settings")).toEqual({badgeOrder: ["MEMO", "UID", "RATIO", "PERMBAN"]});
+        // 맨 위로 와 '위로'가 막혔으니 같은 항목의 '아래로'로 옮긴다.
+        await expect(order.getByRole("button", {name: "메모 아래로", exact: true})).toBeFocused();
     });
 
     test("폰트 교체 설정이 옵션 페이지 본문 글꼴에 걸린다 (크롬이 확장 페이지 body에 넣는 글꼴에 지지 않는다)", async ({page, extensionId, storage}) => {
