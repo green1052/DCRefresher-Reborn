@@ -26,4 +26,4 @@
 - 다이얼로그는 `components/dialogs.tsx`의 `ModalDialog`(열 때만 마운트), `ConfirmDialog`, `Notice`, `DialogActions`, `SubmitForm`을 씁니다. `onClose`는 닫힘 애니메이션이 끝나 포커스가 돌아간 뒤에 불립니다. 일을 마친 창이 스스로 닫을 때는 `actionsRef.current.close()`를 씁니다.
 - 포커스: 트리거 없이 여는 창(다이얼로그·버블)은 `useReturnFocus`(`components/useReturnFocus.ts`)가 연 요소에 포커스를 돌려줍니다. 오버레이(shadow DOM) 안에서는 Base UI의 포커스 가두기가 끝을 알아보지 못해 모달 창(`ModalDialog`·`ConfirmDialog`·`Notice`, 이미지 크게 보기)이 `keepTabInside`로 Tab을 직접 돌립니다.
 - 툴팁은 `components/WithTooltip.tsx`를 씁니다. 수천 줄을 그리는 목록(차단 목록 줄·댓글)에는 브라우저 기본(`title`)을 씁니다.
-- 단축키는 `utils/event.ts`의 `isTyping`이 모달 다이얼로그 배경(`[data-slot=dialog-overlay]`·`[data-slot=alert-dialog-overlay]`)이 떠 있으면 막습니다. 미리보기 창의 Esc 전달(`features/preview/ui/Frame.tsx`)도 같은 선택자로 위에 뜬 창을 알아봅니다. 미리보기 안에서 연 창은 Base UI가 배경을 그리지 않으므로 `useModal`이 늘 `forceRender`로 그립니다. 배경을 바꾸면 이 선택자들도 맞춥니다.
+- 단축키는 `utils/event.ts`의 `isTyping`이 모달 다이얼로그 배경(`[data-slot=dialog-overlay]`·`[data-slot=alert-dialog-overlay]`)이 떠 있으면 막습니다. 미리보기 창의 Esc 전달(`features/preview/ui/Frame.tsx`)은 같은 배경 선택자에 팝오버(`[data-slot=popover-content]`)를 더해 위에 뜬 창을 알아봅니다. 미리보기 안에서 연 창은 Base UI가 배경을 그리지 않으므로 `useModal`이 늘 `forceRender`로 그립니다. 배경을 바꾸면 이 선택자들도 맞춥니다.

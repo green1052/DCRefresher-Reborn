@@ -9,7 +9,7 @@
 | 하려는 것 | 고치는 곳 |
 |---|---|
 | 새 모듈 | `features/<id>/meta.ts`, `index.ts` |
-| 설정 | `meta.ts`의 `settings`. 페이지 코드는 `ctx.settings`, React는 `useModuleSettings(id)`로 읽는다. 바뀔 때 할 일은 setup의 `ctx.onSettingsChanged` |
+| 설정 | `meta.ts`의 `settings`. 페이지 코드는 `ctx.settings`, 컴포넌트는 `useModuleSettings(id)`로 읽는다. 바뀔 때 할 일은 setup의 `ctx.onSettingsChanged` |
 | 단축키 | `meta.ts`의 `commands`와 `index.ts`의 `shortcuts` |
 | 팝업 '현재 페이지' 토글 | `meta.ts`의 `toggles`와 `index.ts`의 `pageToggles` |
 | 디시 페이지 CSS | `features/<id>/page.css` |
@@ -22,7 +22,7 @@
 옵션·팝업이 그리는 데 필요한 정보는 `features/<id>/meta.ts`에서 `defineModuleMeta`로, 페이지에서 하는 일은 `features/<id>/index.ts`에서 메타를 펼쳐 `defineModule`로 정의해 각각 default로 내보냅니다. 가장 작은 예는 `features/requests`입니다.
 
 ```ts
-// meta.ts — 옵션·팝업·콘텐츠가 모두 불러오므로 React 컴포넌트(lucide 아이콘) 말고는 가벼운 것만 둔다
+// meta.ts — 옵션·팝업·콘텐츠가 모두 불러오므로 아이콘 컴포넌트(lucide) 말고는 가벼운 것만 둔다
 export default defineModuleMeta({
     id: "requests",            // 저장소 키에 쓰인다. 바꾸면 사용자 설정이 끊긴다
     name: "요청 제한",          // 옵션·팝업에 보이는 이름
@@ -63,7 +63,7 @@ export default defineModule({
 | `addCleanup(fn)` | signal을 받지 못하는 것(storage watch, zustand subscribe, 타이머)의 해제 함수를 등록한다 |
 | `onSettingsChanged(fn)` | 위 설명 참고. setup 안에서 등록한다 |
 
-React UI는 설정을 `useModuleSettings("모듈 id")`로 직접 읽습니다. 설정을 UI 스토어로 옮겨 적지 마세요. `useModuleSettings`는 꺼진 모듈의 설정도 주므로, 다른 모듈이 이 페이지에서 돌 때만 그 설정을 따르는 UI(미리보기의 차단·배지)는 `useRunningModuleSettings("모듈 id")`로 읽습니다. 모듈이 돌지 않으면 undefined입니다. React 밖에서는 `core/module/registry.ts`의 `runningModuleSettings(id)`를 씁니다.
+컴포넌트(Preact)는 설정을 `useModuleSettings("모듈 id")`로 직접 읽습니다. 설정을 UI 스토어로 옮겨 적지 마세요. `useModuleSettings`는 꺼진 모듈의 설정도 주므로, 다른 모듈이 이 페이지에서 돌 때만 그 설정을 따르는 UI(미리보기의 차단·배지)는 `useRunningModuleSettings("모듈 id")`로 읽습니다. 모듈이 돌지 않으면 undefined입니다. 컴포넌트 밖에서는 `core/module/registry.ts`의 `runningModuleSettings(id)`를 씁니다.
 
 `addFilter`의 `fn`은 같은 요소에 여러 번 불릴 수 있습니다. 넣은 요소가 이미 있는지 보고 건너뛰게 만드세요. 예로는 글 목록 새로고침의 버튼이 있습니다.
 
@@ -94,7 +94,7 @@ const apply = (ctx: Ctx): void => { … ctx.settings.bodyFontSize … }; // numb
 
 같은 `group` 객체를 가진 설정은 옵션 화면에서 한 칸에 묶여 보입니다.
 
-저장된 값은 읽을 때 스키마에 맞게 정리됩니다(`core/module/settings.ts`의 `normalizeSettings`). 타입이 틀리면 기본값을 쓰고, `range`는 `step` 단위로 맞춰 `min`~`max`로 자릅니다. 그래서 `range`의 기본값과 `max`는 `min`에서 `step`의 배수만큼 떨어진 값이어야 합니다. 설정을 없애거나 이름을 바꿀 때는 [저장소](architecture.md#저장소)의 규칙을 따릅니다.
+저장된 값은 읽을 때 스키마에 맞게 정리됩니다(`core/module/settings.ts`의 `settingsOf`·`normalizeSetting`). 타입이 틀리면 기본값을 쓰고, `range`는 `step` 단위로 맞춰 `min`~`max`로 자릅니다. 그래서 `range`의 기본값과 `max`는 `min`에서 `step`의 배수만큼 떨어진 값이어야 합니다. 설정을 없애거나 이름을 바꿀 때는 [저장소](architecture.md#저장소)의 규칙을 따릅니다.
 
 ## 단축키와 팝업 토글
 
@@ -128,6 +128,6 @@ getModuleApi("preview")?.archiveArticle() === true
 - `apply({enabled, settings})`: 모듈을 켜고 끄거나 설정이 바뀔 때, 설치·브라우저 시작 때(Firefox는 배경이 뜰 때마다) 실행됩니다. 맞출 상태 없이 리스너만 거는 모듈은 두지 않습니다(`features/write/background.ts`).
 - 탭이 메시지로 요청한 일을 그 페이지(MAIN world)에서 할 때는 `hasTab`으로 탭에서 온 것인지 보고 `runInPage`로 실행합니다.
 
-배경 번들에는 React가 들어가면 안 됩니다. `background.ts`는 `index.ts`·`meta.ts`(아이콘·React import)를 불러오지 않고, `id`·`settings`·`defaultEnable`처럼 양쪽이 같아야 하는 값은 React 없는 파일로 빼서 같이 씁니다(`features/imagesearch/engines.ts`). `defaultEnable`이 다르면 옵션에서는 꺼져 있는데 배경은 켜진 것으로 봅니다. 페이지에서 할 일이 없는 모듈은 `index.ts`를 두지 않습니다.
+배경 번들에는 Preact가 들어가면 안 됩니다. `background.ts`는 `index.ts`·`meta.ts`(lucide 아이콘 import)를 불러오지 않고, `id`·`settings`·`defaultEnable`처럼 양쪽이 같아야 하는 값은 UI를 불러오지 않는 파일로 빼서 같이 씁니다(`features/imagesearch/engines.ts`). `defaultEnable`이 다르면 옵션에서는 꺼져 있는데 배경은 켜진 것으로 봅니다. 페이지에서 할 일이 없는 모듈은 `index.ts`를 두지 않습니다.
 
 배경·옵션·팝업과 콘텐츠 스크립트가 같이 불러오는 파일(`core/`, `stores/` 등)은 모듈 최상위에서 던지면 안 됩니다. 한 곳에서 던지면 번들 전체가 멈춥니다([Firefox](firefox.md) 참고).
