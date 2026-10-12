@@ -69,15 +69,17 @@ describe("blockKey", () => {
 describe("useBlocksStore", () => {
     const nicks = async () => normalizeBlockList(await stored("refresher:block:NICK"));
 
-    it("addEntries는 같은 content+gallery를 새것으로 바꿔 맨 뒤로 보낸다", async () => {
+    it("addEntries는 같은 content+gallery를 새것으로 바꿔 맨 뒤로 보내고, 바꾼 항목의 id는 이어 쓴다", async () => {
         await fakeBrowser.storage.local.set({"refresher:block:NICK": [entry("a"), entry("b"), entry("a", {id: "ga", gallery: "g"})]});
 
         await useBlocksStore.getState().addEntries("NICK", [{content: "a", isRegex: true}, {content: "c", isRegex: false}]);
 
         const list = await nicks();
         expect(list.map((item) => item.content)).toEqual(["b", "a", "a", "c"]);
-        expect(list[2]).toMatchObject({content: "a", isRegex: true});
-        expect(list[2]?.id).not.toBe("a");
+        // 사용 기록이 id로 묶여 있어 바꾼 항목은 id를 지킨다. 새 항목은 새 id를 받는다.
+        expect(list[2]).toMatchObject({id: "a", content: "a", isRegex: true});
+        expect(list[3]?.id).toEqual(expect.any(String));
+        expect(new Set(list.map((item) => item.id)).size).toBe(4);
     });
 
     it("updateEntry는 내용을 바꾸고 같은 내용의 다른 항목을 지운다", async () => {
