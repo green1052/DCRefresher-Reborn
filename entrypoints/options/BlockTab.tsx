@@ -99,12 +99,12 @@ export function BlockTab() {
                     <ListRow
                         key={entry.id}
                         head={type === "DCCON" ? (
-                            <img src={dcconImage(entry)} alt={entry.extra ?? entry.content} loading="lazy" decoding="async"
+                            <img src={dcconImage(entry)} alt={entry.extra || entry.content} loading="lazy" decoding="async"
                                  className="block h-10"/>
                         ) : (
                             <span className="font-medium">{entry.content}</span>
                         )}
-                        label={type === "DCCON" ? (entry.extra ?? entry.content) : entry.content}
+                        label={type === "DCCON" ? (entry.extra || entry.content) : entry.content}
                         info={<span className="text-muted-foreground">{entryInfo(entry)}</span>}
                         used={used[entry.id]}
                         onEdit={() => setDialog({type, initial: entry})}
