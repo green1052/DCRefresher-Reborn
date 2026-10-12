@@ -159,6 +159,7 @@ export const WriteComment = () => {
                     useUiStore.getState().showToast(outcome.message, "error");
                 }
             } catch (e) {
+                console.error("Comment submit failed:", e);
                 // 시간 초과 등으로 끊겨도 서버는 댓글을 올렸을 수 있다. 목록을 새로 받아 올라간 댓글이 보이게 해 다시 보내지 않게 한다. 입력한 글은 둔다.
                 refreshIfOpen();
                 const timeout = isTimeoutError(e);

@@ -14,7 +14,10 @@ export const notifyManage = async (request: Promise<ManageResult>, done: string,
         showToast(result.message ?? (result.success ? done : "처리하지 못했습니다. 로그인과 권한을 확인한 뒤 다시 시도해 주세요."), result.success ? "info" : "error");
         return result.success;
     } catch (e) {
-        if (!(e instanceof BlockedError)) showToast(failure, "error");
+        // 토스트는 정해진 문구라 원인은 콘솔에 남긴다. 임시 차단은 HTTP 클라이언트가 이미 알렸다.
+        if (e instanceof BlockedError) return false;
+        console.error("Manage request failed:", e);
+        showToast(failure, "error");
         return false;
     }
 };

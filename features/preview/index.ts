@@ -278,7 +278,10 @@ const controller = (ctx: Ctx) => {
         } catch (e) {
             if (isAbortError(e)) return true;
             // 임시 차단은 HTTP 클라이언트가 이미 알렸다. 덮어쓰지 않는다.
-            if (report && !(e instanceof BlockedError)) ui.showToast("댓글을 불러오지 못했습니다.", "error");
+            if (!(e instanceof BlockedError)) {
+                console.error("Comment refresh failed:", e);
+                if (report) ui.showToast("댓글을 불러오지 못했습니다.", "error");
+            }
             return false;
         }
     };
@@ -299,6 +302,7 @@ const controller = (ctx: Ctx) => {
         } catch (e) {
             // 실패해도(삭제된 글 등) 보고 있던 본문은 그대로 둔다. 임시 차단은 HTTP 클라이언트가 이미 알렸다.
             if (isAbortError(e) || e instanceof BlockedError || store.getState().signalId !== signalId) return;
+            console.error("Preview reload failed:", e);
             ui.showToast("게시글을 다시 불러오지 못했습니다.", "error");
         }
     };
@@ -345,7 +349,10 @@ const controller = (ctx: Ctx) => {
             }
         } catch (e) {
             // 댓글만 못 받았으면 본문은 그대로 두고 알린다. 임시 차단은 HTTP 클라이언트가 이미 알렸다.
-            if (store.getState().signalId === mySignal && !(e instanceof BlockedError)) ui.showToast("댓글을 불러오지 못했습니다.", "error");
+            if (store.getState().signalId === mySignal && !(e instanceof BlockedError)) {
+                console.error("Comment load failed:", e);
+                ui.showToast("댓글을 불러오지 못했습니다.", "error");
+            }
         }
 
         // PageUp/Down·스크롤로 넘겼으면 같은 방향 다음 글의 본문을 미리 받는다. 댓글은 열 때 받는다.

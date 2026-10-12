@@ -72,7 +72,10 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
         if (sending) return;
         setSending(true);
 
-        const result = await addDcconPackage(packageIdx).catch(() => "fail" as const);
+        const result = await addDcconPackage(packageIdx).catch((e: unknown) => {
+            console.error("Dccon package add failed:", e);
+            return "fail" as const;
+        });
         const {showToast} = useUiStore.getState();
 
         if (result === "ok") {
