@@ -216,12 +216,14 @@ export default defineModule({
         publishRatios(ctx);
         // 받았지만 아직 저장하지 않은 글댓비 (RATIO_SAVE_DELAY).
         let unsaved: Record<string, RatioInfo> = {};
-        // 저장소를 다시 읽지 않고 메모리의 값을 한 번에 쓴다 (batchedSave). ratios는 아래 감시가 다른 탭이 저장한 값과 합쳐 두었다.
+        // 모아서 한 번에 쓴다 (batchedSave). 저장소의 지금 값에 이 탭이 받은 것만 얹는다. 메모리의 값을 통째로 쓰면
+        // 감시를 걸기 전(읽는 동안)이나 bfcache에 있는 동안 다른 탭이 저장한 값을 지워 그 유저들을 갤로그에 다시 묻는다.
         // 쓰기가 끝난 뒤에 unsaved를 비워, 그사이 다른 탭의 저장이 와도 이 탭의 값이 남는다.
         const saver = batchedSave(ctx, RATIO_SAVE_DELAY, async () => {
             const batch = unsaved;
             if (Object.keys(batch).length === 0) return;
-            await ratioStorage.setValue({ratio: ratios});
+            const current = await ratioStorage.getValue();
+            await ratioStorage.setValue({ratio: trimRatios({...current.ratio, ...batch})});
             unsaved = Object.fromEntries(Object.entries(unsaved).filter(([uid, info]) => batch[uid] !== info));
         });
 

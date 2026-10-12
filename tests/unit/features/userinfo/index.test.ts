@@ -1,6 +1,7 @@
 // @vitest-environment-options {"url": "https://gall.dcinside.com/board/lists/?id=test"}
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {fakeBrowser} from "wxt/testing/fake-browser";
+import {storage} from "wxt/utils/storage";
 
 import {ROWS_HIDDEN_EVENT} from "@/core/block";
 import type {IpCategory} from "@/core/database";
@@ -264,6 +265,21 @@ describe("글댓비·깡계", () => {
         stop();
         running = undefined;
         await vi.waitFor(async () => expect(await stored(RATIO_KEY)).toEqual({ratio: {fresh: {article: 3, comment: 4, date: expect.any(Number)}}}));
+    });
+
+    it("저장할 때 이 탭이 놓친 다른 탭의 글댓비를 지우지 않는다", async () => {
+        // 감시를 걸기 전이나 bfcache에 있는 동안처럼 다른 탭의 저장을 받지 못한 경우.
+        vi.spyOn(storage, "watch").mockImplementation(() => () => {});
+        gallog.activity.set("fresh", {article: 3, comment: 4});
+        mountRows([{no: "1", uid: "fresh"}]);
+        const {api, stop} = await start({checkRatio: true});
+        await saveRatio({other: {article: 5, comment: 6, date: Date.now()}});
+        api.checkNewPosts([...document.querySelectorAll<HTMLElement>("tr")]);
+        await vi.waitFor(() => expect(badges("1")).toEqual(["(fresh)", "[3/4]"]));
+
+        stop();
+        running = undefined;
+        await vi.waitFor(async () => expect(Object.keys((await stored(RATIO_KEY) as { ratio?: Record<string, RatioInfo> }).ratio ?? {}).sort()).toEqual(["fresh", "other"]));
     });
 
     it("1시간 안에 받은 값과 실패한 유저는 다시 묻지 않는다", async () => {
