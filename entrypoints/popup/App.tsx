@@ -117,8 +117,8 @@ function PageSection({tabId, gallery, state: initial, toggled}: Page & { toggled
 
             {/* 확장을 업데이트하기 전에 열린 탭 등 콘텐츠 스크립트가 없으면 토글을 받을 수 없다. */}
             {state === null && <p className="text-center text-xs text-muted-foreground">페이지를 새로고침하면 이 페이지 설정이 나옵니다.</p>}
-            {/* 이 페이지에서 끌 수 있는 것이 없어도 빈 칸으로 두지 않는다. */}
-            {state?.length === 0 && <p className="text-center text-xs text-muted-foreground">이 페이지에는 끌 수 있는 설정이 없습니다.</p>}
+            {/* 이 페이지에서 바꿀 수 있는 것이 없어도 빈 칸으로 두지 않는다. */}
+            {state?.length === 0 && <p className="text-center text-xs text-muted-foreground">이 페이지에서 바꿀 수 있는 설정이 없습니다.</p>}
             {state && state.length > 0 && (
                 <Card className="py-3">
                     <CardContent className="flex flex-col gap-3 px-3">
