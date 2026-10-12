@@ -52,7 +52,8 @@ const onAttributes = (node: Element): void => {
             if (kept.length > 0) node.setAttribute("allow", kept.join("; "));
             else node.removeAttribute("allow");
         }
-    } else if (node.nodeName === "A" && !(node.getAttribute("href") ?? "#").startsWith("#")) {
+    } else if ((node.localName === "a" || node.localName === "area") && !(node.getAttribute("href") ?? node.getAttribute("xlink:href") ?? "#").startsWith("#")) {
+        // SVG <a>(nodeName이 소문자 a, 주소는 href나 xlink:href)와 이미지 맵 <area>도 링크다.
         node.setAttribute("target", "_blank");
         node.setAttribute("rel", "noopener noreferrer");
     }

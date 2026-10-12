@@ -101,6 +101,13 @@ describe("sanitizeHtml", () => {
         expect(anchor?.hasAttribute("target")).toBe(false);
     });
 
+    it("SVG 링크와 이미지 맵 area도 새 탭으로 연다", () => {
+        const root = parse("<svg><a href=\"https://a.example\"><text>a</text></a><a xlink:href=\"https://b.example\"><text>b</text></a></svg><map name=\"m\"><area href=\"https://c.example\"></map>");
+        const links = [...root.querySelectorAll("svg a"), root.querySelector("area")];
+        expect(links).toHaveLength(3);
+        for (const link of links) expect(link?.getAttribute("target")).toBe("_blank");
+    });
+
     it("<style>·폼 요소·popover·background 속성을 뺀다", () => {
         const root = parse("<style>*{}</style><form><input><textarea></textarea><select></select></form><button popover popovertarget=\"x\">b</button><table background=\"x.png\"></table>");
         expect(root.querySelector("style, form, input, textarea, select")).toBeNull();
