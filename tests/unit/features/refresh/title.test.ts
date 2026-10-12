@@ -1,4 +1,4 @@
-import {beforeEach, describe, expect, it} from "vitest";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 
 import {setTitleCount} from "@/features/refresh/title";
 
@@ -28,7 +28,8 @@ describe("setTitleCount", () => {
     it("다시 넣은 인스턴스도 옛 인스턴스가 붙인 수를 뗀다", async () => {
         setTitleCount(3);
         // 파이어폭스 재주입: 모듈을 새로 불러온 인스턴스.
-        const {setTitleCount: fresh} = await import(`@/features/refresh/title?reinjected`);
+        vi.resetModules();
+        const {setTitleCount: fresh} = await import("@/features/refresh/title");
         fresh(0);
         expect(document.title).toBe("갤러리");
     });
