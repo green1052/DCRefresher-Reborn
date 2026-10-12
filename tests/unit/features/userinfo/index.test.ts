@@ -242,9 +242,12 @@ describe("글댓비·깡계", () => {
         const {stop} = await start({checkRatio: true, alarmRatio: 10, lowActivityAction: "hide"});
         await tick();
         expect(notified).toHaveBeenCalledTimes(1);
+        // 배지 자리를 내는 페이지 스타일(page.css)도 켜져 있는 동안만 걸린다.
+        expect(document.documentElement.classList.contains("refresherUserInfo")).toBe(true);
 
         stop();
         running = undefined;
+        expect(document.documentElement.classList.contains("refresherUserInfo")).toBe(false);
         await tick();
         expect(document.querySelector("tr")?.className).toBe("ub-content");
         expect(notified).toHaveBeenCalledTimes(2);

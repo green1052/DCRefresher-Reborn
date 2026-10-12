@@ -191,6 +191,8 @@ export default defineModule({
     ...meta,
 
     async setup(ctx) {
+        // 배지 자리를 내는 페이지 스타일을 켠다 (page.css). 끄면 디시 작성자 칸이 원래대로 돌아간다.
+        document.documentElement.classList.add("refresherUserInfo");
         // await 전에 읽는다. 뒤에 두면 기다리는 동안 모듈이 꺼졌을 때 revoke가 지운 값을 다시 쓴다.
         readBadgeSettings(ctx);
         // IP 정보를 보이지 않고 갱차도 보지 않으면 수백 KB짜리 IP DB를 읽지 않는다. 버블·미리보기는 열 때 따로 읽는다 (subscribeDatabase).
@@ -313,6 +315,7 @@ export default defineModule({
     },
 
     revoke() {
+        document.documentElement.classList.remove("refresherUserInfo");
         useUiStore.setState({ratios: null});
         // 드러난 깡계 댓글도 같은 댓글 접기에 다시 세게 알린다.
         if (clearLowActivity()) notifyRowsHidden();
