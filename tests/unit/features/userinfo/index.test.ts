@@ -275,13 +275,15 @@ describe("글댓비·깡계", () => {
         await vi.waitFor(async () => expect(await stored(RATIO_KEY)).toEqual({ratio: {fresh: {article: 3, comment: 4, date: expect.any(Number)}}}));
     });
 
-    it("저장할 때 이 탭이 놓친 다른 탭의 글댓비를 지우지 않는다", async () => {
-        // 감시를 걸기 전이나 bfcache에 있는 동안처럼 다른 탭의 저장을 받지 못한 경우.
+    it("bfcache에 있는 동안 다른 탭이 저장한 글댓비를 돌아올 때 다시 읽어, 저장할 때 지우지 않는다", async () => {
+        // bfcache에 있는 동안은 감시가 오지 않는다.
         vi.spyOn(storage, "watch").mockImplementation(() => () => {});
         gallog.activity.set("fresh", {article: 3, comment: 4});
         mountRows([{no: "1", uid: "fresh"}]);
         const {api, stop} = await start({checkRatio: true});
         await saveRatio({other: {article: 5, comment: 6, date: Date.now()}});
+        window.dispatchEvent(new PageTransitionEvent("pageshow", {persisted: true}));
+        await tick();
         api.checkNewPosts([...document.querySelectorAll<HTMLElement>("tr")]);
         await vi.waitFor(() => expect(badges("1")).toEqual(["(fresh)", "[3/4]"]));
 

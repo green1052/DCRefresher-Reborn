@@ -10,6 +10,7 @@ import {WRITER_ROW_SELECTOR} from "@/core/list";
 import {batchedSave} from "@/core/storage/batched";
 import {moduleDataKey, moduleDataStorage} from "@/core/storage/items";
 import {watchStorage} from "@/core/storage/sync";
+import {onBfcacheRestore} from "@/utils/dom";
 import {findMemo, useMemosStore} from "@/stores/memos";
 import {isFresh, isLowActivity, openWriterBubble, useUiStore} from "@/stores/ui";
 import {objectFromEntries, objectKeys} from "@/utils/typed";
@@ -213,27 +214,11 @@ export default defineModule({
         // 작성자 우클릭으로 유저 버블(메모·차단·갤로그)을 연다. 메모는 이 모듈의 기능이라 차단 모듈이 꺼져 있어도 열려야 한다.
         document.addEventListener("contextmenu", openWriterBubble, {capture: true, signal});
 
-        // IP/밴 DB는 모듈 설정을 읽은 뒤 여기서 처음 읽는다 (이 모듈이 꺼져 있으면 버블·미리보기의 subscribeDatabase가 읽는다).
-        // 읽기가 끝난 뒤 필터를 걸어야 첫 배지부터 IP 정보가 붙는다.
-        const [stored] = await Promise.all([ratioStorage.getValue(), needsDatabase() ? initDatabase() : null]);
-        if (signal.aborted) return;
-        ratios = stored.ratio ?? {};
-        publishRatios(ctx);
         // 받았지만 아직 저장하지 않은 글댓비 (RATIO_SAVE_DELAY).
         let unsaved: Record<string, RatioInfo> = {};
-        // 모아서 한 번에 쓴다 (batchedSave). 저장소의 지금 값에 이 탭이 받은 것만 얹는다. 메모리의 값을 통째로 쓰면
-        // 감시를 걸기 전(읽는 동안)이나 bfcache에 있는 동안 다른 탭이 저장한 값을 지워 그 유저들을 갤로그에 다시 묻는다.
-        // 쓰기가 끝난 뒤에 unsaved를 비워, 그사이 다른 탭의 저장이 와도 이 탭의 값이 남는다.
-        const saver = batchedSave(ctx, RATIO_SAVE_DELAY, async () => {
-            const batch = unsaved;
-            if (Object.keys(batch).length === 0) return;
-            const current = await ratioStorage.getValue();
-            await ratioStorage.setValue({ratio: trimRatios({...current.ratio, ...batch})});
-            unsaved = Object.fromEntries(Object.entries(unsaved).filter(([uid, info]) => batch[uid] !== info));
-        });
-
-        // 다른 탭이 저장한 글댓비가 여기로 온다 (이 탭의 저장도 돌아온다). 열린 디시 탭마다 오므로, 값이 바뀐 유저의 칸만 다시 그린다.
-        watchStorage<RatioData>(moduleDataKey("userinfo"), (next) => {
+        // 저장소의 글댓비를 받아 합친다. 다른 탭의 저장(이 탭의 저장도 돌아온다)과 bfcache 복원이 여기로 온다.
+        // 열린 디시 탭마다 오므로, 값이 바뀐 유저의 칸만 다시 그린다.
+        const applyStored = (next: RatioData | null): void => {
             const before = ratios;
             ratios = trimRatios({...next?.ratio, ...unsaved});
             const changed = [...new Set([...Object.keys(before), ...Object.keys(ratios)])]
@@ -242,7 +227,34 @@ export default defineModule({
 
             publishRatios(ctx);
             rebuildUsers(ctx, changed);
+        };
+
+        // 감시는 읽기 전에 건다. 읽는 사이 다른 탭이 저장한 값을 놓치면 아래 저장이 그 값을 지운다 (storageSync와 같다).
+        // 읽는 동안 온 값은 모아 두었다가 읽은 값 대신 쓴다.
+        let loading = true;
+        let early: RatioData | null | undefined;
+        watchStorage<RatioData>(moduleDataKey("userinfo"), (next) => {
+            if (loading) early = next;
+            else applyStored(next);
         }, signal);
+        // bfcache에 있는 동안 받은 저장은 감시로 오지 않는다. 돌아올 때 다시 읽는다.
+        onBfcacheRestore(async () => applyStored(await ratioStorage.getValue()), signal);
+
+        // IP/밴 DB는 모듈 설정을 읽은 뒤 여기서 처음 읽는다 (이 모듈이 꺼져 있으면 버블·미리보기의 subscribeDatabase가 읽는다).
+        // 읽기가 끝난 뒤 필터를 걸어야 첫 배지부터 IP 정보가 붙는다.
+        const [stored] = await Promise.all([ratioStorage.getValue(), needsDatabase() ? initDatabase() : null]);
+        if (signal.aborted) return;
+        loading = false;
+        ratios = (early === undefined ? stored : early)?.ratio ?? {};
+        publishRatios(ctx);
+        // 모아서 한 번에 쓴다 (batchedSave). 페이지를 떠날 때도 쓰도록 저장소 호출은 한 번이다. ratios는 위 감시가 다른 탭이 저장한 값과 합쳐 두었다.
+        // 쓰기가 끝난 뒤에 unsaved를 비워, 그사이 다른 탭의 저장이 와도 이 탭의 값이 남는다.
+        const saver = batchedSave(ctx, RATIO_SAVE_DELAY, async () => {
+            const batch = unsaved;
+            if (Object.keys(batch).length === 0) return;
+            await ratioStorage.setValue({ratio: ratios});
+            unsaved = Object.fromEntries(Object.entries(unsaved).filter(([uid, info]) => batch[uid] !== info));
+        });
 
         ctx.addFilter(
             WRITER_SELECTOR,
