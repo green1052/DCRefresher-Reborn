@@ -282,7 +282,7 @@ export const WriteComment = () => {
                         </WithTooltip>
                     </div>
                     <Button aria-label="작성" className="w-full" disabled={sending} onClick={() => void submit()}>
-                        {sending ? <Spinner/> : <Send/>}
+                        {sending ? <Spinner aria-hidden/> : <Send/>}
                     </Button>
                 </div>
             </div>

@@ -130,7 +130,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
                                 <span className="text-lg font-bold">{info.title}</span>
                                 {!info.register && !info.residual && !added &&
                                     <Button className="shrink-0" disabled={sending} onClick={() => setConfirming(true)}>
-                                        {sending && <Spinner data-icon="inline-start"/>}사용
+                                        {sending && <Spinner aria-hidden data-icon="inline-start"/>}사용
                                     </Button>}
                             </div>
                             {info.description && <p>{info.description}</p>}

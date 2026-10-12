@@ -182,7 +182,7 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
             {comment.voice && (
                 <div className="mt-1">
                     {comment.voice.iframe ? (
-                        <iframe src={comment.voice.src} width={280} height={54} className="block border-0" title="voice"/>
+                        <iframe src={comment.voice.src} width={280} height={54} className="block border-0" title="음성 댓글"/>
                     ) : (
                         <audio controls src={comment.voice.src} className="block"/>
                     )}

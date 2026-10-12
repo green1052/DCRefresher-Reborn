@@ -63,7 +63,7 @@ const RefreshButton = ({label, run}: { label: string; run: () => Promise<void> }
                                                       setBusy(true);
                                                       void run().finally(() => setBusy(false));
                                                   }}/>}>
-            {busy ? <Spinner/> : <RotateCw/>}
+            {busy ? <Spinner aria-hidden/> : <RotateCw/>}
         </WithTooltip>
     );
 };

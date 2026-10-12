@@ -64,14 +64,14 @@ export const Votes = ({post}: { post: PostInfo }) => {
         <div className="flex items-center justify-center gap-3 py-6">
             <Button size="lg" variant="secondary" className="h-10 px-4" aria-label={`추천 ${upvotes || "X"}${fixedUpvotes ? ` (고정닉 ${fixedUpvotes})` : ""}`}
                     disabled={voting !== null} onClick={() => onVote("U")}>
-                {voting === "U" ? <Spinner data-icon="inline-start"/> : <ChevronUp data-icon="inline-start"/>}
+                {voting === "U" ? <Spinner aria-hidden data-icon="inline-start"/> : <ChevronUp data-icon="inline-start"/>}
                 {upvotes || "X"}
                 {fixedUpvotes && <span className="text-muted-foreground">({fixedUpvotes})</span>}
             </Button>
             {downvotes !== undefined && (
                 <Button size="lg" variant="secondary" className="h-10 px-4" aria-label={`비추천 ${downvotes}`} disabled={voting !== null}
                         onClick={() => onVote("D")}>
-                    {voting === "D" ? <Spinner data-icon="inline-start"/> : <ChevronDown data-icon="inline-start"/>}
+                    {voting === "D" ? <Spinner aria-hidden data-icon="inline-start"/> : <ChevronDown data-icon="inline-start"/>}
                     {downvotes}
                 </Button>
             )}

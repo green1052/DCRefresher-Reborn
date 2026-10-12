@@ -109,7 +109,7 @@ const BlockPopup = ({comments}: { comments?: string[] }) => {
 
             <DialogActions>
                 <Button variant="destructive" disabled={sending} onClick={() => void submit()}>
-                    {sending && <Spinner data-icon="inline-start"/>}차단
+                    {sending && <Spinner aria-hidden data-icon="inline-start"/>}차단
                 </Button>
             </DialogActions>
         </ModalDialog>

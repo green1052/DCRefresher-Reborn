@@ -122,7 +122,7 @@ export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 
 
             <DialogActions>
                 <Button disabled={busy || !text.trim()} onClick={() => void submit()}>
-                    {busy && <Spinner data-icon="inline-start"/>}가져오기
+                    {busy && <Spinner aria-hidden data-icon="inline-start"/>}가져오기
                 </Button>
             </DialogActions>
         </ModalDialog>
