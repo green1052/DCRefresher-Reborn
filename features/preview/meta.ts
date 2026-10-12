@@ -102,7 +102,9 @@ export const settings = {
         name: "차단 사유",
         desc: "차단 사유입니다. (한글 20자 이내)",
         default: "",
-        placeholder: "직접 입력 (한글 20자 이내)"
+        placeholder: "직접 입력 (한글 20자 이내)",
+        // 직접 차단 창(Popups.tsx)의 사유 입력칸과 같은 상한.
+        maxLength: 20
     },
     expandRecognizeRange: {type: "check", name: "게시글 인식 범위 확장", desc: "행 전체를 클릭해도 미리보기가 열리게 합니다.", default: false},
     imageViewer: {type: "check", name: "이미지 크게 보기", desc: "본문 이미지를 누르면 미리보기 안에서 크게 봅니다. ←/→로 넘깁니다. 끄면 원본 보기를 새 탭으로 엽니다.", default: true},

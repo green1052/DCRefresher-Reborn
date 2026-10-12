@@ -25,7 +25,7 @@ export const normalizeSetting = (schema: SettingSchema, value: unknown): Setting
         case "check":
             return typeof value === "boolean" ? value : schema.default;
         case "text":
-            return typeof value === "string" ? value : schema.default;
+            return typeof value === "string" ? value.slice(0, schema.maxLength) : schema.default;
         case "option":
             return typeof value === "string" && Object.hasOwn(schema.items, value) ? value : schema.default;
         case "key":

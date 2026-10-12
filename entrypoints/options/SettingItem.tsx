@@ -103,6 +103,7 @@ const TextControl = ({schema, value, descId, onChange}: NarrowProps<"text">) => 
             aria-label={schema.name}
             aria-describedby={descId}
             placeholder={schema.placeholder ?? String(schema.default)}
+            maxLength={schema.maxLength}
             value={draft}
             onChange={(ev) => setDraft(ev.target.value)}
             onBlur={() => {

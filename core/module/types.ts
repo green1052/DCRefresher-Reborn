@@ -11,7 +11,8 @@ export interface SettingGroup {
 
 export type SettingSchema = { name: string; desc: string; group?: SettingGroup } & (
     | { type: "check"; default: boolean }
-    | { type: "text"; default: string; placeholder?: string }
+    /** maxLength: 글자 수 상한. 입력칸이 막고, 저장된 값·가져온 값은 그 길이로 자른다. */
+    | { type: "text"; default: string; placeholder?: string; maxLength?: number }
     | { type: "range"; default: number; min: number; max: number; step: number; unit: string }
     | { type: "option"; default: string; items: Record<string, string> }
     /** default가 readonly여야 defineModule의 const 추론(readonly 튜플)을 받을 수 있다. */
