@@ -7,6 +7,8 @@ import {preData} from "../../../helpers";
 const link = "https://gall.dcinside.com/board/view/?id=test&no=1";
 const back = {title: "목록", url: "/list", state: null};
 const entry = (fields: Record<string, unknown>) => ({refresher: 1, doc: 1, preData: preData({link}), back, depth: 2, ...fields});
+// toEqual은 undefined 필드를 없는 것으로 보므로 preData가 남으면 실패하고, 항목이 통째로 null이어도 실패한다.
+const withoutPreData = {refresher: 1, doc: 1, back, depth: 2, reopen: false};
 
 describe("previewEntry", () => {
     it("미리보기가 쌓은 항목을 그대로 읽는다", () => {
@@ -21,13 +23,13 @@ describe("previewEntry", () => {
 
     it("디시 주소가 아닌 링크의 preData는 버린다", () => {
         for (const bad of ["javascript:alert(1)", "https://example.com/board/view/?id=test&no=1", "http://gall.dcinside.com/board/view/?id=test&no=1", ""]) {
-            expect(previewEntry(entry({preData: preData({link: bad})}))?.preData).toBeUndefined();
+            expect(previewEntry(entry({preData: preData({link: bad})}))).toEqual(withoutPreData);
         }
     });
 
     it("모양이 어긋난 preData는 버린다", () => {
         for (const bad of [{...preData({link}), commentCount: undefined}, {...preData({link}), commentCount: Number.NaN}, {...preData({link}), gallery: 1}, {...preData({link}), title: null}, "글"]) {
-            expect(previewEntry(entry({preData: bad}))?.preData).toBeUndefined();
+            expect(previewEntry(entry({preData: bad}))).toEqual(withoutPreData);
         }
     });
 
