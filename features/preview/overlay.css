@@ -214,6 +214,11 @@
     &[data-dccon] {
         --refresher-dccon-cover-border: var(--border);
         @apply refresher-dccon-cover;
+
+        /* 다크 모드에서는 이 상자가 통째로 뒤집히므로(.refresher-html) 테두리 색도 미리 뒤집는다. 아니면 거의 안 보인다. */
+        .dark & {
+            --refresher-dccon-cover-border: rgb(from var(--border) calc(255 - r) calc(255 - g) calc(255 - b));
+        }
     }
 
     /* 글자콘 — 디시 common.css를 옮겼다. 모르는 색 클래스면 디시 기본값(남색 바탕·흰 글자)을 쓴다. */
@@ -333,6 +338,11 @@
 /* ===== 미니 미리보기 ===== */
 
 /* 본문에 든 차단 디시콘 (Mini의 markBlockedDccons). */
+/* 미니 미리보기의 스크롤바(Mini.tsx) — 다크 모드에서는 상자가 뒤집히므로(.refresher-html) 미리 뒤집는다. 내용이 더 있다는 유일한 표시다. */
+.dark .refresher-mini-contents {
+    scrollbar-color: rgb(from var(--border) calc(255 - r) calc(255 - g) calc(255 - b)) transparent;
+}
+
 .refresher-mini-contents .written_dccon[data-blocked] {
     display: none;
 }
