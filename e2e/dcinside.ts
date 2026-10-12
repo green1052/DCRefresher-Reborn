@@ -29,6 +29,8 @@ export interface FakeComment {
     reg_date: string;
     /** 음성 댓글이 아니면 디시는 null을 준다. */
     voice: null;
+    /** 글 페이지(pageComments)에서 글자콘 댓글로 그린다 (.usertxt 없이 .txtcon_txt에 글). */
+    txtcon?: true;
     /** "N"이면 디시가 답글쓰기를 두지 않는 댓글이다. */
     reply_w?: "Y" | "N";
 }
@@ -178,10 +180,12 @@ const listPage = (rows: FakeRow[], page: string, manager: boolean): string => `<
 
 /** 글 페이지에 디시가 그려 둔 댓글. 차단·같은 댓글 접기 같은 페이지 모듈이 본다. */
 const pageCommentList = (comments: FakeComment[]): string => (comments.length === 0 ? "" : `
-<div class="comment_box"><ul class="cmt_list">${comments.map(({no, name, user_id, ip, memo}) => `
+<div class="comment_box"><ul class="cmt_list">${comments.map(({no, name, user_id, ip, memo, txtcon}) => `
 <li id="comment_li_${no}" class="ub-content"><div class="cmt_info clear">
 <div class="cmt_nickbox"><span class="gall_writer ub-writer" data-nick="${name}" data-uid="${user_id}" data-ip="${ip}"><span class="nickname"><em>${name}</em></span></span></div>
-<div class="clear cmt_txtbox"><p class="usertxt ub-word">${memo}</p></div></div></li>`).join("")}
+<div class="clear cmt_txtbox">${txtcon
+    ? `<div class="comment_dccon"><div class="coment_dccon_txt"><p class="txtcon_txt">${memo}</p></div></div>`
+    : `<p class="usertxt ub-word">${memo}</p>`}</div></div></li>`).join("")}
 </ul></div>`);
 
 /**

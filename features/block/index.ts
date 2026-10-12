@@ -134,7 +134,8 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
         const duplicate = duplicateOf(ctx.settings);
         if (!duplicate) return;
 
-        const textOf = (item: HTMLElement): string => item.querySelector(".usertxt")?.textContent ?? "";
+        // 글자콘 댓글은 .usertxt 없이 .txtcon_txt에 글이 있다 (checkWriter의 COMMENT와 같다). 미리보기도 글자콘 글로 묶는다.
+        const textOf = (item: HTMLElement): string => item.querySelector(".usertxt, .txtcon_txt")?.textContent ?? "";
         const all = [...list.querySelectorAll<HTMLElement>("li.ub-content")];
         const groups = groupDuplicates(all.filter((item) => !item.closest(HIDDEN_ROW_SELECTOR)), textOf, duplicate);
         for (const item of all) {
@@ -145,7 +146,8 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
             const existing = item.querySelector(".refresherDuplicateBadge");
             if (existing?.textContent === text) continue;
             existing?.remove();
-            if (text) item.querySelector(".usertxt")?.after(Object.assign(document.createElement("span"), {className: "refresherDuplicateBadge", textContent: text}));
+            // 글자콘은 크기가 정해진 상자(.coment_dccon_txt) 안이 아니라 디시콘 칸(.comment_dccon) 뒤에 붙인다.
+            if (text) item.querySelector(".usertxt, .comment_dccon")?.after(Object.assign(document.createElement("span"), {className: "refresherDuplicateBadge", textContent: text}));
         }
     };
     // userinfo는 같은 필터 묶음에서 이 필터 뒤에 깡계를 가린다. 그 뒤에 접도록 미룬다.

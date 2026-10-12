@@ -150,6 +150,16 @@ test.describe("글 페이지 댓글", () => {
         await expect(page.locator(".refresherDuplicateBadge")).toHaveCount(0);
     });
 
+    test("글자콘 댓글도 글자로 같은 댓글을 접는다", async ({page, site, storage}) => {
+        await storage.setModuleSettings("block", {foldDuplicate: true, duplicateCount: 3});
+        site.pageComments = ["가", "나", "다"].map((name, index) => fakeComment(20 + index, {name, memo: SAME, txtcon: true}));
+        const items = await openView(page);
+
+        await expect(items.nth(0).locator(".refresherDuplicateBadge")).toHaveText("같은 댓글 ×3");
+        await expect(items.nth(1)).toBeHidden();
+        await expect(items.nth(2)).toBeHidden();
+    });
+
     test("깡계로 숨긴 댓글은 세지 않아 같은 내용의 다른 댓글까지 접지 않는다", async ({page, site, storage}) => {
         await storage.setModuleSettings("block", {foldDuplicate: true, duplicateCount: 3});
         await storage.setModuleSettings("userinfo", {checkRatio: true, alarmRatio: 10, lowActivityAction: "hide"});
