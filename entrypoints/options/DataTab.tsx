@@ -168,7 +168,7 @@ export function DataTab() {
 
             <Section
                 title="클라우드 백업"
-                desc="브라우저 동기화 저장소(최대 100KB)에 설정을 압축해 백업합니다. 수동 백업과 자동 백업은 따로 저장됩니다."
+                desc="브라우저 동기화 저장소(최대 100KB)에 설정과 차단/메모 목록을 압축해 백업합니다. 수동 백업과 자동 백업은 따로 저장됩니다."
                 actions={
                     <Field orientation="horizontal">
                         {/* 자동 칸은 기기끼리 같이 쓰고 켜는 즉시 이 기기 설정으로 덮인다. 새 기기에서 켰다가 복원할 백업을 잃지 않게 먼저 묻는다. */}
@@ -231,7 +231,7 @@ export function DataTab() {
             </Section>
 
             <Section title="내보내기 / 가져오기"
-                     desc="IP/밴 데이터베이스와 캐시를 뺀 모든 설정을 JSON으로 옮깁니다. 가져오기는 JSON에 든 설정과 목록만 바꾸고, JSON에 없는 것은 그대로 둡니다.">
+                     desc="IP/밴 데이터베이스와 캐시를 뺀 모든 설정과 차단/메모 목록을 JSON으로 옮깁니다. 가져오기는 JSON에 든 설정과 목록만 바꾸고, JSON에 없는 것은 그대로 둡니다.">
                 <div className="flex flex-wrap gap-2">
                     <Button variant="secondary" disabled={loading} onClick={() => void exportData()}>
                         <Download data-icon="inline-start"/> 클립보드로 내보내기
