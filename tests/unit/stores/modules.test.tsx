@@ -129,14 +129,10 @@ describe("initModulesStore", () => {
     });
 });
 
-describe("useExtensionPageVars", () => {
+describe("ExtensionPageVars", () => {
     const mount = () => {
-        const Vars = () => {
-            modules.useExtensionPageVars();
-            return null;
-        };
         const root = document.createElement("div");
-        act(() => render(<Vars/>, root));
+        act(() => render(<modules.ExtensionPageVars/>, root));
         return () => act(() => render(null, root));
     };
     const fontVar = () => document.documentElement.style.getPropertyValue("--refresher-font");

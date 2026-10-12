@@ -7,7 +7,7 @@ import {Button} from "@/components/ui/button";
 import {Separator} from "@/components/ui/separator";
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
-import {initModulesStore, useExtensionPageVars} from "@/stores/modules";
+import {ExtensionPageVars, initModulesStore} from "@/stores/modules";
 import {cn} from "cn";
 
 import {AboutTab} from "./AboutTab";
@@ -103,10 +103,9 @@ export function App() {
         );
     }, []);
 
-    useExtensionPageVars();
-
     return (
         <div className="flex min-h-screen flex-col md:flex-row">
+            <ExtensionPageVars/>
             <Sidebar tab={current.id} onSelect={(id) => (location.hash = id)}/>
             {/* 누를 때마다 새로 마운트해 무작위 배치와 끝내는 타이머를 처음부터 다시 건다. */}
             {rain > 0 && <Suspense><DcconRain key={rain}/></Suspense>}

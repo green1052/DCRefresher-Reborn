@@ -57,8 +57,11 @@ export const useModulesStore = create<ModulesState>((set) => ({
     }
 }));
 
-/** 켜진 모듈의 extensionPageVars를 이 페이지(옵션·팝업)의 <html>에 넣는다. 모듈을 끄거나 설정을 바꾸면 따라간다. */
-export const useExtensionPageVars = (): void => {
+/**
+ * 켜진 모듈의 extensionPageVars를 이 페이지(옵션·팝업)의 <html>에 넣는다. 모듈을 끄거나 설정을 바꾸면 따라간다.
+ * 그리는 것 없는 컴포넌트다. 설정 전체를 구독하므로 훅으로 App에서 부르면 설정 하나를 바꿀 때마다 화면 전체를 다시 그린다.
+ */
+export const ExtensionPageVars = (): null => {
     const enables = useModulesStore((state) => state.enables);
     const values = useModulesStore((state) => state.values);
 
@@ -72,6 +75,8 @@ export const useExtensionPageVars = (): void => {
             for (const [name] of vars) root.removeProperty(name);
         };
     }, [enables, values]);
+
+    return null;
 };
 
 /**

@@ -12,7 +12,7 @@ import {backupStorage} from "@/core/storage/items";
 import features from "@/features/meta";
 import {initBlocksStore, useBlocksStore} from "@/stores/blocks";
 import {initMemosStore, useMemosStore} from "@/stores/memos";
-import {initModulesStore, useExtensionPageVars, useModulesStore} from "@/stores/modules";
+import {ExtensionPageVars, initModulesStore, useModulesStore} from "@/stores/modules";
 
 const LOGO_URL = browser.runtime.getURL("/icons/48.png");
 const VERSION = browser.runtime.getManifest().version;
@@ -185,12 +185,11 @@ export function App() {
         ]).then(([page, backupError]) => setLoaded({page, backupError}));
     }, []);
 
-    useExtensionPageVars();
-
     if (!loaded) return null;
 
     return (
         <div className="flex flex-col">
+            <ExtensionPageVars/>
             <div className="flex items-center gap-3 border-b px-4 py-3">
                 <img src={LOGO_URL} alt="" width={32} height={32} className="rounded-md"/>
                 <div className="min-w-0 grow">
