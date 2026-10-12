@@ -295,7 +295,8 @@ export default defineModule({
 
     revoke() {
         useUiStore.setState({ratios: null});
-        clearLowActivity();
+        // 드러난 깡계 댓글도 같은 댓글 접기에 다시 세게 알린다.
+        if (clearLowActivity()) notifyRowsHidden();
 
         // 파이어폭스 재주입으로 새 인스턴스가 setup될 때 옛 인스턴스의 값을 이어받지 않게 비운다.
         colors = {};

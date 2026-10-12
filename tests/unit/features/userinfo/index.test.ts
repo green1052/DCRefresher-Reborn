@@ -224,6 +224,24 @@ describe("글댓비·깡계", () => {
         document.removeEventListener(ROWS_HIDDEN_EVENT, notified);
     });
 
+    it("모듈을 끄면 뗀 깡계 표시를 알려 같은 댓글을 다시 접게 한다", async () => {
+        await saveRatio({low: {article: 1, comment: 2, date: Date.now()}});
+        mountRows([{no: "1", uid: "low"}]);
+        const notified = vi.fn();
+        document.addEventListener(ROWS_HIDDEN_EVENT, notified);
+
+        const {stop} = await start({checkRatio: true, alarmRatio: 10, lowActivityAction: "hide"});
+        await tick();
+        expect(notified).toHaveBeenCalledTimes(1);
+
+        stop();
+        running = undefined;
+        await tick();
+        expect(document.querySelector("tr")?.className).toBe("ub-content");
+        expect(notified).toHaveBeenCalledTimes(2);
+        document.removeEventListener(ROWS_HIDDEN_EVENT, notified);
+    });
+
     it("글 보기 머리는 가리지 않는다", async () => {
         await saveRatio({low: {article: 1, comment: 2, date: Date.now()}});
         document.body.innerHTML = "<div class=\"gallview_head ub-content\"><div class=\"gall_writer ub-writer\" data-nick=\"a\" data-uid=\"low\" data-ip=\"\"></div></div>";
