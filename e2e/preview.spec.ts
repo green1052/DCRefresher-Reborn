@@ -288,6 +288,14 @@ test.describe("미리보기 댓글", () => {
         await expect(uid).not.toHaveCSS("color", "rgb(18, 52, 86)");
     });
 
+    test("본문이 확장 UI의 클래스를 써도 본문 상자 밖을 덮지 못한다", async ({listPage}) => {
+        const frame = await listPage.openPreview();
+        const contents = frame.locator(".refresher-preview-contents");
+        await contents.evaluate((box) => box.insertAdjacentHTML("beforeend", "<div class=\"fixed inset-0 z-50 bg-background\" id=\"cover\"></div>"));
+        const [outer, cover] = await Promise.all([contents.boundingBox(), frame.locator("#cover").boundingBox()]);
+        expect(cover).toEqual(outer);
+    });
+
     test("다크 모드에서 흐린 차단 본문도 본문 반전은 그대로 둔다", async ({listPage, storage}) => {
         await storage.setModuleSettings("block", {blur: true});
         await storage.set({"refresher:block:TEXT": [{id: "a", content: "본문 3", isRegex: false}]});

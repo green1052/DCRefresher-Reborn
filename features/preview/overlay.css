@@ -11,6 +11,9 @@
 
 .refresher-html {
     word-break: break-word;
+    /* 본문 HTML은 class를 남겨 확장 UI와 같은 shadow 안의 Tailwind 유틸리티(fixed inset-0 z-50 등)를 쓸 수 있다.
+       상자 안에 가둬 창 머리·버튼·댓글을 덮는 가짜 창을 만들지 못하게 한다. 댓글은 content-visibility가 이미 가둔다. */
+    contain: layout paint;
 
     /* 디시 다크모드는 본문 상자를 통째로 반전 필터로 뒤집는다 (dark.css의 .darkmode .write_div) — 필터는 캐스케이드를
        무시해 글쓴이가 넣은 인라인 color:#000000도 뒤집는다. 미리보기는 페이지 CSS가 안 닿으니 여기서 똑같이 뒤집는다.
