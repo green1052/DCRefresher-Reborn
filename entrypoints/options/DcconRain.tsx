@@ -1,4 +1,4 @@
-import {type CSSProperties, useEffect} from "react";
+import {type CSSProperties, useEffect, useState} from "react";
 
 import {useOptionsStore} from "./optionsStore";
 
@@ -47,23 +47,27 @@ export const DcconRain = () => {
         const timer = setTimeout(() => useOptionsStore.getState().endRain(), (MAX_DELAY + DURATION) * 1000);
         return () => clearTimeout(timer);
     }, []);
+    // 위치·크기·지연·회전은 처음 한 번만 정한다. 렌더마다 정하면 부모(App)가 다시 그릴 때 떨어지던 이미지가 튄다.
+    const [drops] = useState(() =>
+        Array.from({length: COUNT}, () => ({
+            left: `${Math.random() * 95}%`,
+            width: `${60 + Math.random() * 50}px`,
+            animationDelay: `${Math.random() * MAX_DELAY}s`,
+            animationDuration: `${DURATION}s`,
+            "--spin": `${(Math.random() - 0.5) * 720}deg`
+        }) as CSSProperties)
+    );
 
     return (
         <div className="pointer-events-none fixed inset-0 z-100 overflow-hidden">
-            {Array.from({length: COUNT}, (_, index) => (
+            {drops.map((style, index) => (
                 <img
                     key={index}
                     src={`https://image.dcinside.com/dccon.php?no=${DCCONS[index % DCCONS.length]}`}
                     alt=""
                     className="absolute top-0 animate-dccon-fall rounded-lg"
                     onError={(ev) => ev.currentTarget.remove()}
-                    style={{
-                        left: `${Math.random() * 95}%`,
-                        width: `${60 + Math.random() * 50}px`,
-                        animationDelay: `${Math.random() * MAX_DELAY}s`,
-                        animationDuration: `${DURATION}s`,
-                        "--spin": `${(Math.random() - 0.5) * 720}deg`
-                    } as CSSProperties}
+                    style={style}
                 />
             ))}
         </div>
