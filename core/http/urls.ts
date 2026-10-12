@@ -47,8 +47,9 @@ export const dcinsideHref = (url: string | URL | null | undefined): string | und
     return parsed?.protocol === "https:" && parsed.hostname.endsWith(".dcinside.com") ? parsed.href : undefined;
 };
 
+/** 주소의 경로 첫 칸으로 본다. 주소 전체에서 찾으면 검색어(s_keyword)에 든 "dcinside.com/mgallery" 같은 글자에 걸린다. */
 export const galleryKind = (url: string): GalleryKind => {
-    const path = /\.com\/(mgallery|mini|person)/.exec(url)?.[1];
+    const path = /^\/(mgallery|mini|person)\//.exec(URL.parse(url)?.pathname ?? "")?.[1];
     return path === "mgallery" ? "minor" : path === "mini" || path === "person" ? path : "normal";
 };
 

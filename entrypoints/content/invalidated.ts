@@ -11,7 +11,7 @@ export const showInvalidatedNote = (): void => {
     const note = document.createElement("div");
     note.setAttribute("role", "status");
     note.textContent = `확장 프로그램이 업데이트되었거나 꺼져서 이 페이지에서는 멈췄습니다. ${
-        WRITE_PAGE.test(documentUrl.href) ? "작성 중인 글은 등록한 뒤 새로고침해 주세요." : "새로고침해 주세요."
+        WRITE_PAGE.test(documentUrl.pathname) ? "작성 중인 글은 등록한 뒤 새로고침해 주세요." : "새로고침해 주세요."
     }`;
     note.style.cssText = "position:fixed;right:16px;bottom:16px;z-index:2147483647;padding:10px 14px;border-radius:8px;background:#333;color:#fff;font-size:13px;cursor:pointer";
     note.addEventListener("click", () => note.remove());

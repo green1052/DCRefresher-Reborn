@@ -231,7 +231,8 @@ export const loadAll = async (defs: AnyModule[], signal: AbortSignal, ready?: Pr
     // 오버레이의 그 모듈 UI가 마운트되며 설정을 읽는다. 등록하는 모듈은 아래에서 저장된 값으로 덮인다.
     moduleSettingsStore.setState(Object.fromEntries(defs.filter((def) => def.settings).map((def) => [def.id, settingsOf(def, null)])));
     // 이 문서의 주소(documentUrl)는 바뀌지 않으므로 urls가 이 페이지를 빼는 모듈은 끝내 돌지 않는다. 설정을 읽거나 감시하지 않게 등록하지 않는다.
-    defs = defs.filter((def) => !def.urls || def.urls.some((re) => re.test(documentUrl.href)));
+    // 경로만 본다. 주소 전체를 보면 검색어(s_keyword)에 든 "/board/write" 같은 글자에 걸린다.
+    defs = defs.filter((def) => !def.urls || def.urls.some((re) => re.test(documentUrl.pathname)));
     // on/off·모듈 설정을 한 번에 읽고 ready와 같이 기다린다. 차례로 기다리면 저장소 왕복이 쌓여 모듈이 본문을 한참 읽은 뒤에야 뜬다.
     // 설정 감시는 읽기 전에 건다. 읽은 뒤에 걸면 그사이 옵션에서 바꾼 설정을 놓친다 (storageSync와 같다).
     // 등록 전에 온 값은 모아 두었다가 읽은 값 대신 쓴다.
