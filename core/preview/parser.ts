@@ -2,14 +2,14 @@ import type {CommentForm, PostInfo} from "./types";
 
 /**
  * 지연 로딩 이미지의 data-original을 src로 옮긴다.
- * 관리자가 가린 이미지(data-block)는 가림 버튼(.btn_img_block)을 누를 때 넣는다 (features/preview/ui/Frame.tsx).
+ * 관리자가 가린 이미지(data-block)는 가림 버튼(.btn_img_block)을 누를 때 넣는다 (features/preview/ui/contentsClick.ts).
  */
 const restoreImageSources = (dom: Document): void => {
     for (const image of dom.querySelectorAll<HTMLImageElement>("img[data-original]:not([data-block])")) {
         if (image.dataset.original) image.src = image.dataset.original;
     }
 
-    // 누르면 여는 디시 원본 보기 주소(onclick의 imgPop)는 정화에서 onclick째 빠지므로 data-pop으로 옮겨 둔다 (features/preview/ui/Frame.tsx).
+    // 누르면 여는 디시 원본 보기 주소(onclick의 imgPop)는 정화에서 onclick째 빠지므로 data-pop으로 옮겨 둔다 (features/preview/ui/contentsClick.ts).
     for (const image of dom.querySelectorAll<HTMLImageElement>("img[onclick*='imgPop']")) {
         const url = image.getAttribute("onclick")?.match(/imgPop\('([^']+)'/)?.[1];
         if (url) image.dataset.pop = url;

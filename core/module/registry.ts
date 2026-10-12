@@ -41,7 +41,7 @@ export const runningModulesStore = createStore<Record<string, boolean>>(() => ({
 export const moduleSettings = <Id extends keyof ModuleSettings>(id: Id, state = moduleSettingsStore.getState()): ModuleSettings[Id] | undefined =>
     state[id] as ModuleSettings[Id] | undefined;
 
-/** 이 페이지에서 도는 모듈의 설정. 꺼져 있거나 이 페이지에서 돌지 않으면 undefined다. React에서는 useRunningModuleSettings를 쓴다. */
+/** 이 페이지에서 도는 모듈의 설정. 꺼져 있거나 이 페이지에서 돌지 않으면 undefined다. 컴포넌트에서는 useRunningModuleSettings를 쓴다. */
 export const runningModuleSettings = <Id extends keyof ModuleSettings>(id: Id): ModuleSettings[Id] | undefined =>
     runningModulesStore.getState()[id] ? moduleSettings(id) : undefined;
 

@@ -111,7 +111,7 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
     // 글 댓글의 줄바꿈은 CSS(whitespace-pre-line)로 보인다. 디시콘 HTML의 줄바꿈은 보이지 않는다. 붙어 온 디시콘 태그는 splitDccons가 이미 나눠 두었다.
     const html = comment.memo;
 
-    // 글자콘 크기는 그려진 뒤에 잰다. html이 바뀌면 React가 내용을 새로 넣으므로 다시 잰다. 글만 있는 댓글(대부분)은 훑지 않는다.
+    // 글자콘 크기는 그려진 뒤에 잰다. html이 바뀌면 Preact가 내용을 새로 넣으므로 다시 잰다. 글만 있는 댓글(대부분)은 훑지 않는다.
     const body = useRef<HTMLDivElement>(null);
     useLayoutEffect(() => {
         if (!isDccon) return;

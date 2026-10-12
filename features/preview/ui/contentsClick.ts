@@ -14,7 +14,7 @@ const isViewable = (image: HTMLImageElement): boolean =>
     image.complete && image.naturalWidth > 0 && !image.closest(".written_dccon, [data-block]") && !isBlockedHidden(image) && image.checkVisibility();
 
 /**
- * 미리보기 본문(HTML 문자열로 그린 디시 본문)을 눌렀을 때. 본문 요소가 React 요소가 아니라서 감싼 상자의 클릭에서 찾는다.
+ * 미리보기 본문(HTML 문자열로 그린 디시 본문)을 눌렀을 때. 본문 요소가 컴포넌트가 그린 요소가 아니라서 감싼 상자의 클릭에서 찾는다.
  * 디시콘은 정보 창, 이미지는 크게 보기(imageViewer 설정)나 디시 원본 보기, '차단 이미지 보기' 버튼은 가린 이미지를 드러낸다.
  */
 export const clickContents = (ev: MouseEvent<HTMLElement>, imageViewer: boolean): void => {

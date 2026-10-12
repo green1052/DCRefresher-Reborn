@@ -26,7 +26,7 @@ const close = (): void => usePreviewStore.setState({dcconInfo: null});
 
 /**
  * 본문·댓글에서 누른 디시콘의 정보 창을 연다. 디시콘을 눌렀으면 true.
- * 본문·댓글은 HTML 문자열로 그려 디시콘이 React 요소가 아니라서 감싼 상자의 클릭에서 찾는다.
+ * 본문·댓글은 HTML 문자열로 그려 디시콘이 컴포넌트가 그린 요소가 아니라서 감싼 상자의 클릭에서 찾는다.
  * 차단으로 가린 디시콘은 '가린 내용 보기' 동안이거나 흐림이 풀려 있는 동안(blurReveal)만 연다 (isBlockedHidden, 큰 이미지와 같은 기준).
  */
 export const openDcconInfo = (ev: MouseEvent<HTMLElement>): boolean => {

@@ -83,7 +83,7 @@ const ColorControl = ({schema, value, compact, descId, onChange}: NarrowProps<"c
                 title={draft}
                 value={draft}
                 onChange={(ev) => setDraft(ev.target.value)}
-                // React onChange는 input 이벤트라 드래그마다 불린다. 창을 닫을 때만 오는 네이티브 change는 직접 듣는다.
+                // Preact(compat)의 onChange는 input 이벤트라 드래그마다 불린다. 창을 닫을 때만 오는 네이티브 change는 직접 듣는다.
                 ref={(element) => {
                     if (!element) return;
                     const commit = (): void => onChange(element.value);

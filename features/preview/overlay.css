@@ -1,6 +1,6 @@
 @reference "../../assets/styles/shared.css";
 
-/* ===== 미리보기 (preview 모듈) — 오버레이 shadow 안. 공용 배치·토스트·버블은 assets/styles/overlay.css ===== */
+/* ===== 미리보기 (preview 모듈) — 오버레이 shadow 안. 공용 호스트 스타일(:host·포털)은 assets/styles/overlay.css, 토스트·버블 등 컴포넌트는 Tailwind ===== */
 
 /* 누르면 원본 보기가 열리는 본문 이미지 (Frame.tsx). */
 .refresher-preview-contents img[data-pop] {
@@ -155,7 +155,7 @@
     display: none;
 }
 
-/* 관리자가 가린 이미지 — 디시는 인라인 style(display)로 숨기는데 정화하며 지워진다. '차단 이미지 보기'를 누르면 속성을 떼어 보인다 (Frame.tsx). */
+/* 관리자가 가린 이미지 — 디시는 인라인 style(display)로 숨기는데 정화하며 지워진다. '차단 이미지 보기'를 누르면 속성을 떼어 보인다 (ui/contentsClick.ts의 clickContents). */
 .refresher-html :is(img, video)[data-block] {
     display: none;
 }
@@ -231,7 +231,7 @@
         contain: strict;
     }
 
-    /* 글자 크기·자간·줄바꿈은 Comment.tsx(fitTxtcon)가 다시 잡는다 — 정화하며 지워진 style="font-size:16px"도 여기서. */
+    /* 글자 크기·자간·줄바꿈은 fitTxtcon(ui/fitTxtcon.ts, Comment.tsx가 부른다)이 다시 잡는다. 16px은 디시 기본값이다. */
     .txtcon_txt {
         margin: 0;
         color: #ffffff;
