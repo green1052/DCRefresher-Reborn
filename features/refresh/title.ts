@@ -5,14 +5,20 @@ import type {Ctx} from "./meta";
 /** 탭 제목 앞의 새 글 수 "(3) ". */
 const TITLE_COUNT = /^\(\d+\) /;
 
-/** 이 모듈이 탭 제목 앞에 수를 붙여 두었는지. 원래 "(1) "로 시작하는 제목(글 제목 등)은 건드리지 않는다. */
-let titleCounted = false;
+/**
+ * 이 모듈이 탭 제목 앞에 수를 붙여 두었는지. 원래 "(1) "로 시작하는 제목(글 제목 등)은 건드리지 않는다.
+ * 문서에 표시해 둔다. 파이어폭스는 확장을 업데이트하면 정리 없이 새 인스턴스를 넣으므로(entrypoints/content/stale.ts),
+ * 모듈 변수로 두면 새 인스턴스가 옛 인스턴스가 붙인 수를 떼지 못하고 그 앞에 또 붙인다.
+ */
+const COUNTED_ATTRIBUTE = "data-refresher-title-count";
 
 /** 탭 제목 앞에 새 글 수를 붙인다. 0이면 붙여 둔 수를 뗀다. 미리보기가 제목을 바꿔도 앞에 붙은 수만 갈아 쓴다. */
 export const setTitleCount = (count: number): void => {
+    const root = document.documentElement;
+    const titleCounted = root.hasAttribute(COUNTED_ATTRIBUTE);
     if (count === 0 && !titleCounted) return;
     const title = titleCounted ? document.title.replace(TITLE_COUNT, "") : document.title;
-    titleCounted = count > 0;
+    root.toggleAttribute(COUNTED_ATTRIBUTE, count > 0);
     const next = count > 0 ? `(${count}) ${title}` : title;
     if (next !== document.title) document.title = next;
 };
