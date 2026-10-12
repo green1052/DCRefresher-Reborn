@@ -164,6 +164,9 @@ const controller = (ctx: Ctx) => {
     // 마지막으로 그린 댓글 원본 (보존 처리까지 마친 것). 차단 목록·방식이 바뀌면 다시 받지 않고 이것으로 다시 가린다.
     // raw는 source를 만든 받은 목록이다. 같은 목록을 다시 받으면 다시 그리지 않는다.
     let shown: { signal: number; source: DcinsideComment[]; raw: DcinsideComment[] } | null = null;
+    // 갤러리마다 마지막으로 받은 댓글 허용(멤버만 댓글이면 false). 댓글 0개 글은 댓글을 받지 않으므로 이 값을 쓴다.
+    // 글을 열 때 스토어 값은 기본값(true)으로 돌아가 있어, 모르면 멤버만 댓글 갤러리에서도 입력칸을 보인다.
+    const allowReplies = new Map<string, boolean>();
     let freshTimer = 0;
     ctx.addCleanup(() => window.clearTimeout(freshTimer));
 
@@ -206,12 +209,15 @@ const controller = (ctx: Ctx) => {
             // 댓글 가공(정화·차단)도 처음 쓸 때 불러온다.
             const [{prepareComments, processComments, sameComments}, {list: raw, allowReply, truncated}] = await Promise.all([
                 import("@/core/preview/comments"),
-                // 건너뛸 때는 지금 알고 있는 댓글 허용(멤버만 댓글)을 그대로 둔다.
-                skip ? {list: [], allowReply: store.getState().allowReply, truncated: false} : Promise.resolve(given).then((list) => list ?? fetchComments(preData, post, signal))
+                // 건너뛸 때는 이 갤러리에서 받아 둔 댓글 허용(멤버만 댓글)을 쓴다. 건너뛰는 쪽이 아는 갤러리만 건너뛴다.
+                skip ? {list: [], allowReply: allowReplies.get(preData.gallery) ?? store.getState().allowReply, truncated: false} : Promise.resolve(given).then((list) => list ?? fetchComments(preData, post, signal))
             ]);
             if (store.getState().signalId !== mySignal || seq < shownSeq) return;
             shownSeq = seq;
-            if (!skip) setEntry(preData, {comments: {list: raw, allowReply, truncated}, ...(cached ? {} : {commentsAt: Date.now()})});
+            if (!skip) {
+                setEntry(preData, {comments: {list: raw, allowReply, truncated}, ...(cached ? {} : {commentsAt: Date.now()})});
+                allowReplies.set(preData.gallery, allowReply);
+            }
 
             // 보존 기록은 받을 때마다 갱신해야 하므로 prepareComments는 같은 목록이어도 부른다.
             const source = prepareComments(raw, preData, ctx.settings.archiveArticle, truncated);
@@ -345,7 +351,9 @@ const controller = (ctx: Ctx) => {
                 const matches = post.esno === esno && (post.commentId ?? preData.gallery) === preData.gallery && (post.commentNo ?? preData.id) === preData.id;
                 const given = matches && early ? early.then((list) => (list?.list.length ? list : undefined)) : undefined;
                 // 방금 받은 본문이 댓글 0개면 받지 않는다. 보존해 둔 댓글이 있으면 삭제 여부를 비교해야 하므로 받는다.
-                await pullComments(preData, post, mySignal, fresh && post.commentCount === 0 && !Object.keys(getEntry(preData)?.seen ?? {}).length, given);
+                // 이 갤러리의 댓글 허용을 아직 모르면 받는다 (멤버만 댓글이면 입력칸 대신 안내를 보여야 한다).
+                const skip = fresh && post.commentCount === 0 && !Object.keys(getEntry(preData)?.seen ?? {}).length && allowReplies.has(preData.gallery);
+                await pullComments(preData, post, mySignal, skip, given);
             }
         } catch (e) {
             // 댓글만 못 받았으면 본문은 그대로 두고 알린다. 임시 차단은 HTTP 클라이언트가 이미 알렸다.

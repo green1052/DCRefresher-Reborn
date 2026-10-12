@@ -65,6 +65,9 @@ export class FakeSite {
     /** 글 페이지를 직접 열었을 때 디시가 그려 둔 댓글 (.cmt_list). */
     pageComments: FakeComment[] = [];
 
+    /** 댓글 허용. 0이면 멤버만 댓글을 쓸 수 있는 갤러리다. */
+    allowReply: 0 | 1 = 1;
+
     /** 글이 정한 댓글 대상 ($(document).data('comment_id'·'comment_no')). 없으면 그 글이다. */
     commentTarget: { id: string; no: string } | null = null;
 
@@ -101,12 +104,12 @@ export class FakeSite {
                 return html(listPage(page === "1" ? this.rows : this.page2, page, this.manager));
             }
             case "/board/view/":
-                return html(viewPage(url.searchParams.get("no") ?? "", this.pageComments, this.commentTarget));
+                return html(viewPage(url.searchParams.get("no") ?? "", this.pageComments, this.commentTarget, this.comments.length));
             // 디시가 요청이 많을 때 주는 임시 차단 페이지. 본문이 비어 있다.
             case "/board/write/":
                 return html("<!DOCTYPE html><html><head><meta charset=\"utf-8\"></head><body></body></html>");
             case "/board/comment/":
-                return json({comments: this.comments, total_cnt: this.comments.length, pagination: "", allow_reply: 1});
+                return json({comments: this.comments, total_cnt: this.comments.length, pagination: "", allow_reply: this.allowReply});
             case "/board/forms/comment_submit": {
                 // 디시처럼 새 댓글 번호를 돌려주고 목록에 넣는다.
                 const body = form();
@@ -192,13 +195,13 @@ const pageCommentList = (comments: FakeComment[]): string => (comments.length ==
  * 글 페이지. 미리보기가 받아 읽기도 하고(core/preview/parser.ts) 탭에서 직접 열리기도 한다.
  * 직접 열릴 때 아래 인라인 스크립트가 부르는 디시 전역(_d, $)을 빈 함수로 둔다.
  */
-const viewPage = (no: string, comments: FakeComment[], target: { id: string; no: string } | null): string => `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>글 ${no}</title>
+const viewPage = (no: string, comments: FakeComment[], target: { id: string; no: string } | null, commentCount: number): string => `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>글 ${no}</title>
 <script>window._d = () => ""; window.$ = () => ({data() {}});</script></head><body>
 <input type="hidden" id="e_s_n_o" value="token">
 <div class="view_content_wrap"><header><div class="gallview_head clear ub-content">
 <h3 class="title ub-word"><span class="title_headtext">[말머리]</span><span class="title_subject">글 ${no} 제목</span></h3>
 <div class="gall_writer ub-writer" data-nick="고닉" data-uid="user${no}" data-ip=""><span class="nickname"><em>고닉</em></span></div>
-<div class="fr"><span class="gall_date" title="2026-09-30 12:00:00">2026.09.30 12:00:00</span><span class="gall_count">조회 10</span><span class="gall_reply_num">추천 1</span></div>
+<div class="fr"><span class="gall_date" title="2026-09-30 12:00:00">2026.09.30 12:00:00</span><span class="gall_count">조회 10</span><span class="gall_reply_num">추천 1</span><span class="gall_comment">댓글 ${commentCount}</span></div>
 </div></header>
 <div class="writing_view_box"><div class="write_div">본문 ${no} 내용입니다. <img src="https://dcimg1.dcinside.com/viewimage.php?id=test&no=${no}" width="40" height="40"></div></div>
 </div>

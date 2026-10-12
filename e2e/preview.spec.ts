@@ -345,6 +345,14 @@ test.describe("댓글 쓰기·지우기", () => {
         expect(body.has("c_no")).toBe(false);
     });
 
+    test("멤버만 댓글 갤러리는 댓글 0개 글에도 입력칸 대신 안내를 보인다", async ({listPage, site}) => {
+        site.allowReply = 0;
+        site.comments = [];
+        const frame = await listPage.openPreview();
+        await expect(frame.getByText("멤버만 댓글을 쓸 수 있습니다.")).toBeVisible();
+        await expect(frame.getByRole("textbox", {name: "댓글 입력", exact: true})).toHaveCount(0);
+    });
+
     test("글이 정한 댓글 대상(comment_id·comment_no)으로 보낸다", async ({listPage, site}) => {
         site.commentTarget = {id: "other", no: "77"};
         const frame = await listPage.openPreview();
