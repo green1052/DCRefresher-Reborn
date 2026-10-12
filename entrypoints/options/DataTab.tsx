@@ -191,7 +191,7 @@ export function DataTab() {
                         <DialogHeader>
                             <DialogTitle>어느 백업으로 복원할까요?</DialogTitle>
                         </DialogHeader>
-                        <ToggleGroup variant="outline" spacing={0} value={[restoreMode]}
+                        <ToggleGroup aria-label="복원 방식" variant="outline" spacing={0} value={[restoreMode]}
                                      onValueChange={([value]) => arrayIncludes(objectKeys(RESTORE_DESCRIPTIONS), value) && setRestoreMode(value)}>
                             <ToggleGroupItem value="replace">덮어쓰기</ToggleGroupItem>
                             <ToggleGroupItem value="merge">합치기</ToggleGroupItem>

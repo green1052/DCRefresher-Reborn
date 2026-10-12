@@ -85,7 +85,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
 
             <SubmitForm onSubmit={submit} className="flex flex-col gap-4">
                 <div className="flex flex-col gap-3">
-                    <ToggleGroup variant="outline" spacing={0} value={[type]} onValueChange={([next]) => {
+                    <ToggleGroup aria-label="메모 대상" variant="outline" spacing={0} value={[type]} onValueChange={([next]) => {
                         if (!arrayIncludes(MEMO_TYPES, next)) return;
                         setType(next);
                         // 종류를 바꿀 때 입력한 적이 없으면 다른 대상의 저장된 메모로 채우고, 입력했으면 지우지 않는다.
