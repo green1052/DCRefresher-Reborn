@@ -225,3 +225,30 @@ test.describe("옵션 - 메모·데이터 탭", () => {
         await expect.poll(() => storage.get("refresher:memo:UID")).toMatchObject({user9: {text: "옵션 메모"}});
     });
 });
+
+test.describe("옵션 - 데이터 탭 백업·초기화", () => {
+    test("수동 백업을 덮어쓰기로 복원하면 백업할 때의 목록으로 돌아간다", async ({page, extensionId, storage}) => {
+        await storage.set({"refresher:block:NICK": [{id: "a", content: "백업닉", isRegex: false}]});
+        const {dialog, toasts} = await openOptions(page, extensionId, "data");
+        await page.getByRole("button", {name: "백업", exact: true}).click();
+        await expect(toasts).toContainText("데이터를 클라우드에 백업했습니다.");
+
+        await storage.set({"refresher:block:NICK": [{id: "b", content: "나중닉", isRegex: false}]});
+        await page.getByRole("button", {name: "복원", exact: true}).click();
+        await dialog.getByRole("button", {name: "덮어쓰기", exact: true}).click();
+        await dialog.getByRole("button", {name: /^수동 백업/}).click();
+        await expect(toasts).toContainText("백업을 복원했습니다.");
+        await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([{id: expect.any(String), content: "백업닉", isRegex: false}]);
+    });
+
+    test("자동 백업이 켜진 채 초기화하면 자동 백업을 먼저 끄고 데이터를 지운다", async ({page, extensionId, storage}) => {
+        await storage.set({"refresher:backup:auto": true, "refresher:block:NICK": [{id: "a", content: "지울닉", isRegex: false}]});
+        const {alert, toasts} = await openOptions(page, extensionId, "data");
+        await page.getByRole("button", {name: "데이터 초기화", exact: true}).click();
+        await alert.getByRole("button", {name: "초기화", exact: true}).click();
+        await expect(toasts).toContainText("자동 백업을 껐습니다.");
+        // 켜 둔 채 지우면 빈 설정이 클라우드의 자동 백업을 덮어쓴다.
+        expect(await storage.get("refresher:backup:auto")).toBe(false);
+        expect(await storage.get("refresher:block:NICK")).toBeUndefined();
+    });
+});
