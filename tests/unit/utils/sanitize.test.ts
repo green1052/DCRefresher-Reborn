@@ -108,6 +108,12 @@ describe("sanitizeHtml", () => {
         for (const link of links) expect(link?.getAttribute("target")).toBe("_blank");
     });
 
+    it("확장 UI가 찾는 data-slot 표시는 빼고 다른 data 속성은 둔다", () => {
+        const div = parse("<div data-slot=\"dialog-overlay\" data-x=\"1\"></div>").querySelector("div");
+        expect(div?.hasAttribute("data-slot")).toBe(false);
+        expect(div?.dataset.x).toBe("1");
+    });
+
     it("<style>·폼 요소·popover·background 속성을 뺀다", () => {
         const root = parse("<style>*{}</style><form><input><textarea></textarea><select></select></form><button popover popovertarget=\"x\">b</button><table background=\"x.png\"></table>");
         expect(root.querySelector("style, form, input, textarea, select")).toBeNull();
