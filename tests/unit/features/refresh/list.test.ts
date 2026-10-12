@@ -174,7 +174,13 @@ describe("replaceList", () => {
 
         it("한 번 남긴 행은 다음 새로고침에도 남는다", () => {
             mount([row("3"), row("2"), row("1")]);
+            const kept = current().children[1] as HTMLElement;
+            kept.classList.add("refresherNewPost");
+            kept.style.animationDelay = "50ms";
             replaceList(current(), tbody([row("3"), row("1"), row("0")]), KEEP);
+            // 남긴 행은 등장 효과를 다시 재생하지 않는다.
+            expect(kept.classList.contains("refresherNewPost")).toBe(false);
+            expect(kept.style.animationDelay).toBe("");
             expect(nos(current())).toEqual(["3", "2", "1"]);
             replaceList(current(), tbody([row("3"), row("1"), row("0")]), KEEP);
             expect(nos(current())).toEqual(["3", "2", "1"]);

@@ -48,6 +48,9 @@ const keepDeletedRows = (oldRows: HTMLTableRowElement[], newKeys: Set<string>, n
             continue;
         }
 
+        // 떼었다 붙인 요소는 애니메이션이 처음부터 다시 돈다. 예전에 새 글로 들어올 때 단 등장 효과를 떼어 새로고침마다 다시 나타나지 않게 한다.
+        row.classList.remove("refresherNewPost");
+        row.style.removeProperty("animation-delay");
         row.classList.add("refresherDeleted");
         newList.insertBefore(row, next);
         next = row;
