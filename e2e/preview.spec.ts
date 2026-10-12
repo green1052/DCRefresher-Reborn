@@ -26,6 +26,16 @@ test.describe("미리보기", () => {
         await expect(page).toHaveTitle("테스트 갤러리");
     });
 
+    test("미리보기 주소에서 새로고침하면 글 페이지로 남고, 그 항목의 미리보기 표시를 지운다", async ({listPage}) => {
+        const {page} = listPage;
+        await listPage.openPreview();
+        await expect(page).toHaveURL(viewUrl(3));
+        await page.reload();
+        await expect(page.locator(".write_div")).toContainText("본문 3 내용입니다.");
+        // 표시가 남으면 목록으로 뒤로 갔다 앞으로 올 때(bfcache 없이) 다시 목록·미리보기로 바뀐다.
+        await expect.poll(() => page.evaluate(() => history.state)).toBeNull();
+    });
+
     test("창을 열어 페이지 스크롤을 잠가도 스크롤바 자리를 남겨 뒤 페이지가 옆으로 밀리지 않고, 스크롤바가 없던 페이지에는 자리를 만들지 않는다", async ({listPage, browserName}) => {
         test.skip(browserName === "firefox", "headless 파이어폭스는 자리를 차지하는 스크롤바를 그리지 않는다.");
         const {page, frame} = listPage;

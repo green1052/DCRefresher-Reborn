@@ -593,6 +593,10 @@ const controller = (ctx: Ctx) => {
         } else if (navigation instanceof PerformanceNavigationTiming && navigation.type === "back_forward") {
             history.replaceState({...entry, reopen: true}, "", back.url);
             location.reload();
+        } else if (navigation instanceof PerformanceNavigationTiming && navigation.type === "reload") {
+            // 새로고침한 글 페이지는 이제 진짜 글 항목이다. 미리보기 표시를 지운다.
+            // 남겨 두면 목록으로 뒤로 갔다 앞으로 올 때 bfcache가 없으면 위 back_forward로 다시 목록·미리보기가 된다.
+            history.replaceState(null, "");
         }
     }
 
