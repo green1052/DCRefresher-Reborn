@@ -30,6 +30,8 @@ const syncCounts = (target: Element, source: Element): void => {
  * 새 목록에서 빠진 글 행을 제자리에 남기고 붉게 칠한다 (v5의 삭제된 글 보존). 한 번 남긴 행은 다음 새로고침에도 남는다.
  * 위에 새 글이 n개 들어오면 맨 아래 n개는 다음 페이지로 밀려난 것이라 남기지 않는다. 남긴 만큼 아래 행을 빼 행 수를 맞춘다.
  * first: 남아 있던 마지막 글 다음 행(다음 페이지에서 올라온 첫 행). 맨 아래 글이 지워졌을 때 그 앞에 끼워야 행 수를 맞출 때 잘리지 않는다.
+ * 새 목록에는 복제본을 끼우고 옛 행은 그 자리에 둔다. 그래서 replaceList가 남긴 행이 있어도 제자리에서 고칠 수 있다 (같은 틀이라 옛 행이 남는다).
+ * 옮겨 넣으면 옛 목록이 비어 남긴 행이 하나라도 있는 동안 새로고침마다 목록을 통째로 갈아끼운다.
  */
 const keepDeletedRows = (oldRows: HTMLTableRowElement[], newKeys: Set<string>, newList: HTMLElement, newPostCount: number, first: Element | null): void => {
     const newRows = new Map(Array.from(newList.children, (row) => [rowKey(row as HTMLElement), row]));
@@ -52,8 +54,11 @@ const keepDeletedRows = (oldRows: HTMLTableRowElement[], newKeys: Set<string>, n
         row.classList.remove("refresherNewPost");
         row.style.removeProperty("animation-delay");
         row.classList.add("refresherDeleted");
-        newList.insertBefore(row, next);
-        next = row;
+        const copy = row.cloneNode(true) as HTMLTableRowElement;
+        const frame = rowFrames.get(row);
+        if (frame !== undefined) rowFrames.set(copy, frame);
+        newList.insertBefore(copy, next);
+        next = copy;
     }
 
     while (newList.children.length > Math.max(oldRows.length, received)) newList.lastElementChild?.remove();
@@ -150,16 +155,17 @@ export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigat
 
     // 행 순서가 같거나, 한 자리(공지 아래)에 새 글이 끼어들고 그만큼 아래가 밀려난 것뿐이면 제자리에서 고친다.
     // 새 행을 끼우고 밀려난 행을 빼고, 나머지는 바뀐 행만 갈아끼운다(수만 바뀐 행은 글자만 고친다). 그대로인 행은 hover·리스너가 남고 필터·스타일·배치도 다시 하지 않는다.
-    // 검색 결과는 강조와 글·댓글 행 짝이 얽혀 있어 통째로 바꾼다. 삭제된 글 보존은 옛 행을 새 목록으로 옮겨 넣으므로 순서가 같을 때만 제자리에서 고친다.
-    const shift = !navigated && search === undefined ? insertionOf(oldKeys, newKeys) : null;
-    if (shift && (!keepDeleted || (shift.count === 0 && oldKeys.length === newKeys.length))) {
+    // 검색 결과는 강조와 글·댓글 행 짝이 얽혀 있어 통째로 바꾼다. 남긴 삭제된 글 행(복제본)도 새 목록의 행으로 친다.
+    const rows = keepDeleted ? Array.from(newList.querySelectorAll<HTMLTableRowElement>(":scope > tr")) : newRows;
+    const shift = !navigated && search === undefined ? insertionOf(oldKeys, rows.map(rowKey)) : null;
+    if (shift) {
         const {at, count} = shift;
-        const removed = oldRows.slice(newRows.length - count);
+        const removed = oldRows.slice(rows.length - count);
         for (const row of removed) row.remove();
-        const anchor = at < newRows.length - count ? oldRows[at]! : null;
-        for (const row of newRows.slice(at, at + count)) oldList.insertBefore(row, anchor);
+        const anchor = at < rows.length - count ? oldRows[at]! : null;
+        for (const row of rows.slice(at, at + count)) oldList.insertBefore(row, anchor);
         let changed = count > 0 || removed.length > 0;
-        for (const [index, row] of newRows.entries()) {
+        for (const [index, row] of rows.entries()) {
             if (index >= at && index < at + count) continue;
             const old = oldRows[index < at ? index : index - count]!;
             if (rowFrames.get(old) === rowFrames.get(row)) {

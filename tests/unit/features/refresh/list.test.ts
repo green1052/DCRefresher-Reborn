@@ -225,14 +225,33 @@ describe("replaceList", () => {
             expect(nos(current())).toEqual(["1"]);
         });
 
-        it("순서가 같으면 제자리에서 고치고, 새 글이 끼어들면 통째로 바꾼다", () => {
+        it("순서가 같거나 새 글이 끼어든 것뿐이면 제자리에서 고친다", () => {
             const list = mount([row("2"), row("1")]);
             replaceList(list, tbody([row("2", {count: 5}), row("1")]), KEEP);
             expect(current()).toBe(list);
 
-            const fresh = tbody([row("3"), row("2"), row("1")]);
-            replaceList(list, fresh, KEEP);
-            expect(current()).toBe(fresh);
+            replaceList(list, tbody([row("3"), row("2"), row("1")]), KEEP);
+            expect(current()).toBe(list);
+            expect(nos(list)).toEqual(["3", "2", "1"]);
+        });
+
+        it("남긴 행이 있어도 제자리에서 고치고, 남긴 행은 새 글에 밀려 내려간다", () => {
+            const list = mount([row("3"), row("2"), row("1")]);
+            replaceList(list, tbody([row("3"), row("1"), row("0")]), KEEP);
+            const kept = list.querySelector("[data-no='2']");
+            expect(kept?.classList.contains("refresherDeleted")).toBe(true);
+
+            // 같은 목록을 다시 받으면 남긴 행은 그대로 두고 아무것도 갈아끼우지 않는다.
+            const {changed} = replaceList(list, tbody([row("3", {count: 9}), row("1"), row("0")]), KEEP);
+            expect(changed).toBe(false);
+            expect(current()).toBe(list);
+            expect(list.querySelector("[data-no='2']")).toBe(kept);
+
+            // 새 글이 들어오면 남긴 행이 한 칸 내려가고 맨 아래 행이 밀려난다.
+            replaceList(list, tbody([row("4"), row("3"), row("1")]), KEEP);
+            expect(current()).toBe(list);
+            expect(nos(list)).toEqual(["4", "3", "2"]);
+            expect(list.querySelector("[data-no='2']")).toBe(kept);
         });
     });
 });
