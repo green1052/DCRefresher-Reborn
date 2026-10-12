@@ -267,15 +267,19 @@ const controller = (ctx: Ctx) => {
     ctx.addCleanup(runningModulesStore.subscribe(onBlockChange));
 
     /** report: 사용자가 누른 새로고침이면 실패를 알린다. 자동 갱신 실패는 조용히 넘긴다. */
-    const refreshComments = async (report = false) => {
+    /** 받지 못했으면 false (자동 새로고침이 주기를 늘린다). 받을 글이 없거나 끊은 요청은 실패로 치지 않는다. */
+    const refreshComments = async (report = false): Promise<boolean> => {
         const st = store.getState();
-        if (!st.visible || !st.preData || !st.post || !abort) return;
+        if (!st.visible || !st.preData || !st.post || !abort) return true;
 
         try {
             await pullComments(st.preData, st.post, st.signalId);
+            return true;
         } catch (e) {
+            if (isAbortError(e)) return true;
             // 임시 차단은 HTTP 클라이언트가 이미 알렸다. 덮어쓰지 않는다.
-            if (report && !isAbortError(e) && !(e instanceof BlockedError)) ui.showToast("댓글을 불러오지 못했습니다.", "error");
+            if (report && !(e instanceof BlockedError)) ui.showToast("댓글을 불러오지 못했습니다.", "error");
+            return false;
         }
     };
 
@@ -432,11 +436,15 @@ const controller = (ctx: Ctx) => {
         }
 
         // 설정이 꺼져 있어도 타이머는 둔다. 열린 사이 설정(켜고 끄기·간격)을 바꾸면 다음 차례부터 따른다.
+        // 실패(임시 차단 등)가 이어지면 목록 새로고침(features/refresh)처럼 주기를 두 배씩 늘린다 (최대 1분). 계속 같은 주기로 보내면 차단이 길어진다.
+        // 다음 타이머는 요청이 끝난 뒤 잡는다. 그사이 다른 글로 넘어갔거나 닫았으면 그쪽이 타이머를 잡았거나 지웠으므로 잡지 않는다.
+        let failures = 0;
         const scheduleRefresh = (): void => {
-            refreshTimer = window.setTimeout(() => {
-                if (ctx.settings.autoRefreshComment && !document.hidden && !pulling) void refreshComments();
-                scheduleRefresh();
-            }, ctx.settings.commentRefreshInterval);
+            const interval = ctx.settings.commentRefreshInterval;
+            refreshTimer = window.setTimeout(async () => {
+                if (ctx.settings.autoRefreshComment && !document.hidden && !pulling) failures = (await refreshComments()) ? 0 : failures + 1;
+                if (store.getState().signalId === mySignal) scheduleRefresh();
+            }, Math.min(interval * 2 ** failures, Math.max(interval, 60_000)));
         };
         scheduleRefresh();
 
@@ -591,7 +599,9 @@ const controller = (ctx: Ctx) => {
     store.setState({
         requestOpen: (preData, commentsOnly, dir) => open(preData, commentsOnly, false, dir),
         requestClose: () => close(),
-        requestRefresh: (report) => refreshComments(report),
+        requestRefresh: async (report) => {
+            await refreshComments(report);
+        },
         requestReload: () => reloadPost(),
         requestManage: (kind) => void manage(kind),
         requestBlock: block
