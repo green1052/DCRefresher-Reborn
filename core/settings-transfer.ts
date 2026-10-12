@@ -41,9 +41,9 @@ export const writeSettings = async (data: Record<string, unknown>, mode: "replac
     }
     // 설정 키가 아닌 값(차단/메모 내보내기의 "NICK" 등)과 없는 모듈의 설정은 저장하지 않는다.
     const next = Object.fromEntries(Object.entries(data).filter(([key]) => isBackupTarget(key)));
-    // 백업·내보내기는 용량 때문에 차단 항목 id를 빼므로 저장할 때 다시 붙인다.
+    // 백업·내보내기는 용량 때문에 차단 항목 id를 빼므로 저장할 때 다시 붙인다. 이 기기에 같은 항목이 있으면 그 id를 이어 써 사용 기록을 지킨다.
     for (const [key, value] of Object.entries(next)) {
-        if (isBlockListKey(key)) next[key] = normalizeBlockList(value);
+        if (isBlockListKey(key)) next[key] = normalizeBlockList(value, normalizeBlockList(previous[key]));
     }
     if (mode === "merge") {
         // 기본 차단 모드는 mergeBackup처럼 이 기기 것을 남기고, 가져온 목록의 모드 없는 항목에 JSON의 기본 모드를 적어 둔다.

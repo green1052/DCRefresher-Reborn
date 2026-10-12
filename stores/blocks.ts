@@ -43,13 +43,18 @@ export const composeExtra = (fields: { isRegex: boolean; gallery?: string; mode?
         .filter(Boolean)
         .join(" ");
 
-/** 저장소·가져오기 값에서 유효한 항목만 남긴다. id가 없거나 겹치면 새로 준다 (겹친 id는 삭제·수정이 그 항목 모두에 걸린다). */
-export const normalizeBlockList = (value: unknown): BlockEntry[] => {
+/**
+ * 저장소·가져오기 값에서 유효한 항목만 남긴다. id가 없거나 겹치면 새로 준다 (겹친 id는 삭제·수정이 그 항목 모두에 걸린다).
+ * known: id 없는 항목(백업·내보내기는 id를 뺀다)이 같은 content+gallery 항목의 id를 이어받을 목록. 새 id면 그 항목의 사용 기록(core/usage.ts)이 사라진다.
+ */
+export const normalizeBlockList = (value: unknown, known: BlockEntry[] = []): BlockEntry[] => {
     if (!Array.isArray(value)) return [];
 
+    const knownIds = new Map(known.map((entry) => [blockKey(entry), entry.id]));
     const ids = new Set<string>();
     return value.filter(isBlockEntry).map((entry) => {
-        const id = typeof entry.id === "string" && !ids.has(entry.id) ? entry.id : crypto.randomUUID();
+        const given = typeof entry.id === "string" ? entry.id : knownIds.get(blockKey(entry));
+        const id = given !== undefined && !ids.has(given) ? given : crypto.randomUUID();
         ids.add(id);
         // 예전 항목(v5, 이전 다이얼로그)은 플래그 문자열을 extra에 넣었다. 표시할 때 필드에서 만드니 버린다.
         // 키를 지우지 않고 undefined로 덮어 키 순서를 지킨다. 저장한 값과 JSON이 달라지면 이 탭의 쓰기가 watch로 돌아올 때마다 구독자가 다시 돈다.
