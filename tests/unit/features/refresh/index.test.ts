@@ -204,6 +204,19 @@ describe("자동 새로고침", () => {
         expect(document.querySelector("tbody > tr")).toBe(first);
     });
 
+    it("목록 표 태그를 못 찾으면 앞에 있는 다른 tbody로 비교하지 않는다", async () => {
+        vi.useFakeTimers();
+        // 속성 순서가 바뀌어 목록 표를 글자로 찾지 못하고, 그 앞에 다른 tbody가 있는 응답.
+        const reordered = (nos: string[]): string =>
+            "<table class=\"other\"><tbody><tr><td>광고</td></tr></tbody></table>" + page(nos).replace("<table class=\"gall_list\">", "<table summary=\"목록\" class=\"gall_list\">");
+        get.mockImplementation(async () => new Response(reordered(["2", "1"])));
+        await start();
+        await vi.advanceTimersByTimeAsync(5500);
+        get.mockImplementation(async () => new Response(reordered(["3", "2", "1"])));
+        await vi.advanceTimersByTimeAsync(5500);
+        expect(listed()).toEqual(["3", "2", "1"]);
+    });
+
     it("연달아 실패하면 주기를 두 배로 늘리고 알리지 않는다", async () => {
         vi.useFakeTimers();
         vi.spyOn(console, "error").mockImplementation(() => {});

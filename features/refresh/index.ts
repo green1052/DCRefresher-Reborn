@@ -159,7 +159,8 @@ export default defineModule({
 
                 // 목록이 그대로면 파싱·교체를 건너뛴다. 응답 전체는 요청마다 바뀌는 값(s_key)이 있어 목록 표의 tbody만 비교한다.
                 const table = response.indexOf("<table class=\"gall_list");
-                const start = response.indexOf("<tbody", table);
+                // 목록 표를 못 찾으면 비교·부분 파싱·저장을 모두 건너뛴다. indexOf(…, -1)은 처음부터 찾아 다른 tbody를 목록으로 잡는다.
+                const start = table === -1 ? -1 : response.indexOf("<tbody", table);
                 const end = start === -1 ? -1 : response.indexOf("</tbody>", start);
                 // 잘린 응답(</tbody> 없음)은 비교·부분 파싱하지 않고 문서 전체를 파싱한다. slice(start, -1)은 문서 끝까지를 준다.
                 const listHtml = end === -1 ? "" : response.slice(start, end);
@@ -171,7 +172,7 @@ export default defineModule({
                 // 자동 새로고침은 목록 표만 파싱한다 (문서 전체의 1/3). 페이징 박스는 사용자가 한 로드(강제·이동)에서만 맞춘다.
                 // 검색 결과(검색 이어 보기가 페이징을 보고 다시 이어 붙인다)와 지난 요청이 실패한 뒤(사용자의 페이지 이동이 실패해
                 // 페이징이 옛 페이지일 수 있다)에는 문서 전체를 파싱해 페이징도 맞춘다.
-                const partial = !force && failures === 0 && !queryString("s_keyword") && table !== -1 && listHtml;
+                const partial = !force && failures === 0 && !queryString("s_keyword") && listHtml;
                 const dom = new DOMParser().parseFromString(partial ? `<table class="gall_list">${listHtml}` : response, "text/html");
 
                 const oldList = document.querySelector<HTMLElement>(LIST_SELECTOR);
