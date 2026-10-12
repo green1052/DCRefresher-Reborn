@@ -335,6 +335,18 @@ test.describe("댓글 쓰기·지우기", () => {
         expect(body.has("c_no")).toBe(false);
     });
 
+    test("글이 정한 댓글 대상(comment_id·comment_no)으로 보낸다", async ({listPage, site}) => {
+        site.commentTarget = {id: "other", no: "77"};
+        const frame = await listPage.openPreview();
+        await frame.getByRole("textbox", {name: "댓글 입력", exact: true}).fill("대상 글에 쓴 댓글");
+        await frame.getByRole("button", {name: "작성", exact: true}).click();
+        await expect.poll(() => site.submitted.length).toBe(1);
+        const {body} = site.submitted[0]!;
+        expect(Object.fromEntries(["id", "no", "c_gall_id", "c_gall_no"].map((key) => [key, body.get(key)]))).toEqual({
+            id: "other", no: "77", c_gall_id: "other", c_gall_no: "77"
+        });
+    });
+
     test("답글은 스레드 첫 댓글 번호와 답할 댓글 번호를 같이 보낸다", async ({listPage, site}) => {
         const frame = await listPage.openPreview();
         // 답글(11)에 답한다. 부모는 스레드 첫 댓글(10)이다.

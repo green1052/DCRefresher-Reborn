@@ -48,15 +48,18 @@ export const submitComment = async (
 
     // 폼의 필드 중 같은 이름은 아래 값으로 바뀐다 (자리는 폼 순서 그대로).
     // 디시콘 댓글은 디시 dccon.js처럼 CSRF 토큰(ci_t)도 보낸다. 글 댓글(comment.js)은 보내지 않는다.
+    // 댓글을 받는 글은 글이 정한 comment_id·comment_no다 (comment.js·dccon.js, 댓글 목록 fetchComments와 같다). 없으면 이 글이다.
+    const gallery = postInfo.commentId ?? preData.gallery;
+    const no = postInfo.commentNo ?? preData.id;
     const params = await (typeof memo === "string" ? formBody : csrfBody)({
         t_vch2: "",
         t_vch2_chk: "",
         ...Object.fromEntries(form.fields.filter(([name]) => !["service_code", "gallery_no", "clickbutton"].includes(name))),
         service_code: code,
-        c_gall_id: preData.gallery,
-        c_gall_no: preData.id,
-        id: preData.gallery,
-        no: preData.id,
+        c_gall_id: gallery,
+        c_gall_no: no,
+        id: gallery,
+        no,
         c_no: commentNo || undefined,
         reply_no: replyNo || undefined,
         name: user.name,

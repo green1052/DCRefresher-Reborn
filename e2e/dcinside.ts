@@ -63,6 +63,9 @@ export class FakeSite {
     /** 글 페이지를 직접 열었을 때 디시가 그려 둔 댓글 (.cmt_list). */
     pageComments: FakeComment[] = [];
 
+    /** 글이 정한 댓글 대상 ($(document).data('comment_id'·'comment_no')). 없으면 그 글이다. */
+    commentTarget: { id: string; no: string } | null = null;
+
     /** 받은 쓰기 요청 (댓글 작성·삭제, 디시콘 댓글, 관리자 글 삭제). */
     readonly submitted: { path: string; body: URLSearchParams }[] = [];
 
@@ -96,7 +99,7 @@ export class FakeSite {
                 return html(listPage(page === "1" ? this.rows : this.page2, page, this.manager));
             }
             case "/board/view/":
-                return html(viewPage(url.searchParams.get("no") ?? "", this.pageComments));
+                return html(viewPage(url.searchParams.get("no") ?? "", this.pageComments, this.commentTarget));
             // 디시가 요청이 많을 때 주는 임시 차단 페이지. 본문이 비어 있다.
             case "/board/write/":
                 return html("<!DOCTYPE html><html><head><meta charset=\"utf-8\"></head><body></body></html>");
@@ -185,7 +188,7 @@ const pageCommentList = (comments: FakeComment[]): string => (comments.length ==
  * 글 페이지. 미리보기가 받아 읽기도 하고(core/preview/parser.ts) 탭에서 직접 열리기도 한다.
  * 직접 열릴 때 아래 인라인 스크립트가 부르는 디시 전역(_d, $)을 빈 함수로 둔다.
  */
-const viewPage = (no: string, comments: FakeComment[]): string => `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>글 ${no}</title>
+const viewPage = (no: string, comments: FakeComment[], target: { id: string; no: string } | null): string => `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>글 ${no}</title>
 <script>window._d = () => ""; window.$ = () => ({data() {}});</script></head><body>
 <input type="hidden" id="e_s_n_o" value="token">
 <div class="view_content_wrap"><header><div class="gallview_head clear ub-content">
@@ -198,7 +201,7 @@ const viewPage = (no: string, comments: FakeComment[]): string => `<!DOCTYPE htm
 ${pageCommentList(comments)}
 <div class="cmt_write_box"><form id="focus_cmt"><input name="service_code" value="${SERVICE_CODE}"></form></div>
 <script id="reply-setting-tmpl" type="text/x-jquery-tmpl"></script><script>_d('${encodeServiceTail(SERVICE_CODE_TAIL)}');</script>
-<script>$(document).data('comment_id', 'test'); $(document).data('comment_no', '${no}');</script>
+<script>$(document).data('comment_id', '${target?.id ?? "test"}'); $(document).data('comment_no', '${target?.no ?? no}');</script>
 </body></html>`;
 
 // ===== 댓글 폼의 service_code =====
