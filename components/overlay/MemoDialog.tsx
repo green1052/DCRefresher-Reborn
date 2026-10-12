@@ -51,23 +51,26 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     const value = state.targets[type] ?? "";
     const existing = Boolean(memoOf(type, value));
 
+    /** 저장·삭제를 마치면 알리고 닫는다. 실패하면 창을 열어 둔다. 닫으면 입력한 메모가 사라진다. */
+    const save = async (write: Promise<void>, done: string): Promise<void> => {
+        try {
+            await write;
+        } catch {
+            showToast(SAVE_FAILED, "error");
+            return;
+        }
+        showToast(done);
+        closeMemo();
+    };
+
+    const remove = (): Promise<void> => save(removeMemo(type, value), "메모를 삭제했습니다.");
+
     const submit = async (): Promise<void> => {
         // 공백만 있는 메모는 빈 메모로 본다. 그대로 저장하면 빈 "[ ]" 배지가 붙는다.
         const trimmed = text.trim();
-        try {
-            if (!trimmed) {
-                if (existing) {
-                    await removeMemo(type, value);
-                    showToast("메모를 삭제했습니다.");
-                } else showToast("메모 내용이 없어 저장하지 않았습니다.", "error");
-            } else {
-                await setMemo(type, value, {text: trimmed, color, gallery: scope});
-                showToast("메모를 저장했습니다.");
-            }
-        } catch {
-            showToast(SAVE_FAILED, "error");
-        }
-
+        if (trimmed) return save(setMemo(type, value, {text: trimmed, color, gallery: scope}), "메모를 저장했습니다.");
+        if (existing) return remove();
+        showToast("메모 내용이 없어 저장하지 않았습니다.", "error");
         closeMemo();
     };
 
@@ -127,10 +130,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
 
                 <DialogFooter>
                     {existing && (
-                        <Button type="button" variant="destructive" onClick={() => {
-                            removeMemo(type, value).catch(() => showToast(SAVE_FAILED, "error"));
-                            closeMemo();
-                        }}>
+                        <Button type="button" variant="destructive" onClick={() => void remove()}>
                             삭제
                         </Button>
                     )}
