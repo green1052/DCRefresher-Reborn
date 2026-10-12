@@ -33,9 +33,8 @@ export function DataTab() {
     const [restoreOpen, setRestoreOpen] = useState(false);
     const [restoreMode, setRestoreMode] = useState<RestoreMode>("replace");
     const [loading, setLoading] = useState(false);
-    const [resetConfirm, setResetConfirm] = useState(false);
-    const [autoConfirm, setAutoConfirm] = useState(false);
-    const [cloudClearConfirm, setCloudClearConfirm] = useState(false);
+    // 떠 있는 확인 창. 모달이라 한 번에 하나다.
+    const [confirm, setConfirm] = useState<"reset" | "cloudClear" | "auto" | null>(null);
     const [importOpen, setImportOpen] = useState(false);
     const restoreRef = useRef<HTMLButtonElement>(null);
     const id = useId();
@@ -147,6 +146,17 @@ export function DataTab() {
             return `데이터를 초기화했습니다.${wasAuto ? " 클라우드 백업을 지키려고 자동 백업을 껐습니다." : ""} 새 탭에서 디시인사이드를 열어 주세요.`;
         }, "초기화하지 못했습니다.");
 
+    // 떠 있는 확인 창의 문구와 할 일.
+    const confirmed = confirm && {
+        reset: {title: "모든 설정과 차단/메모 데이터를 초기화할까요?", label: "초기화", run: clearData},
+        cloudClear: {title: `클라우드에 올라간 수동·자동 백업을 모두 지울까요?${autoBackup ? " 자동 백업도 꺼집니다." : ""}`, label: "삭제", run: clearCloud},
+        auto: {
+            title: `자동 백업을 켜면 ${formatTime(cloud.auto?.createdAt ?? 0)} 자동 백업을 이 기기의 설정으로 덮어씁니다. 켤까요?`,
+            label: "켜기",
+            run: () => toggleAutoBackup(true)
+        }
+    }[confirm];
+
     return (
         <div>
             <Section title="IP/밴 데이터베이스" desc={`버전: ${version.trim() || "없음"} · 마지막 확인: ${formatTime(lastUpdate)}`}
@@ -163,7 +173,7 @@ export function DataTab() {
                     <Field orientation="horizontal">
                         {/* 자동 칸은 기기끼리 같이 쓰고 켜는 즉시 이 기기 설정으로 덮인다. 새 기기에서 켰다가 복원할 백업을 잃지 않게 먼저 묻는다. */}
                         <Switch id={`${id}-auto`} checked={autoBackup} disabled={loading}
-                                onCheckedChange={(on) => (on && cloud.auto ? setAutoConfirm(true) : void toggleAutoBackup(on))}/>
+                                onCheckedChange={(on) => (on && cloud.auto ? setConfirm("auto") : void toggleAutoBackup(on))}/>
                         <FieldLabel htmlFor={`${id}-auto`}>자동 백업</FieldLabel>
                     </Field>
                 }
@@ -180,7 +190,7 @@ export function DataTab() {
                         <DialogTrigger render={<Button ref={restoreRef} variant="secondary" disabled={loading}/>}>
                             <CloudDownload data-icon="inline-start"/> 복원
                         </DialogTrigger>
-                        <Button variant="secondary" disabled={loading || (!cloud.manual && !cloud.auto)} onClick={() => setCloudClearConfirm(true)}>
+                        <Button variant="secondary" disabled={loading || (!cloud.manual && !cloud.auto)} onClick={() => setConfirm("cloudClear")}>
                             <Trash2 data-icon="inline-start"/> 삭제
                         </Button>
                     </div>
@@ -234,48 +244,16 @@ export function DataTab() {
 
             <Section title="초기화" desc="모든 설정과 차단/메모 데이터를 삭제합니다. 되돌릴 수 없습니다."
                      actions={
-                         <Button variant="destructive" disabled={loading} onClick={() => setResetConfirm(true)}>
+                         <Button variant="destructive" disabled={loading} onClick={() => setConfirm("reset")}>
                              <Trash2 data-icon="inline-start"/> 데이터 초기화
                          </Button>
                      }/>
 
-            {resetConfirm && (
-                <ConfirmDialog
-                    title="모든 설정과 차단/메모 데이터를 초기화할까요?"
-                    confirmLabel="초기화"
-                    danger
-                    onConfirm={() => {
-                        setResetConfirm(false);
-                        void clearData();
-                    }}
-                    onClose={() => setResetConfirm(false)}
-                />
-            )}
-
-            {cloudClearConfirm && (
-                <ConfirmDialog
-                    title={`클라우드에 올라간 수동·자동 백업을 모두 지울까요?${autoBackup ? " 자동 백업도 꺼집니다." : ""}`}
-                    confirmLabel="삭제"
-                    danger
-                    onConfirm={() => {
-                        setCloudClearConfirm(false);
-                        void clearCloud();
-                    }}
-                    onClose={() => setCloudClearConfirm(false)}
-                />
-            )}
-
-            {autoConfirm && (
-                <ConfirmDialog
-                    title={`자동 백업을 켜면 ${formatTime(cloud.auto?.createdAt ?? 0)} 자동 백업을 이 기기의 설정으로 덮어씁니다. 켤까요?`}
-                    confirmLabel="켜기"
-                    danger
-                    onConfirm={() => {
-                        setAutoConfirm(false);
-                        void toggleAutoBackup(true);
-                    }}
-                    onClose={() => setAutoConfirm(false)}
-                />
+            {confirmed && (
+                <ConfirmDialog title={confirmed.title} confirmLabel={confirmed.label} danger onClose={() => setConfirm(null)} onConfirm={() => {
+                    setConfirm(null);
+                    void confirmed.run();
+                }}/>
             )}
 
             {importOpen && (

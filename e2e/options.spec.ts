@@ -111,6 +111,15 @@ test.describe("옵션 - 차단 탭", () => {
         await expect(page.getByRole("tabpanel")).toBeFocused();
     });
 
+    test("전체 삭제는 확인한 뒤 그 종류의 항목을 모두 지운다", async ({page, extensionId, storage}) => {
+        await storage.set({"refresher:block:NICK": [{id: "a", content: "가닉", isRegex: false}, {id: "b", content: "나닉", isRegex: false}]});
+        const {alert} = await openOptions(page, extensionId, "block");
+        await page.getByRole("button", {name: "전체 삭제", exact: true}).click();
+        await expect(alert).toContainText("모두(2개) 삭제할까요?");
+        await alert.getByRole("button", {name: "삭제", exact: true}).click();
+        await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([]);
+    });
+
     test("갤러리·마지막 사용으로 걸러 보이는 항목만 지우고, 지운 항목의 사용 기록도 정리한다", async ({page, extensionId, storage}) => {
         const day = 24 * 60 * 60 * 1000;
         await storage.set({

@@ -175,8 +175,8 @@ export const ListTabs = <T extends string, I>({
         return [type, {total: all.length, list: all.filter((item) => visible(type, item)).reverse()}];
     }));
 
-    const [clearConfirm, setClearConfirm] = useState<T | null>(null);
-    const [removeShownConfirm, setRemoveShownConfirm] = useState<T | null>(null);
+    // 떠 있는 확인 창: 그 종류 전체 삭제(clear)나 보이는 항목 삭제(shown).
+    const [confirm, setConfirm] = useState<{ kind: "clear" | "shown"; type: T } | null>(null);
     // 삭제를 확인하면 연 버튼이 사라지거나(보이는 항목 삭제) 막혀(전체 삭제) 확인 창이 포커스를 돌려줄 곳이 없다. 지우기 전에 탭 패널로 옮겨 둔다.
     // 확인 창은 창 밖으로 옮긴 포커스를 빼앗지 않는다 (useReturnFocus).
     const filterRow = useRef<HTMLDivElement>(null);
@@ -257,7 +257,7 @@ export const ListTabs = <T extends string, I>({
                                         setLimit(PAGE);
                                     }}/>
                                     {filtering && list.length > 0 && (
-                                        <Button variant="destructive" onClick={() => setRemoveShownConfirm(type)}>
+                                        <Button variant="destructive" onClick={() => setConfirm({kind: "shown", type})}>
                                             <Trash2 data-icon="inline-start"/> 보이는 {list.length}개 삭제
                                         </Button>
                                     )}
@@ -277,7 +277,7 @@ export const ListTabs = <T extends string, I>({
                                         </InputGroup>
                                         {/* 검색 중에도 걸러진 것만이 아니라 이 종류 전부를 지우므로 확인 문구에 전체 개수를 적는다. */}
                                         <WithTooltip tip="전체 삭제" trigger={<Button variant="destructive" size="icon" aria-label="전체 삭제" disabled={total === 0}
-                                                                                   onClick={() => setClearConfirm(type)}/>}>
+                                                                                   onClick={() => setConfirm({kind: "clear", type})}/>}>
                                             <Trash2/>
                                         </WithTooltip>
                                         <WithTooltip tip="추가" trigger={<Button size="icon" aria-label="추가" onClick={() => {
@@ -329,31 +329,20 @@ export const ListTabs = <T extends string, I>({
                 </Tabs>
             </CardContent>
 
-            {clearConfirm && (
+            {confirm && (
                 <ConfirmDialog
-                    title={`${names[clearConfirm]} ${object} 모두(${items(clearConfirm).length}개) 삭제할까요?`}
+                    title={confirm.kind === "clear"
+                        ? `${names[confirm.type]} ${object} 모두(${items(confirm.type).length}개) 삭제할까요?`
+                        : `보이는 ${names[confirm.type]} ${object} ${shown.get(confirm.type)!.list.length}개 삭제할까요?`}
                     confirmLabel="삭제"
                     danger
                     onConfirm={() => {
                         focusPanel(filterRow.current);
-                        onClear(clearConfirm).catch(() => notify(`${object} 삭제하지 못했습니다.`));
-                        setClearConfirm(null);
+                        const {kind, type} = confirm;
+                        (kind === "clear" ? onClear(type) : onRemoveMany(type, shown.get(type)!.list)).catch(() => notify(`${object} 삭제하지 못했습니다.`));
+                        setConfirm(null);
                     }}
-                    onClose={() => setClearConfirm(null)}
-                />
-            )}
-
-            {removeShownConfirm && (
-                <ConfirmDialog
-                    title={`보이는 ${names[removeShownConfirm]} ${object} ${shown.get(removeShownConfirm)!.list.length}개 삭제할까요?`}
-                    confirmLabel="삭제"
-                    danger
-                    onConfirm={() => {
-                        focusPanel(filterRow.current);
-                        onRemoveMany(removeShownConfirm, shown.get(removeShownConfirm)!.list).catch(() => notify(`${object} 삭제하지 못했습니다.`));
-                        setRemoveShownConfirm(null);
-                    }}
-                    onClose={() => setRemoveShownConfirm(null)}
+                    onClose={() => setConfirm(null)}
                 />
             )}
 
