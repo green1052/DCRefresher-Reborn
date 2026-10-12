@@ -155,7 +155,7 @@ export const isBlocked = (type: BlockType, content: string, gallery?: string): b
 /** 값 중 하나라도 차단 대상인지. 막힌 유형에서 멈추지 않고 모든 유형을 본다. */
 export const isAnyBlocked = (values: BlockValues, gallery?: string): boolean =>
     // some을 바로 쓰면 첫 막힌 유형에서 멈춰 다른 유형 항목(같은 유저를 아이디로도 막은 것 등)의 markUsed가 빠진다.
-    objectEntries(values).map(([type, value]) => Boolean(value) && isBlocked(type, value!, gallery)).some(Boolean);
+    objectEntries(values).map(([type, value]) => (value ? isBlocked(type, value, gallery) : false)).some(Boolean);
 
 /** 확장이 흐리게 가린 행 (차단 블러, userinfo의 깡계 흐림). 흐린 행은 보이므로 checkVisibility로 가릴 수 없다. */
 export const BLURRED_ROW_SELECTOR = ".refresherBlur, .refresherLowActivityBlur";
