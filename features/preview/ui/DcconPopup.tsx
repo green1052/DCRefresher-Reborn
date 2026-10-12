@@ -124,7 +124,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                                     className="cursor-pointer rounded-lg p-0.5 [&>img]:size-full [&>img]:object-contain size-12 flex-none border-2 border-transparent aria-pressed:border-primary aria-pressed:bg-transparent"
                                     onClick={(ev) => ev.currentTarget.scrollIntoView({behavior: smoothScroll(), block: "nearest", inline: "center"})}
                                 >
-                                    <img src={pack.main_img_url} alt={pack.title}/>
+                                    <img src={pack.main_img_url} alt={pack.title} loading="lazy" decoding="async"/>
                                 </ToggleGroupItem>
                             ))}
                         </ToggleGroup>
@@ -136,7 +136,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                     ? Array.from({length: 36}, (_, index) => <Skeleton key={index} className="aspect-square w-full"/>)
                     : current.map((dccon) => (
                         <button type="button" key={dccon.detail_idx} title={dccon.title} className="cursor-pointer rounded-lg p-0.5 hover:bg-muted [&>img]:size-full [&>img]:object-contain aspect-square" onClick={() => clickDccon(dccon)}>
-                            <img src={dccon.list_img} alt={dccon.title}/>
+                            <img src={dccon.list_img} alt={dccon.title} loading="lazy" decoding="async"/>
                         </button>
                     ))}
             </div>

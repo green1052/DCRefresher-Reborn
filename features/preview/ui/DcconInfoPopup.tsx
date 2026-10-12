@@ -161,7 +161,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
             <div className="grid max-h-[420px] grid-cols-[repeat(auto-fill,minmax(96px,1fr))] content-start gap-2 overflow-y-auto aria-busy:h-[420px] aria-busy:overflow-hidden"
                  aria-busy={!dccon} onContextMenu={openBlockBubble}>
                 {dccon
-                    ? dccon.detail.map((item) => <img key={item.idx} src={urls.dccon.image + item.path} alt={item.title} title={item.title}
+                    ? dccon.detail.map((item) => <img key={item.idx} src={urls.dccon.image + item.path} alt={item.title} title={item.title} loading="lazy" decoding="async"
                                                       className="aspect-square w-full cursor-context-menu object-contain"/>)
                     : Array.from({length: 30}, (_, index) => <Skeleton key={index} className="aspect-square w-full"/>)}
             </div>
