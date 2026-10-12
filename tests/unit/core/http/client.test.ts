@@ -2,7 +2,8 @@
 import {afterEach, describe, expect, it, vi} from "vitest";
 import {TimeoutError as KyTimeoutError} from "ky";
 
-import {ajax, BlockedError, formBody, http, isAbortError, isTimeoutError, setBlockedHandler, setRequestConcurrency} from "@/core/http/client";
+import {ajax, BlockedError, formBody, http, isAbortError, setBlockedHandler, setRequestConcurrency} from "@/core/http/client";
+import {isTimeoutError} from "@/utils/error";
 
 /** 클라이언트가 불러올 때 fetch를 잡아 두므로 그 전에 바꾼다. 응답은 테스트가 정한다. */
 const network = vi.hoisted(() => {

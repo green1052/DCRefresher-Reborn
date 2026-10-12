@@ -1,6 +1,11 @@
 import {isHTTPError, isNetworkError} from "ky";
 
-import {isTimeoutError} from "@/core/http/client";
+/**
+ * 시간 초과 오류인지. ky의 TimeoutError(totalTimeout)와 core/http/client.ts의 limitedFetch가 끊은 DOMException 둘 다 이름이 TimeoutError다.
+ * ky의 isTimeoutError는 DOMException을 거짓으로 본다.
+ * HTTP 클라이언트가 아니라 여기 둔다. 저 모듈은 불러오면 ky 인스턴스를 만들어, 요청하지 않는 옵션·팝업 번들에 ky가 딸려 간다.
+ */
+export const isTimeoutError = (e: unknown): boolean => typeof e === "object" && e !== null && "name" in e && e.name === "TimeoutError";
 
 /** 오류의 메시지. 파이어폭스 content.fetch의 오류는 페이지 영역의 DOMException이라 instanceof Error가 거짓이므로 모양으로 꺼낸다. */
 export const messageOf = (error: unknown): string =>

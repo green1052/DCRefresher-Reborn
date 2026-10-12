@@ -97,10 +97,4 @@ export const formBody = (fields: Record<string, string | null | undefined | fals
 /** 끊은 요청(AbortController)의 오류인지. 파이어폭스 content.fetch의 오류는 다른 영역 객체라 instanceof Error가 틀릴 수 있어 이름으로 본다. */
 export const isAbortError = (e: unknown): boolean => typeof e === "object" && e !== null && "name" in e && e.name === "AbortError";
 
-/**
- * 시간 초과 오류인지. ky의 TimeoutError(totalTimeout)와 limitedFetch가 끊은 DOMException 둘 다 이름이 TimeoutError다.
- * ky의 isTimeoutError는 DOMException을 거짓으로 본다.
- */
-export const isTimeoutError = (e: unknown): boolean => typeof e === "object" && e !== null && "name" in e && e.name === "TimeoutError";
-
 export const ajax: KyInstance = http.extend({headers: {"X-Requested-With": "XMLHttpRequest"}});

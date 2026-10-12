@@ -7,11 +7,11 @@ import {Spinner} from "@/components/ui/spinner";
 import {Textarea} from "@/components/ui/textarea";
 import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
 import {WithTooltip} from "@/components/WithTooltip";
-import {isTimeoutError} from "@/core/http/client";
 import {captchaImage, normalizeTxtcon, TXTCON_BACKGROUNDS, TXTCON_COLORS} from "@/core/preview/request";
 import {postKey, setEntry} from "@/core/preview/cache";
 import type {DcinsideDccon} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
+import {isTimeoutError} from "@/utils/error";
 import {loggedInUserId} from "@/utils/user";
 
 import {postComment} from "../comment-submit";
