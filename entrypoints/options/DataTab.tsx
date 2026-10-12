@@ -92,7 +92,7 @@ export function DataTab() {
             const data = mode === "merge" ? mergeBackup(await readBackupTargets(), backup.data) : backup.data;
             await writeSettings(data, mode);
             const what = `${formatTime(backup.createdAt)} 백업을`;
-            return `${what} ${mode === "merge" ? "합쳤습니다" : "복원했습니다"}. 새 탭에서 디시인사이드를 열어 주세요.`;
+            return `${what} ${mode === "merge" ? "합쳤습니다" : "복원했습니다"}.`;
         }, "복원하지 못했습니다.");
 
     const toggleAutoBackup = async (on: boolean): Promise<void> => {
@@ -119,7 +119,7 @@ export function DataTab() {
     const submitImport = async (text: string): Promise<string | undefined> => {
         try {
             await writeSettings(parseImport(text), "merge");
-            return "데이터를 가져왔습니다. 새 탭에서 디시인사이드를 열어 주세요.";
+            return "데이터를 가져왔습니다.";
         } catch (e) {
             console.error(e);
             notify(`가져오지 못했습니다. ${friendlyMessage(e)}`);
@@ -143,7 +143,7 @@ export function DataTab() {
             if (wasAuto) await backupStorage.auto.setValue(false);
 
             await writeSettings({}, "replace");
-            return `데이터를 초기화했습니다.${wasAuto ? " 클라우드 백업을 지키려고 자동 백업을 껐습니다." : ""} 새 탭에서 디시인사이드를 열어 주세요.`;
+            return `데이터를 초기화했습니다.${wasAuto ? " 클라우드 백업을 지키려고 자동 백업을 껐습니다." : ""}`;
         }, "초기화하지 못했습니다.");
 
     // 떠 있는 확인 창의 문구와 할 일.
