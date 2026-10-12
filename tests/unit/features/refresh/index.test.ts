@@ -92,6 +92,19 @@ describe("제어 버튼·일시정지", () => {
         expect(document.documentElement.classList.contains("refresherDoNotColorVisited")).toBe(false);
         expect(document.querySelector("button[data-refresher-refresh]")).toBeNull();
     });
+
+    it("모듈을 끄면 남겨 둔 삭제된 글 행을 빼고 새 글 효과를 뗀다", async () => {
+        const {stop} = await start();
+        const [fresh, deleted] = document.querySelectorAll<HTMLElement>(".gall_list tbody > tr");
+        fresh!.classList.add("refresherNewPost");
+        fresh!.style.animationDelay = "50ms";
+        deleted!.classList.add("refresherDeleted");
+        stop();
+        running = undefined;
+        expect(listed()).toEqual(["2"]);
+        expect(fresh!.classList.contains("refresherNewPost")).toBe(false);
+        expect(fresh!.style.animationDelay).toBe("");
+    });
 });
 
 describe("직접 새로고침", () => {

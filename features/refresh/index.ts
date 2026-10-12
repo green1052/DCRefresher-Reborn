@@ -356,5 +356,11 @@ export default defineModule({
     revoke() {
         document.documentElement.classList.remove("refresherDoNotColorVisited");
         setTitleCount(0);
+        // 남겨 둔 삭제된 글 행은 서버 목록에 없는 행이라 뺀다. 모듈을 끄면 목록을 다시 받는 쪽이 없어 새로고침할 때까지 남는다.
+        for (const row of document.querySelectorAll(".refresherDeleted")) row.remove();
+        for (const row of document.querySelectorAll<HTMLElement>(".refresherNewPost")) {
+            row.classList.remove("refresherNewPost");
+            row.style.removeProperty("animation-delay");
+        }
     }
 });
