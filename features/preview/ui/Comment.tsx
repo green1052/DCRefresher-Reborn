@@ -1,5 +1,5 @@
 import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-react";
-import {useEffect, useLayoutEffect, useRef} from "react";
+import {memo, useEffect, useLayoutEffect, useRef} from "react";
 
 import {Button} from "@/components/ui/button";
 import {Checkbox} from "@/components/ui/checkbox";
@@ -48,7 +48,11 @@ interface CommentProps {
     isAdmin: boolean;
 }
 
-export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAdmin}: CommentProps) => {
+/**
+ * memo로 감싼다. 목록이 다시 그려질 때 그대로인 댓글(keepUnchanged가 객체를 유지한 것)은 건너뛴다.
+ * 감싸지 않으면 부모가 그릴 때마다 댓글 전부를 다시 그린다 (자동 새로고침·추천·차단 목록 변경).
+ */
+export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply, isAdmin}: CommentProps) => {
     // reply 객체째 구독하면 답글 버튼 하나에 모든 댓글이 다시 그려지므로, 이 댓글이 대상인지만 구독한다.
     const replying = usePreviewStore((s) => s.reply.replyNo === comment.no);
     const collapsed = usePreviewStore((s) => s.collapsed.has(comment.no));
@@ -188,4 +192,4 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                  dangerouslySetInnerHTML={{__html: html}}/>
         </div>
     );
-};
+});
