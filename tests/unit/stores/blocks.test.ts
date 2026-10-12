@@ -137,6 +137,11 @@ describe("useBlocksStore", () => {
         expect(useBlocksStore.getState().entries.ID).toEqual([entry("u")]);
         expect(useBlocksStore.getState().defaults.ID).toBe("CONTAIN");
 
+        // 같은 값이 다시 와도 스토어를 바꾸지 않는다 (차단 모듈이 다시 판정하지 않게).
+        const before = useBlocksStore.getState().defaults;
+        await fakeBrowser.storage.local.set({"refresher:block:defaults": {ID: "CONTAIN", NICK: "SAME"}});
+        expect(useBlocksStore.getState().defaults).toBe(before);
+
         await fakeBrowser.storage.local.set({"refresher:block:defaults": {ID: "bad"}});
         expect(useBlocksStore.getState().defaults.ID).toBe("SAME");
     });

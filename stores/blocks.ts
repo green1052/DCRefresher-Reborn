@@ -1,4 +1,5 @@
 import {create} from "zustand";
+import {shallow} from "zustand/shallow";
 
 import {BLOCK_DEFAULTS_KEY, BLOCK_TYPES, blockDefaultsStorage, blockListKey, DEFAULT_DETECT_MODE, DETECT_MODE_NAMES, DETECT_MODES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
@@ -127,7 +128,13 @@ const lists = typedListSync({
     get: (): Record<BlockType, BlockEntry[]> => useBlocksStore.getState().entries,
     set: (entries) => useBlocksStore.setState({entries}),
     failure: "차단 목록을 저장하지 못했습니다.",
-    extra: {[BLOCK_DEFAULTS_KEY]: (value) => useBlocksStore.setState({defaults: normalizeDefaults(value)})},
+    // 목록처럼 같은 값이면 스토어를 건드리지 않는다. 새 객체를 넣으면 차단 모듈이 문서 전체를 다시 판정한다 (setDefault 뒤 돌아온 같은 값, bfcache 복원 등).
+    extra: {
+        [BLOCK_DEFAULTS_KEY]: (value) => {
+            const defaults = normalizeDefaults(value);
+            if (!shallow(defaults, useBlocksStore.getState().defaults)) useBlocksStore.setState({defaults});
+        }
+    },
     lock: "refresher:blocks"
 });
 
