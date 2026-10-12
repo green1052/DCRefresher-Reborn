@@ -1,7 +1,8 @@
 // @vitest-environment node
 import {afterEach, describe, expect, it, vi} from "vitest";
+import {TimeoutError as KyTimeoutError} from "ky";
 
-import {ajax, BlockedError, formBody, http, isAbortError, setBlockedHandler, setRequestConcurrency} from "@/core/http/client";
+import {ajax, BlockedError, formBody, http, isAbortError, isTimeoutError, setBlockedHandler, setRequestConcurrency} from "@/core/http/client";
 
 /** 클라이언트가 불러올 때 fetch를 잡아 두므로 그 전에 바꾼다. 응답은 테스트가 정한다. */
 const network = vi.hoisted(() => {
@@ -170,5 +171,14 @@ describe("isAbortError", () => {
         expect(isAbortError(new Error("AbortError"))).toBe(false);
         expect(isAbortError(null)).toBe(false);
         expect(isAbortError("AbortError")).toBe(false);
+    });
+});
+
+describe("isTimeoutError", () => {
+    it("limitedFetch가 끊은 DOMException과 ky의 TimeoutError를 둘 다 시간 초과로 본다", () => {
+        expect(isTimeoutError(new DOMException("요청 시간 초과", "TimeoutError"))).toBe(true);
+        expect(isTimeoutError(new KyTimeoutError(new Request("https://gall.dcinside.com/")))).toBe(true);
+        expect(isTimeoutError(new DOMException("", "AbortError"))).toBe(false);
+        expect(isTimeoutError(null)).toBe(false);
     });
 });

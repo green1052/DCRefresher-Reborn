@@ -1,4 +1,3 @@
-import {isTimeoutError} from "ky";
 import {Send, Smile, Type, X} from "lucide-react";
 import {useLayoutEffect, useRef, useState} from "react";
 
@@ -8,6 +7,7 @@ import {Spinner} from "@/components/ui/spinner";
 import {Textarea} from "@/components/ui/textarea";
 import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
 import {WithTooltip} from "@/components/WithTooltip";
+import {isTimeoutError} from "@/core/http/client";
 import {captchaImage, normalizeTxtcon, TXTCON_BACKGROUNDS, TXTCON_COLORS} from "@/core/preview/request";
 import {postKey, setEntry} from "@/core/preview/cache";
 import type {DcinsideDccon} from "@/core/preview/types";
