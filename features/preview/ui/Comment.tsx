@@ -1,8 +1,11 @@
 import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-react";
-import {memo, useEffect, useLayoutEffect, useRef} from "react";
+import {memo, useEffect, useLayoutEffect, useRef, useState} from "react";
 
+import {ConfirmDialog, DialogActions, ModalDialog, SubmitForm} from "@/components/dialogs";
 import {Button} from "@/components/ui/button";
 import {Checkbox} from "@/components/ui/checkbox";
+import {DialogHeader, DialogTitle} from "@/components/ui/dialog";
+import {Input} from "@/components/ui/input";
 import type {ProcessedComment} from "@/core/preview/comments";
 import type {User} from "@/core/preview/types";
 import {adminDeleteComments, userDeleteComment} from "@/core/preview/request";
@@ -83,25 +86,23 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
     const canDelete =
         !isDeleted && (comment.del_btn === "Y" || comment.my_cmt === "Y" || isAdmin || (!comment.user_id && Boolean(comment.ip)));
 
-    const onDelete = async (): Promise<void> => {
+    // 비밀번호 없이 지워지는 삭제(관리자·회원 본인)는 X 한 번에 되돌릴 수 없으니 확인한다 (디시 comment.js와 같음).
+    // 비밀번호 삭제는 비밀번호 창이 확인을 겸한다.
+    const [asking, setAsking] = useState<"confirm" | "password" | null>(null);
+    // 요청 중에는 X를 막는다. 다시 누르면 같은 삭제가 또 나가 성공 알림 뒤에 실패 알림이 뜬다.
+    const [deleting, setDeleting] = useState(false);
+
+    const remove = async (password: string): Promise<void> => {
+        setAsking(null);
         const st = usePreviewStore.getState();
         if (!st.preData || !st.post) return;
 
-        // 비밀번호 없이 지워지는 삭제(관리자·회원 본인)는 X 한 번에 되돌릴 수 없으니 확인한다 (디시 comment.js와 같음).
-        // 비밀번호 삭제는 prompt가 확인을 겸한다.
-        const needsPassword = !isAdmin && !comment.user_id;
-        if (!needsPassword && !window.confirm("댓글을 삭제할까요?")) return;
-
-        let password = "";
-        if (needsPassword) {
-            // 미리보기에서 쓴 댓글은 저장해 둔 비밀번호를 썼으므로 기본값으로 채운다.
-            password = window.prompt("댓글 비밀번호를 입력해 주세요.", savedNonmember().pw) ?? "";
-            if (!password) return;
-        }
-
+        setDeleting(true);
         // 비밀번호가 틀려도 HTTP 200('false||메시지')이 오므로 결과를 확인해 알려야 한다.
         const request = isAdmin ? adminDeleteComments(st.preData, [comment.no]) : userDeleteComment(st.preData, comment.no, password);
-        if (await notifyManage(request, "댓글을 삭제했습니다.", "댓글을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.")) void st.requestRefresh();
+        const deleted = await notifyManage(request, "댓글을 삭제했습니다.", "댓글을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+        setDeleting(false);
+        if (deleted) void st.requestRefresh();
     };
 
     // 디시콘(img/video)과 글자콘. 답글이면 앞에 멘션이 붙어 오므로 ^로 고정하지 않고 찾는다.
@@ -168,7 +169,8 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
                         </Button>
                     )}
                     {canDelete && (
-                        <Button size="icon-xs" variant="ghost" aria-label={`${who} 댓글 삭제`} onClick={() => void onDelete()}>
+                        <Button size="icon-xs" variant="ghost" aria-label={`${who} 댓글 삭제`} disabled={deleting}
+                                onClick={() => setAsking(isAdmin || comment.user_id ? "confirm" : "password")}>
                             <X/>
                         </Button>
                     )}
@@ -191,6 +193,43 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
                  onClick={isDccon ? openDcconInfo : undefined}
                  onKeyDown={isDccon ? pressContents : undefined}
                  dangerouslySetInnerHTML={{__html: html}}/>
+
+            {asking === "confirm" && (
+                <ConfirmDialog title="댓글을 삭제할까요?" confirmLabel="삭제" danger onConfirm={() => void remove("")} onClose={() => setAsking(null)}/>
+            )}
+            {asking === "password" && <PasswordDialog onSubmit={(password) => void remove(password)} onClose={() => setAsking(null)}/>}
         </div>
     );
 });
+
+/**
+ * 유동 댓글을 지울 비밀번호를 묻는다. 미리보기에서 쓴 댓글은 저장해 둔 비밀번호를 썼으므로 비워 두면 그것을 쓴다.
+ * 저장된 비밀번호는 칸에 채우지 않는다 (WriteComment와 같다). 채우면 화면에 그대로 보인다.
+ */
+const PasswordDialog = ({onSubmit, onClose}: { onSubmit: (password: string) => void; onClose: () => void }) => {
+    const [saved] = useState(() => savedNonmember().pw);
+    const [password, setPassword] = useState("");
+    const input = useRef<HTMLInputElement>(null);
+    const value = password || saved;
+
+    return (
+        <ModalDialog onClose={onClose} className="sm:max-w-[320px]" focusOnOpen={input}>
+            <DialogHeader>
+                <DialogTitle>댓글 비밀번호</DialogTitle>
+            </DialogHeader>
+            <SubmitForm onSubmit={() => value && onSubmit(value)} className="flex flex-col gap-4">
+                <Input
+                    ref={input}
+                    type="password"
+                    value={password}
+                    aria-label="댓글 비밀번호"
+                    placeholder={saved ? "비밀번호 (저장됨)" : "비밀번호"}
+                    onChange={(ev) => setPassword(ev.target.value)}
+                />
+                <DialogActions>
+                    <Button type="submit" variant="destructive" disabled={!value}>삭제</Button>
+                </DialogActions>
+            </SubmitForm>
+        </ModalDialog>
+    );
+};

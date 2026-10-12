@@ -478,19 +478,30 @@ test.describe("댓글 쓰기·지우기", () => {
         expect(site.submitted).toEqual([]);
     });
 
+    test("관리자가 댓글 하나를 지울 때는 확인 창을 거친다", async ({listPage, site}) => {
+        site.manager = true;
+        await listPage.page.reload();
+        await listPage.refreshButton.waitFor();
+        await listPage.openPreview();
+        await listPage.comments.first().getByRole("button", {name: "고닉 댓글 삭제", exact: true}).click();
+        await expect(listPage.alert).toContainText("댓글을 삭제할까요?");
+        await listPage.alert.getByRole("button", {name: "삭제", exact: true}).click();
+
+        await expect(listPage.toast).toContainText("댓글을 삭제했습니다.");
+        expect(site.submitted.map(({path, body}) => [path, body.getAll("cmt_nos[]")])).toEqual([["/ajax/minor_manager_board_ajax/delete_comment", ["10"]]]);
+    });
+
     test("유동 댓글은 비밀번호를 물어 지우고, 지운 뒤 목록을 다시 받는다", async ({listPage, site}) => {
         await listPage.openPreview();
-        // 대화상자는 뜨는 동안 페이지를 멈추므로 누르기 전에 처리기를 건다.
-        const dialogs: string[] = [];
-        listPage.page.once("dialog", (dialog) => {
-            dialogs.push(dialog.type());
-            void dialog.accept("pw1234");
-        });
-        await listPage.comments.nth(1).getByRole("button", {name: "ㅇㅇ 댓글 삭제", exact: true}).click();
+        const remove = listPage.comments.nth(1).getByRole("button", {name: "ㅇㅇ 댓글 삭제", exact: true});
+        await remove.click();
+        const password = listPage.dialog.getByRole("textbox", {name: "댓글 비밀번호", exact: true});
+        await expect(password).toHaveAttribute("type", "password");
+        await password.fill("pw1234");
+        await listPage.dialog.getByRole("button", {name: "삭제", exact: true}).click();
 
         await expect(listPage.toast).toContainText("댓글을 삭제했습니다.");
         await expect(listPage.comments.nth(1)).toHaveAttribute("data-deleted");
-        expect(dialogs).toEqual(["prompt"]);
         const {path, body} = site.submitted[0]!;
         expect(path).toBe("/board/comment/comment_delete_submit");
         expect(Object.fromEntries(["id", "no", "re_no", "mode", "re_password"].map((key) => [key, body.get(key)]))).toEqual({
