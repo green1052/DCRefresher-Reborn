@@ -47,6 +47,8 @@ export const ImageViewer = ({images, index}: { images: ViewerImage[]; index: num
                     onKeyDown={(ev) => {
                         keepTabInside(ev);
                         if (images.length < 2 || (ev.key !== "ArrowLeft" && ev.key !== "ArrowRight")) return;
+                        // 조합키는 브라우저 몫이다 (Alt+←는 뒤로 가기). 다른 미리보기 단축키처럼 넘기지 않는다.
+                        if (ev.ctrlKey || ev.altKey || ev.metaKey || ev.shiftKey) return;
                         ev.preventDefault();
                         go(ev.key === "ArrowLeft" ? -1 : 1);
                     }}
