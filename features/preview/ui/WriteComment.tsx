@@ -121,58 +121,54 @@ export const WriteComment = () => {
         setSending(true);
         sendingKeys.add(key);
         const signal = st.signalId;
-        // 안쪽 함수에서도 null이 아닌 값으로 쓰도록 미리 꺼내 둔다.
         const {preData, post} = st;
-        // 보내기는 안쪽 함수에 두고 끝나면(성공·실패·캡차 취소 모두) 정리한다.
-        const submit = async (): Promise<void> => {
-            try {
-                let code: string | undefined;
-                if (post.requireCommentCaptcha) {
-                    code = await st.openCaptcha(captchaImage(preData, "comment"));
-                    if (!code) return;
-                }
-
-                const user = {name: login ? "" : nick, pw: login ? undefined : password};
-                const outcome = await postComment(preData, post, user, {text, dccons, bigDccon, txtcon: txtcon ? txtconColors : undefined}, st.reply, code);
-
-                if (outcome.ok) {
-                    // 보내는 사이 더 쓴 글은 남긴다. 디시콘만 보냈으면 입력칸의 글은 보내지 않았으니 둔다.
-                    if (!useDccon) {
-                        if (textarea.current?.value === raw) textarea.current.value = "";
-                        if (draft.text === raw) draft.text = "";
-                    }
-                    setDccon(NO_DCCON);
-                    setTxtcon(false);
-                    // 디시처럼 쓴 닉네임·비밀번호를 기억한다. 만든 비밀번호도 저장해야 나중에 자기 댓글을 지울 수 있다.
-                    if (!login) saveNonmember(nick, password);
-                    // 그새 다른 글로 넘어갔으면 답글 대상은 그 글 것이라 건드리지 않는다.
-                    if (usePreviewStore.getState().signalId === signal) usePreviewStore.setState({reply: NO_REPLY});
-                    refreshIfOpen();
-                } else if (outcome.captcha) {
-                    useUiStore.getState().showToast(
-                        "자동입력 방지 확인이 필요합니다. 원문에서 작성해 주세요.",
-                        "warning",
-                        8000,
-                        {label: "원문 열기", run: () => window.open(preData.link, "_blank", "noopener")}
-                    );
-                } else {
-                    useUiStore.getState().showToast(outcome.message, "error");
-                }
-            } catch (e) {
-                console.error("Comment submit failed:", e);
-                // 시간 초과 등으로 끊겨도 서버는 댓글을 올렸을 수 있다. 목록을 새로 받아 올라간 댓글이 보이게 해 다시 보내지 않게 한다. 입력한 글은 둔다.
-                refreshIfOpen();
-                const timeout = isTimeoutError(e);
-                useUiStore.getState().showToast(
-                    timeout ? "응답이 없어 작성 여부를 확인하지 못했습니다. 댓글 목록을 확인해 주세요." : "댓글을 작성하지 못했습니다. 잠시 후 다시 시도해 주세요.",
-                    "error"
-                );
+        // 끝나면(성공·실패·캡차 취소 모두) 정리한다.
+        try {
+            let code: string | undefined;
+            if (post.requireCommentCaptcha) {
+                code = await st.openCaptcha(captchaImage(preData, "comment"));
+                if (!code) return;
             }
-        };
 
-        await submit();
-        sendingKeys.delete(key);
-        setSending(false);
+            const user = {name: login ? "" : nick, pw: login ? undefined : password};
+            const outcome = await postComment(preData, post, user, {text, dccons, bigDccon, txtcon: txtcon ? txtconColors : undefined}, st.reply, code);
+
+            if (outcome.ok) {
+                // 보내는 사이 더 쓴 글은 남긴다. 디시콘만 보냈으면 입력칸의 글은 보내지 않았으니 둔다.
+                if (!useDccon) {
+                    if (textarea.current?.value === raw) textarea.current.value = "";
+                    if (draft.text === raw) draft.text = "";
+                }
+                setDccon(NO_DCCON);
+                setTxtcon(false);
+                // 디시처럼 쓴 닉네임·비밀번호를 기억한다. 만든 비밀번호도 저장해야 나중에 자기 댓글을 지울 수 있다.
+                if (!login) saveNonmember(nick, password);
+                // 그새 다른 글로 넘어갔으면 답글 대상은 그 글 것이라 건드리지 않는다.
+                if (usePreviewStore.getState().signalId === signal) usePreviewStore.setState({reply: NO_REPLY});
+                refreshIfOpen();
+            } else if (outcome.captcha) {
+                useUiStore.getState().showToast(
+                    "자동입력 방지 확인이 필요합니다. 원문에서 작성해 주세요.",
+                    "warning",
+                    8000,
+                    {label: "원문 열기", run: () => window.open(preData.link, "_blank", "noopener")}
+                );
+            } else {
+                useUiStore.getState().showToast(outcome.message, "error");
+            }
+        } catch (e) {
+            console.error("Comment submit failed:", e);
+            // 시간 초과 등으로 끊겨도 서버는 댓글을 올렸을 수 있다. 목록을 새로 받아 올라간 댓글이 보이게 해 다시 보내지 않게 한다. 입력한 글은 둔다.
+            refreshIfOpen();
+            const timeout = isTimeoutError(e);
+            useUiStore.getState().showToast(
+                timeout ? "응답이 없어 작성 여부를 확인하지 못했습니다. 댓글 목록을 확인해 주세요." : "댓글을 작성하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+                "error"
+            );
+        } finally {
+            sendingKeys.delete(key);
+            setSending(false);
+        }
     };
 
     /**
