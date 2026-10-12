@@ -13,7 +13,6 @@ export type BlockInputFields = Omit<BlockEntry, "id">;
 interface BlocksState {
     entries: Record<BlockType, BlockEntry[]>;
     defaults: Record<BlockType, DetectMode>;
-    setEntries: (type: BlockType, entries: BlockEntry[]) => Promise<void>;
     /** 저장소의 현재 값에 change를 붙여 쓴다 (가져오기·여러 개 지우기). */
     updateEntries: (type: BlockType, change: (entries: BlockEntry[]) => BlockEntry[]) => Promise<void>;
     addEntry: (type: BlockType, fields: BlockInputFields) => Promise<void>;
@@ -73,8 +72,6 @@ export const blockKey = ({content, gallery}: BlockInputFields): string => JSON.s
 export const useBlocksStore = create<BlocksState>((set, get) => ({
     entries: emptyEntries(),
     defaults: {...DEFAULT_DETECT_MODE},
-
-    setEntries: (type, entries): Promise<void> => lists.save(type, entries),
 
     updateEntries: (type, change): Promise<void> => lists.update(type, change),
 

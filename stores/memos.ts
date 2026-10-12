@@ -10,7 +10,6 @@ type MemoMap = Record<string, MemoEntry>;
 
 interface MemosState {
     memos: Record<MemoType, MemoMap>;
-    setMemos: (type: MemoType, memos: MemoMap) => Promise<void>;
     /** 저장소의 현재 값에 change를 붙여 쓴다 (가져오기·여러 개 지우기). */
     updateMemos: (type: MemoType, change: (memos: MemoMap) => MemoMap) => Promise<void>;
     setMemo: (type: MemoType, user: string, entry: MemoEntry) => Promise<void>;
@@ -43,8 +42,6 @@ export const normalizeMemoMap = (value: unknown): MemoMap =>
 /** 메모의 단일 출처. 콘텐츠·옵션 모두 이 스토어를 쓰고 저장소와 양방향 동기화된다. */
 export const useMemosStore = create<MemosState>(() => ({
     memos: {UID: {}, NICK: {}, IP: {}},
-
-    setMemos: (type, memos): Promise<void> => lists.save(type, memos),
 
     updateMemos: (type, change): Promise<void> => lists.update(type, change),
 

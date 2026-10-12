@@ -63,7 +63,7 @@ export const storageSync = <K extends StorageItemKey>(keys: readonly K[], apply:
 
 /**
  * 유형마다 키 하나에 저장하는 목록(차단 목록·메모)을 스토어와 양방향으로 맞춘다.
- * - save: 스토어에 먼저 반영하고 저장한다. 실패하면 저장소 값으로 되돌리고 던진다 (saveOrReload).
+ * - update: 스토어에 먼저 반영하고 저장한다. 실패하면 저장소 값으로 되돌리고 던진다 (saveOrReload).
  * - 저장소가 바뀌면(다른 탭·옵션 페이지, 이 탭의 쓰기도 돌아온다) normalize한 값을 넣는다. 값이 같으면 스토어를 건드리지 않아 구독자를 깨우지 않는다.
  * - extra: 같은 읽기·감시에 함께 묶을 다른 키 (차단의 기본 모드 등).
  * load·start는 storageSync와 같다.
@@ -104,11 +104,6 @@ export const typedListSync = <T extends string, V>(options: {
     const locks = lock && !(import.meta.env.BROWSER === "firefox" && location.protocol !== "moz-extension:") ? lock : undefined;
     const enqueue = locks ? (write: () => Promise<void>): Promise<void> => navigator.locks.request(locks, write) : (write: () => Promise<void>): Promise<void> => write();
 
-    const save = async (type: T, value: V): Promise<void> => {
-        set({...get(), [type]: value});
-        await saveOrReload(enqueue(() => storage.setItem(keyOf(type), value)), sync.load, failure);
-    };
-
     /**
      * 저장소의 현재 값에 change를 붙여 쓴다. 스토어에는 바로 반영해 두고, 잠금 안에서 다시 읽은 값에 붙인다.
      * change는 순수해야 한다 — 스토어 값과 저장소 값에 두 번 불리며, 결과는 저장소 쪽으로 맞춰진다.
@@ -121,5 +116,5 @@ export const typedListSync = <T extends string, V>(options: {
         }), sync.load, failure);
     };
 
-    return {...sync, save, update};
+    return {...sync, update};
 };

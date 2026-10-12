@@ -165,26 +165,14 @@ describe("typedListSync", () => {
         expect(defaults).toHaveBeenCalledWith("v");
     });
 
-    it("save는 스토어에 먼저 넣고 저장한다", async () => {
+    it("update는 스토어에 먼저 넣고 저장한다", async () => {
         const {sync, lists} = create();
 
-        const saving = sync.save("X", ["a"]);
+        const saving = sync.update("X", () => ["a"]);
         expect(lists().X).toEqual(["a"]);
         await saving;
 
         expect(await stored("list:X")).toEqual(["a"]);
-    });
-
-    it("save가 실패하면 저장소 값으로 되돌리고 던진다", async () => {
-        vi.spyOn(console, "error").mockImplementation(() => {});
-        await fakeBrowser.storage.local.set({"list:X": ["kept"]});
-        const {sync, lists} = create();
-        await sync.start(contextSignal());
-        vi.spyOn(fakeBrowser.storage.local, "set").mockRejectedValueOnce(new Error("quota"));
-
-        await expect(sync.save("X", ["lost"])).rejects.toThrow("quota");
-
-        expect(lists().X).toEqual(["kept"]);
     });
 
     it("update는 다른 창이 쓴 저장소 값에 붙인다", async () => {

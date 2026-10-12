@@ -157,7 +157,6 @@ export function MemoTab() {
     const memos = useMemosStore((state) => state.memos);
     const setMemo = useMemosStore((state) => state.setMemo);
     const removeMemo = useMemosStore((state) => state.removeMemo);
-    const setMemos = useMemosStore((state) => state.setMemos);
     const updateMemos = useMemosStore((state) => state.updateMemos);
     const ids = useMemo(() => MEMO_TYPES.flatMap((type) => Object.keys(memos[type]).map((user) => memoUsageKey(type, user))), [memos]);
     const used = useUsage("memo", ids);
@@ -225,7 +224,7 @@ export function MemoTab() {
                 emptyText={(type) => `${MEMO_TYPE_NAMES[type]} 메모 없음`}
                 exportData={() => memos}
                 importData={importMemos}
-                onClear={(type) => setMemos(type, {})}
+                onClear={(type) => updateMemos(type, () => ({}))}
                 onAdd={(type) => setForm({type, user: "", text: "", color: randomColor(), gallery: ""})}
                 // 공앱(디시인사이드 모바일 앱) 메모는 한 줄에 하나씩 "아이디-메모" 글이다.
                 toolbar={() => (

@@ -31,7 +31,6 @@ export function BlockTab() {
     const addEntry = useBlocksStore((state) => state.addEntry);
     const updateEntry = useBlocksStore((state) => state.updateEntry);
     const removeEntry = useBlocksStore((state) => state.removeEntry);
-    const setEntries = useBlocksStore((state) => state.setEntries);
     const updateEntries = useBlocksStore((state) => state.updateEntries);
     const setDefault = useBlocksStore((state) => state.setDefault);
     const addEntries = useBlocksStore((state) => state.addEntries);
@@ -73,7 +72,7 @@ export function BlockTab() {
                 emptyText={(type) => `차단된 ${TYPE_NAMES[type]} 없음`}
                 exportData={() => ({...entries, defaults})}
                 importData={importBlocks}
-                onClear={(type) => setEntries(type, [])}
+                onClear={(type) => updateEntries(type, () => [])}
                 onAdd={(type) => setDialog({type, initial: null})}
                 toolbar={(type) => (
                     <div className="flex items-center gap-2">
