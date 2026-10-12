@@ -288,6 +288,15 @@ test.describe("미리보기 댓글", () => {
         await expect(uid).not.toHaveCSS("color", "rgb(18, 52, 86)");
     });
 
+    test("글 댓글의 줄바꿈은 그대로 보인다", async ({listPage, site}) => {
+        const frame = await listPage.openPreview();
+        site.comments.push(fakeComment(12, {user_id: "user2", name: "고닉", ip: "", memo: "첫 줄\n둘째 줄"}));
+        await frame.getByRole("button", {name: "댓글 새로고침", exact: true}).click();
+        const body = listPage.comments.last().locator(".refresher-comment-html");
+        await expect(body).toHaveText("첫 줄\n둘째 줄", {useInnerText: true});
+        await expect(body.locator("br")).toHaveCount(0);
+    });
+
     test("본문이 확장 UI의 클래스를 써도 본문 상자 밖을 덮지 못한다", async ({listPage}) => {
         const frame = await listPage.openPreview();
         const contents = frame.locator(".refresher-preview-contents");

@@ -106,8 +106,9 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
 
     // 디시콘(img/video)과 글자콘. 답글이면 앞에 멘션이 붙어 오므로 ^로 고정하지 않고 찾는다.
     const isDccon = /<(img|video) class=|<div class="coment_dccon_txt/.test(comment.memo);
-    // 디시콘 HTML은 줄바꿈을 <br/>로 바꾸지 않는다. 붙어 온 디시콘 태그는 core/preview/comments.ts(splitDccons)가 이미 나눠 두었다.
-    const html = isDccon ? comment.memo : comment.memo.replace(/\n/g, "<br/>");
+    // 정화한 HTML(core/preview/comments.ts)을 그대로 넣는다. 줄바꿈을 <br>로 바꾸는 등 정화 뒤에 고치면 브라우저가 정화한 것과 다른 트리로 읽을 수 있다.
+    // 글 댓글의 줄바꿈은 CSS(whitespace-pre-line)로 보인다. 디시콘 HTML의 줄바꿈은 보이지 않는다. 붙어 온 디시콘 태그는 splitDccons가 이미 나눠 두었다.
+    const html = comment.memo;
 
     // 글자콘 크기는 그려진 뒤에 잰다. html이 바뀌면 React가 내용을 새로 넣으므로 다시 잰다. 글만 있는 댓글(대부분)은 훑지 않는다.
     const body = useRef<HTMLDivElement>(null);
@@ -186,7 +187,7 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
                 </div>
             )}
             {/* 지운 댓글은 읽을 수 있게 본문용 회색을 쓴다. */}
-            <div ref={body} className={cn("refresher-html refresher-comment-html mt-1", isDeleted && "text-muted-foreground")} data-dccon={isDccon || undefined}
+            <div ref={body} className={cn("refresher-html refresher-comment-html mt-1", !isDccon && "whitespace-pre-line", isDeleted && "text-muted-foreground")} data-dccon={isDccon || undefined}
                  onClick={isDccon ? openDcconInfo : undefined}
                  onKeyDown={isDccon ? pressContents : undefined}
                  dangerouslySetInnerHTML={{__html: html}}/>
