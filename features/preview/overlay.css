@@ -318,6 +318,15 @@
     }
 }
 
+/* 다크 모드 본문 미디어는 다시 뒤집혀 있다 (.refresher-html). 본문 차단 디시콘은 흐림·풀기에서도 그 반전을 지킨다 — 아니면 흐림이 반전을 덮거나 반전이 흐림을 덮는다. */
+.dark .refresher-html .written_dccon[data-blocked="blur"] {
+    filter: invert(1) blur(var(--refresher-blur, 5px));
+}
+
+.dark :is(.refresher-frame[data-blur-reveal] .refresher-html .written_dccon[data-blocked="blur"]:is(:hover, :has(:focus-visible)), .refresher-frame[data-block-revealed] .refresher-html .written_dccon[data-blocked]) {
+    filter: invert(1);
+}
+
 /* ===== 미니 미리보기 ===== */
 
 /* 본문에 든 차단 디시콘 (Mini의 markBlockedDccons). */

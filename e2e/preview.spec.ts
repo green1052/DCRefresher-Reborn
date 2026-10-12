@@ -287,6 +287,16 @@ test.describe("미리보기 댓글", () => {
         await expect(blocked).not.toHaveAttribute("data-blocked");
         await expect(uid).not.toHaveCSS("color", "rgb(18, 52, 86)");
     });
+
+    test("다크 모드에서 흐린 차단 본문도 본문 반전은 그대로 둔다", async ({listPage, storage}) => {
+        await storage.setModuleSettings("block", {blur: true});
+        await storage.set({"refresher:block:TEXT": [{id: "a", content: "본문 3", isRegex: false}]});
+        await listPage.page.evaluate(() => document.head.append(Object.assign(document.createElement("style"), {id: "css-darkmode"})));
+        const frame = await listPage.openPreview();
+        const contents = frame.locator(".refresher-preview-contents");
+        await expect(contents.locator("..")).toHaveAttribute("data-blocked", "blur");
+        await expect(contents).toHaveCSS("filter", "invert(1)");
+    });
 });
 
 test.describe("댓글 쓰기·지우기", () => {

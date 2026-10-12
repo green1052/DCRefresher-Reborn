@@ -316,14 +316,16 @@ export const Frame = () => {
                             </Button>
                         ) : (
                             <>
-                                <div
-                                    ref={contentsBox}
-                                    className={cn("refresher-html refresher-preview-contents grow", imageBlocked && "refresher-preview-block-media")}
-                                    data-blocked={hideText ? undefined : post?.textBlocked}
-                                    onClick={(ev) => clickContents(ev, imageViewer)}
-                                    onKeyDown={pressContents}
-                                    dangerouslySetInnerHTML={{__html: hideText ? BLOCKED_TEXT : contents ?? ""}}
-                                />
+                                {/* 차단 표시는 감싼 상자에 단다. 본문 상자는 다크 모드에서 반전 필터를 쓰므로 흐림 필터와 한 요소에 두면 하나가 덮인다 (Comment.tsx와 같음). */}
+                                <div className="grow" data-blocked={hideText ? undefined : post?.textBlocked}>
+                                    <div
+                                        ref={contentsBox}
+                                        className={cn("refresher-html refresher-preview-contents", imageBlocked && "refresher-preview-block-media")}
+                                        onClick={(ev) => clickContents(ev, imageViewer)}
+                                        onKeyDown={pressContents}
+                                        dangerouslySetInnerHTML={{__html: hideText ? BLOCKED_TEXT : contents ?? ""}}
+                                    />
+                                </div>
                                 {post && <Votes post={post}/>}
                             </>
                         )}
