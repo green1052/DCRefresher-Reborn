@@ -17,14 +17,15 @@ import {type Running, runModule} from "../module";
 const db = vi.hoisted(() => ({
     ips: new Map<string, { label: string; title: string; category: IpCategory }>(),
     bans: new Map<string, string>(),
-    listeners: new Set<() => void>()
+    listeners: new Set<() => void>(),
+    init: vi.fn(async () => {})
 }));
 vi.mock("@/core/database", async (importOriginal) => ({
     ...await importOriginal<typeof import("@/core/database")>(),
-    initDatabase: async () => {},
+    initDatabase: () => db.init(),
     ipInfoOf: (ip: string) => db.ips.get(ip),
     banReasonsOf: (uid: string) => db.bans.get(uid),
-    subscribeDatabase: (listener: () => void) => {
+    onDatabaseChange: (listener: () => void) => {
         db.listeners.add(listener);
         return () => db.listeners.delete(listener);
     }
@@ -92,6 +93,13 @@ describe("아이디·IP 배지", () => {
         expect(badge("2", "[KT]")?.style.color).toBe("rgb(100, 149, 237)");
         // IP 정보가 없는 유동은 배지 묶음을 만들지 않는다.
         expect(document.querySelector("tr[data-no='3'] .refresher-user-badges")).toBeNull();
+    });
+
+    it("IP 정보를 보이지 않고 갱차도 보지 않으면 IP DB를 읽지 않다가, 설정을 켜면 읽는다", async () => {
+        const {change} = await start({ipInfoFilter: "none", checkPermBan: false});
+        expect(db.init).not.toHaveBeenCalled();
+        change({ipInfoFilter: "all"});
+        expect(db.init).toHaveBeenCalledOnce();
     });
 
     it("배지는 IP 바로 뒤에 넣는다", async () => {

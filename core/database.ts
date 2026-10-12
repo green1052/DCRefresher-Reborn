@@ -97,6 +97,9 @@ export const subscribeDatabase = (listener: () => void): (() => void) => {
     return versionStore.subscribe(listener);
 };
 
+/** DB 변경 구독. subscribeDatabase와 달리 읽기를 시작하지 않는다 (필요할 때만 initDatabase를 부르는 쪽). */
+export const onDatabaseChange = (listener: () => void): (() => void) => versionStore.subscribe(listener);
+
 const bump = (): void => versionStore.setState((version) => version + 1);
 
 // 깨진 값이어도 던지지 않고 IP 정보 없이 둔다. 던지면 initDatabase가 실패해 그것을 기다리는 userinfo 모듈의 setup까지 실패한다.

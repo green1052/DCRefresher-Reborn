@@ -1,7 +1,7 @@
 import QuickLRU from "quick-lru";
 
 import {badgeViewOf, type BadgeView, DEFAULT_BADGE_VIEW, showsUid} from "@/core/badges";
-import {banReasonsOf, initDatabase, ipInfoOf, passesIpFilter, subscribeDatabase} from "@/core/database";
+import {banReasonsOf, initDatabase, ipInfoOf, onDatabaseChange, passesIpFilter} from "@/core/database";
 import {defineModule} from "@/core/module/define";
 import {type GallogActivity, getGallogActivity, type RatioInfo} from "@/core/gallog";
 import {ROWS_HIDDEN_EVENT} from "@/core/block";
@@ -192,10 +192,15 @@ export default defineModule({
     async setup(ctx) {
         // await 전에 읽는다. 뒤에 두면 기다리는 동안 모듈이 꺼졌을 때 revoke가 지운 값을 다시 쓴다.
         readBadgeSettings(ctx);
+        // IP 정보를 보이지 않고 갱차도 보지 않으면 수백 KB짜리 IP DB를 읽지 않는다. 버블·미리보기는 열 때 따로 읽는다 (subscribeDatabase).
+        // 갱차 목록은 banReasonsOf가 처음 불릴 때 읽지만, 갱신 감시는 initDatabase가 건다.
+        const needsDatabase = (): boolean => view.ipFilter !== "none" || ctx.settings.checkPermBan;
         ctx.onSettingsChanged(() => {
             readBadgeSettings(ctx);
             publishRatios(ctx);
             rebuildAll(ctx);
+            // 읽고 나면 번호가 올라 아래 onDatabaseChange가 다시 그린다.
+            if (needsDatabase()) void initDatabase().catch(console.error);
         });
 
         // await 뒤마다 확인해, 그사이 모듈이 꺼졌으면 revoke가 지운 배지·글댓비를 다시 그리지 않는다.
@@ -210,7 +215,7 @@ export default defineModule({
 
         // IP/밴 DB는 모듈 설정을 읽은 뒤 여기서 처음 읽는다 (이 모듈이 꺼져 있으면 버블·미리보기의 subscribeDatabase가 읽는다).
         // 읽기가 끝난 뒤 필터를 걸어야 첫 배지부터 IP 정보가 붙는다.
-        const [stored] = await Promise.all([ratioStorage.getValue(), initDatabase()]);
+        const [stored] = await Promise.all([ratioStorage.getValue(), needsDatabase() ? initDatabase() : null]);
         if (signal.aborted) return;
         ratios = stored.ratio ?? {};
         publishRatios(ctx);
@@ -249,7 +254,7 @@ export default defineModule({
         });
 
         // IP DB가 갱신되거나 갱차 목록을 다 읽으면 다시 그린다. 갱차 목록은 banReasonsOf를 처음 부를 때 읽기 시작한다.
-        const unwatchDatabase = subscribeDatabase(() => rebuildAll(ctx));
+        const unwatchDatabase = onDatabaseChange(() => rebuildAll(ctx));
 
         // 조회 중인 uid. 응답이 새로고침 주기보다 늦어도 다음 새로고침이 같은 요청을 또 보내지 않게 한다.
         const pending = new Set<string>();
