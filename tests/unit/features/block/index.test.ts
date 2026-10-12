@@ -37,7 +37,7 @@ beforeEach(() => {
     document.body.innerHTML = `<table class="gall_list"><tbody>${[
         row({no: "1", nick: "도배", uid: "spam"}),
         row({no: "2", nick: "착한", title: "광고 <script>var 광고 = 1</script>아님"}),
-        row({no: "3", subject: "<span class=\"subject_inner\">긴 말머리 전체</span>"})
+        row({no: "3", subject: "<span class=\"subject_inner\">긴 말머리 전체</span>긴 말머…"})
     ].join("")}</tbody></table>`;
     setBlockLists();
     useUiStore.setState({toasts: [], blockRevealed: false, selected: null, bubble: null});
@@ -73,7 +73,7 @@ describe("작성자 칸 판정", () => {
     });
 
     it("잘린 말머리는 툴팁의 전체 글자로 본다", async () => {
-        setBlockLists({TAB: [entry("긴 말머리 전체")]});
+        setBlockLists({TAB: [entry("긴 말머리 전체", {mode: "SAME"})]});
         await start();
         expect(hidden()).toEqual(["3"]);
     });
