@@ -24,12 +24,12 @@
         visibility: hidden;
     }
 
-    /* 오른쪽 영역 썸네일. */
-    .bgcover {
+    /* 마이너 갤러리 대문(.bgcover)과 오른쪽 영역 썸네일. 다른 이미지처럼 잠시 보이기(.stlth) 동안은 보인다. */
+    &:not(.stlth) .bgcover {
         visibility: hidden;
     }
 
-    .rcontimg_box .img_box {
+    &:not(.stlth) .rcontimg_box .img_box {
         display: none !important;
     }
 
