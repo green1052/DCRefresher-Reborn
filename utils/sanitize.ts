@@ -33,7 +33,9 @@ const IFRAME_ALLOW = new Set(["autoplay", "encrypted-media", "fullscreen", "pict
 // 동영상에는 재생 컨트롤을 붙인다. 디시 본문은 컨트롤 없이 페이지 스크립트로 재생하기 때문이다.
 // 디시콘·움짤은 디시처럼 컨트롤 없이 자동 반복 재생한다.
 // 이미지·iframe은 lazy로 두어 스텔스·이미지 차단으로 숨긴 것은 받지 않게 한다.
-// 링크(# 앵커 제외)는 새 탭으로 연다. DOMPurify가 target을 지우므로 두면 갤러리 탭이 링크로 넘어가 목록과 미리보기를 잃는다.
+// 링크는 새 탭으로 연다. DOMPurify가 target을 지우므로 두면 갤러리 탭이 링크로 넘어가 목록과 미리보기를 잃는다.
+// # 앵커는 주소를 뗀다. 정화한 HTML은 미리보기(shadow DOM) 안에 그려져 앵커가 가리킬 곳을 찾지 못하고, 누르면 페이지 주소에 #이 붙어
+// 미리보기가 쌓은 기록이 바뀌며 창이 닫힌다.
 const onAttributes = (node: Element): void => {
     // MathML(<math>) 같은 나머지 요소는 서식만 골라 지울 수 없어(HTMLElement·SVGElement가 아니다) style을 통째로 지운다.
     if (node.hasAttribute("style")) {
@@ -52,8 +54,15 @@ const onAttributes = (node: Element): void => {
             if (kept.length > 0) node.setAttribute("allow", kept.join("; "));
             else node.removeAttribute("allow");
         }
-    } else if ((node.localName === "a" || node.localName === "area") && !(node.getAttribute("href") ?? node.getAttribute("xlink:href") ?? "#").startsWith("#")) {
+    } else if (node.localName === "a" || node.localName === "area") {
         // SVG <a>(nodeName이 소문자 a, 주소는 href나 xlink:href)와 이미지 맵 <area>도 링크다.
+        const href = node.getAttribute("href") ?? node.getAttribute("xlink:href");
+        if (href === null) return;
+        if (href.startsWith("#")) {
+            node.removeAttribute("href");
+            node.removeAttribute("xlink:href");
+            return;
+        }
         node.setAttribute("target", "_blank");
         node.setAttribute("rel", "noopener noreferrer");
     }

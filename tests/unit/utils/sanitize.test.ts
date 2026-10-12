@@ -94,11 +94,13 @@ describe("sanitizeHtml", () => {
         expect(dropped?.hasAttribute("allow")).toBe(false);
     });
 
-    it("링크는 새 탭으로 열고 # 앵커는 그대로 둔다", () => {
+    it("링크는 새 탭으로 열고 # 앵커는 주소를 뗀다", () => {
         const [external, anchor] = parse("<a href=\"https://gall.dcinside.com\">a</a><a href=\"#top\">b</a>").querySelectorAll("a");
         expect(external?.getAttribute("target")).toBe("_blank");
         expect(external?.getAttribute("rel")).toBe("noopener noreferrer");
         expect(anchor?.hasAttribute("target")).toBe(false);
+        // 미리보기 안에서는 가리킬 곳이 없고, 누르면 페이지 주소에 #이 붙어 미리보기 기록이 꼬인다.
+        expect(anchor?.hasAttribute("href")).toBe(false);
     });
 
     it("SVG 링크와 이미지 맵 area도 새 탭으로 연다", () => {
