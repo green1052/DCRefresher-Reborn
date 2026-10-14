@@ -1,5 +1,5 @@
-import {sendMessage} from "@/core/messaging/protocol";
-import {resultMessage, submitComment, type SubmitResult, submitTxtcon} from "@/core/preview/request";
+import {type CommentRcKey, sendMessage} from "@/core/messaging/protocol";
+import {type ManageResult, resultMessage, submitComment, type SubmitResult, submitTxtcon, userDeleteComment} from "@/core/preview/request";
 import type {DcinsideDccon, GalleryPreData, PostInfo} from "@/core/preview/types";
 
 // 'false||메시지' 형식이 아닌 실패 응답 코드 (디시 dccon.js·txtcon.js에서 옮김).
@@ -33,6 +33,9 @@ interface CommentContent {
     txtcon?: { bg: string; txt: string };
 }
 
+/** 글 댓글의 reCAPTCHA 키 쌍. 디시는 페이지마다 반반으로 고른다. 재전송 토큰도 같은 쌍으로 받아야 서버가 확인한다. */
+const pickRcKey = (): CommentRcKey => (Math.random() < 0.5 ? "new" : "new3");
+
 /** captcha: 원문 페이지에서만 풀 수 있는 자동입력 방지 확인을 요구받았다. */
 type CommentOutcome = { ok: true } | { ok: false; captcha: true } | { ok: false; captcha: false; message: string };
 
@@ -49,8 +52,7 @@ export const postComment = async (
     code?: string
 ): Promise<CommentOutcome> => {
     const useDccon = content.dccons.length > 0;
-    // 글 댓글의 reCAPTCHA 키 쌍. 디시는 페이지마다 반반으로 고른다. 재전송 토큰도 같은 쌍으로 받아야 서버가 확인한다.
-    const rcKey = Math.random() < 0.5 ? "new" : "new3";
+    const rcKey = pickRcKey();
     const send = (token?: string): Promise<SubmitResult> =>
         content.txtcon
             ? submitTxtcon(preData, post, user, content.text, content.txtcon, reply.commentNo, reply.replyNo, code, token)
@@ -69,4 +71,23 @@ export const postComment = async (
     const failMessage = Object.hasOwn(FAIL_MESSAGES, response.result) ? FAIL_MESSAGES[response.result]
         : useDccon && Object.hasOwn(DCCON_FAIL_MESSAGES, response.result) ? DCCON_FAIL_MESSAGES[response.result] : undefined;
     return {ok: false, captcha: false, message: (response.result === "false" ? resultMessage(response) : failMessage) || "댓글을 작성하지 못했습니다."};
+};
+
+/**
+ * 본인 댓글 삭제 (비밀번호·회원). 'false||captcha||v3'가 오면 작성처럼 v3 토큰을 붙여 한 번 더 보낸다 (디시 comment.js의 비밀번호 삭제).
+ * v2 체크박스나 재전송도 막히면 원문에서만 풀 수 있어 그렇게 안내한다.
+ */
+export const deleteOwnComment = async (preData: GalleryPreData, post: PostInfo, commentNo: string, password: string): Promise<ManageResult> => {
+    const rcKey = pickRcKey();
+    const send = (token?: string): Promise<SubmitResult> => userDeleteComment(preData, post, commentNo, password, rcKey, token);
+
+    let response = await send();
+    if (response.message === "captcha" && response.detail === "v3") {
+        const token = await sendMessage("refresher:grecaptchaToken", {action: "comment_delete_submit", rcKey}).catch(() => undefined);
+        if (token) response = await send(token);
+    }
+
+    // 'true'만 성공으로 본다. 비밀번호가 틀려도 HTTP 200('false||메시지')이 온다.
+    if (response.result === "true") return {success: true};
+    return {success: false, message: response.message === "captcha" ? "자동입력 방지 확인이 필요합니다. 원문에서 삭제해 주세요." : resultMessage(response)};
 };

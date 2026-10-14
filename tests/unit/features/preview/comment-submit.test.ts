@@ -3,7 +3,7 @@ import {beforeEach, describe, expect, it, vi} from "vitest";
 import type {SubmitResult} from "@/core/preview/request";
 import {submitResult} from "@/core/preview/response";
 import type {DcinsideDccon, GalleryPreData, PostInfo} from "@/core/preview/types";
-import {isCommentPosted, postComment} from "@/features/preview/comment-submit";
+import {deleteOwnComment, isCommentPosted, postComment} from "@/features/preview/comment-submit";
 
 const net = vi.hoisted(() => ({
     responses: [] as string[],
@@ -20,7 +20,7 @@ vi.mock("@/core/preview/request", async (importOriginal) => {
         net.calls.push(args);
         return submitResult(net.responses.shift() ?? "");
     };
-    return {...await importOriginal<typeof import("@/core/preview/request")>(), submitComment: send, submitTxtcon: send};
+    return {...await importOriginal<typeof import("@/core/preview/request")>(), submitComment: send, submitTxtcon: send, userDeleteComment: send};
 });
 
 vi.mock("@/core/messaging/protocol", () => ({
@@ -112,5 +112,27 @@ describe("postComment", () => {
     it("디시콘 실패 코드는 디시콘 댓글에서만 디시콘 문구를 보인다", async () => {
         expect(await send(["not_buy"], dccon)).toEqual({ok: false, captcha: false, message: "구매내역이 존재하지 않는 디시콘입니다."});
         expect(await send(["fail"], txtcon)).toEqual({ok: false, captcha: false, message: "댓글을 작성하지 못했습니다."});
+    });
+});
+
+describe("deleteOwnComment", () => {
+    it("v3를 요구하면 같은 rc_key 쌍의 토큰을 붙여 한 번 더 보낸다", async () => {
+        net.responses = ["false||captcha||v3", "true"];
+        expect(await deleteOwnComment(preData, post, "7", "pw")).toEqual({success: true});
+        const rcKey = net.calls[0]?.[4];
+        expect(rcKey).toMatch(/^new3?$/);
+        expect(net.calls.map((call) => [call[4], call[5]])).toEqual([[rcKey, undefined], [rcKey, "token"]]);
+        expect(net.requests).toEqual([{action: "comment_delete_submit", rcKey}]);
+    });
+
+    it("재전송도 막히면 원문에서 지우라고 알린다", async () => {
+        net.responses = ["false||captcha||v3", "false||captcha"];
+        expect(await deleteOwnComment(preData, post, "7", "pw")).toEqual({success: false, message: "자동입력 방지 확인이 필요합니다. 원문에서 삭제해 주세요."});
+    });
+
+    it("비밀번호가 틀리면 디시 문구를 그대로 보인다", async () => {
+        net.responses = ["false||비밀번호가 맞지 않습니다."];
+        expect(await deleteOwnComment(preData, post, "7", "x")).toEqual({success: false, message: "비밀번호가 맞지 않습니다."});
+        expect(net.requests).toEqual([]);
     });
 });

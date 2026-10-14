@@ -25,9 +25,9 @@ interface ProtocolMap {
 
     /**
      * 탭 → 배경: 디시가 reCAPTCHA v3를 요구하면 그 탭의 MAIN world에서 토큰을 받아 온다. 실패하면 undefined다.
-     * 글 댓글(comment_submit)은 rc_key로 보낸 쌍의 키로, 디시콘·글자콘(insert_icon)은 예전 키로 받는다.
+     * 글 댓글 작성·삭제(comment_submit, comment_delete_submit)는 rc_key로 보낸 쌍의 키로, 디시콘·글자콘(insert_icon)은 예전 키로 받는다.
      */
-    "refresher:grecaptchaToken"(data: { action: "comment_submit"; rcKey: CommentRcKey } | { action: "insert_icon" }): string | undefined;
+    "refresher:grecaptchaToken"(data: { action: "comment_submit" | "comment_delete_submit"; rcKey: CommentRcKey } | { action: "insert_icon" }): string | undefined;
 
     /**
      * 탭 → 배경: refresh·search가 목록 행을 갈아끼우거나 이어 붙였다. 배경이 그 탭의 MAIN world에서 디시 자체 차단·이용자 메모 표시를 다시 적용한다.

@@ -234,12 +234,12 @@ describe("댓글 관리", () => {
         expect(sent[0]?.body.get("del_chk")).toBe("1");
     });
 
-    it("비밀번호 삭제는 글의 댓글 갤러리로 보내고 no는 글 번호다", async () => {
+    it("비밀번호 삭제는 글의 댓글 갤러리로 보내고 no는 글 번호다. 디시처럼 rc_key·c_k_v·v_cur_t와 재전송 토큰을 붙인다", async () => {
         const sent = serve(fetchMock, () => "true");
-        expect(await userDeleteComment(target(), {commentId: "cid"}, "7", "pw")).toEqual({success: true, message: undefined});
+        expect(await userDeleteComment(target(), {commentId: "cid", v_cur_t: "vt"}, "7", "pw", "new3", "tok")).toEqual({result: "true", message: undefined, detail: undefined});
         expect(sent[0]?.url).toBe(urls.comment_remove);
-        expect(sent[0]?.body.get("id")).toBe("cid");
-        expect(sent[0]?.body.get("no")).toBe("3");
-        expect(sent[0]?.body.get("re_no")).toBe("7");
+        expect(Object.fromEntries(["id", "no", "re_no", "re_password", "v_cur_t", "rc_key", "c_k_v", "g-recaptcha-token"].map((key) => [key, sent[0]?.body.get(key)]))).toEqual({
+            id: "cid", no: "3", re_no: "7", re_password: "pw", v_cur_t: "vt", rc_key: "new3", c_k_v: "dzc", "g-recaptcha-token": "tok"
+        });
     });
 });

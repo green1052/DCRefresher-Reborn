@@ -1,8 +1,9 @@
 import {ajax} from "@/core/http/client";
 import {galltypeOf, managerAjaxUrl, urls} from "@/core/http/urls";
+import type {CommentRcKey} from "@/core/messaging/protocol";
 import {isRecord} from "@/utils/record";
 
-import {dcBody, resultMessage, submitResult} from "./response";
+import {dcBody, resultMessage, type SubmitResult, submitResult} from "./response";
 import type {BlockDay, BlockReason, GalleryPreData, PostInfo} from "./types";
 
 /** 관리 요청 결과. 디시 관리 API는 {"result": "success" | "fail", "msg": "…"}를 돌려준다. */
@@ -98,18 +99,32 @@ export const captchaImage = (preData: GalleryPreData, type: "comment" | "recomme
 export const adminDeleteComments = (preData: GalleryPreData, commentIds: string[]): Promise<ManageResult> =>
     manage(preData, "delete_comment", {id: preData.gallery, pno: preData.id, "cmt_nos[]": commentIds});
 
-/** 유저 댓글 삭제. 댓글 목록·작성과 같이 글의 댓글 갤러리(comment_id)로 보낸다. no는 디시처럼 글 번호 그대로다. */
-export const userDeleteComment = async (preData: GalleryPreData, postInfo: Pick<PostInfo, "commentId">, commentId: string, password: string): Promise<ManageResult> => {
+/**
+ * 유저 댓글 삭제. 댓글 목록·작성과 같이 글의 댓글 갤러리(comment_id)로 보낸다. no는 디시처럼 글 번호 그대로다.
+ * 디시 comment.js처럼 reCAPTCHA 키 쌍(rc_key)을 보내고, 'false||captcha||v3'의 재전송에는 그 쌍으로 받은 토큰을 붙인다.
+ * 응답은 JSON이 아닌 'true' 또는 'false||메시지' 텍스트다.
+ */
+export const userDeleteComment = async (
+    preData: GalleryPreData,
+    postInfo: Pick<PostInfo, "commentId" | "v_cur_t">,
+    commentId: string,
+    password: string,
+    rcKey: CommentRcKey,
+    grecaptchaToken?: string
+): Promise<SubmitResult> => {
     const body = await dcBody(preData.link, {
         id: postInfo.commentId ?? preData.gallery,
         no: preData.id,
         re_no: commentId,
         mode: "del",
         re_password: password || undefined,
-        "g-recaptcha-response": ""
+        // 비밀번호 삭제 폼만 보낸다 (디시 comment.js의 비밀번호 확인 버튼).
+        v_cur_t: (password && postInfo.v_cur_t) || undefined,
+        "g-recaptcha-response": "",
+        "g-recaptcha-token": grecaptchaToken || undefined,
+        rc_key: rcKey,
+        c_k_v: "dzc"
     });
 
-    // 'true'만 성공으로 본다. 관리 요청과 달리 응답이 JSON이 아니다.
-    const response = submitResult(await ajax.post(urls.comment_remove, {body}).text());
-    return {success: response.result === "true", message: resultMessage(response)};
+    return submitResult(await ajax.post(urls.comment_remove, {body}).text());
 };
