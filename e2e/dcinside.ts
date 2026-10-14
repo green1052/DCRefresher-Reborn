@@ -105,6 +105,8 @@ export class FakeSite {
             }
             case "/board/view/":
                 return html(viewPage(url.searchParams.get("no") ?? "", this.pageComments, this.commentTarget, this.comments.length));
+            case "/mini/management/":
+                return html(MANAGE_PAGE);
             // 디시가 요청이 많을 때 주는 임시 차단 페이지. 본문이 비어 있다.
             case "/board/write/":
                 return html("<!DOCTYPE html><html><head><meta charset=\"utf-8\"></head><body></body></html>");
@@ -179,6 +181,14 @@ const listPage = (rows: FakeRow[], page: string, manager: boolean): string => `<
 <table class="gall_list"><thead><tr>${manager ? "<th class=\"chkbox_th\"></th>" : ""}<th>번호</th><th>제목</th><th>글쓴이</th><th>작성일</th><th>조회</th><th>추천</th></tr></thead>
 <tbody>${rows.map((row) => listRow(row, manager)).join("")}</tbody></table>
 </div><div class="bottom_paging_box">${paging(page)}</div></article></div>
+</body></html>`;
+
+/** 갤러리 관리 페이지. 디시는 왼쪽 메뉴·오른쪽 설정 칸에 목록 사이드바와 같은 클래스를 쓴다. */
+const MANAGE_PAGE = `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>갤러리 관리</title></head><body>
+<div id="top" class="dcwrap"><div class="wrap_inner"><main id="container"><div class="minor_uadmin_wrap">
+<div class="left_content"><ul class="minor_uadmin_menu"><li><a class="on">기본 설정</a></li><li><a>차단 목록</a></li></ul></div>
+<div class="right_content"><div class="minor_uadmin_setting">갤러리 이름</div></div>
+</div></main></div></div>
 </body></html>`;
 
 /** 글 페이지에 디시가 그려 둔 댓글. 차단·같은 댓글 접기 같은 페이지 모듈이 본다. */
