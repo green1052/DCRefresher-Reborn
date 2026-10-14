@@ -486,6 +486,26 @@ test.describe("댓글 쓰기·지우기", () => {
         expect([body.get("id"), body.get("pno"), body.getAll("cmt_nos[]")]).toEqual(["test", "3", ["10", "11"]]);
     });
 
+    test("관리자의 전체 선택은 접힌 스레드의 답글을 고르지 않는다", async ({listPage, site}) => {
+        site.manager = true;
+        site.comments.push(fakeComment(12, {c_no: "10", depth: 1, ip: "3.4", memo: "답글 둘"}));
+        await listPage.page.reload();
+        await listPage.refreshButton.waitFor();
+        const frame = await listPage.openPreview();
+        await frame.getByRole("button", {name: "고닉 댓글의 답글 2개", exact: true}).click();
+        await expect(frame.getByText("답글 둘", {exact: true})).toBeHidden();
+
+        // 체크박스가 보이는 첫 댓글만 고르고 지운다.
+        await frame.getByRole("checkbox", {name: "전체 선택"}).click();
+        await expect(frame.getByText("1개 선택")).toBeVisible();
+        await frame.getByRole("button", {name: "삭제", exact: true}).click();
+        await expect(listPage.alert).toContainText("선택한 댓글 1개를 삭제할까요?");
+        await listPage.alert.getByRole("button", {name: "삭제", exact: true}).click();
+
+        await expect(listPage.toast).toContainText("댓글을 삭제했습니다.");
+        expect(site.submitted.map(({path, body}) => [path, body.getAll("cmt_nos[]")])).toEqual([["/ajax/minor_manager_board_ajax/delete_comment", ["10"]]]);
+    });
+
     // 배경을 흐리지 않아도 겹친 창의 배경은 그려야 단축키를 막는다.
     for (const popupBlur of [true, false]) test(`삭제 확인 창이 떠 있는 동안에는 PageDown으로 옆 글로 넘어가지 않는다 (흐림 ${popupBlur ? "켬" : "끔"})`, async ({listPage, site, storage}) => {
         site.manager = true;

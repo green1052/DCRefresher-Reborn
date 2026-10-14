@@ -51,10 +51,13 @@ const Thread = ({parent, replies, isAdmin}: { parent: ProcessedComment; replies:
 
 /**
  * 관리자가 고른 댓글을 한 번에 지우거나 작성자를 차단한다 (디시 댓글 목록 아래의 댓글 삭제·차단 버튼).
- * 고른 것은 따로 구독한다. 목록이 구독하면 하나를 고를 때마다 댓글 전부를 다시 그린다.
- * selectable: 체크박스가 있는 댓글 (보이고 지우지 않은 댓글). 새로고침으로 사라진 댓글은 골라 두었어도 세지 않는다.
+ * 고른 것과 접힘은 따로 구독한다. 목록이 구독하면 하나를 고르거나 접을 때마다 댓글 전부를 다시 그린다.
+ * shownSelectable: 보이고 지우지 않은 댓글. 새로고침으로 사라진 댓글은 골라 두었어도 세지 않는다.
+ * foldable: 답글을 접을 수 있는 스레드의 첫 댓글 번호. 접힌 스레드의 답글은 체크박스가 그려지지 않으므로 고르지 않는다.
  */
-const SelectionTools = ({selectable}: { selectable: ProcessedComment[] }) => {
+const SelectionTools = ({shownSelectable, foldable}: { shownSelectable: ProcessedComment[]; foldable: ReadonlySet<string> }) => {
+    const collapsed = usePreviewStore((s) => s.collapsed);
+    const selectable = shownSelectable.filter((comment) => !(comment.depth === 1 && foldable.has(comment.c_no) && collapsed.has(comment.c_no)));
     const selected = usePreviewStore((s) => s.selectedComments);
     const picked = selectable.filter((comment) => selected.has(comment.no)).map((comment) => comment.no);
     const all = picked.length > 0 && picked.length === selectable.length;
@@ -117,7 +120,10 @@ export const CommentList = () => {
 
     return (
         <div className="py-1">
-            {isAdmin && <SelectionTools selectable={comments.filter((comment) => shown.has(comment) && comment.is_delete !== "1")}/>}
+            {isAdmin && (
+                <SelectionTools shownSelectable={comments.filter((comment) => shown.has(comment) && comment.is_delete !== "1")}
+                                foldable={new Set(parents.filter((parent) => shown.has(parent) && (repliesOf.get(parent.no)?.length ?? 0) > 1).map((parent) => parent.no))}/>
+            )}
             {parents.map((parent) => {
                 const replies = repliesOf.get(parent.no) ?? [];
 
