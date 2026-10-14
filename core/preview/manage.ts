@@ -3,7 +3,7 @@ import {galltypeOf, managerAjaxUrl, urls} from "@/core/http/urls";
 import {isRecord} from "@/utils/record";
 
 import {dcBody, resultMessage, submitResult} from "./response";
-import type {BlockDay, BlockReason, GalleryPreData} from "./types";
+import type {BlockDay, BlockReason, GalleryPreData, PostInfo} from "./types";
 
 /** 관리 요청 결과. 디시 관리 API는 {"result": "success" | "fail", "msg": "…"}를 돌려준다. */
 export interface ManageResult {
@@ -98,10 +98,10 @@ export const captchaImage = (preData: GalleryPreData, type: "comment" | "recomme
 export const adminDeleteComments = (preData: GalleryPreData, commentIds: string[]): Promise<ManageResult> =>
     manage(preData, "delete_comment", {id: preData.gallery, pno: preData.id, "cmt_nos[]": commentIds});
 
-/** 유저 댓글 삭제. */
-export const userDeleteComment = async (preData: GalleryPreData, commentId: string, password: string): Promise<ManageResult> => {
+/** 유저 댓글 삭제. 댓글 목록·작성과 같이 글의 댓글 갤러리(comment_id)로 보낸다. no는 디시처럼 글 번호 그대로다. */
+export const userDeleteComment = async (preData: GalleryPreData, postInfo: Pick<PostInfo, "commentId">, commentId: string, password: string): Promise<ManageResult> => {
     const body = await dcBody(preData.link, {
-        id: preData.gallery,
+        id: postInfo.commentId ?? preData.gallery,
         no: preData.id,
         re_no: commentId,
         mode: "del",

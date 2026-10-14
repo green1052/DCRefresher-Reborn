@@ -99,7 +99,7 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
 
         setDeleting(true);
         // 비밀번호가 틀려도 HTTP 200('false||메시지')이 오므로 결과를 확인해 알려야 한다.
-        const request = isAdmin ? adminDeleteComments(st.preData, [comment.no]) : userDeleteComment(st.preData, comment.no, password);
+        const request = isAdmin ? adminDeleteComments(st.preData, [comment.no]) : userDeleteComment(st.preData, st.post, comment.no, password);
         const deleted = await notifyManage(request, "댓글을 삭제했습니다.", "댓글을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.");
         setDeleting(false);
         if (deleted) void st.requestRefresh();

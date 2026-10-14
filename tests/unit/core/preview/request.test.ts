@@ -5,7 +5,7 @@ const fetchMock = vi.hoisted(() => (globalThis.fetch = vi.fn<typeof fetch>()));
 
 import {BlockedError} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
-import {adminDeleteComments, blockCommenters, fetchComments, fetchDcconList, fetchDcconPackage, fetchPost, viewUrl, vote} from "@/core/preview/request";
+import {adminDeleteComments, blockCommenters, fetchComments, fetchDcconList, fetchDcconPackage, fetchPost, userDeleteComment, viewUrl, vote} from "@/core/preview/request";
 import type {DcinsideComment, PostInfo} from "@/core/preview/types";
 
 import {preData} from "../../../helpers";
@@ -232,5 +232,14 @@ describe("댓글 관리", () => {
         expect(sent[0]?.body.getAll("nos[]")).toEqual(["7", "8"]);
         expect(sent[0]?.body.get("parent")).toBe("3");
         expect(sent[0]?.body.get("del_chk")).toBe("1");
+    });
+
+    it("비밀번호 삭제는 글의 댓글 갤러리로 보내고 no는 글 번호다", async () => {
+        const sent = serve(fetchMock, () => "true");
+        expect(await userDeleteComment(target(), {commentId: "cid"}, "7", "pw")).toEqual({success: true, message: undefined});
+        expect(sent[0]?.url).toBe(urls.comment_remove);
+        expect(sent[0]?.body.get("id")).toBe("cid");
+        expect(sent[0]?.body.get("no")).toBe("3");
+        expect(sent[0]?.body.get("re_no")).toBe("7");
     });
 });
