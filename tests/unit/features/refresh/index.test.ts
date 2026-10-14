@@ -285,6 +285,8 @@ describe("페이지 이동 시 목록만 교체", () => {
         expect(location.search).toBe("?id=test&page=2");
         expect(get).toHaveBeenCalledWith("https://gall.dcinside.com/board/lists?id=test&page=2", expect.anything());
         expect(document.querySelector(".bottom_paging_box em")?.textContent).toBe("2");
+        // 교체 뒤 스크롤에서 던지면 목록은 바뀌어도 실패 토스트가 뜬다.
+        expect(toasts()).toEqual([]);
     });
 
     it("수정키 클릭이나 설정을 끈 경우는 가로채지 않는다", async () => {
