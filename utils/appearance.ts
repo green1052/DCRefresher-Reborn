@@ -21,6 +21,9 @@ export const followDcAppearance = (root: HTMLElement): (() => void) => {
     const apply = (): void => setAppearance(root, document.getElementById("css-darkmode") !== null);
     apply();
     const observer = new MutationObserver(apply);
-    observer.observe(document.head ?? document.documentElement, {childList: true});
+    // 글쓰기 페이지에서는 디시가 새로고침 없이 링크를 body에 붙였다 뗀다 (_js__common.js darkmode()).
+    for (const target of [document.head, document.body]) {
+        if (target) observer.observe(target, {childList: true});
+    }
     return () => observer.disconnect();
 };
