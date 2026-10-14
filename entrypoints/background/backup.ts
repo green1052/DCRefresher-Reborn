@@ -9,9 +9,12 @@ const AUTO_BACKUP_ALARM = "refresher:autoBackup";
  */
 export const startAutoBackup = (): void => {
     const arm = () => browser.alarms.create(AUTO_BACKUP_ALARM, {delayInMinutes: 1});
+    // 백업 대상이 바뀐 횟수. 알람이 울려 백업하는 사이 또 바뀌었는지 본다.
+    let edits = 0;
 
     browser.storage.local.onChanged.addListener((changes) => {
         if (!Object.keys(changes).some(isBackupTarget)) return;
+        edits++;
 
         void backupStorage.auto.getValue().then((auto) => {
             if (!auto) return;
@@ -38,11 +41,13 @@ export const startAutoBackup = (): void => {
         if (alarm.name !== AUTO_BACKUP_ALARM) return;
         // 자동 백업을 끈 직후(초기화 전 끄기 등) 남은 알람이 울릴 수 있으므로 울린 시점에 설정을 다시 확인한다.
         // 대기 표시는 백업이 된 뒤에 지운다. 실패(오프라인·쓰기 한도 등)하면 남겨 다음 시작 때(rearm) 다시 한다.
-        // 울린 뒤 설정이 또 바뀌어 새 알람이 걸렸으면 대기 표시를 둔다. 지우면 그 알람이 브라우저를 끌 때 사라져도 다시 걸지 않는다.
+        // 울린 뒤 설정이 또 바뀌었으면 대기 표시를 둔다. 지우면 새 알람이 브라우저를 끌 때 사라져도 다시 걸지 않는다.
+        // 알람이 있는지로 보면 안 된다. 변경이 alarms.get 응답과 엇갈리면 알람은 걸렸는데 대기 표시가 지워진다.
+        const seen = edits;
         void backupStorage.auto.getValue()
             .then(async (auto) => {
                 if (auto) await runBackup("auto");
-                if (!await browser.alarms.get(AUTO_BACKUP_ALARM)) await backupStorage.pending.setValue(false);
+                if (edits === seen) await backupStorage.pending.setValue(false);
             })
             .catch(() => {});
     });
