@@ -76,4 +76,8 @@ export const bindListKeys = (ctx: Ctx, open: (preData: GalleryPreData) => void):
         if (entry) select(entry);
     }));
     ctx.addCleanup(() => select(undefined));
+    // 끄면 Esc도 막히므로 여기서 선택을 푼다. 선택이 없으면 필터·미리보기 구독도 손대지 않는다.
+    ctx.onSettingsChanged((keys) => {
+        if (keys.has("listKeyboard") && !ctx.settings.listKeyboard) select(undefined);
+    });
 };
