@@ -49,14 +49,16 @@ export const postComment = async (
     code?: string
 ): Promise<CommentOutcome> => {
     const useDccon = content.dccons.length > 0;
+    // 글 댓글의 reCAPTCHA 키 쌍. 디시는 페이지마다 반반으로 고른다. 재전송 토큰도 같은 쌍으로 받아야 서버가 확인한다.
+    const rcKey = Math.random() < 0.5 ? "new" : "new3";
     const send = (token?: string): Promise<SubmitResult> =>
         content.txtcon
             ? submitTxtcon(preData, post, user, content.text, content.txtcon, reply.commentNo, reply.replyNo, code, token)
-            : submitComment(preData, post, user, useDccon ? content.dccons : content.text, reply.commentNo, reply.replyNo, useDccon && content.bigDccon, code, token);
+            : submitComment(preData, post, user, useDccon ? content.dccons : content.text, reply.commentNo, reply.replyNo, useDccon && content.bigDccon, code, rcKey, token);
 
     let response = await send();
     if (response.message === "captcha" && response.detail === "v3") {
-        const token = await sendMessage("refresher:grecaptchaToken", content.txtcon || useDccon ? "insert_icon" : "comment_submit").catch(() => undefined);
+        const token = await sendMessage("refresher:grecaptchaToken", content.txtcon || useDccon ? {action: "insert_icon"} : {action: "comment_submit", rcKey}).catch(() => undefined);
         if (token) response = await send(token);
     }
 

@@ -1,11 +1,15 @@
 import {ajax, formBody} from "@/core/http/client";
 import {csrfBody} from "@/core/http/cookie";
 import {urls} from "@/core/http/urls";
+import type {CommentRcKey} from "@/core/messaging/protocol";
 
 import {type SubmitResult, submitResult} from "./response";
 import type {DcinsideDccon, GalleryPreData, PostInfo} from "./types";
 
-/** 댓글/디시콘 작성. 디시 f_submit(null)처럼 첫 전송은 grecaptchaToken 없이 보낸다. */
+/**
+ * 댓글/디시콘 작성. 디시 f_submit(null)처럼 첫 전송은 grecaptchaToken 없이 보낸다.
+ * 글 댓글은 디시 comment.js처럼 매번 rc_key를 보내고, 토큰은 그 쌍의 키로 받은 것이어야 한다.
+ */
 export const submitComment = async (
     preData: GalleryPreData,
     postInfo: PostInfo,
@@ -15,6 +19,7 @@ export const submitComment = async (
     replyNo: string | null,
     bigDccon: boolean,
     captcha?: string,
+    rcKey?: CommentRcKey,
     grecaptchaToken?: string
 ): Promise<SubmitResult> => {
     const form = postInfo.commentForm;
@@ -70,7 +75,7 @@ export const submitComment = async (
         "g-recaptcha-token": grecaptchaToken || undefined,
         bigdccon: bigDccon && "1",
         ...(typeof memo === "string"
-            ? {memo}
+            ? {memo, rc_key: rcKey}
             : {
                 input_type: "comment",
                 double_con_chk: memo.length > 1 && "1",

@@ -8,6 +8,8 @@ import {isCommentPosted, postComment} from "@/features/preview/comment-submit";
 const net = vi.hoisted(() => ({
     responses: [] as string[],
     tokens: [] as (string | undefined)[],
+    calls: [] as unknown[][],
+    requests: [] as unknown[],
     token: "token" as string | undefined
 }));
 
@@ -15,12 +17,18 @@ vi.mock("@/core/preview/request", async (importOriginal) => {
     const {submitResult} = await import("@/core/preview/response");
     const send = async (...args: unknown[]): Promise<SubmitResult> => {
         net.tokens.push(args.at(-1) as string | undefined);
+        net.calls.push(args);
         return submitResult(net.responses.shift() ?? "");
     };
     return {...await importOriginal<typeof import("@/core/preview/request")>(), submitComment: send, submitTxtcon: send};
 });
 
-vi.mock("@/core/messaging/protocol", () => ({sendMessage: async () => net.token}));
+vi.mock("@/core/messaging/protocol", () => ({
+    sendMessage: async (_: string, data: unknown) => {
+        net.requests.push(data);
+        return net.token;
+    }
+}));
 
 const preData = {gallery: "test", id: "1"} as GalleryPreData;
 const post = {} as PostInfo;
@@ -37,6 +45,8 @@ const send = (responses: string[], content: Parameters<typeof postComment>[3] = 
 
 beforeEach(() => {
     net.tokens = [];
+    net.calls = [];
+    net.requests = [];
     net.token = "token";
 });
 
@@ -68,6 +78,19 @@ describe("postComment", () => {
     it("v3 캡차를 요구하면 토큰을 붙여 한 번 더 보낸다", async () => {
         expect(await send(["false||captcha||v3", "12345"])).toEqual({ok: true});
         expect(net.tokens).toEqual([undefined, "token"]);
+    });
+
+    it("글 댓글은 매번 rc_key를 보내고 재전송 토큰도 그 쌍의 키로 받는다", async () => {
+        await send(["false||captcha||v3", "12345"]);
+        // submitComment(..., captcha, rcKey, grecaptchaToken)
+        const [first, second] = net.calls.map((args) => args.at(-2));
+        expect(["new", "new3"]).toContain(first);
+        expect(second).toBe(first);
+        expect(net.requests).toEqual([{action: "comment_submit", rcKey: first}]);
+
+        net.requests = [];
+        await send(["false||captcha||v3", "ok"], dccon);
+        expect(net.requests).toEqual([{action: "insert_icon"}]);
     });
 
     it("토큰을 받지 못했거나 다시 보내도 캡차면 원문에서 풀게 한다", async () => {
