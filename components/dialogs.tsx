@@ -6,7 +6,7 @@ import {useReturnFocus} from "@/components/useReturnFocus";
 import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogTitle} from "@/components/ui/alert-dialog";
 import {Button} from "@/components/ui/button";
 import {Dialog, DialogClose, DialogContent, DialogFooter} from "@/components/ui/dialog";
-import {useModuleSettings} from "@/core/module/useModuleSettings";
+import {useUiStore} from "@/stores/ui";
 
 /**
  * 연 창의 포커스.
@@ -44,8 +44,7 @@ const useModal = (onClose: () => void, focusOnOpen: AutoFocus) => {
     const [open, setOpen] = useState(true);
     const popup = useRef<HTMLDivElement>(null);
     const focus = useReturnFocus(popup);
-    // 옵션 페이지에는 모듈 설정이 없어 기본(흐림)이다.
-    const blur = useModuleSettings("preview")?.popupBlur ?? true;
+    const blur = useUiStore((s) => s.popupBlur);
 
     return {
         close: () => setOpen(false),

@@ -47,6 +47,8 @@ interface UiState {
     ratios: { cache: Record<string, RatioInfo>; alarm: number } | null;
     /** 차단 모듈의 '가린 내용 보기' (이 페이지에서만, 저장하지 않는다). 미리보기도 따른다. 모듈이 꺼져 있으면 false다. */
     blockRevealed: boolean;
+    /** 팝업 창(메모·차단 등) 바깥 배경을 흐릴지 (미리보기의 popupBlur). 미리보기가 꺼져 있거나 옵션 페이지면 기본(true)이다. */
+    popupBlur: boolean;
 
     showToast: (content: string, type?: ToastLevel, autoClose?: number, action?: ToastData["action"]) => void;
     /** user를 고르고 (x, y)에 유저 버블을 연다. 버블의 메모·차단은 고른 대상에 건다. */
@@ -64,6 +66,7 @@ export const useUiStore = create<UiState>((set, get) => ({
     memo: null,
     ratios: null,
     blockRevealed: false,
+    popupBlur: true,
 
     showToast: (content, type = "info", autoClose = 5000, action) => {
         set({toasts: [...get().toasts, {content, type, autoClose, action}]});

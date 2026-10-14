@@ -516,6 +516,7 @@ test.describe("댓글 쓰기·지우기", () => {
         await listPage.frame.getByRole("checkbox", {name: "전체 선택"}).click();
         await listPage.frame.getByRole("button", {name: "삭제", exact: true}).click();
         await expect(listPage.alert).toBeVisible();
+        await expect(listPage.page.locator("[data-slot=alert-dialog-overlay]")).toHaveClass(popupBlur ? /backdrop-blur-xs/ : /backdrop-blur-none/);
 
         // 포커스가 입력칸이 아니어도 확인 창이 떠 있으면 단축키를 막는다.
         await listPage.page.keyboard.press("PageDown");
