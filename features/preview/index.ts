@@ -304,13 +304,15 @@ const controller = (ctx: Ctx) => {
             const post = await processContents(preData, await requestPost(preData));
             if (store.getState().signalId !== signalId) return;
             store.setState({post, error: undefined, archived: false});
-            await pullComments(preData, post, signalId);
         } catch (e) {
             // 실패해도(삭제된 글 등) 보고 있던 본문은 그대로 둔다. 임시 차단은 HTTP 클라이언트가 이미 알렸다.
             if (isAbortError(e) || e instanceof BlockedError || store.getState().signalId !== signalId) return;
             console.error("Preview reload failed:", e);
             ui.showToast("게시글을 다시 불러오지 못했습니다.", "error");
+            return;
         }
+        // 본문은 받았으니 댓글 실패는 댓글 실패로 알린다.
+        await refreshComments(true);
     };
 
     const load = async (preData: GalleryPreData, mySignal: number, dir: number) => {
