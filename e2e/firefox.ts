@@ -135,20 +135,33 @@ class RdpClient {
     }
 
     /**
-     * to에 요청을 보내고, 그 요청으로 to가 보내는 event 알림 중 match에 맞는 것을 기다린다. 놓치지 않게 요청보다 먼저 듣는다.
-     * 요청이 실패하거나 시간이 지나도 듣던 쪽을 빼야 다음 요청의 알림을 가로채지 않는다.
+     * to에 요청을 보내고, 그 요청으로 to가 보내는 event 알림 중 match(알림, 요청의 응답)에 맞는 것을 기다린다.
+     * 알림은 응답과 같은 묶음으로 올 수 있어 요청보다 먼저 듣고, 응답을 받은 뒤 그때까지 온 것부터 짝짓는다.
+     * 알림을 가져가지 않으므로 시간이 지난 뒤 늦게 온 알림도 다음 요청이 응답으로 걸러 낸다 (evaluationResult의 resultID).
      */
-    async requestEvent(to: string, type: string, params: Record<string, unknown>, event: string, match: (packet: Packet) => boolean = () => true): Promise<Packet> {
-        const {promise, resolve} = Promise.withResolvers<Packet>();
+    async requestEvent(to: string, type: string, params: Record<string, unknown>, event: string, match: (packet: Packet, reply: Packet) => boolean): Promise<Packet> {
+        const seen: Packet[] = [];
+        let wake = (): void => undefined;
         const listener = (packet: Packet): boolean => {
-            if (packet.from !== to || packet.type !== event || !match(packet)) return false;
-            resolve(packet);
-            return true;
+            if (packet.from === to && packet.type === event) {
+                seen.push(packet);
+                wake();
+            }
+            return false;
         };
         this.listeners.add(listener);
         try {
-            await this.request(to, type, params);
-            return await withTimeout(promise, `${to}의 ${event} 알림`);
+            const reply = await this.request(to, type, params);
+            const found = async (): Promise<Packet> => {
+                for (;;) {
+                    const packet = seen.find((candidate) => match(candidate, reply));
+                    if (packet) return packet;
+                    await new Promise<void>((resolve) => {
+                        wake = resolve;
+                    });
+                }
+            };
+            return await withTimeout(found(), `${to}의 ${event} 알림`);
         } finally {
             this.listeners.delete(listener);
         }
@@ -198,7 +211,7 @@ export const installTemporaryAddon = async (port: number, addonPath: string): Pr
             // 서버는 거부된 Promise의 이유를 주지 않으므로(topLevelAwaitRejected) 식 안에서 잡는다.
             const text = `(async () => { try { return JSON.stringify({value: await (${expression})}); } catch (e) { return JSON.stringify({error: String(e)}); } })()`;
             // mapped.await: 식이 낸 Promise를 서버가 기다려 그 값을 준다.
-            const {exceptionMessage, result: grip} = await client.requestEvent(consoleActor, "evaluateJSAsync", {text, mapped: {await: true}}, "evaluationResult") as Packet & { exceptionMessage?: unknown; result?: string | { type?: string; actor?: string; length?: number } };
+            const {exceptionMessage, result: grip} = await client.requestEvent(consoleActor, "evaluateJSAsync", {text, mapped: {await: true}}, "evaluationResult", (packet, reply) => reply.resultID !== undefined && packet.resultID === reply.resultID) as Packet & { exceptionMessage?: unknown; result?: string | { type?: string; actor?: string; length?: number } };
             // 긴 문자열(1만 자 넘음)은 값 대신 longString grip으로 온다.
             const json = typeof grip === "string" ? grip
                 : grip?.type === "longString" && grip.actor ? String((await client.request(grip.actor, "substring", {start: 0, end: grip.length})).substring)
