@@ -1,7 +1,5 @@
 import {storage} from "wxt/utils/storage";
 
-import {http} from "@/core/http/client";
-import {postSearchUrl} from "@/core/http/urls";
 import {onMessage, sendMessage} from "@/core/messaging/protocol";
 import {type BackgroundModule, startBackgroundModules} from "@/core/module/background";
 import {dbStorage, moduleDataKey} from "@/core/storage/items";
@@ -40,9 +38,6 @@ export default defineBackground(() => {
     });
 
     listenPageMessages();
-
-    // ===== 관리: 같은 제목 글 찾기의 통합검색 (CORS를 열지 않아 콘텐츠 스크립트가 직접 받지 못한다) =====
-    onMessage("refresher:searchPosts", ({data: query}) => http.get(postSearchUrl(query)).text());
 
     // ===== 차단·메모 사용 기록 (core/usage). 탭·옵션이 따로 쓰면 서로 덮으므로 여기서 차례로 쓴다 =====
     onMessage("refresher:markUsed", ({data}) => recordUsage(data));
