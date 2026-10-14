@@ -5,14 +5,19 @@
 export const BLOCK_DAYS = {"1": "1시간", "6": "6시간", "24": "1일", "168": "7일", "336": "14일", "744": "31일"} as const;
 export type BlockDay = keyof typeof BLOCK_DAYS;
 
-/** 관리 API의 차단 사유. "0"은 직접 입력이다. 객체로 두면 "0"이 맨 앞으로 오므로 순서대로 배열에 둔다. */
+/**
+ * 관리 API의 차단 사유. DC 글·댓글 차단 창(update_avoid_list)의 avoid_reason 값과 같다.
+ * "0"은 직접 입력이다. 8(허위사실 적시)은 프로필 차단 창에만 있어 넣지 않는다.
+ * 객체로 두면 "0"이 맨 앞으로 오므로 순서대로 배열에 둔다.
+ */
 export const BLOCK_REASONS = [
     ["1", "음란성"],
     ["2", "광고"],
     ["3", "욕설"],
     ["4", "도배"],
-    ["5", "저작권 침해"],
-    ["6", "명예훼손"],
+    ["5", "혐오 콘텐츠"],
+    ["6", "저작권 침해"],
+    ["7", "명예훼손"],
     ["0", "직접 입력"]
 ] as const;
 export type BlockReason = (typeof BLOCK_REASONS)[number][0];
