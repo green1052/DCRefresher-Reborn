@@ -331,7 +331,7 @@
     filter: invert(1) blur(var(--refresher-blur, 5px));
 }
 
-.dark :is(.refresher-frame[data-blur-reveal] .refresher-html .written_dccon[data-blocked="blur"]:is(:hover, :has(:focus-visible)), .refresher-frame[data-block-revealed] .refresher-html .written_dccon[data-blocked]) {
+.dark :is(.refresher-frame[data-blur-reveal] .refresher-html .written_dccon[data-blocked="blur"]:is(:hover, :focus-visible), .refresher-frame[data-block-revealed] .refresher-html .written_dccon[data-blocked]) {
     filter: invert(1);
 }
 
