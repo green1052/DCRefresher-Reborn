@@ -25,14 +25,15 @@ export const urls = {
 };
 
 /**
- * 갤러리 종류별 주소 경로 접두사와 디시 요청의 _GALLTYPE_ 값. 디시가 정한 값이라 바꾸면 안 된다.
+ * 갤러리 종류별 주소 경로 접두사, 디시 요청의 _GALLTYPE_ 값, 관리 API 접두사(<manager>_manager_board_ajax). 디시가 정한 값이라 바꾸면 안 된다.
+ * 관리 접두사는 디시 get_gall_type_name()처럼 경로 첫 칸을 쓰고 mgallery만 minor로 바꾼다. 일반 갤러리엔 관리 기능이 없어 전처럼 minor로 둔다.
  * 코드에서는 종류 이름(GalleryKind)으로 다루고, 이 값들은 주소·요청을 만들 때만 꺼낸다.
  */
 const GALLERIES = {
-    normal: {path: "", galltype: "G"},
-    minor: {path: "mgallery/", galltype: "M"},
-    mini: {path: "mini/", galltype: "MI"},
-    person: {path: "person/", galltype: "PR"}
+    normal: {path: "", galltype: "G", manager: "minor"},
+    minor: {path: "mgallery/", galltype: "M", manager: "minor"},
+    mini: {path: "mini/", galltype: "MI", manager: "mini"},
+    person: {path: "person/", galltype: "PR", manager: "person"}
 } as const;
 
 /** 갤러리 종류: 일반, 마이너, 미니, 인물. */
@@ -58,6 +59,9 @@ export const galleryPath = (url: string): string => GALLERIES[galleryKind(url)].
 
 /** 댓글·관리·캡차 요청에 넣는 _GALLTYPE_ 값. */
 export const galltypeOf = (url: string): string => GALLERIES[galleryKind(url)].galltype;
+
+/** 관리 API 주소 (ajax/<접두사>_manager_board_ajax/<action>). */
+export const managerAjaxUrl = (url: string, action: string): string => `${urls.base}ajax/${GALLERIES[galleryKind(url)].manager}_manager_board_ajax/${action}`;
 
 /**
  * 게시글/목록 URL → 같은 갤러리·쿼리의 목록 URL.

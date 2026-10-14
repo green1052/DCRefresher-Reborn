@@ -1,5 +1,5 @@
 import {ajax} from "@/core/http/client";
-import {galltypeOf, galleryKind, urls} from "@/core/http/urls";
+import {galltypeOf, managerAjaxUrl, urls} from "@/core/http/urls";
 import {isRecord} from "@/utils/record";
 
 import {dcBody, resultMessage, submitResult} from "./response";
@@ -18,14 +18,14 @@ const isSuccess = (result: unknown): boolean => result === "success" || result =
 type ManageAction = "update_bump" | "delete_list" | "delete_comment" | "update_avoid_list" | "set_notice" | "set_recommend";
 
 /**
- * 관리 요청. 미니 갤러리는 mini_, 나머지(일반·마이너·인물)는 minor_ 관리 API를 쓴다.
+ * 관리 요청. 관리 API 접두사는 갤러리 종류를 따른다 (일반·마이너 minor_, 미니 mini_, 인물 person_).
  * 필드는 공통 필드(ci_t, _GALLTYPE_) 뒤에 준 순서대로 붙는다. 배열은 같은 이름으로 여러 번 붙인다 (jQuery가 보내는 nos[]=1&nos[]=2).
  */
 const manage = async (target: Pick<GalleryPreData, "link">, action: ManageAction, fields: Record<string, string | string[]>): Promise<ManageResult> => {
     const body = await dcBody(target.link, {});
     for (const [key, value] of Object.entries(fields)) for (const item of [value].flat()) body.append(key, item);
 
-    const url = `${urls.base}ajax/${galleryKind(target.link) === "mini" ? "mini" : "minor"}_manager_board_ajax/${action}`;
+    const url = managerAjaxUrl(target.link, action);
     const text = (await ajax.post(url, {body}).text()).trim();
 
     try {

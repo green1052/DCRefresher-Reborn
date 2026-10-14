@@ -1,7 +1,7 @@
 // @vitest-environment-options {"url": "https://gall.dcinside.com/board/view/?id=test&no=9"}
 import {describe, expect, it} from "vitest";
 
-import {dcinsideHref, galleryKind, listUrl, rowPostNo} from "@/core/http/urls";
+import {dcinsideHref, galleryKind, listUrl, managerAjaxUrl, rowPostNo} from "@/core/http/urls";
 
 describe("dcinsideHref", () => {
     it.each(["https://gall.dcinside.com/board/view?id=a&no=1", "https://m.dcinside.com/", "https://dcimg5.dcinside.com/dccon.php?no=1"])("https 디시 주소 %s는 그대로 돌려준다", (url) => {
@@ -24,6 +24,14 @@ describe("dcinsideHref", () => {
         undefined
     ])("%s는 돌려주지 않는다", (url) => {
         expect(dcinsideHref(url)).toBeUndefined();
+    });
+});
+
+describe("managerAjaxUrl", () => {
+    it("디시 get_gall_type_name()처럼 경로 첫 칸으로 관리 API 접두사를 정한다", () => {
+        expect(managerAjaxUrl("https://gall.dcinside.com/mgallery/board/view/?id=test&no=1", "delete_list")).toBe("https://gall.dcinside.com/ajax/minor_manager_board_ajax/delete_list");
+        expect(managerAjaxUrl("https://gall.dcinside.com/mini/board/view/?id=test&no=1", "delete_list")).toBe("https://gall.dcinside.com/ajax/mini_manager_board_ajax/delete_list");
+        expect(managerAjaxUrl("https://gall.dcinside.com/person/board/view/?id=test&no=1", "delete_list")).toBe("https://gall.dcinside.com/ajax/person_manager_board_ajax/delete_list");
     });
 });
 
