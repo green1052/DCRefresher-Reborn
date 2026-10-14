@@ -65,3 +65,14 @@ it("목록을 갈아끼우면 받아 둔 검색 페이지를 다시 받지 않�
     // 캐시의 행을 옮기지 않고 복제해 붙였다.
     expect(first.innerHTML).toBe(filled);
 });
+
+it("모듈을 끄면 이어 붙인 행을 빼고 페이징을 되돌린다", async () => {
+    running = await runModule(search);
+    const list = document.querySelector(".gall_list tbody")!;
+    await vi.waitFor(() => expect(nos(list)).toEqual(["30", "29", "20", "19", "10", "9"]));
+
+    running.stop();
+    running = undefined;
+    expect(nos(list)).toEqual(["30", "29"]);
+    expect(document.querySelector<HTMLAnchorElement>(".search_next")!.search).toContain("search_pos=-10000");
+});

@@ -14,6 +14,8 @@ import meta from "./meta";
  * 검색 구간은 번호로 나뉘어 겹치지 않으므로 중복을 거르지 않는다. 댓글 검색에선 댓글마다 글 행이 되풀이되는 게 정상이다.
  */
 const RESULT_ROW = ":scope > tr:is([data-no], [data-cmt])";
+/** 이어 붙인 행. 모듈을 끄면 뺀다. */
+const ADDED_ROW = "refresherSearchAdded";
 
 /** 이 검색 구간(search_pos)의 마지막 페이지인지. 현재 페이지(em) 뒤에 페이지 링크가 없으면 마지막이다. */
 const isLastPage = (paging: Element): boolean => {
@@ -48,7 +50,10 @@ export default defineModule({
 
             // 구간의 마지막 페이지에서만 잇는다. 중간 페이지에서 이으면 그 뒤 페이지를 건너뛴다.
             const paging = document.querySelector<HTMLElement>(PAGING_SELECTOR);
-            if (!paging || !isLastPage(paging)) return;
+            if (!paging) return;
+            // 모듈을 끄면 되돌릴 이 목록의 페이징. 앞 목록에서 둔 것은 새로고침 모듈이 페이징을 맞추면서 낡았으니 덮는다.
+            paging.dataset.refresherSearchPaging = paging.innerHTML;
+            if (!isLastPage(paging)) return;
 
             const target = Number(document.querySelector<HTMLInputElement>("#list_num")?.value) || 50;
             let count = list.querySelectorAll(":scope > tr[data-no]").length;
@@ -87,6 +92,7 @@ export default defineModule({
                     // 붙이면 노드가 옮겨 가므로 복제해 붙인다. 캐시의 행은 다른 모듈이 고치지 않은 채로 다시 이을 때 쓴다.
                     for (const cached of page.rows) {
                         const row = document.importNode(cached, true);
+                        row.classList.add(ADDED_ROW);
                         fillCheckbox(row);
                         list.append(row);
                         if (row.dataset.no) count++;
@@ -118,5 +124,15 @@ export default defineModule({
             if (document.readyState !== "loading") void fill(list);
         });
         ctx.addCleanup(() => running?.abort());
+    },
+
+    revoke() {
+        // 모듈을 끄면 목록을 다시 받는 쪽이 없어 이어 붙인 다른 구간 행과 페이징이 새로고침할 때까지 남는다.
+        for (const row of document.querySelectorAll(`.${ADDED_ROW}`)) row.remove();
+        const paging = document.querySelector<HTMLElement>(PAGING_SELECTOR);
+        const original = paging?.dataset.refresherSearchPaging;
+        if (!paging || original === undefined) return;
+        paging.innerHTML = original;
+        delete paging.dataset.refresherSearchPaging;
     }
 });
