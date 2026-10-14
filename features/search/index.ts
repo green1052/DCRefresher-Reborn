@@ -42,6 +42,9 @@ export default defineModule({
         const fill = async (list: HTMLElement): Promise<void> => {
             if (filled.has(list)) return;
             filled.add(list);
+            // 앞 인스턴스가 이미 이어 붙인 목록이다 (파이어폭스는 확장을 업데이트하면 열린 탭에 스크립트를 다시 넣고, 무효화된 쪽은 되돌리지 않는다).
+            // 페이징도 그쪽이 바꾼 것이라 처음 것으로 저장하면 안 되고, 더 이으면 최대 다음 검색 횟수를 넘는다.
+            if (list.querySelector(`.${ADDED_ROW}`)) return;
 
             running?.abort();
             const controller = new AbortController();

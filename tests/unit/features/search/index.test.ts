@@ -76,3 +76,21 @@ it("모듈을 끄면 이어 붙인 행을 빼고 페이징을 되돌린다", asy
     expect(nos(list)).toEqual(["30", "29"]);
     expect(document.querySelector<HTMLAnchorElement>(".search_next")!.search).toContain("search_pos=-10000");
 });
+
+it("스크립트가 다시 주입되면 앞 인스턴스가 이어 붙인 목록을 그대로 두고, 끌 때 처음 페이징으로 되돌린다", async () => {
+    const first = await runModule(search);
+    const list = document.querySelector(".gall_list tbody")!;
+    await vi.waitFor(() => expect(nos(list)).toEqual(["30", "29", "20", "19", "10", "9"]));
+
+    // 확장 업데이트로 컨텍스트가 무효화되면(stopAll) revoke 없이 멈추고, 파이어폭스는 새 스크립트를 넣는다.
+    first.abort();
+    running = await runModule(search);
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(nos(list)).toEqual(["30", "29", "20", "19", "10", "9"]);
+    expect(get).toHaveBeenCalledTimes(2);
+
+    running.stop();
+    running = undefined;
+    expect(nos(list)).toEqual(["30", "29"]);
+    expect(document.querySelector<HTMLAnchorElement>(".search_next")!.search).toContain("search_pos=-10000");
+});
