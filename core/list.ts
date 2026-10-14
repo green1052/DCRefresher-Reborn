@@ -67,9 +67,12 @@ export const checkboxFiller = (list: HTMLElement, commentSearch: boolean): ((row
     };
 };
 
-/** 제목 링크 안의 검색어를 span.mark로 감싼다. 텍스트 노드만 바꿔 링크 안의 다른 요소는 건드리지 않는다. */
-export const highlightSearchResults = (newList: HTMLElement, searchValue: string): void => {
-    if (!searchValue) return;
+/**
+ * 제목 링크 안의 검색어를 span.mark로 감싼다. 텍스트 노드만 바꿔 링크 안의 다른 요소는 건드리지 않는다.
+ * 댓글 검색은 제목이 아니라 댓글에서 찾은 결과라 DC처럼 표시하지 않는다.
+ */
+export const highlightSearchResults = (newList: HTMLElement, searchValue: string, commentSearch: boolean): void => {
+    if (!searchValue || commentSearch) return;
 
     for (const gallTit of newList.querySelectorAll<HTMLElement>(".gall_tit")) {
         const anchor = gallTit.querySelector<HTMLElement>("a:first-child");

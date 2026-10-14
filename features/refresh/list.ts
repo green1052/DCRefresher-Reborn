@@ -120,7 +120,8 @@ export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigat
     // 남은 글이 하나도 없으면(한꺼번에 많이 올라온 경우) 모두 새 글로 본다.
     const lastKept = newKeys.findLastIndex((key) => oldCacheSet.has(key));
 
-    const fillCheckbox = checkboxFiller(oldList, searchType === "search_comment");
+    const commentSearch = searchType === "search_comment";
+    const fillCheckbox = checkboxFiller(oldList, commentSearch);
 
     for (const [index, element] of newRows.entries()) {
         const no = newKeys[index]!;
@@ -138,7 +139,7 @@ export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigat
     }
 
     // 받아온 HTML엔 검색어 강조가 없으니 페이지 전환뿐 아니라 받아온 목록마다 칠한다.
-    if (search !== undefined) highlightSearchResults(newList, search);
+    if (search !== undefined) highlightSearchResults(newList, search, commentSearch);
 
     if (!navigated && fadeIn) {
         for (const [index, element] of newPostList.entries()) {

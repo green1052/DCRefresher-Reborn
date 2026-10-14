@@ -150,6 +150,13 @@ describe("replaceList", () => {
         expect(fresh.querySelector(".gall_tit .mark")?.textContent).toBe("사과");
     });
 
+    it("댓글 검색이면 DC처럼 제목에 검색어를 칠하지 않는다", () => {
+        mount([row("1", {title: "사과 맛"})]);
+        const fresh = tbody([row("1", {title: "사과 맛"})]);
+        replaceList(current(), fresh, {...OPTIONS, search: "사과", searchType: "search_comment"});
+        expect(fresh.querySelector(".mark")).toBeNull();
+    });
+
     it("관리자 목록이면 받아온 행에 체크박스 칸을 채운다", () => {
         const head = "<th class=\"chkbox_th\"></th><th>번호</th>";
         const list = tbody([row("1").replace("<td class=\"gall_num\">", "<td><input type=\"checkbox\" class=\"article_chkbox\" value=\"1\"></td><td class=\"gall_num\">")], head);

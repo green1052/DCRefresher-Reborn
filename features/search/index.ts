@@ -55,7 +55,8 @@ export default defineModule({
             if (count >= target) return;
 
             const keyword = document.querySelector<HTMLInputElement>("#sch_q")?.value ?? "";
-            const fillCheckbox = checkboxFiller(list, queryString("s_type") === "search_comment");
+            const commentSearch = queryString("s_type") === "search_comment";
+            const fillCheckbox = checkboxFiller(list, commentSearch);
 
             const max = ctx.settings.maxSearches;
             const status = Object.assign(document.createElement("p"), {className: "refresherSearchStatus"});
@@ -76,7 +77,7 @@ export default defineModule({
                         // 알림 페이지 같은 것은 캐시에 두지 않는다. 두면 다시 채울 때마다 같은 오류가 난다.
                         if (!newList || !newPaging) throw new Error("검색 결과 페이지에 목록이 없습니다.");
 
-                        highlightSearchResults(newList, keyword);
+                        highlightSearchResults(newList, keyword, commentSearch);
                         // 행은 이 문서로 옮겨 담는다. 받은 문서의 노드를 잡고 있으면 그 문서 전체가 남는다.
                         const rows = Array.from(newList.querySelectorAll<HTMLTableRowElement>(RESULT_ROW), (row) => document.adoptNode(row));
                         page = {rows, paging: newPaging.innerHTML};
