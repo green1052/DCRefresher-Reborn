@@ -134,16 +134,24 @@ class RdpClient {
         return withTimeout(reply, `${to}의 ${type} 응답`);
     }
 
-    /** from이 보내는 type 알림 중 match에 맞는 것. 알림을 일으키는 요청보다 먼저 불러야 놓치지 않는다. */
-    event(from: string, type: string, match: (packet: Packet) => boolean = () => true): Promise<Packet> {
-        const received = new Promise<Packet>((resolve) => {
-            this.listeners.add((packet) => {
-                if (packet.from !== from || packet.type !== type || !match(packet)) return false;
-                resolve(packet);
-                return true;
-            });
-        });
-        return withTimeout(received, `${from}의 ${type} 알림`);
+    /**
+     * to에 요청을 보내고, 그 요청으로 to가 보내는 event 알림 중 match에 맞는 것을 기다린다. 놓치지 않게 요청보다 먼저 듣는다.
+     * 요청이 실패하거나 시간이 지나도 듣던 쪽을 빼야 다음 요청의 알림을 가로채지 않는다.
+     */
+    async requestEvent(to: string, type: string, params: Record<string, unknown>, event: string, match: (packet: Packet) => boolean = () => true): Promise<Packet> {
+        const {promise, resolve} = Promise.withResolvers<Packet>();
+        const listener = (packet: Packet): boolean => {
+            if (packet.from !== to || packet.type !== event || !match(packet)) return false;
+            resolve(packet);
+            return true;
+        };
+        this.listeners.add(listener);
+        try {
+            await this.request(to, type, params);
+            return await withTimeout(promise, `${to}의 ${event} 알림`);
+        } finally {
+            this.listeners.delete(listener);
+        }
     }
 
     close(): void {
@@ -176,12 +184,11 @@ export const installTemporaryAddon = async (port: number, addonPath: string): Pr
         // 부가 기능의 문서(target)는 watcher가 알린다. 배경 페이지 말고 대체 문서(resource://)도 오므로 확장 주소인 것을 기다린다.
         const {actor: watcher} = await client.request(descriptor, "getWatcher");
         if (typeof watcher !== "string") throw new Error("부가 기능의 watcher가 없습니다.");
-        const background = client.event(watcher, "target-available-form", (packet) => {
+        const background = await client.requestEvent(watcher, "watchTargets", {targetType: "frame"}, "target-available-form", (packet) => {
             const target = packet.target as { url?: string } | undefined;
             return Boolean(target?.url?.startsWith("moz-extension://"));
         });
-        await client.request(watcher, "watchTargets", {targetType: "frame"});
-        const consoleActor = ((await background).target as { consoleActor?: string }).consoleActor;
+        const consoleActor = (background.target as { consoleActor?: string }).consoleActor;
         if (!consoleActor) throw new Error("배경 페이지의 consoleActor가 없습니다.");
 
         // 결과(evaluationResult)는 resultID로만 짝지을 수 있어, 요청을 하나씩 보내 섞이지 않게 한다.
@@ -190,10 +197,8 @@ export const installTemporaryAddon = async (port: number, addonPath: string): Pr
             // 결과를 JSON 문자열 하나로 받는다. {value}로 감싸 undefined(없는 키)도 그대로 돌아오고, 실패는 {error}로 온다.
             // 서버는 거부된 Promise의 이유를 주지 않으므로(topLevelAwaitRejected) 식 안에서 잡는다.
             const text = `(async () => { try { return JSON.stringify({value: await (${expression})}); } catch (e) { return JSON.stringify({error: String(e)}); } })()`;
-            const result = client.event(consoleActor, "evaluationResult");
             // mapped.await: 식이 낸 Promise를 서버가 기다려 그 값을 준다.
-            await client.request(consoleActor, "evaluateJSAsync", {text, mapped: {await: true}});
-            const {exceptionMessage, result: grip} = await result as Packet & { exceptionMessage?: unknown; result?: string | { type?: string; actor?: string; length?: number } };
+            const {exceptionMessage, result: grip} = await client.requestEvent(consoleActor, "evaluateJSAsync", {text, mapped: {await: true}}, "evaluationResult") as Packet & { exceptionMessage?: unknown; result?: string | { type?: string; actor?: string; length?: number } };
             // 긴 문자열(1만 자 넘음)은 값 대신 longString grip으로 온다.
             const json = typeof grip === "string" ? grip
                 : grip?.type === "longString" && grip.actor ? String((await client.request(grip.actor, "substring", {start: 0, end: grip.length})).substring)
