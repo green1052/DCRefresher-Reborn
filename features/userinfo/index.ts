@@ -251,8 +251,9 @@ export default defineModule({
         publishRatios(ctx);
         // 모아서 한 번에 쓴다 (batchedSave). 페이지를 떠날 때도 쓰도록 저장소 호출은 한 번이다. ratios는 위 감시가 다른 탭이 저장한 값과 합쳐 두었다.
         // 쓰기가 끝난 뒤에 unsaved를 비워, 그사이 다른 탭의 저장이 와도 이 탭의 값이 남는다.
+        // batch는 복사해 둔다. 쓰는 사이 받은 글댓비는 unsaved에 그대로 들어가므로, 같은 객체면 그것까지 지운다.
         const saver = batchedSave(ctx, RATIO_SAVE_DELAY, async () => {
-            const batch = unsaved;
+            const batch = {...unsaved};
             if (Object.keys(batch).length === 0) return;
             await ratioStorage.setValue({ratio: ratios});
             unsaved = Object.fromEntries(Object.entries(unsaved).filter(([uid, info]) => batch[uid] !== info));

@@ -278,6 +278,33 @@ describe("글댓비·깡계", () => {
         await vi.waitFor(async () => expect(await stored(RATIO_KEY)).toEqual({ratio: {fresh: {article: 3, comment: 4, date: expect.any(Number)}}}));
     });
 
+    it("저장하는 사이 받은 글댓비는 다음 저장에 넣는다", async () => {
+        gallog.activity.set("a", {article: 1, comment: 2});
+        gallog.activity.set("b", {article: 3, comment: 4});
+        mountRows([{no: "1", uid: "a"}, {no: "2", uid: "b"}]);
+        const {api, stop} = await start({checkRatio: true});
+        const rows = [...document.querySelectorAll<HTMLElement>("tr")];
+        api.checkNewPosts(rows.slice(0, 1));
+        await vi.waitFor(() => expect(badges("1")).toEqual(["(a)", "[1/2]"]));
+
+        // 탭을 떠나며 쓰는 동안 저장소가 늦게 끝난다.
+        const set = fakeBrowser.storage.local.set.bind(fakeBrowser.storage.local);
+        const {promise: gate, resolve: release} = Promise.withResolvers<void>();
+        vi.spyOn(fakeBrowser.storage.local, "set").mockImplementation(async (items) => {
+            await gate;
+            await set(items);
+        });
+        window.dispatchEvent(new Event("pagehide"));
+        api.checkNewPosts(rows.slice(1));
+        await vi.waitFor(() => expect(badges("2")).toEqual(["(b)", "[3/4]"]));
+        release();
+        await vi.waitFor(async () => expect(await stored(RATIO_KEY)).toBeDefined());
+
+        stop();
+        running = undefined;
+        await vi.waitFor(async () => expect(Object.keys((await stored(RATIO_KEY) as { ratio?: Record<string, RatioInfo> }).ratio ?? {}).sort()).toEqual(["a", "b"]));
+    });
+
     it("bfcache에 있는 동안 다른 탭이 저장한 글댓비를 돌아올 때 다시 읽어, 저장할 때 지우지 않는다", async () => {
         // bfcache에 있는 동안은 감시가 오지 않는다.
         vi.spyOn(storage, "watch").mockImplementation(() => () => {});
