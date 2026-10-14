@@ -24,7 +24,7 @@ const executeGrecaptcha = async (siteKey: string, action: string): Promise<strin
         render: (container: HTMLElement, parameters: { sitekey: string; size: "invisible" }) => number;
         execute: (key: string | number, options: { action: string }) => Promise<string>;
     };
-    const scope = window as Window & { grecaptcha?: Grecaptcha };
+    const scope = window as Window & { grecaptcha?: Grecaptcha; refresherRecaptchaWidgets?: Record<string, number> };
 
     if (!scope.grecaptcha) {
         await new Promise<void>((resolve, reject) => {
@@ -42,10 +42,10 @@ const executeGrecaptcha = async (siteKey: string, action: string): Promise<strin
         return await grecaptcha.execute(siteKey, {action});
     } catch {
         // api.js가 이미 다른 키로 떠 있으면(디시 comment.js나 앞선 디시콘 재전송) 그 키만 실행할 수 있어 던진다.
-        // 이 키로 보이지 않는 위젯을 따로 그려 실행한다.
-        const container = document.createElement("div");
-        document.body.append(container);
-        return grecaptcha.execute(grecaptcha.render(container, {sitekey: siteKey, size: "invisible"}), {action});
+        // 이 키로 보이지 않는 위젯을 따로 그려 실행한다. 키마다 한 번만 그려 두고 다시 쓴다 — 매번 그리면 위젯과 배지가 쌓인다.
+        const widgets = (scope.refresherRecaptchaWidgets ??= {});
+        widgets[siteKey] ??= grecaptcha.render(document.body.appendChild(document.createElement("div")), {sitekey: siteKey, size: "invisible"});
+        return grecaptcha.execute(widgets[siteKey], {action});
     }
 };
 

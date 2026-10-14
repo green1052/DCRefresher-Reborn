@@ -343,6 +343,8 @@ test.describe("댓글 쓰기·지우기", () => {
         // 비밀번호는 만들어 넣고, 답글이 아니면 부모 번호가 없다.
         expect(body.get("password")).toMatch(/^[a-z0-9]{8}$/);
         expect(body.has("c_no")).toBe(false);
+        // 글 댓글은 디시 comment.js처럼 reCAPTCHA 키 쌍(rc_key)을 같이 보낸다.
+        expect(body.get("rc_key")).toMatch(/^new3?$/);
     });
 
     test("멤버만 댓글 갤러리는 댓글 0개 글에도 입력칸 대신 안내를 보인다", async ({listPage, site}) => {
