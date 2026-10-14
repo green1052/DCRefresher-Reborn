@@ -70,6 +70,24 @@ describe("Ctrl+클릭 삭제", () => {
     });
 });
 
+describe("Shift+클릭으로 같은 작성자 글 체크", () => {
+    const writer = "<td class=\"gall_writer ub-writer\" data-uid=\"a\" data-ip=\"\" data-nick=\"닉\"></td>";
+
+    it("체크박스를 처음 볼 때 작성자 칸이 아직 없던 행도 누를 때 작성자를 찾는다", async () => {
+        // 문서를 읽는 중에는 체크박스 칸만 먼저 붙고 작성자 칸은 나중에 붙는다.
+        document.body.innerHTML = "<table class=\"gall_list\"><tbody>" +
+            "<tr class=\"ub-content\" data-no=\"1\"><td><input type=\"checkbox\" class=\"article_chkbox\"></td></tr>" +
+            `<tr class="ub-content" data-no="2"><td><input type="checkbox" class="article_chkbox"></td>${writer}</tr></tbody></table>`;
+        await start({checkAllTargetUser: true});
+        const [first, second] = Array.from(document.querySelectorAll<HTMLInputElement>(".article_chkbox"));
+        first!.closest("tr")!.insertAdjacentHTML("beforeend", writer);
+
+        first!.dispatchEvent(new MouseEvent("click", {bubbles: true, cancelable: true, shiftKey: true}));
+        expect(first!.checked).toBe(true);
+        expect(second!.checked).toBe(true);
+    });
+});
+
 describe("이미지 출처", () => {
     /** 디시 이미지 주소의 id: 올린 갤러리 아이디를 MD5("dcinside")와 XOR한 16진수 (baseball_new, test, mi$test). */
     const image = (id: string): string => `<img src="https://dcimg1.dcinside.com/viewimage.php?id=${id}&no=1">`;
