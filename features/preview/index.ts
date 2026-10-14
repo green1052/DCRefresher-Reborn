@@ -639,10 +639,6 @@ export default defineModule({
     ...meta,
 
     setup: (ctx): PreviewApi => {
-        // 팝업 바깥 흐림은 공용 창(components/dialogs.tsx)이 UI 스토어에서 읽는다.
-        useUiStore.setState({popupBlur: ctx.settings.popupBlur});
-        ctx.onSettingsChanged(() => useUiStore.setState({popupBlur: ctx.settings.popupBlur}));
-        ctx.addCleanup(() => useUiStore.setState({popupBlur: true}));
         controller(ctx);
         return {archiveArticle: () => ctx.settings.archiveArticle};
     }
