@@ -5,6 +5,7 @@ import type {browser} from "wxt/browser";
 
 import {FakeSite} from "./dcinside";
 import {DEBUGGER_PREFS, type FirefoxAddon, freePort, installTemporaryAddon, OFFLINE_PREFS} from "./firefox";
+import {FakeIpDb} from "./ipdb";
 import {type ListPage, openListPage} from "./pages/list";
 
 /** 서비스 워커 안(evaluate)의 chrome 전역. 테스트 파일은 확장 번들이 아니라 타입이 없다. */
@@ -57,15 +58,21 @@ const backgrounds = new WeakMap<BrowserContext, Background>();
  *   PLAYWRIGHT_CHROMIUM에 실행 파일을 주면 그것을 쓴다.
  * - 파이어폭스: 원격 디버깅 서버로 임시 부가 기능을 설치한다 (firefox.ts). 확장 페이지로는 이동하지 못해 팝업·옵션 테스트는 크로미엄에서만 돈다.
  * - dcinside.com 요청은 가짜 디시(site)가 응답하고 IP DB 서버는 끊는다. live 프로젝트만 실제 디시에 읽기 요청을 보낸다.
+ * - serveIpDb를 켜면 크로미엄에서는 IP DB 서버 요청에 가짜 DB(ipDb)가 응답한다. 파이어폭스는 배경 요청을 route로 가로채지 못해 끊은 그대로다 (OFFLINE_PREFS).
  */
-export const test = base.extend<{ live: boolean }>({
-    live: [false, {option: true}]
-}).extend<{ site: FakeSite; context: BrowserContext; extensionId: string; storage: ExtensionStorage; errors: string[]; listPage: ListPage }>({
+export const test = base.extend<{ live: boolean; serveIpDb: boolean }>({
+    live: [false, {option: true}],
+    serveIpDb: [false, {option: true}]
+}).extend<{ site: FakeSite; ipDb: FakeIpDb; context: BrowserContext; extensionId: string; storage: ExtensionStorage; errors: string[]; listPage: ListPage }>({
     site: async ({}, use) => {
         await use(new FakeSite());
     },
 
-    context: async ({browserName, live, site}, use) => {
+    ipDb: async ({}, use) => {
+        await use(new FakeIpDb());
+    },
+
+    context: async ({browserName, live, serveIpDb, site, ipDb}, use) => {
         // 프로필 경로를 비워 두면 플레이라이트가 테스트마다 임시 프로필을 만들고 닫을 때 지운다.
         let context: BrowserContext | undefined;
         try {
@@ -102,7 +109,7 @@ export const test = base.extend<{ live: boolean }>({
                 await routeLive(context);
             } else {
                 await context.route((url) => DCINSIDE.test(url.origin), site.handle);
-                await context.route((url) => url.hostname === IP_DB_HOST, (route) => route.abort());
+                await context.route((url) => url.hostname === IP_DB_HOST, serveIpDb ? ipDb.handle : (route) => route.abort());
             }
 
             await use(context);

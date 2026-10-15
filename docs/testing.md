@@ -20,7 +20,7 @@
 
 `bun run e2e`로 실행합니다. 스크립트가 먼저 확장을 빌드합니다(`e2e:firefox`는 파이어폭스용으로). Playwright도 Node에서 실행됩니다. Bun에서는 테스트가 무작위로 멈춥니다.
 
-- **디시에는 요청을 보내지 않습니다.** fixtures가 `dcinside.com` 주소를 모두 `e2e/dcinside.ts`의 가짜 목록·글·댓글로 응답합니다. 흉내 낸 쓰기는 `site.submitted`에 모으고 그 밖의 읽기가 아닌 요청에는 500을 줘서 테스트가 바로 실패합니다. IP DB 서버는 끊습니다. 디시 마크업이 바뀌어 모듈을 고치면 가짜 페이지도 같이 고칩니다.
+- **디시에는 요청을 보내지 않습니다.** fixtures가 `dcinside.com` 주소를 모두 `e2e/dcinside.ts`의 가짜 목록·글·댓글로 응답합니다. 흉내 낸 쓰기는 `site.submitted`에 모으고 그 밖의 읽기가 아닌 요청에는 500을 줘서 테스트가 바로 실패합니다. IP DB 서버는 끊고, `test.use({serveIpDb: true})`를 준 테스트(`e2e/ipdb.spec.ts`)만 `e2e/ipdb.ts`의 가짜 IP·밴 DB로 응답합니다. 파이어폭스는 배경 요청을 가로채지 못해 이 테스트를 건너뜁니다. 디시 마크업이 바뀌어 모듈을 고치면 가짜 페이지도 같이 고칩니다.
 - 스펙에서는 선택자를 직접 쓰는 대신 `e2e/pages/`의 페이지 객체(`openListPage`, `openPopup`, `openOptions`)를 씁니다. 설정은 `storage.setModules({...})`·`storage.setModuleSettings(id, {...})`로 넣습니다. 디시 마크업이나 클래스 이름이 바뀌면 페이지 객체만 고칩니다.
 - `errors` fixture가 모든 테스트에서 페이지 오류와 `console.error`가 없는지 봅니다. 디시 페이지의 `page.evaluate`에서는 `chrome.storage`에 닿지 않으므로 `storage` fixture를 씁니다.
 - **파이어폭스**(`bun run e2e:firefox`): `e2e/firefox.ts`가 원격 디버깅 서버로 `.output/firefox-mv2`를 임시 부가 기능으로 설치합니다. Playwright의 파이어폭스는 `moz-extension://` 페이지로 이동하지 못해 팝업·옵션 테스트는 크로미엄에서만 실행되고 파이어폭스에서는 콘텐츠 스크립트 테스트만 돌아갑니다.
