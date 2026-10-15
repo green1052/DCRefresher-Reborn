@@ -3,7 +3,7 @@ import QuickLRU from "quick-lru";
 import {badgeViewOf, type BadgeView, DEFAULT_BADGE_VIEW, showsUid} from "@/core/badges";
 import {banReasonsOf, initDatabase, ipInfoOf, onDatabaseChange, passesIpFilter} from "@/core/database";
 import {defineModule} from "@/core/module/define";
-import {type GallogActivity, getGallogActivity, type RatioInfo} from "@/core/gallog";
+import {type GallogActivity, getGallogActivity, onGallogActivity, type RatioInfo} from "@/core/gallog";
 import {ROWS_HIDDEN_EVENT} from "@/core/block";
 import {FILTER_SKIP_ATTR} from "@/core/filtering";
 import {queryString} from "@/core/http/urls";
@@ -273,6 +273,22 @@ export default defineModule({
         // IP DB가 갱신되거나 갱차 목록을 다 읽으면 다시 그린다. 갱차 목록은 banReasonsOf를 처음 부를 때 읽기 시작한다.
         const unwatchDatabase = onDatabaseChange(() => rebuildAll(ctx));
 
+        // 받은 글댓비를 이 탭에는 바로 그리고, 저장은 모아서 한다 (RATIO_SAVE_DELAY).
+        const storeRatios = (entries: (readonly [string, GallogActivity])[]): void => {
+            const now = Date.now();
+            const received = Object.fromEntries(entries.map(([uid, info]) => [uid, {...info, date: now}]));
+            Object.assign(unsaved, received);
+            ratios = trimRatios({...ratios, ...received});
+            publishRatios(ctx);
+            rebuildUsers(ctx, Object.keys(received));
+            saver.schedule();
+        };
+
+        // 미리보기·버블·새 글 조회가 갤로그에서 새로 받은 값을 모두 저장한다. 이미 받은 사람을 다시 묻지 않는다.
+        const unwatchGallog = onGallogActivity((uid, activity) => {
+            if (ctx.settings.checkRatio) storeRatios([[uid, activity]]);
+        });
+
         // 조회 중인 uid. 응답이 새로고침 주기보다 늦어도 다음 새로고침이 같은 요청을 또 보내지 않게 한다.
         const pending = new Set<string>();
 
@@ -291,19 +307,10 @@ export default defineModule({
                 for (const [uid, info] of results) {
                     if (!info) failedRatios.set(uid, true);
                 }
-                const fresh = results.filter((entry): entry is [string, GallogActivity] => Boolean(entry[1]));
-                if (fresh.length === 0) return;
-
-                if (signal.aborted) return;
-
-                // 이 탭에는 바로 그리고, 저장은 모아서 한다 (RATIO_SAVE_DELAY).
-                const now = Date.now();
-                const received = Object.fromEntries(fresh.map(([uid, info]) => [uid, {...info, date: now}]));
-                Object.assign(unsaved, received);
-                ratios = trimRatios({...ratios, ...received});
-                publishRatios(ctx);
-                rebuildUsers(ctx, Object.keys(received));
-                saver.schedule();
+                // 새로 받은 값은 위 onGallogActivity가 이미 넣었다. 남은 것은 이 모듈이나 글댓비 표시가 꺼져 있을 때 받아 갤로그 캐시에만 있던 값이다.
+                const fresh = results.filter((entry): entry is [string, GallogActivity] => Boolean(entry[1]) && !isFresh(ratios[entry[0]]));
+                if (fresh.length === 0 || signal.aborted) return;
+                storeRatios(fresh);
             }).catch(console.error).finally(() => {
                 for (const uid of stale) pending.delete(uid);
             });
@@ -312,6 +319,7 @@ export default defineModule({
         ctx.addCleanup(() => {
             unsubscribeMemos();
             unwatchDatabase();
+            unwatchGallog();
         });
 
         return {checkNewPosts};

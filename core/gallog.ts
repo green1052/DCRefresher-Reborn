@@ -30,6 +30,18 @@ const fetchGallogActivity = async (uid: string): Promise<GallogActivity | undefi
 /** uid별 요청. 1시간 캐시하고, 받는 중인 요청은 같이 기다린다. */
 const activityCache = new QuickLRU<string, Promise<GallogActivity | undefined>>({maxSize: 500, maxAge: 3_600_000});
 
+type ActivityListener = (uid: string, activity: GallogActivity) => void;
+const listeners = new Set<ActivityListener>();
+
+/**
+ * 갤로그에서 새로 받은 글/댓글 수를 알린다 (캐시에서 꺼낸 값은 알리지 않는다). 글댓비(userinfo)가 미리보기·버블이 받은 값도 저장한다.
+ * 기다리던 쪽보다 먼저 불린다. 해제 함수를 돌려준다.
+ */
+export const onGallogActivity = (listener: ActivityListener): (() => void) => {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
+};
+
 /**
  * 캐시를 거친 갤로그 글/댓글 수. 실패하면 undefined다.
  * 유저 버블·미리보기(useGallogActivity)와 글댓비(userinfo)가 같이 써서 같은 사람을 두 번 묻지 않는다.
@@ -41,6 +53,16 @@ export const getGallogActivity = (uid: string): Promise<GallogActivity | undefin
         // 그사이 이 항목이 밀려나 새 요청이 들어왔으면 그것은 지우지 않는다.
         const pending: Promise<GallogActivity | undefined> = fetchGallogActivity(uid).catch(() => undefined).then((activity) => {
             if (!activity && activityCache.get(uid) === pending) activityCache.delete(uid);
+            if (activity) {
+                // 듣는 쪽이 던져도 기다리던 쪽은 값을 받고, 거절된 요청이 1시간 캐시에 남지 않게 한다.
+                for (const listener of listeners) {
+                    try {
+                        listener(uid, activity);
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
+            }
             return activity;
         });
         request = pending;

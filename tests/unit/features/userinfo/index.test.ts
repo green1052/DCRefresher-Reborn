@@ -32,11 +32,24 @@ vi.mock("@/core/database", async (importOriginal) => ({
     }
 }));
 
-const gallog = vi.hoisted(() => ({activity: new Map<string, GallogActivity>(), asked: new Array<string>()}));
+// 실제처럼 새로 받은 값은 기다리던 쪽보다 먼저 알린다.
+const gallog = vi.hoisted(() => ({
+    activity: new Map<string, GallogActivity>(),
+    asked: new Array<string>(),
+    listeners: new Set<(uid: string, activity: GallogActivity) => void>()
+}));
 vi.mock("@/core/gallog", () => ({
     getGallogActivity: async (uid: string) => {
         gallog.asked.push(uid);
-        return gallog.activity.get(uid);
+        const activity = gallog.activity.get(uid);
+        if (activity) {
+            for (const listener of gallog.listeners) listener(uid, activity);
+        }
+        return activity;
+    },
+    onGallogActivity: (listener: (uid: string, activity: GallogActivity) => void) => {
+        gallog.listeners.add(listener);
+        return () => gallog.listeners.delete(listener);
     }
 }));
 
@@ -74,6 +87,7 @@ beforeEach(() => {
     db.listeners.clear();
     gallog.activity.clear();
     gallog.asked.length = 0;
+    gallog.listeners.clear();
     useMemosStore.setState({memos: {UID: {}, NICK: {}, IP: {}}});
     useUiStore.setState({selected: null, bubble: null});
 });
@@ -323,6 +337,48 @@ describe("글댓비·깡계", () => {
         stop();
         running = undefined;
         await vi.waitFor(async () => expect(Object.keys((await stored(RATIO_KEY) as { ratio?: Record<string, RatioInfo> }).ratio ?? {}).sort()).toEqual(["fresh", "other"]));
+    });
+
+    it("미리보기·버블이 새로 받은 글댓비도 그리고 저장한다", async () => {
+        mountRows([{no: "1", uid: "seen"}]);
+        const {stop} = await start({checkRatio: true});
+        for (const listener of gallog.listeners) listener("seen", {article: 7, comment: 8});
+        expect(badges("1")).toEqual(["(seen)", "[7/8]"]);
+        expect(useUiStore.getState().ratios?.cache.seen?.article).toBe(7);
+
+        stop();
+        running = undefined;
+        await vi.waitFor(async () => expect(await stored(RATIO_KEY)).toEqual({ratio: {seen: {article: 7, comment: 8, date: expect.any(Number)}}}));
+        // 끈 뒤에는 듣지 않는다.
+        expect(gallog.listeners.size).toBe(0);
+    });
+
+    it("글댓비 표시를 끄면 미리보기·버블이 받은 값을 넣지 않는다", async () => {
+        mountRows([{no: "1", uid: "seen"}]);
+        await start();
+        for (const listener of gallog.listeners) listener("seen", {article: 7, comment: 8});
+        expect(badges("1")).toEqual(["(seen)"]);
+    });
+
+    it("새 글 조회가 받은 값은 알림으로 한 번만 넣고, 알림 없이 캐시에서 온 값은 직접 넣는다", async () => {
+        gallog.activity.set("fresh", {article: 3, comment: 4});
+        mountRows([{no: "1", uid: "fresh"}, {no: "2", uid: "cached"}]);
+        const {api} = await start({checkRatio: true});
+        const published = vi.fn();
+        const unsubscribe = useUiStore.subscribe((state, previous) => {
+            if (state.ratios !== previous.ratios) published();
+        });
+        api.checkNewPosts([...document.querySelectorAll<HTMLElement>("tr")].slice(0, 1));
+        await vi.waitFor(() => expect(badges("1")).toEqual(["(fresh)", "[3/4]"]));
+        await tick();
+        expect(published).toHaveBeenCalledOnce();
+
+        // 글댓비를 끈 동안 받아 갤로그 캐시에만 남은 값.
+        gallog.listeners.clear();
+        gallog.activity.set("cached", {article: 5, comment: 6});
+        api.checkNewPosts([...document.querySelectorAll<HTMLElement>("tr")].slice(1));
+        await vi.waitFor(() => expect(badges("2")).toEqual(["(cached)", "[5/6]"]));
+        unsubscribe();
     });
 
     it("1시간 안에 받은 값과 실패한 유저는 다시 묻지 않는다", async () => {
