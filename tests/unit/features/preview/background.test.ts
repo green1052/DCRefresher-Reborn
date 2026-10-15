@@ -1,5 +1,6 @@
 // @vitest-environment node
 import {describe, expect, it, vi} from "vitest";
+import {fakeBrowser} from "wxt/testing/fake-browser";
 
 import background from "@/features/preview/background";
 
@@ -43,4 +44,12 @@ describe("refresher:grecaptchaToken", () => {
         runInPage.mockRejectedValue(new Error("Cannot access contents of the page"));
         await expect(receive({action: "insert_icon"})).resolves.toBeUndefined();
     });
+});
+
+it("설치·업데이트 때 예전 읽은 글 기록을 지운다", async () => {
+    await fakeBrowser.storage.local.set({"refresher:module:preview:data": [1]});
+    background.listen?.();
+
+    await fakeBrowser.runtime.onInstalled.trigger({reason: "update", previousVersion: "6.1.1"});
+    await vi.waitFor(async () => expect(await fakeBrowser.storage.local.get("refresher:module:preview:data")).toEqual({}));
 });

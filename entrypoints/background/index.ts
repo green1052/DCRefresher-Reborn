@@ -1,8 +1,6 @@
-import {storage} from "wxt/utils/storage";
-
 import {onMessage, sendMessage} from "@/core/messaging/protocol";
 import {type BackgroundModule, startBackgroundModules} from "@/core/module/background";
-import {dbStorage, moduleDataKey} from "@/core/storage/items";
+import {dbStorage} from "@/core/storage/items";
 import {recordUsage, syncUsage} from "@/core/usage";
 import {friendlyMessage} from "@/utils/error";
 
@@ -51,9 +49,8 @@ export default defineBackground(() => {
     }));
 
     browser.runtime.onInstalled.addListener(async () => {
-        await applyBackgroundModules();
-        // 미리보기로 읽은 글 기록. 이제 브라우저 방문 기록(:visited)으로 표시해 쓰지 않는다.
-        await storage.removeItem(moduleDataKey("preview"));
+        // 파이어폭스는 설치·업데이트 때도 배경이 새로 떠 위에서 이미 맞췄다.
+        if (import.meta.env.BROWSER !== "firefox") await applyBackgroundModules();
         await fillMissingBlockIds();
 
         // 개발 빌드는 DB가 없을 때만 받는다.

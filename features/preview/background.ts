@@ -1,5 +1,8 @@
+import {storage} from "wxt/utils/storage";
+
 import {type CommentRcKey, onMessage} from "@/core/messaging/protocol";
 import {defineBackgroundModule, hasTab, runInPage} from "@/core/module/background";
+import {moduleDataKey} from "@/core/storage/items";
 
 /** 디시콘·글자콘(insert_icon)은 예전 키를 그대로 쓴다 (디시 dccon.js·txtcon.js). */
 const ICON_SITE_KEY = "6Lc-Fr0UAAAAAOdqLYqPy53MxlRMIXpNXFvBliwI";
@@ -55,6 +58,9 @@ export default defineBackgroundModule({
     id: "preview",
 
     listen() {
+        // 예전에 미리보기로 읽은 글 기록. 이제 브라우저 방문 기록(:visited)으로 표시해 쓰지 않는다. 6.2로 업데이트할 때 지우므로 6.3에서 뺀다.
+        browser.runtime.onInstalled.addListener(() => void storage.removeItem(moduleDataKey("preview")));
+
         // reCAPTCHA: 디시가 v3 토큰을 요구할 때만 받아 온다. 토큰은 디시 도메인에서 실행해야 유효하다. 상주 스크립트 없이 필요할 때 한 번만 주입한다.
         onMessage("refresher:grecaptchaToken", async ({data, sender}) => {
             if (!hasTab(sender)) return undefined;
