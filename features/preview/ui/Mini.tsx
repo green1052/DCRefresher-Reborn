@@ -4,6 +4,7 @@ import {useRunningModuleSettings} from "@/core/module/useModuleSettings";
 import {useBlocksStore} from "@/stores/blocks";
 
 import {markBlockedDccons} from "./blockedDccons";
+import {fitMovies} from "./fitMovies";
 import {watchGifVideos} from "./gifVideos";
 import {cn} from "cn";
 
@@ -21,6 +22,8 @@ export const Mini = () => {
 
     // 깨진 움짤·디시콘 mp4는 전체 미리보기처럼 gif로 바꾼다 (Frame.tsx). 내용이 바뀔 때마다 새로 그려진다.
     useEffect(() => (contents.current ? watchGifVideos(contents.current) : undefined), [mini?.contents]);
+    // 디시 동영상 iframe도 전체 미리보기처럼 크기를 맞춘다. 안 그러면 기본 300×150으로 잘린다.
+    useEffect(() => (contents.current ? fitMovies(contents.current) : undefined), [mini?.contents]);
 
     // 본문의 차단 디시콘을 가린다. 마우스를 올려 흐림을 걷을 수 없으니 흐리게 처리여도 숨긴다.
     const blocking = useRunningModuleSettings("block") !== undefined;
