@@ -44,6 +44,12 @@ const goToAdjacent = (dir: number): void => {
     if (next) st.requestOpen(next, false, dir);
 };
 
+/** 그 방향에 넘어갈 글이 있는지. 목록 처음·끝 글에서는 스크롤 끝 넘기기를 안내하지 않는다. */
+const hasAdjacent = (dir: number): boolean => {
+    const {preData} = usePreviewStore.getState();
+    return preData !== null && adjacentPreData(preData, dir) !== null;
+};
+
 /** run이 끝날 때까지 로딩으로 돌며, 그동안은 다시 누를 수 없다. */
 const RefreshButton = ({label, run}: { label: string; run: () => Promise<void> }) => {
     const [busy, setBusy] = useState(false);
@@ -203,7 +209,7 @@ export const Frame = () => {
         return () => window.removeEventListener("keydown", onKey);
     }, [visible]);
 
-    const {onWheel, hint} = useWheelGesture(postKey, goToAdjacent, scrollToSkip);
+    const {onWheel, hint} = useWheelGesture(postKey, goToAdjacent, hasAdjacent, scrollToSkip);
     const hintDir = visible && !fading && hint.key === postKey ? hint.dir : 0;
 
     if (!visible && !fading) return null;
