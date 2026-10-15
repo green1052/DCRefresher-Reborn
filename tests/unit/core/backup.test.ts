@@ -121,7 +121,7 @@ describe("runBackup / readCloudBackup", () => {
         await runBackup("manual");
         await patchManualMeta({format: 2, createdAt: 99});
 
-        expect((await readCloudBackupStatus()).manual).toEqual({createdAt: 99, size: expect.any(Number)});
+        expect((await readCloudBackupStatus()).manual).toEqual({createdAt: 99, size: expect.any(Number), other: false});
         await expect(readCloudBackup("manual")).rejects.toThrow("새 버전 확장에서 만든 백업입니다");
     });
 
@@ -169,8 +169,24 @@ describe("readCloudBackupStatus", () => {
 
         const status = await readCloudBackupStatus();
         const meta = (await browser.storage.sync.get("autoBackup")).autoBackup;
-        expect(status).toEqual({manual: undefined, auto: {createdAt: 77, size: expect.any(Number)}});
+        expect(status).toEqual({manual: undefined, auto: {createdAt: 77, size: expect.any(Number), other: false}});
         expect(meta).toMatchObject({size: status.auto?.size, chunks: 1});
+    });
+
+    it("다른 기기나 기기를 남기기 전 버전이 올린 백업은 other로 알린다", async () => {
+        await browser.storage.local.set({"refresher:modules": {a: true}});
+        await runBackup("manual");
+        expect((await readCloudBackupStatus()).manual?.other).toBe(false);
+
+        await patchManualMeta({device: "다른 기기"});
+        expect((await readCloudBackupStatus()).manual?.other).toBe(true);
+
+        await patchManualMeta({device: undefined});
+        expect((await readCloudBackupStatus()).manual?.other).toBe(true);
+
+        // 이 기기가 다시 올리면 이 기기 것이 된다.
+        await runBackup("manual");
+        expect((await readCloudBackupStatus()).manual?.other).toBe(false);
     });
 });
 

@@ -137,6 +137,8 @@ const backupAuto = lazyItem<boolean>("local:refresher:backup:auto", false);
 const backupError = lazyItem<string>("local:refresher:backup:error", "");
 const backupPending = lazyItem<boolean>("local:refresher:backup:pending", false);
 const backupUndo = lazyItem<{ data: Record<string, unknown>; createdAt: number } | null>("local:refresher:backup:undo", null);
+let backupDeviceItem: WxtStorageItem<string, {}> | undefined;
+const backupDevice = () => (backupDeviceItem ??= storage.defineItem<string>("local:refresher:backup:device", {init: () => crypto.randomUUID()}));
 export const backupStorage = {
     /** 설정이 바뀌면 잠시 뒤 자동으로 백업. */
     get auto() {
@@ -156,6 +158,10 @@ export const backupStorage = {
      */
     get undo() {
         return backupUndo();
+    },
+    /** 이 기기의 id. 처음 읽을 때 만든다. 클라우드 백업 메타에 남겨 다른 기기가 올린 백업을 덮기 전에 묻는다. */
+    get device() {
+        return backupDevice();
     }
 };
 

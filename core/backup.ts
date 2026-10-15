@@ -48,6 +48,8 @@ interface BackupMeta {
     /** 압축 후 크기 (base64 글자 수). */
     size: number;
     createdAt: number;
+    /** 올린 기기 (backupStorage.device). 이 값을 남기기 전 버전이 올린 백업에는 없다. */
+    device?: string;
 }
 
 /** 백업하는 로컬 키 (local: 없이). 모듈 설정은 지금 있는 모듈(MODULE_IDS) 것만 넣는다. */
@@ -115,7 +117,7 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
     const chunks: string[] = [];
     for (let at = 0; at < encoded.length; at += CHUNK_CHARS) chunks.push(encoded.slice(at, at + CHUNK_CHARS));
 
-    const meta: BackupMeta = {format: FORMAT, chunks: chunks.length, hash: await sha256(bytes), size: encoded.length, createdAt: Date.now()};
+    const meta: BackupMeta = {format: FORMAT, chunks: chunks.length, hash: await sha256(bytes), size: encoded.length, createdAt: Date.now(), device: await backupStorage.device.getValue()};
     const items: Record<string, unknown> = {
         ...Object.fromEntries(chunks.map((chunk, index) => [chunkKey(slot, index), chunk])),
         [SLOT_KEYS[slot]]: meta
@@ -127,18 +129,26 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
     if (stale.length > 0) await browser.storage.sync.remove(stale);
 };
 
+interface SlotStatus {
+    createdAt: number;
+    size: number;
+    /** 다른 기기가 올렸다. 기기를 남기기 전 버전이 올린 백업도 어느 기기 것인지 몰라 여기에 넣는다. */
+    other: boolean;
+}
+
 export interface CloudBackupStatus {
     /** 칸마다 마지막 백업 시각과 크기(바이트). 백업이 없으면 없다. */
-    manual?: { createdAt: number; size: number };
-    auto?: { createdAt: number; size: number };
+    manual?: SlotStatus;
+    auto?: SlotStatus;
 }
 
 /** 클라우드 백업 상태. 다른 기기가 올린 백업도 메타로 알 수 있다. */
 export const readCloudBackupStatus = async (): Promise<CloudBackupStatus> => {
     const all = await browser.storage.sync.get(null);
-    const slotStatus = (slot: BackupSlot): CloudBackupStatus["manual"] => {
+    const device = await backupStorage.device.getValue();
+    const slotStatus = (slot: BackupSlot): SlotStatus | undefined => {
         const meta = all[SLOT_KEYS[slot]];
-        return isMeta(meta) ? {createdAt: meta.createdAt, size: meta.size} : undefined;
+        return isMeta(meta) ? {createdAt: meta.createdAt, size: meta.size, other: meta.device !== device} : undefined;
     };
 
     return {

@@ -30,12 +30,13 @@ export function DataTab() {
     const backupError = useStorageItem(backupStorage.error);
     const autoBackup = useStorageItem(backupStorage.auto);
     const undo = useStorageItem(backupStorage.undo);
-    const [cloud, setCloud] = useState<CloudBackupStatus>({});
+    // 처음 읽기 전(null)에는 덮기 전 확인을 할 수 없으므로 백업 버튼과 자동 백업 스위치를 막는다.
+    const [cloud, setCloud] = useState<CloudBackupStatus | null>(null);
     const [restoreOpen, setRestoreOpen] = useState(false);
     const [restoreMode, setRestoreMode] = useState<RestoreMode>("replace");
     const [loading, setLoading] = useState(false);
     // 떠 있는 확인 창. 모달이라 한 번에 하나다.
-    const [confirm, setConfirm] = useState<"reset" | "cloudClear" | "auto" | null>(null);
+    const [confirm, setConfirm] = useState<"reset" | "cloudClear" | "manual" | "auto" | null>(null);
     const [importOpen, setImportOpen] = useState(false);
     const restoreRef = useRef<HTMLButtonElement>(null);
     const id = useId();
@@ -50,7 +51,11 @@ export function DataTab() {
             const request = latest;
             void readCloudBackupStatus().then((status) => {
                 if (alive && request === latest) setCloud(status);
-            }, console.error);
+            }, (e: unknown) => {
+                console.error(e);
+                // 읽지 못해도 버튼을 계속 막아 두지는 않는다. 이미 읽은 상태는 남긴다.
+                if (alive) setCloud((prev) => prev ?? {});
+            });
         };
         loadStatus();
         browser.storage.sync.onChanged.addListener(loadStatus);
@@ -162,9 +167,14 @@ export function DataTab() {
     // 떠 있는 확인 창의 문구와 할 일.
     const confirmed = confirm && {
         reset: {title: "모든 설정과 차단/메모 데이터를 초기화할까요?", label: "초기화", run: clearData},
+        manual: {
+            title: `${formatTime(cloud?.manual?.createdAt ?? 0)}에 다른 기기에서 올린 수동 백업을 이 기기의 설정으로 덮어씁니다. 백업할까요?`,
+            label: "백업",
+            run: backupCloud
+        },
         cloudClear: {title: `클라우드에 올라간 수동·자동 백업을 모두 지울까요?${autoBackup ? " 자동 백업도 꺼집니다." : ""}`, label: "삭제", run: clearCloud},
         auto: {
-            title: `자동 백업을 켜면 ${formatTime(cloud.auto?.createdAt ?? 0)} 자동 백업을 이 기기의 설정으로 덮어씁니다. 켤까요?`,
+            title: `자동 백업을 켜면 ${cloud?.auto?.other ? "다른 기기에서 올린 " : ""}${formatTime(cloud?.auto?.createdAt ?? 0)} 자동 백업을 이 기기의 설정으로 덮어씁니다. 켤까요?`,
             label: "켜기",
             run: () => toggleAutoBackup(true)
         }
@@ -185,25 +195,26 @@ export function DataTab() {
                 actions={
                     <Field orientation="horizontal">
                         {/* 자동 칸은 기기끼리 같이 쓰고 켜는 즉시 이 기기 설정으로 덮인다. 새 기기에서 켰다가 복원할 백업을 잃지 않게 먼저 묻는다. */}
-                        <Switch id={`${id}-auto`} checked={autoBackup} disabled={loading}
-                                onCheckedChange={(on) => (on && cloud.auto ? setConfirm("auto") : void toggleAutoBackup(on))}/>
+                        <Switch id={`${id}-auto`} checked={autoBackup} disabled={loading || !cloud}
+                                onCheckedChange={(on) => (on && cloud?.auto ? setConfirm("auto") : void toggleAutoBackup(on))}/>
                         <FieldLabel htmlFor={`${id}-auto`}>자동 백업</FieldLabel>
                     </Field>
                 }
             >
                 <p className="mb-3 text-muted-foreground">
-                    수동 백업: {formatTime(cloud.manual?.createdAt ?? 0)} · 자동 백업: {formatTime(cloud.auto?.createdAt ?? 0)}
+                    수동 백업: {formatTime(cloud?.manual?.createdAt ?? 0)} · 자동 백업: {formatTime(cloud?.auto?.createdAt ?? 0)}
                 </p>
                 {/* 복원 버튼을 Trigger로 둬야 닫을 때 그 버튼으로 포커스가 돌아온다. */}
                 <Dialog open={restoreOpen} onOpenChange={setRestoreOpen}>
                     <div className="flex flex-wrap gap-2">
-                        <Button variant="secondary" disabled={loading} onClick={() => void backupCloud()}>
+                        {/* 백업 버튼은 수동 칸을 덮는 것이 할 일이다. 다른 기기가 올린 백업일 때만 묻는다(새 기기에서 복원과 헷갈려 누르는 경우). */}
+                        <Button variant="secondary" disabled={loading || !cloud} onClick={() => (cloud?.manual?.other ? setConfirm("manual") : void backupCloud())}>
                             <CloudUpload data-icon="inline-start"/> 백업
                         </Button>
                         <DialogTrigger render={<Button ref={restoreRef} variant="secondary" disabled={loading}/>}>
                             <CloudDownload data-icon="inline-start"/> 복원
                         </DialogTrigger>
-                        <Button variant="secondary" disabled={loading || (!cloud.manual && !cloud.auto)} onClick={() => setConfirm("cloudClear")}>
+                        <Button variant="secondary" disabled={loading || (!cloud?.manual && !cloud?.auto)} onClick={() => setConfirm("cloudClear")}>
                             <Trash2 data-icon="inline-start"/> 삭제
                         </Button>
                     </div>
@@ -222,8 +233,8 @@ export function DataTab() {
                         <DialogDescription>{RESTORE_DESCRIPTIONS[restoreMode]}</DialogDescription>
                         <div className="flex flex-col gap-2">
                             {([
-                                ["manual", "수동 백업", cloud.manual ? formatTime(cloud.manual.createdAt) : undefined],
-                                ["auto", "자동 백업", cloud.auto ? formatTime(cloud.auto.createdAt) : undefined]
+                                ["manual", "수동 백업", cloud?.manual ? formatTime(cloud.manual.createdAt) : undefined],
+                                ["auto", "자동 백업", cloud?.auto ? formatTime(cloud.auto.createdAt) : undefined]
                             ] as const).map(([slot, label, time]) => (
                                 <Button key={slot} variant="secondary" size="lg" className="justify-between" disabled={!time}
                                         onClick={() => void recoverCloud(slot, restoreMode)}>

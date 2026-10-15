@@ -1,6 +1,12 @@
 import {expect, test} from "./fixtures";
 import {openOptions} from "./pages/extension";
 
+/** 옵션 페이지(evaluate)의 chrome 전역. 테스트 파일은 확장 번들이 아니라 타입이 없다. */
+declare const chrome: typeof browser;
+
+/** 클라우드 수동 백업 메타 (core/backup.ts의 BackupMeta 중 테스트가 보는 것). */
+type ManualMeta = { backup?: { createdAt: number; device?: string } };
+
 test.describe("옵션 - 설정 탭", () => {
     test("모듈 카드를 그리고, 스위치로 켜고 끈 값을 저장해 다시 열어도 남는다", async ({page, extensionId, storage}) => {
         const options = await openOptions(page, extensionId, "general");
@@ -286,6 +292,31 @@ test.describe("옵션 - 데이터 탭 백업·초기화", () => {
         await dialog.getByRole("button", {name: /^수동 백업/}).click();
         await expect(toasts).toContainText("백업을 복원했습니다.");
         await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([{id: expect.any(String), content: "백업닉", isRegex: false}]);
+    });
+
+    test("다른 기기가 올린 수동 백업은 덮기 전에 묻고, 이 기기가 다시 올린 뒤에는 묻지 않는다", async ({page, extensionId}) => {
+        const {alert, toasts} = await openOptions(page, extensionId, "data");
+        const backup = page.getByRole("button", {name: "백업", exact: true});
+        const status = page.getByText(/^수동 백업:/);
+        const createdAt = () => page.evaluate(async () => (await chrome.storage.sync.get<ManualMeta>("backup")).backup?.createdAt);
+        await backup.click();
+        await expect(toasts).toContainText("데이터를 클라우드에 백업했습니다.");
+
+        // 다른 기기가 같은 칸에 올린 것처럼 메타의 기기와 시각을 바꾼다.
+        await page.evaluate(async () => {
+            const {backup: meta} = await chrome.storage.sync.get<ManualMeta>("backup");
+            await chrome.storage.sync.set({backup: {...meta, device: "다른 기기", createdAt: Date.UTC(2020, 5, 15)}});
+        });
+        await expect(status).toContainText("2020.");
+        await backup.click();
+        await expect(alert).toContainText("다른 기기에서 올린 수동 백업을 이 기기의 설정으로 덮어씁니다.");
+        await alert.getByRole("button", {name: "백업", exact: true}).click();
+        await expect(status).not.toContainText("2020.");
+
+        const before = await createdAt();
+        await backup.click();
+        await expect.poll(createdAt).not.toBe(before);
+        await expect(alert).toBeHidden();
     });
 
     test("자동 백업이 켜진 채 초기화하면 자동 백업을 먼저 끄고 데이터를 지운다", async ({page, extensionId, storage}) => {
