@@ -9,4 +9,4 @@ Chrome에서만 시험해서는 드러나지 않는 Firefox 문제를 모았습�
 - **브라우저 분기는 `import.meta.env.BROWSER === "firefox"`로 합니다.** `import.meta.env.FIREFOX`는 Vitest가 문자열(`"false"`)로 바꿔 넣어 단위 테스트에서 참이 됩니다.
 - **MV2라 배경은 서비스 워커가 아닌 배경 페이지로 돕니다.** 알람과 메뉴, 단축키는 두 브라우저에서 다 확인합니다.
 - **페이지의 `navigator.locks`에 콘텐츠 스크립트의 콜백을 넘기면 이유 없는 `Error`로 실패합니다.** 쓰기 직렬화(`core/storage/sync.ts`)는 파이어폭스 콘텐츠 스크립트에서 잠그지 않습니다.
-- **Firefox 전용 API**는 `wxt/browser` 타입(Chrome 기준)에 없습니다. 지금은 `browser.commands.openShortcutSettings()` 한 곳이라 `// @ts-ignore`에 이유를 적어 두었습니다.
+- **Firefox 전용 API**는 `wxt/browser` 타입(Chrome 기준)에 없습니다. 지금은 `browser.commands.openShortcutSettings()` 한 곳이라 `// @ts-expect-error`에 이유를 적어 두었습니다. 나중에 타입이 생기면 이 주석이 오류가 되어 지울 때를 알려 줍니다.
