@@ -15,6 +15,52 @@ const GALLERY = searchParams.get("id") ?? "";
 const POSTS = ".gall_list tbody tr.us-post[data-no]:not([data-type=icon_notice], [data-type=icon_survey])";
 const escape = (text: string): string => text.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
 
+/**
+ * 기능이 찾는 디시 마크업. 못 찾으면 오류 없이 조용히 멈추는 것들이라 여기서 하나 이상 맞는지 본다.
+ * optional은 갤러리·글에 따라 없을 수 있어 없으면 실패 대신 주석만 남긴다.
+ * 선택자는 각 기능의 코드(core/list.ts, features/block·search·layout·stealth)에서 옮겼다. 그쪽을 바꾸면 여기도 바꾼다.
+ */
+interface Markup {
+    feature: string;
+    selector: string;
+    optional?: true;
+}
+
+const PAGING = ".left_content article:has(.gall_listwrap) .bottom_paging_box";
+
+const LIST_MARKUP: Markup[] = [
+    {feature: "새로고침·검색 이어 보기 (갈아끼울 목록)", selector: ".gall_list:not([id]) tbody > tr.ub-content"},
+    {feature: "새로고침·검색 이어 보기 (페이징의 현재 쪽)", selector: `${PAGING} em`},
+    {feature: "차단 (작성자 닉네임·아이디·IP)", selector: ".gall_list tr.ub-content > .ub-writer[data-nick][data-uid][data-ip]"},
+    {feature: "차단 (제목)", selector: ".gall_list tr.ub-content .gall_tit > a:not([class])"},
+    {feature: "차단 (말머리)", selector: ".gall_list tr.ub-content .gall_subject", optional: true},
+    {feature: "레이아웃 (갤러리 뷰 숨기기)", selector: ".issue_wrap"},
+    {feature: "레이아웃 (갤러리 뷰 숨기기)", selector: "#visit_history"},
+    {feature: "레이아웃 (잡다 링크 숨기기)", selector: "section.right_content article"},
+    {feature: "레이아웃 (갤러리 공지 숨기기)", selector: "tr:has(em[class*=icon_notice])", optional: true},
+    {feature: "레이아웃 (디시 공지 숨기기)", selector: "tr[class*=ub-content]:has(> td[user_name=운영자])", optional: true},
+    {feature: "스텔스 (마이너 갤러리 대문)", selector: ".bgcover", optional: true},
+    {feature: "스텔스 (오른쪽 영역 썸네일)", selector: ".rcontimg_box .img_box", optional: true}
+];
+
+const VIEW_MARKUP: Markup[] = [
+    {feature: "차단 (글 보기 머리 작성자)", selector: ".gallview_head.ub-content .ub-writer[data-nick][data-uid][data-ip]"},
+    {feature: "차단 (글 보기 제목)", selector: ".gallview_head.ub-content .title_subject"},
+    {feature: "차단 (글 보기 말머리)", selector: ".gallview_head.ub-content .title_headtext", optional: true},
+    {feature: "스텔스 (본문)", selector: ".writing_view_box .write_div"},
+    {feature: "스텔스 (본문 미디어)", selector: ".writing_view_box :is(img, video, embed, iframe)", optional: true},
+    {feature: "레이아웃·스텔스 (갤러리 대문)", selector: "#zzbang_div", optional: true}
+];
+
+const SEARCH_MARKUP: Markup[] = [
+    {feature: "검색 이어 보기 (검색 결과 행)", selector: ".gall_list:not([id]) tbody > tr[data-no]"},
+    {feature: "검색 이어 보기 (검색어)", selector: "#sch_q"},
+    {feature: "검색 이어 보기 (목록 줄 수)", selector: "#list_num"},
+    {feature: "검색 이어 보기 (페이징의 현재 쪽)", selector: `${PAGING} em`},
+    // 검색 구간이 하나뿐인 작은 갤러리에는 없다.
+    {feature: "검색 이어 보기 (다음 검색)", selector: `${PAGING} a.search_next`, optional: true}
+];
+
 test.describe("실제 디시", () => {
     test("글 목록에 배지와 새로고침 버튼을 붙이고, 자동 새로고침이 같은 목록을 다시 받는다", async ({page}) => {
         const list = await openListPage(page, LIST_URL);
@@ -119,5 +165,36 @@ test.describe("실제 디시", () => {
         expect(dValue, "reply-setting-tmpl 다음 스크립트에 _d('…')가 있다").toBeDefined();
         expect(decodeD(dValue ?? "")).toMatch(/^\d+(\.\d+)?(,\d+(\.\d+)?)*$/);
         expect(view).toMatch(/name="service_code" value="[^"]{10,}"/);
+    });
+
+    // 목록·글·검색 결과를 한 번씩 GET으로 받아(요청 3개) 디시 스크립트를 뺀 채 빈 페이지에 그리고 선택자를 센다.
+    // 확장이 고치기 전의 디시 마크업을 봐야 하므로 디시 주소로 열지 않는다. 댓글은 댓글 API로 따로 받아 그리므로 여기서 보지 않는다.
+    test("차단·검색 이어 보기·레이아웃·스텔스가 찾는 디시 마크업이 그대로 있다", async ({page, request}) => {
+        // 그린 HTML의 스타일·이미지·iframe은 받지 않는다. 마크업만 보면 된다.
+        await page.route("**/*", (route) => route.abort());
+        const check = async (url: string, markups: Markup[]): Promise<void> => {
+            const response = await request.get(url);
+            expect(response.ok(), url).toBe(true);
+            await page.setContent((await response.text()).replace(/<script\b[\s\S]*?<\/script>/gi, ""), {waitUntil: "domcontentloaded"});
+            for (const {feature, selector, optional} of markups) {
+                const count = await page.locator(selector).count();
+                if (optional && count === 0) test.info().annotations.push({type: "없음", description: `${feature}: ${selector} (${url})`});
+                else expect.soft(count, `${feature}: ${selector}가 없다 (${url})`).toBeGreaterThan(0);
+            }
+        };
+
+        await check(LIST_URL, LIST_MARKUP);
+        const post = page.locator(`${POSTS} .gall_tit > a:not([class])`).first();
+        const href = await post.getAttribute("href");
+        // 첫 글 제목으로 검색하면 어느 갤러리에서든 결과가 하나는 나온다.
+        const title = (await post.textContent())?.trim() ?? "";
+        expect(href, "목록에 글 주소가 있다").toBeTruthy();
+
+        await check(new URL(href ?? "", LIST_URL).href, VIEW_MARKUP);
+
+        const search = new URL(LIST_URL);
+        search.searchParams.set("s_type", "search_subject");
+        search.searchParams.set("s_keyword", title);
+        await check(search.href, SEARCH_MARKUP);
     });
 });
