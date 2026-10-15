@@ -63,7 +63,7 @@ scripts/                IP DB 빌드 스크립트
 - 차단 항목의 `mode`가 비어 있으면 그 기기의 기본 차단 모드를 따릅니다. 그래서 차단 목록을 다른 기기로 옮기는 곳은 내보낸 쪽의 기본 모드가 다르면 그 모드를 항목에 적어 둡니다. 새로 옮기는 경로를 만들 때도 같은 규칙을 따릅니다.
 - 설정을 없애거나 이름을 바꿀 때 옛 값을 옮기는 코드는 두지 않습니다. 옵션·팝업을 열면 `stores/modules.ts`의 `pruneStaleSettings`가 스키마에 없는 설정을 지워서 이름을 바꾼 설정은 기본값으로 돌아갑니다.
 - 차단·메모의 마지막 사용 시각(`refresher:usage`, `core/usage.ts`)은 여러 탭이 함께 고치는 값이라 쓰기는 배경이 메시지를 받아 차례로 합니다. 기기마다 다른 값이라 백업하지 않습니다.
-- 클라우드 복원·합치기, JSON 가져오기, 초기화가 저장소에 쓰는 규칙은 `core/settings-transfer.ts`에 모여 있습니다. `storage.local`을 직접 다루는 곳은 키 이름을 문자열로 적지 말고 `rawKey(MODULES_KEY)`처럼 `items.ts`의 키에서 만듭니다.
+- 클라우드 복원·합치기, JSON 가져오기, 초기화가 저장소에 쓰는 규칙은 `core/settings-transfer.ts`에 모여 있습니다. 쓰기를 마치면 직전 값을 `backupStorage.undo`(`refresher:backup:undo`, 백업 대상 아님)에 남겨 데이터 탭의 되돌리기가 씁니다. `storage.local`을 직접 다루는 곳은 키 이름을 문자열로 적지 말고 `rawKey(MODULES_KEY)`처럼 `items.ts`의 키에서 만듭니다.
 
 ## HTTP
 

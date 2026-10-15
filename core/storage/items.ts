@@ -136,6 +136,7 @@ export const writeDatabase = (meta: DatabaseMeta, ip: string, ban: string): Prom
 const backupAuto = lazyItem<boolean>("local:refresher:backup:auto", false);
 const backupError = lazyItem<string>("local:refresher:backup:error", "");
 const backupPending = lazyItem<boolean>("local:refresher:backup:pending", false);
+const backupUndo = lazyItem<{ data: Record<string, unknown>; createdAt: number } | null>("local:refresher:backup:undo", null);
 export const backupStorage = {
     /** 설정이 바뀌면 잠시 뒤 자동으로 백업. */
     get auto() {
@@ -148,6 +149,13 @@ export const backupStorage = {
     /** 자동 백업 알람이 걸려 있고 아직 울리지 않았다. 브라우저를 끄면 알람이 사라질 수 있어 다음 시작 때 이 값을 보고 다시 건다. */
     get pending() {
         return backupPending();
+    },
+    /**
+     * 마지막 초기화·복원·가져오기(core/settings-transfer.ts의 writeSettings) 직전의 백업 대상 값과 그 시각. 데이터 탭의 되돌리기가 쓴다.
+     * 이 기기에만 둔다. 클라우드 자동 백업이 1분 뒤 바뀐 값으로 덮여도 이것으로 돌아갈 수 있다.
+     */
+    get undo() {
+        return backupUndo();
     }
 };
 

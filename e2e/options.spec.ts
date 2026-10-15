@@ -251,4 +251,35 @@ test.describe("옵션 - 데이터 탭 백업·초기화", () => {
         expect(await storage.get("refresher:backup:auto")).toBe(false);
         expect(await storage.get("refresher:block:NICK")).toBeUndefined();
     });
+
+    test("초기화한 뒤 알림의 되돌리기를 누르면 초기화 직전 목록으로 돌아가고, 탭의 되돌리기로 다시 앞으로 간다", async ({page, extensionId, storage}) => {
+        await storage.set({"refresher:block:NICK": [{id: "a", content: "남길닉", isRegex: false}]});
+        const {alert, toasts, card} = await openOptions(page, extensionId, "data");
+        await page.getByRole("button", {name: "데이터 초기화", exact: true}).click();
+        await alert.getByRole("button", {name: "초기화", exact: true}).click();
+        await expect(toasts).toContainText("데이터를 초기화했습니다.");
+        await expect.poll(() => storage.get("refresher:block:NICK")).toBeUndefined();
+
+        await toasts.getByRole("button", {name: "되돌리기", exact: true}).click();
+        await expect(toasts).toContainText("직전 상태로 되돌렸습니다.");
+        await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([{id: "a", content: "남길닉", isRegex: false}]);
+
+        await card("되돌리기").getByRole("button", {name: "되돌리기", exact: true}).click();
+        await expect.poll(() => storage.get("refresher:block:NICK")).toBeUndefined();
+    });
+
+    test("그 뒤에 다른 작업을 했으면 예전 알림의 되돌리기는 아무것도 바꾸지 않는다", async ({page, extensionId, storage}) => {
+        await storage.set({"refresher:block:NICK": [{id: "a", content: "남길닉", isRegex: false}]});
+        const {alert, toasts, card} = await openOptions(page, extensionId, "data");
+        await page.getByRole("button", {name: "데이터 초기화", exact: true}).click();
+        await alert.getByRole("button", {name: "초기화", exact: true}).click();
+        await expect(toasts).toContainText("데이터를 초기화했습니다.");
+
+        await card("되돌리기").getByRole("button", {name: "되돌리기", exact: true}).click();
+        await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([{id: "a", content: "남길닉", isRegex: false}]);
+
+        await toasts.getByRole("button", {name: "되돌리기", exact: true}).click();
+        await expect(toasts).toContainText("이 알림으로는 되돌릴 수 없습니다.");
+        expect(await storage.get("refresher:block:NICK")).toEqual([{id: "a", content: "남길닉", isRegex: false}]);
+    });
 });

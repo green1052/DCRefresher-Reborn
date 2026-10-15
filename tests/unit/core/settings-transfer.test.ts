@@ -2,7 +2,7 @@
 import {describe, expect, it, vi} from "vitest";
 
 import {mergeBackup, parseImport, pinDefaultMode, writeSettings} from "@/core/settings-transfer";
-import {DEFAULT_DETECT_MODE} from "@/core/storage/items";
+import {backupStorage, DEFAULT_DETECT_MODE} from "@/core/storage/items";
 import type {BlockEntry} from "@/core/storage/types";
 
 import {stored} from "../../helpers";
@@ -16,6 +16,13 @@ const SETTINGS = "refresher:module:preview:settings";
 const UNKNOWN_SETTINGS = "refresher:module:zzz:settings";
 
 const entry = (content: string, fields: Partial<BlockEntry> = {}): BlockEntry => ({id: content, content, isRegex: false, ...fields});
+
+/** 되돌리기 칸(writeSettings가 남기는 직전 상태)을 뺀 storage.local. */
+const UNDO = "refresher:backup:undo";
+const settings = async (): Promise<Record<string, unknown>> => {
+    const {[UNDO]: _, ...rest} = await browser.storage.local.get(null);
+    return rest;
+};
 
 /** 비교용: 저장할 때 새로 붙는 id를 뺀다. */
 const contents = (value: unknown): unknown => (Array.isArray(value) ? value.map(({id: _, ...rest}: BlockEntry) => rest) : value);
@@ -85,7 +92,7 @@ describe("writeSettings", () => {
         });
         await writeSettings({[MODULES]: {b: true}, NICK: ["내보내기 전용"]}, "replace");
 
-        expect(await browser.storage.local.get(null)).toEqual({
+        expect(await settings()).toEqual({
             [MODULES]: {b: true},
             "refresher:db:ip": "ip",
             "refresher:module:userinfo:data": {cache: 1}
@@ -95,19 +102,19 @@ describe("writeSettings", () => {
     it("replace는 없어진 모듈이 남긴 설정도 지운다", async () => {
         await browser.storage.local.set({[MODULES]: {a: true}, [UNKNOWN_SETTINGS]: {width: 1}});
         await writeSettings({[MODULES]: {b: true}}, "replace");
-        expect(await browser.storage.local.get(null)).toEqual({[MODULES]: {b: true}});
+        expect(await settings()).toEqual({[MODULES]: {b: true}});
     });
 
     it("merge는 없어진 모듈이 남긴 설정을 그대로 둔다", async () => {
         await browser.storage.local.set({[UNKNOWN_SETTINGS]: {width: 1}});
         await writeSettings({[MODULES]: {b: true}}, "merge");
-        expect(await browser.storage.local.get(null)).toEqual({[MODULES]: {b: true}, [UNKNOWN_SETTINGS]: {width: 1}});
+        expect(await settings()).toEqual({[MODULES]: {b: true}, [UNKNOWN_SETTINGS]: {width: 1}});
     });
 
     it("빈 객체로 replace하면(초기화) 없어진 모듈의 설정까지 모두 지운다", async () => {
         await browser.storage.local.set({[MODULES]: {a: true}, [NICK]: [entry("a")], [UNKNOWN_SETTINGS]: {width: 1}});
         await writeSettings({}, "replace");
-        expect(await browser.storage.local.get(null)).toEqual({});
+        expect(await settings()).toEqual({});
     });
 
     it("차단 목록에 빠진 id를 새로 붙인다", async () => {
@@ -150,9 +157,9 @@ describe("writeSettings", () => {
 
     it("없는 모듈의 설정은 저장하지 않는다", async () => {
         await writeSettings({[SETTINGS]: {width: 1000}, [UNKNOWN_SETTINGS]: {width: 1}}, "merge");
-        expect(await browser.storage.local.get(null)).toEqual({[SETTINGS]: {width: 1000}});
+        expect(await settings()).toEqual({[SETTINGS]: {width: 1000}});
         await writeSettings({[SETTINGS]: {width: 900}, [UNKNOWN_SETTINGS]: {width: 1}}, "replace");
-        expect(await browser.storage.local.get(null)).toEqual({[SETTINGS]: {width: 900}});
+        expect(await settings()).toEqual({[SETTINGS]: {width: 900}});
     });
 
     it("쓸 수 있는 설정이 없으면 던지고 아무것도 바꾸지 않는다", async () => {
@@ -162,6 +169,20 @@ describe("writeSettings", () => {
         // 기본 모드만 든 JSON은 merge에서 기본 모드가 빠지므로 쓸 것이 없다.
         await expect(writeSettings({[DEFAULTS]: {NICK: "SAME"}}, "merge")).rejects.toThrow("쓸 수 있는 설정이 없습니다.");
         expect(await browser.storage.local.get(null)).toEqual({[MODULES]: {a: true}});
+    });
+
+    it("다 쓰면 직전 상태를 남기고, 그것을 replace로 쓰면 id까지 원래대로 돌아간다", async () => {
+        const before = {[MODULES]: {a: true}, [NICK]: [entry("a", {id: "local-a"})], [SETTINGS]: {width: 900}};
+        await browser.storage.local.set(before);
+        await writeSettings({[NICK]: [entry("b")]}, "merge");
+        const at = await writeSettings({}, "replace");
+
+        const undo = await backupStorage.undo.getValue();
+        expect(undo).toEqual({data: {[MODULES]: {a: true}, [NICK]: [entry("b")], [SETTINGS]: {width: 900}}, createdAt: at});
+        await writeSettings(undo?.data ?? {}, "replace");
+        expect(await settings()).toEqual({[MODULES]: {a: true}, [NICK]: [entry("b")], [SETTINGS]: {width: 900}});
+        // 되돌리기도 직전 상태(빈 설정)를 남겨 다시 앞으로 갈 수 있다.
+        expect(await stored(UNDO)).toEqual({data: {}, createdAt: expect.any(Number)});
     });
 
     it("쓰다 실패하면 건드린 키만 이전 값으로 되돌린다", async () => {

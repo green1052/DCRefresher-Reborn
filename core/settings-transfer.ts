@@ -3,7 +3,7 @@
  * 키는 storage.local의 이름(local: 없이)이다. 백업·내보내기와 같은 모양이다.
  */
 import {isBackupTarget, readBackupTargets} from "@/core/backup";
-import {BLOCK_DEFAULTS_KEY, BLOCK_TYPES, blockListKey, isBlockListKey, MODULES_KEY, rawKey, settingsKeyModule} from "@/core/storage/items";
+import {BLOCK_DEFAULTS_KEY, BLOCK_TYPES, backupStorage, blockListKey, isBlockListKey, MODULES_KEY, rawKey, settingsKeyModule} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {blockKey, normalizeBlockList, normalizeDefaults} from "@/stores/blocks";
 import {isRecord} from "@/utils/record";
@@ -29,9 +29,9 @@ export const pinDefaultMode = (list: BlockEntry[], from: DetectMode, local: Dete
  * - replace(클라우드 복원·초기화): 백업은 완전한 스냅숏이므로 거기 없는 설정 키는 지운다. 없어진 모듈이 남긴 설정도 지운다.
  * - merge(가져오기): 붙여넣은 JSON은 일부만 담을 수 있으므로 든 키만 쓴다. 설정만 든 JSON이 차단/메모 목록을 지우지 않게 한다.
  *   설정 객체(isMapKey)도 기존 값에 얕게 합쳐, 설정 몇 개만 든 JSON이 나머지 설정을 기본값으로 돌리지 않게 한다.
- * 쓰다가 실패하면 이전 값으로 되돌린다.
+ * 쓰다가 실패하면 이전 값으로 되돌린다. 다 쓰면 이전 값을 backupStorage.undo에 남겨 데이터 탭에서 되돌릴 수 있게 하고 그 시각을 돌려준다.
  */
-export const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "merge"): Promise<void> => {
+export const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "merge"): Promise<number | undefined> => {
     // 아래에서 쓰는 이전 값(기본 차단 모드·설정 객체·지울 키·되돌릴 키)은 백업 대상 키다.
     const previous = await readBackupTargets();
     if (mode === "replace") {
@@ -79,6 +79,14 @@ export const writeSettings = async (data: Record<string, unknown>, mode: "replac
             console.error("설정 되돌리기 실패:", rollback);
         }
         throw e;
+    }
+    // refresher:backup:* 키라 자동 백업을 깨우지 않는다. 남기지 못해도 쓰기는 이미 끝났으므로 실패로 알리지 않는다.
+    const createdAt = Date.now();
+    try {
+        await backupStorage.undo.setValue({data: previous, createdAt});
+        return createdAt;
+    } catch (e) {
+        console.error(e);
     }
 };
 

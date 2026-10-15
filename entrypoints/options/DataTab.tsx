@@ -1,4 +1,4 @@
-import {CloudDownload, CloudUpload, Download, RefreshCw, Trash2, Upload} from "lucide-react";
+import {CloudDownload, CloudUpload, Download, RefreshCw, Trash2, Undo2, Upload} from "lucide-react";
 import {useEffect, useId, useRef, useState} from "react";
 
 import {ConfirmDialog, DialogActions} from "@/components/dialogs";
@@ -16,7 +16,7 @@ import {friendlyMessage} from "@/utils/error";
 import {arrayIncludes, objectKeys} from "@/utils/typed";
 
 import {formatTime, ImportDialog, Section, useStorageItem} from "./Layout";
-import {notify, notifyDone} from "./optionsStore";
+import {type Done, notify, notifyDone} from "./optionsStore";
 
 type RestoreMode = "replace" | "merge";
 
@@ -29,6 +29,7 @@ export function DataTab() {
     const {version, lastUpdate} = useStorageItem(dbStorage.meta);
     const backupError = useStorageItem(backupStorage.error);
     const autoBackup = useStorageItem(backupStorage.auto);
+    const undo = useStorageItem(backupStorage.undo);
     const [cloud, setCloud] = useState<CloudBackupStatus>({});
     const [restoreOpen, setRestoreOpen] = useState(false);
     const [restoreMode, setRestoreMode] = useState<RestoreMode>("replace");
@@ -59,29 +60,42 @@ export function DataTab() {
         };
     }, []);
 
-    const run = async (action: () => Promise<string>, failure: string): Promise<void> => {
+    const run = async (action: () => Promise<Done>, failure: string): Promise<void> => {
         // 누른 버튼이 막히면 포커스가 body로 떨어져 알림을 닫은 뒤 돌아갈 곳이 없으므로 가까운 조상(탭 패널)으로 옮겨 둔다.
         if (document.activeElement !== document.body) focusPanel(document.activeElement);
         setLoading(true);
-        let message: string;
-        let done = false;
+        let done: Done | undefined;
+        let failed = "";
         try {
-            message = await action();
-            done = true;
+            done = await action();
         } catch (e) {
             console.error(e);
-            message = `${failure} ${friendlyMessage(e)}`;
+            failed = `${failure} ${friendlyMessage(e)}`;
         }
         // 확인 창 안에서 부르면(초기화) 창이 닫히며 포커스가 body로 떨어지고, 실패 알림이 그 body를 돌아갈 곳으로 기억한다.
         if (document.activeElement === document.body) focusPanel(restoreRef.current);
-        if (done) notifyDone(message);
-        else notify(message);
+        if (done) notifyDone(done);
+        else notify(failed);
         setLoading(false);
     };
 
     const forceUpdate = () => run(() => sendMessage("refresher:updateDatabase").then(() => "데이터베이스를 갱신했습니다."), "데이터베이스를 갱신하지 못했습니다.");
 
     const backupCloud = () => run(() => runBackup("manual").then(() => "데이터를 클라우드에 백업했습니다."), "클라우드에 백업하지 못했습니다.");
+
+    // writeSettings가 남긴 직전 상태로 돌린다. 이것도 writeSettings로 쓰므로 한 번 더 하면 되돌리기 전으로 돌아온다.
+    // at: 알림의 되돌리기가 맡은 작업의 시각. 그 뒤에 다른 작업이 칸을 덮었으면 엉뚱한 작업을 되돌리지 않는다.
+    const revert = (at?: number) =>
+        run(async () => {
+            const before = await backupStorage.undo.getValue();
+            if (!before) return "되돌릴 데이터가 없습니다.";
+            if (at !== undefined && before.createdAt !== at) return "그 뒤에 다른 작업이 있어 이 알림으로는 되돌릴 수 없습니다.";
+            await writeSettings(before.data, "replace");
+            return `${formatTime(before.createdAt)} 직전 상태로 되돌렸습니다.`;
+        }, "되돌리지 못했습니다.");
+
+    // 직전 상태를 남기지 못했으면(at 없음) 되돌리기 버튼을 달지 않는다.
+    const undoable = (message: string, at: number | undefined): Done => (at === undefined ? message : {message, undo: () => void revert(at)});
 
     const recoverCloud = (slot: BackupSlot, mode: RestoreMode) =>
         run(async () => {
@@ -90,9 +104,9 @@ export function DataTab() {
             if (!backup) return "클라우드에 백업이 없습니다.";
 
             const data = mode === "merge" ? mergeBackup(await readBackupTargets(), backup.data) : backup.data;
-            await writeSettings(data, mode);
+            const at = await writeSettings(data, mode);
             const what = `${formatTime(backup.createdAt)} 백업을`;
-            return `${what} ${mode === "merge" ? "합쳤습니다" : "복원했습니다"}.`;
+            return undoable(`${what} ${mode === "merge" ? "합쳤습니다" : "복원했습니다"}.`, at);
         }, "복원하지 못했습니다.");
 
     const toggleAutoBackup = async (on: boolean): Promise<void> => {
@@ -116,10 +130,9 @@ export function DataTab() {
         );
 
     // run()을 거치지 않는다. loading이 가져오기 버튼을 막으면 다이얼로그를 닫을 때 포커스가 그 버튼으로 돌아가지 못한다.
-    const submitImport = async (text: string): Promise<string | undefined> => {
+    const submitImport = async (text: string): Promise<Done | undefined> => {
         try {
-            await writeSettings(parseImport(text), "merge");
-            return "데이터를 가져왔습니다.";
+            return undoable("데이터를 가져왔습니다.", await writeSettings(parseImport(text), "merge"));
         } catch (e) {
             console.error(e);
             notify(`가져오지 못했습니다. ${friendlyMessage(e)}`);
@@ -142,8 +155,8 @@ export function DataTab() {
             const wasAuto = await backupStorage.auto.getValue();
             if (wasAuto) await backupStorage.auto.setValue(false);
 
-            await writeSettings({}, "replace");
-            return `데이터를 초기화했습니다.${wasAuto ? " 클라우드 백업을 지키려고 자동 백업을 껐습니다." : ""}`;
+            const at = await writeSettings({}, "replace");
+            return undoable(`데이터를 초기화했습니다.${wasAuto ? " 클라우드 백업을 지키려고 자동 백업을 껐습니다." : ""}`, at);
         }, "초기화하지 못했습니다.");
 
     // 떠 있는 확인 창의 문구와 할 일.
@@ -242,7 +255,17 @@ export function DataTab() {
                 </div>
             </Section>
 
-            <Section title="초기화" desc="모든 설정과 차단/메모 데이터를 삭제합니다. 되돌릴 수 없습니다."
+            {undo && (
+                <Section title="되돌리기"
+                         desc={`마지막 초기화·복원·가져오기·되돌리기(${formatTime(undo.createdAt)}) 직전의 설정과 차단/메모 목록으로 돌아갑니다. 그 뒤에 바꾼 것은 사라집니다.`}
+                         actions={
+                             <Button variant="secondary" disabled={loading} onClick={() => void revert()}>
+                                 <Undo2 data-icon="inline-start"/> 되돌리기
+                             </Button>
+                         }/>
+            )}
+
+            <Section title="초기화" desc="모든 설정과 차단/메모 데이터를 삭제합니다. 초기화한 뒤에는 되돌리기로 초기화 직전 상태로 돌아갈 수 있습니다."
                      actions={
                          <Button variant="destructive" disabled={loading} onClick={() => setConfirm("reset")}>
                              <Trash2 data-icon="inline-start"/> 데이터 초기화

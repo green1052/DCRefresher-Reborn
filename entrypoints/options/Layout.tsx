@@ -12,7 +12,7 @@ import {sendMessage} from "@/core/messaging/protocol";
 import {USAGE_KEY} from "@/core/storage/items";
 import type {UsageKind} from "@/core/usage";
 
-import {notifyDone} from "./optionsStore";
+import {type Done, notifyDone} from "./optionsStore";
 
 /** 저장소 항목 하나의 값. 배경·다른 탭에서 바뀌어도 따라가고, 읽기 전에는 fallback이다. */
 export const useStorageItem = <T, >(item: WxtStorageItem<T, {}>): T => {
@@ -94,7 +94,7 @@ export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 
     placeholder?: string;
     onClose: () => void;
     /** 가져왔으면 알림 문구를 돌려준다. 실패는 직접 알리고 undefined를 돌려줘 다이얼로그를 열어 둔다. */
-    onSubmit: (text: string) => Promise<string | undefined>;
+    onSubmit: (text: string) => Promise<Done | undefined>;
 }) => {
     const [text, setText] = useState("");
     const [busy, setBusy] = useState(false);

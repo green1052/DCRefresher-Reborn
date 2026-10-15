@@ -26,5 +26,13 @@ export const useOptionsStore = create<OptionsState>()((set) => ({
 /** 확인해야 하는 옵션 페이지 알림(실패 등)을 띄운다. 탭마다 알림 상태를 따로 두지 않고 이것을 쓴다. */
 export const notify = (message: string): void => useOptionsStore.setState({notice: message});
 
+/** 성공 알림. undo가 있으면 토스트에 되돌리기 버튼을 단다. */
+export type Done = string | { message: string; undo: () => void };
+
 /** 성공을 알린다. 확인할 것이 없으니 막지 않는 토스트로 띄운다 (App의 ToastHost). */
-export const notifyDone = (message: string): void => useUiStore.getState().showToast(message);
+export const notifyDone = (done: Done): void => {
+    const {showToast} = useUiStore.getState();
+    if (typeof done === "string") showToast(done);
+    // 되돌리기가 달린 알림은 잘못 누른 것을 알아챌 시간을 넉넉히 둔다.
+    else showToast(done.message, "info", 20_000, {label: "되돌리기", run: done.undo});
+};
