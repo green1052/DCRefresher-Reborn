@@ -9,6 +9,7 @@ import {useUiStore} from "@/stores/ui";
 import {smoothScroll} from "@/utils/dom";
 
 import {isWholeFirstPage, replaceList, syncPaging} from "./list";
+import {LIST_TABLE} from "./markup";
 import meta, {type Ctx, PAUSE_TOGGLE} from "./meta";
 import {createUnseenCounter, READ_MARK_CLASS, setTitleCount} from "./title";
 
@@ -158,7 +159,7 @@ export default defineModule({
                 if (target !== originalLocation) return false;
 
                 // 목록이 그대로면 파싱·교체를 건너뛴다. 응답 전체는 요청마다 바뀌는 값(s_key)이 있어 목록 표의 tbody만 비교한다.
-                const table = response.indexOf("<table class=\"gall_list");
+                const table = response.indexOf(LIST_TABLE);
                 // 목록 표를 못 찾으면 비교·부분 파싱·저장을 모두 건너뛴다. indexOf(…, -1)은 처음부터 찾아 다른 tbody를 목록으로 잡는다.
                 const start = table === -1 ? -1 : response.indexOf("<tbody", table);
                 const end = start === -1 ? -1 : response.indexOf("</tbody>", start);

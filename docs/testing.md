@@ -24,7 +24,7 @@
 - 스펙에서는 선택자를 직접 쓰는 대신 `e2e/pages/`의 페이지 객체(`openListPage`, `openPopup`, `openOptions`)를 씁니다. 설정은 `storage.setModules({...})`·`storage.setModuleSettings(id, {...})`로 넣습니다. 디시 마크업이나 클래스 이름이 바뀌면 페이지 객체만 고칩니다.
 - `errors` fixture가 모든 테스트에서 페이지 오류와 `console.error`가 없는지 봅니다. 디시 페이지의 `page.evaluate`에서는 `chrome.storage`에 닿지 않으므로 `storage` fixture를 씁니다.
 - **파이어폭스**(`bun run e2e:firefox`): `e2e/firefox.ts`가 원격 디버깅 서버로 `.output/firefox-mv2`를 임시 부가 기능으로 설치합니다. Playwright의 파이어폭스는 `moz-extension://` 페이지로 이동하지 못해 팝업·옵션 테스트는 크로미엄에서만 실행되고 파이어폭스에서는 콘텐츠 스크립트 테스트만 돌아갑니다.
-- **실제 디시**(`bun run e2e:live`, `e2e/live/`): 실제 디시에 요청하되 읽기가 아닌 POST는 끊어 아무것도 쓰지 않습니다. 모양만 보며, 차단·검색 이어 보기·레이아웃·스텔스처럼 못 찾으면 조용히 멈추는 기능이 찾는 디시 선택자도 목록·글·검색 결과 페이지에서 하나 이상 맞는지 봅니다. 네트워크에 따라 흔들릴 수 있어 PR CI에는 넣지 않았고, GitHub Actions의 Live 워크플로(`.github/workflows/live.yml`)를 손으로 실행(Actions → Live → Run workflow)해 돌릴 수 있습니다. `DC_LIST_URL`(워크플로에서는 `list_url` 입력)에 PC 목록 주소를 주면 그 갤러리에서 실행됩니다(기본은 미니 갤러리 `bjwg64`).
+- **실제 디시**(`bun run e2e:live`, `e2e/live/`): 실제 디시에 요청하되 읽기가 아닌 POST는 끊어 아무것도 쓰지 않습니다. 모양만 보며, 차단·검색 이어 보기·레이아웃·스텔스처럼 못 찾으면 조용히 멈추는 기능이 찾는 디시 선택자도 목록·글·검색 결과 페이지에서 하나 이상 맞는지 봅니다. 새로고침이 목록 응답을 문자열로 자르고 수 칸을 비울 때 찾는 표지(`features/refresh/markup.ts`)도 실제 응답에 맞는지 봅니다. 네트워크에 따라 흔들릴 수 있어 PR CI에는 넣지 않았고, GitHub Actions의 Live 워크플로(`.github/workflows/live.yml`)를 손으로 실행(Actions → Live → Run workflow)해 돌릴 수 있습니다. `DC_LIST_URL`(워크플로에서는 `list_url` 입력)에 PC 목록 주소를 주면 그 갤러리에서 실행됩니다(기본은 미니 갤러리 `bjwg64`).
   - 디시 JS에서 옮겨 쓴 값(`core/preview/dcinside-js.ts`의 reCAPTCHA 키, `_d()` 해독표)이 디시 `comment.js`·`dccon.js`·`txtcon.js`·`common.js`와 글 페이지에 그대로 있는지도 봅니다. 디시가 바꿔 이 검사가 실패하면 그 파일의 새 값을 옮기고 검사도 맞춥니다.
 - 미리 설치된 크로미엄을 쓰려면 `PLAYWRIGHT_CHROMIUM=/경로/chrome`을 줍니다.
 

@@ -1,13 +1,12 @@
 import {isViewPage, pagePostNo, rowPostNo} from "@/core/http/urls";
 import {checkboxFiller, highlightSearchResults, PAGING_SELECTOR} from "@/core/list";
 
+import {COUNT_CELLS, COUNT_TEXT} from "./markup";
+
 // 받아온 목록을 지금 목록 자리에 넣는 일. 요청·주기와 상관없이 DOM만 다룬다.
 
 /** 새 글 판정용 행 키. 번호 없는 행(설문·AD, 다른 갤러리 공지)은 번호 칸 글자로 구분한다. */
 const rowKey = (row: HTMLElement): string => rowPostNo(row) ?? row.querySelector(".gall_num")?.textContent ?? "";
-
-/** 조회수·추천수·댓글 수 칸. 폴링마다 위쪽 행 여럿에서 바뀐다. */
-const COUNT_CELLS = ".gall_count, .gall_recommend, .reply_num";
 
 /**
  * 받아온 행의 원래 HTML에서 수 칸의 글자를 비운 것 (체크박스 칸·강조·효과를 입히기 전). 행 순서가 같을 때 바뀐 행을 가려내는 데 쓴다.
@@ -15,7 +14,7 @@ const COUNT_CELLS = ".gall_count, .gall_recommend, .reply_num";
  * 마크업이 예상과 달라 정규식이 못 비우면 수가 바뀐 행도 달라 보여 통째로 갈아끼운다.
  */
 const rowFrames = new WeakMap<Element, string>();
-const frameOf = (html: string): string => html.replace(/(class="(?:gall_count|gall_recommend|reply_num)"[^>]*>)[^<]*/g, "$1");
+const frameOf = (html: string): string => html.replace(COUNT_TEXT, "$1");
 
 const syncCounts = (target: Element, source: Element): void => {
     const sources = source.querySelectorAll(COUNT_CELLS);

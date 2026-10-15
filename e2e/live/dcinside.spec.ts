@@ -1,4 +1,5 @@
 import {COMMENT_SITE_KEYS, D_ALPHABET, decodeD, ICON_SITE_KEY} from "../../core/preview/dcinside-js";
+import {COUNT_CELLS, COUNT_TEXT, LIST_TABLE} from "../../features/refresh/markup";
 import {expect, test} from "../fixtures";
 import {openListPage} from "../pages/list";
 
@@ -169,21 +170,40 @@ test.describe("실제 디시", () => {
 
     // 목록·글·검색 결과를 한 번씩 GET으로 받아(요청 3개) 디시 스크립트를 뺀 채 빈 페이지에 그리고 선택자를 센다.
     // 확장이 고치기 전의 디시 마크업을 봐야 하므로 디시 주소로 열지 않는다. 댓글은 댓글 API로 따로 받아 그리므로 여기서 보지 않는다.
-    test("차단·검색 이어 보기·레이아웃·스텔스가 찾는 디시 마크업이 그대로 있다", async ({page, request}) => {
+    test("새로고침·차단·검색 이어 보기·레이아웃·스텔스가 찾는 디시 마크업이 그대로 있다", async ({page, request}) => {
         // 그린 HTML의 스타일·이미지·iframe은 받지 않는다. 마크업만 보면 된다.
         await page.route("**/*", (route) => route.abort());
-        const check = async (url: string, markups: Markup[]): Promise<void> => {
+        // 받은 HTML을 돌려준다. 문자열로 찾는 마크업은 그것으로 본다.
+        const check = async (url: string, markups: Markup[]): Promise<string> => {
             const response = await request.get(url);
             expect(response.ok(), url).toBe(true);
-            await page.setContent((await response.text()).replace(/<script\b[\s\S]*?<\/script>/gi, ""), {waitUntil: "domcontentloaded"});
+            const html = await response.text();
+            await page.setContent(html.replace(/<script\b[\s\S]*?<\/script>/gi, ""), {waitUntil: "domcontentloaded"});
             for (const {feature, selector, optional} of markups) {
                 const count = await page.locator(selector).count();
                 if (optional && count === 0) test.info().annotations.push({type: "없음", description: `${feature}: ${selector} (${url})`});
                 else expect.soft(count, `${feature}: ${selector}가 없다 (${url})`).toBeGreaterThan(0);
             }
+            return html;
         };
 
-        await check(LIST_URL, LIST_MARKUP);
+        // 새로고침은 받은 목록을 문자열로 다룬다(features/refresh/markup.ts). LIST_TABLE 뒤 첫 tbody를 잘라 비교·부분 파싱하고,
+        // 파싱한 행의 outerHTML에 COUNT_TEXT를 써 수 칸 글자를 비워 수만 바뀐 행을 가린다(list.ts frameOf). 자른 tbody가 갈아끼울 목록과 행 수가 같아야 하고,
+        // 각 행의 outerHTML을 정규식으로 고쳐 다시 파싱하면 수 칸이 모두 비어 있어야 한다. 수를 자식 요소로 감싸면 정규식이 잡아도 비우지 못한다.
+        const listHtml = await check(LIST_URL, LIST_MARKUP);
+        const table = listHtml.indexOf(LIST_TABLE);
+        expect(table, `새로고침 (목록 표): ${LIST_TABLE}가 없다`).toBeGreaterThan(-1);
+        const start = listHtml.indexOf("<tbody", table);
+        const tbody = listHtml.slice(start, listHtml.indexOf("</tbody>", start));
+        const rows = page.locator(".gall_list:not([id]) tbody > tr");
+        expect.soft(tbody.match(/<tr\b/g)?.length ?? 0, "새로고침 (목록 tbody): 문자열로 자른 tbody가 목록과 다르다").toBe(await rows.count());
+        const cleared = await rows.evaluateAll((trs, [source, flags, cells]) => trs.every((tr) => {
+            const template = document.createElement("template");
+            template.innerHTML = tr.outerHTML.replace(new RegExp(source, flags), "$1");
+            return [...template.content.querySelectorAll(cells)].every((cell) => cell.textContent === "");
+        }), [COUNT_TEXT.source, COUNT_TEXT.flags, COUNT_CELLS] as const);
+        expect.soft(cleared, `새로고침 (수 칸): ${COUNT_TEXT}가 행의 수 칸 글자를 다 비우지 못한다`).toBe(true);
+
         const post = page.locator(`${POSTS} .gall_tit > a:not([class])`).first();
         const href = await post.getAttribute("href");
         // 첫 글 제목으로 검색하면 어느 갤러리에서든 결과가 하나는 나온다.
