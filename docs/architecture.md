@@ -38,7 +38,7 @@ scripts/                IP DB 빌드 스크립트
 2. 저장소를 기다리기 전에 컨텍스트가 무효가 되면 모듈을 멈추는 처리를 겁니다. 확장이 정말 없어졌을 때만 새로고침 안내를 띄웁니다(`invalidated.ts`).
 3. 오버레이는 화면에 그릴 것이 처음 생길 때 띄웁니다(`overlay.tsx`, [UI](ui.md#오버레이와-css)).
 4. 글 목록·본문 페이지(`BOARD_PAGE`)면 차단·메모 스토어와 모듈 on/off·설정(`core/module/registry.ts`의 `loadAll`)을 동시에 읽습니다. 모듈의 `setup`은 차단·메모를 다 읽은 뒤에 돕니다.
-5. 가장 큰 IP DB는 콘텐츠 스크립트가 읽지 않고 유저 정보 모듈의 `setup`이 모듈 설정을 읽은 뒤 읽습니다(`core/database.ts`의 `initDatabase`). 저장소는 요청 순서대로 읽히기 때문입니다. 모듈이 꺼져 있으면 버블이 IP 정보를 처음 그릴 때 읽습니다(`subscribeDatabase`). 밴 DB는 처음 조회할 때 읽습니다.
+5. 가장 큰 IP DB는 콘텐츠 스크립트가 읽지 않고 유저 정보 모듈의 `setup`이 모듈 설정을 읽은 뒤 읽습니다(`core/database.ts`의 `initDatabase`). 저장소는 요청 순서대로 읽히기 때문입니다. 다만 IP 정보 표시(`ipInfoFilter`)가 "표시 안 함"(`none`)이 아니거나 갱차 조회(`checkPermBan`)가 켜져 있을 때만 읽고, 나중에 설정을 켜면 그때 읽습니다(`features/userinfo/index.ts`의 `needsDatabase`). 모듈이 꺼져 있거나 둘 다 꺼져 있으면 버블이 IP 정보를 처음 그릴 때 읽습니다(`subscribeDatabase`). 밴 DB는 처음 조회할 때 읽습니다.
 
 모듈은 이 문서를 불러온 주소(`core/http/urls.ts`의 `documentUrl`)로 판단합니다. 미리보기가 주소창을 글 주소로 바꿔도 페이지가 보여 주는 것은 그대로이기 때문입니다.
 
