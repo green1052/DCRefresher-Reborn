@@ -83,48 +83,70 @@ const SkipHint = ({dir}: { dir: number }) => (
     </div>
 );
 
+/**
+ * 미리보기 본문 칸. 댓글만 보기·오류일 때는 빠지고 글마다(Frame의 Fragment key) 새로 마운트되며, 창을 닫으면 페이드가 끝난 뒤 빠진다.
+ * 그래서 넣은 HTML이 바뀔 때만 다시 보면 되고, 떨어진 영상의 감시·받기는 언마운트 정리가 끊는다.
+ */
+const PostContents = () => {
+    const post = usePreviewStore((s) => s.post);
+    const imageBlocked = usePreviewStore((s) => s.imageBlocked);
+    const gallery = usePreviewStore((s) => s.preData?.gallery);
+    const {imageViewer} = useContentModuleSettings("preview");
+    const block = useRunningModuleSettings("block");
+    const revealed = useUiStore((s) => s.blockRevealed);
+    const blockEntries = useBlocksStore((s) => s.entries);
+    const blockDefaults = useBlocksStore((s) => s.defaults);
+    const contentsBox = useRef<HTMLDivElement>(null);
+    // 숨김 차단된 본문은 안내 문구로 바꾸고, '가린 내용 보기' 동안만 원문을 흐리게 보인다 (features/preview/overlay.css의 data-blocked).
+    const hideText = post?.textBlocked === "hide" && !revealed;
+    const html = hideText ? BLOCKED_TEXT : post?.contents ?? "";
+
+    // 본문이 새로 들어오면 동영상 크기를 다시 맞춘다. hideText가 풀려도 동영상이 새로 들어온다.
+    useEffect(() => (contentsBox.current ? fitMovies(contentsBox.current) : undefined), [html]);
+    // 본문에 든 차단 디시콘은 페이지 글 보기처럼 그 디시콘만 가린다. 차단 목록이나 설정이 바뀌면 다시 본다.
+    useEffect(() => {
+        if (contentsBox.current) markBlockedDccons(contentsBox.current, gallery, block ? (block.blur ? "blur" : "hide") : undefined);
+    }, [html, block, blockEntries, blockDefaults, gallery]);
+    // 깨진 움짤·디시콘 mp4는 디시처럼 gif로 바꾼다.
+    useEffect(() => (contentsBox.current ? watchGifVideos(contentsBox.current) : undefined), [html]);
+    // 이미지 크게 보기와 디시콘 정보 창을 키보드로도 연다 (pressContents).
+    useEffect(() => {
+        if (contentsBox.current) markPressable(contentsBox.current, imageViewer);
+    }, [html, imageViewer]);
+
+    return (
+        // 차단 표시는 감싼 상자에 단다. 본문 상자는 다크 모드에서 반전 필터를 쓰므로 흐림 필터와 한 요소에 두면 하나가 덮인다 (Comment.tsx와 같음).
+        <div className="grow" data-blocked={hideText ? undefined : post?.textBlocked}>
+            <div
+                ref={contentsBox}
+                className={cn("refresher-html refresher-preview-contents", imageBlocked && "refresher-preview-block-media")}
+                onClick={(ev) => clickContents(ev, imageViewer)}
+                onKeyDown={pressContents}
+                // 이미지가 깨지면 크게 보기 버튼 표시를 다시 맞춘다. 이미지의 error는 버블링되지 않아 캡처로 받는다.
+                onErrorCapture={(ev) => ev.target instanceof HTMLImageElement && markPressable(ev.currentTarget, imageViewer)}
+                dangerouslySetInnerHTML={{__html: html}}
+            />
+        </div>
+    );
+};
+
 export const Frame = () => {
     const visible = usePreviewStore((s) => s.visible);
     const fading = usePreviewStore((s) => s.fading);
     const adminVisible = usePreviewStore((s) => s.adminVisible);
     const post = usePreviewStore((s) => s.post);
-    const contents = post?.contents;
     const error = usePreviewStore((s) => s.error);
     const archived = usePreviewStore((s) => s.archived);
     const comments = usePreviewStore((s) => s.comments);
     const allowReply = usePreviewStore((s) => s.allowReply);
     const commentsOnly = usePreviewStore((s) => s.commentsOnly);
-    const imageBlocked = usePreviewStore((s) => s.imageBlocked);
-    const {previewWidth: frameWidth, toggleBackgroundBlur: backgroundBlur, scrollToSkip, imageViewer} = useContentModuleSettings("preview");
+    const {previewWidth: frameWidth, toggleBackgroundBlur: backgroundBlur, scrollToSkip} = useContentModuleSettings("preview");
     const block = useRunningModuleSettings("block");
     const revealed = useUiStore((s) => s.blockRevealed);
-    const blockEntries = useBlocksStore((s) => s.entries);
-    const blockDefaults = useBlocksStore((s) => s.defaults);
-    const gallery = usePreviewStore((s) => s.preData?.gallery);
     const postKey = usePreviewStore((s) => (s.preData ? keyOfPost(s.preData) : ""));
     const listTitle = usePreviewStore((s) => s.preData?.title);
     const scroller = useRef<HTMLDivElement>(null);
     const commentsSection = useRef<HTMLDivElement>(null);
-    const contentsBox = useRef<HTMLDivElement>(null);
-    // 숨김 차단된 본문은 안내 문구로 바꾸고, '가린 내용 보기' 동안만 원문을 흐리게 보인다 (features/preview/overlay.css의 data-blocked).
-    const hideText = post?.textBlocked === "hide" && !revealed;
-
-    // 창이 그려져 있는 동안 (닫는 페이드 포함). 닫을 때 바로 다시 돌지 않고, 페이드가 끝나 본문이 빠지면 정리가 돈다 (떨어진 영상의 감시·받기를 끊는다).
-    const mounted = visible || fading;
-    // 본문 칸은 댓글만 보기·오류·닫힘일 때 빠졌다가 다시 붙고, 글마다 새로 마운트되므로 그때마다 동영상 크기를 다시 맞춘다.
-    // 같은 글을 캐시로 다시 열면 mounted 말고는 값이 모두 같다. hideText가 풀리면 동영상이 새로 들어온다.
-    useEffect(() => (contentsBox.current ? fitMovies(contentsBox.current) : undefined), [mounted, contents, commentsOnly, error, postKey, hideText]);
-    // 본문에 든 차단 디시콘은 페이지 글 보기처럼 그 디시콘만 가린다. 차단 목록이나 설정이 바뀌면 다시 본다.
-    useEffect(() => {
-        if (contentsBox.current) markBlockedDccons(contentsBox.current, gallery, block ? (block.blur ? "blur" : "hide") : undefined);
-    }, [mounted, contents, commentsOnly, error, postKey, hideText, block, blockEntries, blockDefaults, gallery]);
-    // 깨진 움짤·디시콘 mp4는 디시처럼 gif로 바꾼다. 본문 칸이 새로 그려지는 때가 위와 같다.
-    useEffect(() => (contentsBox.current ? watchGifVideos(contentsBox.current) : undefined), [mounted, contents, commentsOnly, error, postKey, hideText]);
-    // 이미지 크게 보기와 디시콘 정보 창을 키보드로도 연다 (pressContents).
-    useEffect(() => {
-        if (contentsBox.current) markPressable(contentsBox.current, imageViewer);
-    }, [mounted, contents, commentsOnly, error, postKey, hideText, imageViewer]);
-
     // 창은 비모달이라(아래 Dialog.Root) 포커스를 가두지 않는다. 연 동안 뒤 페이지를 inert로 막아 Tab·스크린 리더가 가려진 목록으로 나가지 않게 한다.
     // 오버레이(refresher-root)는 남긴다. 버블·토스트·관리 패널이 거기 있다. body에 직접 붙인 확장 UI(스텔스 버튼 등)도 data-refresher-ui로 남긴다.
     // 키보드로 열었으면(연 요소에 포커스 링이 보이면) 닫을 때 그 요소(목록의 제목 링크 등)로 포커스를 돌려준다. 글을 넘길 때는 visible이 그대로라 처음 연 요소가 남는다.
@@ -316,18 +338,7 @@ export const Frame = () => {
                             </Button>
                         ) : (
                             <>
-                                {/* 차단 표시는 감싼 상자에 단다. 본문 상자는 다크 모드에서 반전 필터를 쓰므로 흐림 필터와 한 요소에 두면 하나가 덮인다 (Comment.tsx와 같음). */}
-                                <div className="grow" data-blocked={hideText ? undefined : post?.textBlocked}>
-                                    <div
-                                        ref={contentsBox}
-                                        className={cn("refresher-html refresher-preview-contents", imageBlocked && "refresher-preview-block-media")}
-                                        onClick={(ev) => clickContents(ev, imageViewer)}
-                                        onKeyDown={pressContents}
-                                        // 이미지가 깨지면 크게 보기 버튼 표시를 다시 맞춘다. 이미지의 error는 버블링되지 않아 캡처로 받는다.
-                                        onErrorCapture={(ev) => ev.target instanceof HTMLImageElement && markPressable(ev.currentTarget, imageViewer)}
-                                        dangerouslySetInnerHTML={{__html: hideText ? BLOCKED_TEXT : contents ?? ""}}
-                                    />
-                                </div>
+                                <PostContents/>
                                 {post && <Votes post={post}/>}
                             </>
                         )}
