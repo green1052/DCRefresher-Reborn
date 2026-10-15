@@ -93,6 +93,8 @@ interface PreviewState extends PostState, Hooks {
 
     /** 정보 창(DcconInfoPopup)을 띄운 디시콘 코드. null이면 닫혀 있다. */
     dcconInfo: string | null;
+    /** 댓글 최신순 보기. 글을 넘겨도 그대로 두고 저장하지 않는다. */
+    newestFirst: boolean;
 
     /** 글 상태를 비우고 patch를 얹어 한 번의 setState로 연다. */
     open: (preData: GalleryPreData, patch?: Partial<PostState>) => void;
@@ -202,6 +204,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     captcha: null,
     mini: null,
     dcconInfo: null,
+    newestFirst: false,
 
     open: (preData, patch) => {
         // 이전 글의 캡차 창은 닫는다. 남아 있으면 입력한 코드가 이전 글로 간다.

@@ -287,6 +287,21 @@ test.describe("미리보기 댓글", () => {
         await expect(second).toBeVisible();
     });
 
+    test("최신순으로 고르면 스레드만 거꾸로 세우고 답글은 첫 댓글 아래에 둔다", async ({listPage, site}) => {
+        site.comments.push(fakeComment(12, {user_id: "user2", name: "고닉", ip: "", memo: "새 댓글"}));
+        const frame = await listPage.openPreview();
+        const memos = listPage.comments.locator(".refresher-html");
+        await expect(memos).toHaveText(["댓글 하나", "답글", "새 댓글"]);
+
+        const newest = frame.getByRole("button", {name: "최신순", exact: true});
+        await newest.click();
+        await expect(newest).toHaveAttribute("aria-pressed", "true");
+        await expect(memos).toHaveText(["새 댓글", "댓글 하나", "답글"]);
+
+        await frame.getByRole("button", {name: "등록순", exact: true}).click();
+        await expect(memos).toHaveText(["댓글 하나", "답글", "새 댓글"]);
+    });
+
     test("댓글을 새로고침하면 새로 들어온 댓글만 강조한다", async ({listPage, site}) => {
         const frame = await listPage.openPreview();
         const fresh = frame.locator(".refresher-comment[data-fresh]");

@@ -6,6 +6,7 @@ import {Button} from "@/components/ui/button";
 import {Checkbox} from "@/components/ui/checkbox";
 import {Collapsible, CollapsibleContent} from "@/components/ui/collapsible";
 import {Field, FieldLabel} from "@/components/ui/field";
+import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
 import type {ProcessedComment} from "@/core/preview/comments";
 import {adminDeleteComments} from "@/core/preview/request";
 import {notifyManage} from "@/stores/notify";
@@ -15,10 +16,29 @@ import {isGalleryManager} from "@/utils/user";
 import {Comment} from "./Comment";
 import {NO_FRESH, usePreviewStore} from "./previewStore";
 
-/** 스레드 첫 댓글로 그릴 댓글. 10쪽 제한으로 부모를 받지 못한 답글도 넣는다. 빠뜨리면 머리의 스레드·총 댓글 수와 어긋난다. */
-export const threadParents = (comments: ProcessedComment[]): ProcessedComment[] => {
+/**
+ * 스레드 첫 댓글로 그릴 댓글. 10쪽 제한으로 부모를 받지 못한 답글도 넣는다. 빠뜨리면 머리의 스레드·총 댓글 수와 어긋난다.
+ * 댓글은 번호(등록)순이다. newestFirst면 스레드만 거꾸로 세운다. 답글은 첫 댓글 아래에 등록순으로 남는다 (디시 본문의 최신순과 같다).
+ */
+export const threadParents = (comments: ProcessedComment[], newestFirst = false): ProcessedComment[] => {
     const topNos = new Set(comments.filter((comment) => comment.depth === 0).map((comment) => comment.no));
-    return comments.filter((comment) => comment.depth === 0 || !topNos.has(comment.c_no));
+    const parents = comments.filter((comment) => comment.depth === 0 || !topNos.has(comment.c_no));
+    return newestFirst ? parents.reverse() : parents;
+};
+
+/** 댓글 머리의 등록순·최신순 고르기. 순서는 여기와 CommentList만 구독한다. Frame이 구독하면 고를 때마다 본문까지 다시 그린다. */
+export const CommentOrder = () => {
+    const newestFirst = usePreviewStore((s) => s.newestFirst);
+
+    return (
+        <ToggleGroup aria-label="댓글 순서" variant="outline" spacing={0} value={[newestFirst ? "newest" : "oldest"]} onValueChange={([value]) => {
+            // 이미 고른 것을 다시 누르면 빈 값이 온다. 그대로 둔다.
+            if (value !== undefined) usePreviewStore.setState({newestFirst: value === "newest"});
+        }}>
+            <ToggleGroupItem value="oldest" className="h-6 min-w-0 px-2 text-xs">등록순</ToggleGroupItem>
+            <ToggleGroupItem value="newest" className="h-6 min-w-0 px-2 text-xs">최신순</ToggleGroupItem>
+        </ToggleGroup>
+    );
 };
 
 /**
@@ -107,11 +127,12 @@ const SelectionTools = ({shownSelectable, foldable}: { shownSelectable: Processe
 export const CommentList = () => {
     const comments = usePreviewStore((s) => s.comments)!;
     const revealed = useUiStore((s) => s.blockRevealed);
+    const newestFirst = usePreviewStore((s) => s.newestFirst);
 
     // 숨김 차단과 접힌 같은 댓글은 '가린 내용 보기' 동안만 (흐리게) 그린다. 블러 차단은 그려 두고 features/preview/overlay.css가 흐린다.
     // 트리 선과 답글 수도 그리는 댓글만 센다.
     const shown = new Set(revealed ? comments : comments.filter((comment) => comment.blocked !== "hide" && comment.duplicates !== 0));
-    const parents = threadParents(comments);
+    const parents = threadParents(comments, newestFirst);
     // 답글을 스레드 첫 댓글 번호(c_no)로 한 번에 묶는다. 부모마다 전체를 훑으면 O(n²)이다.
     const repliesOf = Map.groupBy(comments.filter((comment) => comment.depth === 1 && shown.has(comment)), (comment) => comment.c_no);
     // 문서를 querySelector로 훑으므로 댓글마다가 아니라 여기서 한 번 잰다.

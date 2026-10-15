@@ -22,7 +22,7 @@ import {cn} from "cn";
 import {adjacentPreData} from "../rows";
 import {TimeStamp} from "./TimeStamp";
 import {UserCard} from "./UserCard";
-import {CommentList, threadParents} from "./CommentList";
+import {CommentList, CommentOrder, threadParents} from "./CommentList";
 import {clickContents, markPressable, pressContents} from "./contentsClick";
 import {CountDown} from "./CountDown";
 import {ErrorBlock} from "./ErrorBlock";
@@ -358,7 +358,10 @@ export const Frame = () => {
                             <Separator/>
                             <div className="flex items-center justify-between gap-3 px-8 pt-3">
                                 <span className="text-muted-foreground">{comments && subtitleOf(comments)}</span>
-                                <RefreshButton label="댓글 새로고침" run={() => usePreviewStore.getState().requestRefresh(true)}/>
+                                <div className="flex items-center gap-2">
+                                    {comments && threadParents(comments).length > 1 && <CommentOrder/>}
+                                    <RefreshButton label="댓글 새로고침" run={() => usePreviewStore.getState().requestRefresh(true)}/>
+                                </div>
                             </div>
                             {comments === undefined ? (commentsFailed ? (
                                 <Alert variant="destructive" className="mx-8 my-4 w-auto">
