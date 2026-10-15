@@ -28,6 +28,37 @@ jobs:
             -   name: Unit tests
                 run: bun run test
 
+            -   name: Build with bundle analysis
+                run: bunx wxt build --analyze
+
+            -   name: Upload bundle analysis
+                uses: actions/upload-artifact@v7
+                with:
+                    name: bundle-stats
+                    path: stats.html
+                    retention-days: 7
+
+            # content.js는 디시 모든 페이지에서 document_start에 파싱된다. 의도한 증가라면 같은 커밋에서 상한을 올린다.
+            -   name: Bundle size
+                env:
+                    CONTENT_JS_LIMIT: 565000
+                run: |
+                    cd .output/chrome-mv3
+                    {
+                        echo "| 파일 | 바이트 |"
+                        echo "| --- | ---: |"
+                        for f in content-scripts/* background.js chunks/*.js; do
+                            echo "| $f | $(stat -c %s "$f") |"
+                        done
+                        echo
+                        echo "content.js 상한: $CONTENT_JS_LIMIT 바이트"
+                    } >> "$GITHUB_STEP_SUMMARY"
+                    size=$(stat -c %s content-scripts/content.js)
+                    if [ "$size" -gt "$CONTENT_JS_LIMIT" ]; then
+                        echo "::error::content.js가 $size 바이트로 상한 $CONTENT_JS_LIMIT 바이트를 넘었다."
+                        exit 1
+                    fi
+
     e2e:
         runs-on: ubuntu-latest
         timeout-minutes: 20
