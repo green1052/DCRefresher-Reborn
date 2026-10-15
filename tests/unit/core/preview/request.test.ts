@@ -5,7 +5,21 @@ const fetchMock = vi.hoisted(() => (globalThis.fetch = vi.fn<typeof fetch>()));
 
 import {BlockedError} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
-import {adminDeleteComments, blockCommenters, fetchComments, fetchDcconList, fetchDcconPackage, fetchPost, userDeleteComment, viewUrl, vote} from "@/core/preview/request";
+import {
+    adminDeleteComments,
+    blockCommenters,
+    bump,
+    fetchComments,
+    fetchDcconList,
+    fetchDcconPackage,
+    fetchPost,
+    setNotice,
+    setRecommend,
+    submitComment,
+    userDeleteComment,
+    viewUrl,
+    vote
+} from "@/core/preview/request";
 import type {DcinsideComment, PostInfo} from "@/core/preview/types";
 
 import {preData} from "../../../helpers";
@@ -241,5 +255,62 @@ describe("댓글 관리", () => {
         expect(Object.fromEntries(["id", "no", "re_no", "re_password", "v_cur_t", "rc_key", "c_k_v", "g-recaptcha-token"].map((key) => [key, sent[0]?.body.get(key)]))).toEqual({
             id: "cid", no: "3", re_no: "7", re_password: "pw", v_cur_t: "vt", rc_key: "new3", c_k_v: "dzc", "g-recaptcha-token": "tok"
         });
+    });
+    it("성공이라고 밝힌 응답만 성공으로 본다", async () => {
+        const cases: [string, { success: boolean; message?: string }][] = [
+            [JSON.stringify({result: "success", msg: "삭제되었습니다."}), {success: true, message: "삭제되었습니다."}],
+            [JSON.stringify({result: "fail", msg: "권한이 없습니다."}), {success: false, message: "권한이 없습니다."}],
+            [JSON.stringify({result: "fail", msg: ""}), {success: false, message: undefined}],
+            ["true", {success: true, message: undefined}],
+            ["false||정상적인 접근이 아닙니다.", {success: false, message: "정상적인 접근이 아닙니다."}],
+            ["false||nomember||로그인이 필요합니다.", {success: false, message: "로그인이 필요합니다."}],
+            // 세션이 끊기면 로그인 페이지 HTML이 온다.
+            ["<!DOCTYPE html><html><body>로그인</body></html>", {success: false, message: undefined}]
+        ];
+        for (const [reply, result] of cases) {
+            serve(fetchMock, () => reply);
+            expect(await adminDeleteComments(target(), ["7"])).toEqual(result);
+        }
+    });
+
+    it("끌올·공지·개념글은 갤러리 종류의 관리 주소로 글 번호를 보낸다", async () => {
+        const sent = serve(fetchMock, () => JSON.stringify({result: "success"}));
+        await bump(target());
+        await setNotice(target(), true);
+        await setNotice(target(), false);
+        await setRecommend(target(), true);
+        await setRecommend(target(), false);
+
+        expect(sent.map(({url, body}) => [url.replace(`${urls.base}ajax/mini_manager_board_ajax/`, ""), [...body].slice(2)])).toEqual([
+            ["update_bump", [["id", "a"], ["nos[]", "3"]]],
+            ["set_notice", [["mode", "SET"], ["id", "a"], ["no", "3"]]],
+            ["set_notice", [["mode", "REL"], ["id", "a"], ["no", "3"]]],
+            ["set_recommend", [["mode", "SET"], ["id", "a"], ["nos[]", "3"]]],
+            ["set_recommend", [["mode", "REL"], ["id", "a"], ["nos[]", "3"]]]
+        ]);
+    });
+});
+
+describe("submitComment", () => {
+    /** 디시 _d()가 푸는 값. 표준 base64를 디시가 섞은 알파벳으로 옮긴다. */
+    const dValue = (plain: string) => Array.from(btoa(plain), (char) => "yL/M=zNa0bcPQdReSfTgUhViWjXkYIZmnpo+qArOBs1Ct2D3uE4Fv5G6wHl78xJ9K"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".indexOf(char)]).join("");
+    const form = (value?: string): PostInfo => post({commentForm: {fields: [["service_code", "x"], ["check_6", "c6"]], serviceCode: "abc0123456789", dValue: value, checks: {}}});
+    const submit = (info: PostInfo) => submitComment(preData({gallery: "a", id: "3"}), info, {name: "ㅇㅇ", pw: "1234"}, "댓글", null, null, false);
+
+    it("_d() 값을 풀어 service_code 끝 10자리를 갈아 끼운다", async () => {
+        const sent = serve(fetchMock, () => "1234");
+        // "e2eRefresh"를 푸는 값. 첫 자리 6을 4 당겨 2로 적는다.
+        expect(await submit(form(dValue("207,277,508,373,409,363,349,260.5,239,166")))).toEqual({result: "1234", message: undefined, detail: undefined});
+        expect(sent[0]?.url).toBe(urls.comments_submit);
+        expect(sent[0]?.body.get("service_code")).toBe("abce2eRefresh");
+        expect(sent[0]?.body.get("check_6")).toBe("c6");
+    });
+
+    it("값이 없거나 숫자로 풀리지 않으면 보내지 않고 알린다", async () => {
+        serve(fetchMock, () => "1234");
+        for (const value of [undefined, dValue("x07,277"), dValue("207,abc,508"), "!!!!"]) {
+            expect(await submit(form(value))).toEqual({result: "false", message: "댓글 폼을 읽지 못했습니다. 원문에서 작성해 주세요."});
+        }
+        expect(fetchMock).not.toHaveBeenCalled();
     });
 });
