@@ -27,12 +27,17 @@ let hookRequested = false;
  * 페이지에 넣는 hookUploads가 읽을 설정을 둔다. 켜진 설정이 있으면 배경에 hookUploads를 넣어 달라고 한다 (페이지마다 한 번만 걸린다).
  * 둘 다 꺼져 있으면 지워 파일을 건드리지 않게 한다.
  */
-const publishImageOptions = ({webpConvert: webp, webpQuality, obfuscateName: rename}: { webpConvert: boolean; webpQuality: number; obfuscateName: boolean }): void => {
+const publishImageOptions = ({webpConvert: webp, webpQuality, webpConcurrency: concurrency, obfuscateName: rename}: {
+    webpConvert: boolean;
+    webpQuality: number;
+    webpConcurrency: number;
+    obfuscateName: boolean;
+}): void => {
     if (!webp && !rename) {
         delete document.documentElement.dataset[UPLOAD_OPTIONS_KEY];
         return;
     }
-    const options: ImageOptions = {webp, quality: webpQuality / 100, rename};
+    const options: ImageOptions = {webp, quality: webpQuality / 100, rename, concurrency};
     document.documentElement.dataset[UPLOAD_OPTIONS_KEY] = JSON.stringify(options);
     if (hookRequested) return;
     hookRequested = true;

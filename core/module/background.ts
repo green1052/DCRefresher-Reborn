@@ -1,3 +1,4 @@
+import type {ScriptPublicPath} from "wxt/utils/inject-script";
 import {storage} from "wxt/utils/storage";
 import pLimit from "p-limit";
 
@@ -33,15 +34,20 @@ type TabSender = Browser.runtime.MessageSender & { tab: { id: number } };
 export const hasTab = (sender: Browser.runtime.MessageSender): sender is TabSender => sender.tab?.id !== undefined;
 
 /**
- * 메시지를 보낸 문서의 페이지(MAIN world)에서 func를 실행한다.
+ * 메시지를 보낸 문서.
  * 크롬은 문서(documentId)로 집는다. 프레임 번호로 집으면 그사이 다른 페이지로 넘어갔거나 보낸 쪽이 프리렌더 중인 페이지일 때
  * 지금 보이는 다른 문서에서 돈다. 파이어폭스는 documentId를 주지 않아 프레임 번호로 집는다.
  */
-export const runInPage = <Args extends unknown[], Result>(sender: TabSender, func: (...args: Args) => Result, args: Args) => {
-    const {tab: {id: tabId}, frameId, documentId} = sender;
-    const target = documentId ? {tabId, documentIds: [documentId]} : {tabId, frameIds: [frameId ?? 0]};
-    return browser.scripting.executeScript({target, world: "MAIN", func, args});
-};
+const senderTarget = ({tab: {id: tabId}, frameId, documentId}: TabSender) =>
+    documentId ? {tabId, documentIds: [documentId]} : {tabId, frameIds: [frameId ?? 0]};
+
+/** 메시지를 보낸 문서의 페이지(MAIN world)에서 func를 실행한다. func는 직렬화되므로 바깥 변수·import를 쓸 수 없다. */
+export const runInPage = <Args extends unknown[], Result>(sender: TabSender, func: (...args: Args) => Result, args: Args) =>
+    browser.scripting.executeScript({target: senderTarget(sender), world: "MAIN", func, args});
+
+/** import가 필요해 따로 번들한 스크립트(entrypoints/의 unlisted script)를 메시지를 보낸 문서의 페이지(MAIN world)에서 실행한다. */
+export const runFileInPage = (sender: TabSender, file: ScriptPublicPath) =>
+    browser.scripting.executeScript({target: senderTarget(sender), world: "MAIN", files: [file]});
 
 /** 배경 모듈을 시작한다. 모든 모듈을 지금 상태에 다시 맞추는 함수를 돌려준다 (설치·브라우저 시작 때 배경이 부른다). */
 export const startBackgroundModules = (modules: BackgroundModule[]): (() => Promise<void>) => {

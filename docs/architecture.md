@@ -9,6 +9,7 @@ entrypoints/
   background/           배경 스크립트. page.ts는 탭의 페이지(MAIN world)에서 대신 실행하는 것
   content/              콘텐츠 스크립트. stale.ts는 파이어폭스 재주입으로 죽은 인스턴스 정리
   page.content.css      디시 페이지에 입히는 CSS (manifest로 따로 주입)
+  upload-hook.ts        글쓰기 이미지 변환. 배경이 페이지(MAIN world)에 넣는 unlisted script
   options/, popup/
 features/<id>/          기능 모듈 하나
   meta.ts               이름·아이콘·설정 스키마 (옵션·팝업이 읽는다)
@@ -45,7 +46,7 @@ scripts/                IP DB 빌드 스크립트
 
 배경은 뜰 때마다 리스너를 동기로 겁니다. Chrome은 서비스 워커라 언제든 멈췄다 다시 뜨니 전역 변수에 상태를 두지 말고 저장소에 둡니다.
 
-- `page.ts`: 콘텐츠 스크립트 대신 탭의 페이지(MAIN world)에서 실행합니다. 갈아끼운 목록에 디시 스크립트 다시 걸기를 맡습니다. 모듈 하나만 쓰는 것은 그 모듈의 `background.ts`가 같은 도우미(`core/module/background.ts`의 `runInPage`)로 합니다(미리보기 reCAPTCHA 토큰, 글쓰기 이미지 변환).
+- `page.ts`: 콘텐츠 스크립트 대신 탭의 페이지(MAIN world)에서 실행합니다. 갈아끼운 목록에 디시 스크립트 다시 걸기를 맡습니다. 모듈 하나만 쓰는 것은 그 모듈의 `background.ts`가 같은 도우미(`core/module/background.ts`의 `runInPage`)로 합니다(미리보기 reCAPTCHA 토큰). import가 필요한 코드는 직렬화해 넘길 수 없어 `entrypoints/`에 unlisted script로 따로 번들하고 `runFileInPage`로 넣습니다(글쓰기 이미지 변환).
 - `database.ts`: IP·밴 DB를 하루마다 확인해 7일이 지났거나 저장 형식이 옛것이면 받습니다. 알람은 배포 빌드에서만 만듭니다. 설치·업데이트 때도 받고 개발 빌드는 DB가 없을 때만 받습니다. 옵션의 "지금 갱신"도 직접 받지 않고 배경에 메시지(`refresher:updateDatabase`)를 보내 진행 중인 갱신과 겹치지 않게 합니다.
 - 디시 통합검색은 CORS를 열지 않아서 관리 모듈의 같은 제목 찾기는 배경이 받아 줍니다(`refresher:searchPosts`).
 

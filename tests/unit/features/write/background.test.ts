@@ -3,7 +3,6 @@ import {describe, expect, it, vi} from "vitest";
 import {fakeBrowser} from "wxt/testing/fake-browser";
 
 import background from "@/features/write/background";
-import {hookUploads, UPLOAD_OPTIONS_KEY} from "@/features/write/images";
 
 type Sender = Browser.runtime.MessageSender;
 type Handler = (message: { sender: Sender }) => Promise<void>;
@@ -25,12 +24,12 @@ const receive = async (sender: Sender): Promise<void> => {
 const executeScript = () => vi.spyOn(fakeBrowser.scripting, "executeScript").mockResolvedValue(undefined);
 
 describe("refresher:hookUploads", () => {
-    it("보낸 문서(documentId)의 MAIN world에 hookUploads를 넣는다", async () => {
+    it("보낸 문서(documentId)의 MAIN world에 hookUploads 번들을 넣는다", async () => {
         const execute = executeScript();
 
         await receive(fromTab(3, {frameId: 2, documentId: "doc"}));
 
-        expect(execute).toHaveBeenCalledWith({target: {tabId: 3, documentIds: ["doc"]}, world: "MAIN", func: hookUploads, args: [UPLOAD_OPTIONS_KEY]});
+        expect(execute).toHaveBeenCalledWith({target: {tabId: 3, documentIds: ["doc"]}, world: "MAIN", files: ["/upload-hook.js"]});
     });
 
     it("documentId가 없으면(파이어폭스) 프레임 번호로, 그것도 없으면 최상위 프레임에 넣는다", async () => {

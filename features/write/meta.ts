@@ -38,6 +38,16 @@ export default defineModuleMeta({
             step: 5,
             unit: "%"
         },
+        webpConcurrency: {
+            type: "range",
+            name: "동시 변환 수",
+            desc: "여러 장을 한꺼번에 바꾸는 수입니다. 높을수록 빠르지만 메모리를 더 씁니다.",
+            default: 2,
+            min: 1,
+            max: 8,
+            step: 1,
+            unit: "장"
+        },
         obfuscateName: {
             type: "check",
             name: "이미지 이름 숨기기",

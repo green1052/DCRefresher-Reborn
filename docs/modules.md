@@ -129,7 +129,7 @@ getModuleApi("preview")?.archiveArticle() === true
 - `listen()`: 배경이 뜰 때마다 동기로 실행됩니다. 서비스 워커를 깨울 이벤트 리스너는 여기서 겁니다. 던지면 오류만 남기고 그 모듈은 `apply`하지 않습니다. 메시지 이름은 배경 전체에서 한 번만 걸 수 있으며, 겹치면 단위 테스트(`tests/unit/entrypoints/background/messages.test.ts`)가 잡습니다.
 - `apply({enabled, settings})`: 모듈을 켜고 끄거나 설정이 바뀔 때, 설치·브라우저 시작 때(Firefox는 배경이 뜰 때마다) 실행됩니다. 맞출 상태 없이 리스너만 거는 모듈은 두지 않습니다(`features/write/background.ts`).
 - 설치·업데이트 때 한 번만 할 일(옛 모듈 데이터 지우기 등)은 `listen()`에서 `browser.runtime.onInstalled`에 겁니다(`features/preview/background.ts`). `entrypoints/background/index.ts`에 모듈 코드를 넣지 않습니다.
-- 탭이 메시지로 요청한 일을 그 페이지(MAIN world)에서 할 때는 `hasTab`으로 탭에서 온 것인지 보고 `runInPage`로 실행합니다.
+- 탭이 메시지로 요청한 일을 그 페이지(MAIN world)에서 할 때는 `hasTab`으로 탭에서 온 것인지 보고 `runInPage`로 실행합니다. 함수는 직렬화되어 import를 쓸 수 없으므로, 라이브러리가 필요하면 `entrypoints/<이름>.ts`에 `defineUnlistedScript`로 번들하고 `runFileInPage(sender, "/<이름>.js")`로 넣습니다(`entrypoints/upload-hook.ts`). unlisted script는 `web_accessible_resources`에 넣지 않아 디시 페이지가 불러올 수 없습니다.
 
 배경 번들에는 Preact가 들어가면 안 됩니다. `background.ts`는 `index.ts`·`meta.ts`(lucide 아이콘 import)를 불러오지 않고, `id`·`settings`·`defaultEnable`처럼 양쪽이 같아야 하는 값은 UI를 불러오지 않는 파일로 빼서 같이 씁니다(`features/imagesearch/engines.ts`). `defaultEnable`이 다르면 옵션에서는 꺼져 있는데 배경은 켜진 것으로 봅니다. 페이지에서 할 일이 없는 모듈은 `index.ts`를 두지 않습니다.
 

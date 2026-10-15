@@ -1,22 +1,25 @@
+import pLimit from "p-limit";
+
 /** 올리는 이미지를 바꾸는 방법. 모듈이 <html>의 data 속성에 JSON으로 두고, 페이지에 넣은 hookUploads가 이벤트마다 읽는다. */
 export interface ImageOptions {
     webp: boolean;
     /** WebP 품질 (0~1). */
     quality: number;
     rename: boolean;
+    /** 한꺼번에 바꾸는 이미지 수. 원본 크기 캔버스가 이만큼 함께 살아 있다. */
+    concurrency: number;
 }
 
 /** ImageOptions를 두는 <html> dataset 키. 없으면(모듈이 꺼졌거나 두 설정이 다 꺼짐) 파일을 그대로 둔다. */
 export const UPLOAD_OPTIONS_KEY = "refresherUpload";
 
 /**
- * 탭의 페이지 컨텍스트(MAIN world)에서 실행된다(직렬화되므로 바깥 변수를 쓰지 않는다). 배경이 페이지마다 한 번 넣는다.
+ * 탭의 페이지 컨텍스트(MAIN world)에서 실행된다. entrypoints/upload-hook.ts가 따로 번들하고, 배경이 페이지마다 한 번 그 파일을 넣는다.
  * 글쓰기 에디터에 붙여 넣거나 끌어 놓은 이미지, 파일 선택칸(이미지 올리기 팝업·에디터 이미지 창·자동 짤방)에서 고른 이미지를 바꾼다.
  * 디시 스크립트보다 먼저(window 캡처 단계에서) 이벤트를 막고, 바꾼 파일로 이벤트를 다시 보낸다.
- * 직렬화되는 것은 값뿐이라 타입(ImageOptions)은 바깥 것을 그대로 쓴다.
  * 페이지에서 하는 까닭: 파이어폭스는 콘텐츠 스크립트가 DataTransfer에 넣은 파일을 페이지 스크립트에 보여 주지 않는다.
  */
-export const hookUploads = (key: string): void => {
+export const hookUploads = (): void => {
     const hooked = Symbol.for("refresher.uploads");
     const scope = window as Window & { [hooked]?: true };
     if (scope[hooked]) return;
@@ -24,7 +27,7 @@ export const hookUploads = (key: string): void => {
 
     const readOptions = (): ImageOptions | null => {
         try {
-            const raw = document.documentElement.dataset[key];
+            const raw = document.documentElement.dataset[UPLOAD_OPTIONS_KEY];
             return raw ? (JSON.parse(raw) as ImageOptions) : null;
         } catch {
             return null;
@@ -88,7 +91,8 @@ export const hookUploads = (key: string): void => {
 
     const convertAll = async (files: File[], options: ImageOptions): Promise<DataTransfer> => {
         const transfer = new DataTransfer();
-        for (const file of await Promise.all(files.map((file) => convert(file, options)))) {
+        // 큰 사진 여러 장을 한꺼번에 바꾸면 원본 크기 캔버스가 장수만큼 메모리에 쌓인다. 결과는 고른 순서대로 온다.
+        for (const file of await pLimit(options.concurrency).map(files, (file) => convert(file, options))) {
             done.add(file);
             transfer.items.add(file);
         }

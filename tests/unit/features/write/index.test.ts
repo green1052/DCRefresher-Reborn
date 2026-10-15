@@ -61,12 +61,12 @@ describe("업로드 설정", () => {
 
     it("켜면 설정을 <html>에 두고, 끄면 지운다", async () => {
         const {change} = await start({webpConvert: true, webpQuality: 70});
-        expect(options()).toEqual({webp: true, quality: 0.7, rename: false});
+        expect(options()).toEqual({webp: true, quality: 0.7, rename: false, concurrency: 2});
         // 이미 넣어 달라고 했으면 다시 보내지 않는다.
         expect(sendMessage).not.toHaveBeenCalled();
 
         change({obfuscateName: true});
-        expect(options()).toEqual({webp: true, quality: 0.7, rename: true});
+        expect(options()).toEqual({webp: true, quality: 0.7, rename: true, concurrency: 2});
         change({webpConvert: false, obfuscateName: false});
         expect(options()).toBeUndefined();
     });
