@@ -37,6 +37,15 @@ describe("commands 모듈", () => {
         expect(await generateManifest({})).toEqual({});
     });
 
+    it("기본 키가 있는 명령이 dev 다시 불러오기를 더해 4개를 넘으면 던진다", async () => {
+        const keys = (prefix: string, count: number) => Object.fromEntries(Array.from({length: count}, (_, i) => [`${prefix}${i}`, {description: "", key: `Alt+${prefix.toUpperCase()}${i}`}]));
+        const reload = {"wxt:reload-extension": {description: "dev", suggested_key: {default: "Alt+Shift+R"}}};
+
+        await expect(setup([meta("a", keys("a", 2)), meta("b", {...keys("b", 1), free: {description: ""}})]).generateManifest({commands: {...reload}})).resolves.toBeDefined();
+        await expect(setup([meta("a", keys("a", 2)), meta("b", keys("b", 2))]).generateManifest({commands: {...reload}}))
+            .rejects.toThrow("크롬은 기본 단축키를 4개까지만 받습니다 (지금 5개)");
+    });
+
     it("이름이 겹치면 던진다", async () => {
         const {generateManifest} = setup([meta("a", {go: {description: ""}}), meta("b", {go: {description: ""}})]);
         await expect(generateManifest({})).rejects.toThrow("단축키 이름이 겹칩니다: go (b)");

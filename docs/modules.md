@@ -98,7 +98,7 @@ const apply = (ctx: Ctx): void => { … ctx.settings.bodyFontSize … }; // numb
 
 ## 단축키와 팝업 토글
 
-- **commands** (meta.ts): `{명령 이름: {description, key?}}`. 빌드할 때 `modules/commands.ts`가 모든 모듈의 것을 모아 manifest `commands`로 넣습니다. `key`는 처음 설치할 때의 기본 키입니다.
+- **commands** (meta.ts): `{명령 이름: {description, key?}}`. 빌드할 때 `modules/commands.ts`가 모든 모듈의 것을 모아 manifest `commands`로 넣습니다. `key`는 처음 설치할 때의 기본 키입니다. 크롬은 기본 키가 있는 명령을 4개까지만 받고 dev 빌드의 다시 불러오기(Alt+Shift+R)가 한 자리를 쓰므로, 모듈의 기본 키는 모두 합쳐 3개까지입니다(넘으면 빌드가 멈춥니다).
 - **shortcuts** (index.ts): `{명령 이름: (ctx, api) => …}`. 메타의 `commands`와 이름이 같아야 합니다(`tests/unit/features/meta.test.ts`가 확인합니다). setup이 끝난 모듈에만 전달됩니다.
 - **pageToggles**: 팝업의 "현재 페이지"에 나오는 이 페이지 한정 토글입니다. 표시 정보(`id`, `label`, `icon`)는 `meta.ts`의 `toggles`에 두고(팝업이 아이콘을 여기서 찾습니다), `index.ts`의 `pageToggles`가 같은 객체를 펼쳐 `desc`(문자열 또는 `(api) => string`), `isOn(api)`, `toggle(api)`를 붙입니다. setup이 끝난 모듈의 토글만 보입니다.
 

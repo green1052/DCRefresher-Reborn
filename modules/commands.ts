@@ -23,6 +23,10 @@ export default defineWxtModule((wxt) => {
             }
         }
         // dev는 확장 다시 불러오기 명령(dev.reloadCommand)을 이미 넣어 두었으므로 덮지 않고 더한다.
-        if (Object.keys(commands).length > 0) manifest.commands = {...manifest.commands, ...commands};
+        if (Object.keys(commands).length === 0) return;
+        manifest.commands = {...manifest.commands, ...commands};
+        // 크롬은 기본 키(suggested_key)가 있는 명령이 4개를 넘으면 확장을 불러오지 않는다. dev 다시 불러오기 명령도 한 자리를 차지한다.
+        const keyed = Object.values(manifest.commands).filter((command) => command.suggested_key).length;
+        if (keyed > 4) throw new Error(`크롬은 기본 단축키를 4개까지만 받습니다 (지금 ${keyed}개)`);
     });
 });

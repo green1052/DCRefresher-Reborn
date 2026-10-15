@@ -74,6 +74,8 @@ describe("단축키", () => {
             expect(key).toMatch(/(?:^|\+)(?:Ctrl|Alt)\+/);
         }
         expect(new Set(keys).size).toBe(keys.length);
+        // 크롬은 기본 키를 4개까지만 받는다. dev 빌드의 다시 불러오기 명령(wxt.config.ts dev.reloadCommand)이 한 자리를 쓴다.
+        expect(keys.length).toBeLessThanOrEqual(3);
     });
 
     it("설명이 있다", () => {
