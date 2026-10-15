@@ -2,8 +2,8 @@
 
 /* ===== 미리보기 (preview 모듈) — 오버레이 shadow 안. 공용 호스트 스타일(:host·포털)은 assets/styles/overlay.css, 토스트·버블 등 컴포넌트는 Tailwind ===== */
 
-/* 누르면 원본 보기가 열리는 본문 이미지 (Frame.tsx). */
-.refresher-preview-contents img[data-pop] {
+/* 누르면 크게 보기나 원본 보기가 열리는 본문 이미지 (contentsClick.ts의 markPressable). */
+.refresher-preview-contents img[role="button"] {
     cursor: pointer;
 }
 
