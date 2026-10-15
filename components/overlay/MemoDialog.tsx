@@ -9,9 +9,9 @@ import {DialogClose, DialogDescription, DialogFooter, DialogHeader, DialogTitle}
 import {Field, FieldLabel} from "@/components/ui/field";
 import {InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput} from "@/components/ui/input-group";
 import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
-import {queryString} from "@/core/http/urls";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
 import type {MemoType} from "@/core/storage/types";
+import {useViewedGallery} from "@/features/preview/ui/previewStore";
 import {ownMemo, randomColor, useMemosStore} from "@/stores/memos";
 import {type MemoTargetState, useUiStore} from "@/stores/ui";
 import {SAVE_FAILED} from "@/utils/error";
@@ -27,7 +27,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     const input = useRef<HTMLInputElement>(null);
 
     // 지금 보고 있는 갤러리. 이 갤러리에서만 보이는 메모로 저장할 때 쓴다.
-    const gallery = queryString("id");
+    const gallery = useViewedGallery();
 
     const memoOf = (memoType: MemoType, user: string) => ownMemo(memos[memoType], user);
 

@@ -9,7 +9,6 @@ import {Separator} from "@/components/ui/separator";
 import {useReturnFocus} from "@/components/useReturnFocus";
 import {blockingEntries} from "@/core/block";
 import {banReasonsOf, databaseVersion, ipInfoOf, subscribeDatabase} from "@/core/database";
-import {queryString} from "@/core/http/urls";
 import {TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {type BlockRequestOptions, handleBlockRequest} from "@/stores/blockRequest";
@@ -18,6 +17,7 @@ import {useUserMemo} from "@/stores/memos";
 import {type SelectedUser, useUiStore} from "@/stores/ui";
 import {SAVE_FAILED} from "@/utils/error";
 import {type ActivityState, useGallogActivity} from "@/components/overlay/gallogActivity";
+import {useViewedGallery} from "@/features/preview/ui/previewStore";
 
 import {overlay} from "./shadow";
 
@@ -125,7 +125,7 @@ const Bubble = ({bubble, selected, onBlockPackage}: BubbleProps) => {
     const popup = useRef<HTMLDivElement>(null);
     const focus = useReturnFocus(popup);
     const activityState = useGallogActivity(selected.dccon ? undefined : selected.uid);
-    const gallery = queryString("id");
+    const gallery = useViewedGallery();
     const memo = useUserMemo(selected, gallery);
     // 구독한 목록으로 찾아야 해제했을 때 바로 다시 계산된다.
     const entries = useBlocksStore((s) => s.entries);
