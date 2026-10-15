@@ -44,7 +44,7 @@ export const settings = {
     titleCount: {
         type: "check",
         name: "탭 제목에 새 글 수 표시",
-        desc: "이 탭을 보고 있지 않을 때 들어온 새 글 수를 탭 제목 앞에 (3)처럼 붙입니다. 탭으로 돌아오면 지웁니다.",
+        desc: "이 탭을 보고 있지 않을 때 들어온 새 글 수를 탭 제목 앞에 (3)처럼 붙입니다. 탭으로 돌아오면 지우고, 그동안 들어온 글 아래에 '여기까지 읽음' 선을 긋습니다.",
         default: true
     },
     backgroundRefresh: {

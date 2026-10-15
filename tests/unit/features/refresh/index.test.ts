@@ -326,3 +326,73 @@ describe("페이지 이동 시 목록만 교체", () => {
         expect(get).not.toHaveBeenCalled();
     });
 });
+
+describe("탭 제목 새 글 수·여기까지 읽음", () => {
+    const marked = (): string[] => Array.from(document.querySelectorAll<HTMLElement>(".refresherReadMark"), (tr) => tr.dataset.no ?? "");
+
+    it("떠난 동안 새 글이 들어왔으면 돌아올 때 떠날 때 맨 위 글에 선을 긋고, 목록을 갈아끼워도 다시 붙인다", async () => {
+        // jsdom에는 없는 API. 행은 다 보이는 것으로 친다.
+        Element.prototype.checkVisibility = () => true;
+        document.title = "갤러리";
+        const focus = vi.spyOn(document, "hasFocus").mockReturnValue(false);
+        const {api, stop} = await start();
+        window.dispatchEvent(new Event("blur"));
+
+        respond(["4", "3", "2", "1"]);
+        await api.reload();
+        await tick();
+        expect(document.title).toBe("(2) 갤러리");
+
+        focus.mockReturnValue(true);
+        window.dispatchEvent(new Event("focus"));
+        expect(document.title).toBe("갤러리");
+        expect(marked()).toEqual(["2"]);
+        // 돌아올 때 함께 오는 visibilitychange가 선을 지우지 않는다.
+        document.dispatchEvent(new Event("visibilitychange"));
+        expect(marked()).toEqual(["2"]);
+
+        // 3이 지워져 목록을 통째로 갈아끼운다.
+        respond(["5", "4", "2", "1"]);
+        await api.reload();
+        expect(marked()).toEqual(["2"]);
+
+        // 새 글 없이 돌아오면 선을 지운다.
+        focus.mockReturnValue(false);
+        window.dispatchEvent(new Event("blur"));
+        focus.mockReturnValue(true);
+        window.dispatchEvent(new Event("focus"));
+        expect(marked()).toEqual([]);
+
+        stop();
+        running = undefined;
+    });
+
+    it("titleCount를 끄면 선을 긋지 않는다", async () => {
+        Element.prototype.checkVisibility = () => true;
+        const focus = vi.spyOn(document, "hasFocus").mockReturnValue(false);
+        const {api} = await start({titleCount: false});
+        window.dispatchEvent(new Event("blur"));
+        respond(["3", "2", "1"]);
+        await api.reload();
+        await tick();
+        focus.mockReturnValue(true);
+        window.dispatchEvent(new Event("focus"));
+        expect(marked()).toEqual([]);
+    });
+
+    it("모듈을 끄면 선을 뗀다", async () => {
+        Element.prototype.checkVisibility = () => true;
+        const focus = vi.spyOn(document, "hasFocus").mockReturnValue(false);
+        const {api, stop} = await start();
+        window.dispatchEvent(new Event("blur"));
+        respond(["3", "2", "1"]);
+        await api.reload();
+        await tick();
+        focus.mockReturnValue(true);
+        window.dispatchEvent(new Event("focus"));
+        expect(marked()).toEqual(["2"]);
+        stop();
+        running = undefined;
+        expect(marked()).toEqual([]);
+    });
+});

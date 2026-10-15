@@ -10,7 +10,7 @@ import {smoothScroll} from "@/utils/dom";
 
 import {isWholeFirstPage, replaceList, syncPaging} from "./list";
 import meta, {type Ctx, PAUSE_TOGGLE} from "./meta";
-import {createUnseenCounter, setTitleCount} from "./title";
+import {createUnseenCounter, READ_MARK_CLASS, setTitleCount} from "./title";
 
 const MINIMUM_REFRESH_INTERVAL = 2000;
 /** 목록 요청이 연달아 실패할 때 자동 새로고침 주기를 늘리는 상한. */
@@ -197,7 +197,10 @@ export default defineModule({
                 // 복사해 둔다. slice한 문자열은 응답 전체(수백 KB)를 붙잡아 다음 교체까지 남는다.
                 lastListHtml = structuredClone(listHtml);
                 // 수만 고쳤으면 디시 차단·메모 표시를 다시 걸 행이 없다. 주기마다 배경 왕복·페이지 주입을 하지 않는다.
-                if (changed) notifyListReplaced(gallery);
+                if (changed) {
+                    notifyListReplaced(gallery);
+                    unseen.showMark();
+                }
 
                 if (target === scrollAfter) {
                     scrollAfter = null;
@@ -356,6 +359,7 @@ export default defineModule({
     revoke() {
         document.documentElement.classList.remove("refresherDoNotColorVisited");
         setTitleCount(0);
+        for (const row of document.querySelectorAll(`.${READ_MARK_CLASS}`)) row.classList.remove(READ_MARK_CLASS);
         // 남겨 둔 삭제된 글 행은 서버 목록에 없는 행이라 뺀다. 모듈을 끄면 목록을 다시 받는 쪽이 없어 새로고침할 때까지 남는다.
         for (const row of document.querySelectorAll(".refresherDeleted")) row.remove();
         for (const row of document.querySelectorAll<HTMLElement>(".refresherNewPost")) {
