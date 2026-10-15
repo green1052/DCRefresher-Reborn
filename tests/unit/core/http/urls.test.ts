@@ -1,7 +1,7 @@
 // @vitest-environment-options {"url": "https://gall.dcinside.com/board/view/?id=test&no=9"}
 import {describe, expect, it} from "vitest";
 
-import {dcinsideHref, galleryKind, listUrl, managerAjaxUrl, rowPostNo} from "@/core/http/urls";
+import {dcinsideHref, galleryKind, listUrl, managerAjaxUrl, mergeParamURL, postSearchUrl, rowPostNo} from "@/core/http/urls";
 
 describe("dcinsideHref", () => {
     it.each(["https://gall.dcinside.com/board/view?id=a&no=1", "https://m.dcinside.com/", "https://dcimg5.dcinside.com/dccon.php?no=1"])("https 디시 주소 %s는 그대로 돌려준다", (url) => {
@@ -63,6 +63,22 @@ describe("listUrl", () => {
 
     it("같은 목록의 글 주소와 목록 주소는 같은 값이다", () => {
         expect(listUrl("https://gall.dcinside.com/board/view/?id=test&no=3&page=1")).toBe(listUrl("https://gall.dcinside.com/board/lists/?id=test"));
+    });
+});
+
+describe("mergeParamURL", () => {
+    it("origin의 쿼리에 from의 쿼리를 덮어쓰고, from에 없는 값은 남긴다", () => {
+        expect(mergeParamURL("https://gall.dcinside.com/board/view/?id=a&no=5&page=1", "https://gall.dcinside.com/board/lists/?id=a&page=2")).toBe("?id=a&no=5&page=2");
+    });
+
+    it("from에만 있는 값은 뒤에 붙인다", () => {
+        expect(mergeParamURL("https://gall.dcinside.com/board/lists/?id=a", "https://gall.dcinside.com/board/lists/?s_type=search_all&s_keyword=%EA%B0%80")).toBe("?id=a&s_type=search_all&s_keyword=%EA%B0%80");
+    });
+});
+
+describe("postSearchUrl", () => {
+    it("검색어의 UTF-8 바이트를 대문자 \".XX\"로 쓴다", () => {
+        expect(postSearchUrl("a/가")).toBe("https://search.dcinside.com/post/sort/latest/q/.61.2F.EA.B0.80");
     });
 });
 
