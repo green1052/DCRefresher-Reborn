@@ -1,4 +1,4 @@
-import {pagePostNo, postSearchUrl, queryString} from "@/core/http/urls";
+import {documentUrl, pagePostNo, postSearchUrl} from "@/core/http/urls";
 import {sendMessage} from "@/core/messaging/protocol";
 import {useUiStore} from "@/stores/ui";
 
@@ -21,7 +21,7 @@ const DOWNLOADED_NAME = /^([a-z0-9_]+)-\d{8}-\d{6}-\d{3}(?:-resize)?\.\w+$/;
 
 /** 다른 갤러리에서 올린 본문 이미지와, 다른 갤러리에서 받은 첨부 파일을 제목 위에 알린다. */
 const showImageOrigin = (head: Element): void => {
-    const gallery = queryString("id") ?? "";
+    const gallery = documentUrl.searchParams.get("id") ?? "";
     const own = new Set([gallery, `mi$${gallery}`].map((id) => id.slice(0, 16)));
     const foreign = new Map<string, string[]>();
     const check = (source: string | undefined, label: string): void => {
@@ -50,7 +50,7 @@ const searchSameTitle = async (button: HTMLButtonElement, title: string): Promis
         const galleries = Array.from(dom.querySelectorAll("ul.sch_result_list > li"), (item) => {
             const link = item.querySelector(".tit_txt");
             const params = URL.parse(link?.getAttribute("href") ?? "")?.searchParams;
-            const self = params?.get("id") === queryString("id") && params?.get("no") === pagePostNo;
+            const self = params?.get("id") === documentUrl.searchParams.get("id") && params?.get("no") === pagePostNo;
             return link?.textContent?.trim() === title && !self ? (item.querySelector(".sub_txt")?.textContent?.trim() ?? "") : null;
         }).filter((gallery) => gallery !== null);
 
@@ -84,6 +84,6 @@ export const renderViewTools = (show: { imageOrigin: boolean; titleSearch: boole
     const head = document.querySelector(".gallview_head");
     if (!head) return;
     // 개념글은 다른 갤러리의 글을 옮긴 것이라 이미지 출처는 언제나 다르다.
-    if (show.imageOrigin && queryString("id") !== "dcbest") showImageOrigin(head);
+    if (show.imageOrigin && documentUrl.searchParams.get("id") !== "dcbest") showImageOrigin(head);
     if (show.titleSearch) addTitleSearch(head);
 };

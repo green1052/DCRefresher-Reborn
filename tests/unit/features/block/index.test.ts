@@ -1,5 +1,5 @@
 // @vitest-environment-options {"url": "https://gall.dcinside.com/board/lists/?id=test"}
-import {afterEach, beforeEach, describe, expect, it} from "vitest";
+import {afterEach, beforeEach, describe, expect, it, onTestFinished} from "vitest";
 
 import type {BlockEntry, DetectMode} from "@/core/storage/types";
 import block from "@/features/block/index";
@@ -79,6 +79,14 @@ describe("작성자 칸 판정", () => {
     });
 
     it("다른 갤러리 한정 항목은 쓰지 않는다", async () => {
+        setBlockLists({NICK: [entry("도배", {gallery: "other"}), entry("착한", {gallery: "test"})]});
+        await start();
+        expect(hidden()).toEqual(["2"]);
+    });
+
+    it("미리보기가 주소를 다른 갤러리 글로 바꿔 두어도 이 문서의 갤러리 항목을 쓴다", async () => {
+        history.pushState(null, "", "/board/view/?id=other&no=5");
+        onTestFinished(() => history.replaceState(null, "", "/board/lists/?id=test"));
         setBlockLists({NICK: [entry("도배", {gallery: "other"}), entry("착한", {gallery: "test"})]});
         await start();
         expect(hidden()).toEqual(["2"]);

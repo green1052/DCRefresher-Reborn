@@ -1,7 +1,7 @@
 import QuickLRU from "quick-lru";
 
 import {BlockedError, http} from "@/core/http/client";
-import {queryString} from "@/core/http/urls";
+import {documentUrl, queryString} from "@/core/http/urls";
 import {checkboxFiller, highlightSearchResults, LIST_SELECTOR, notifyListReplaced, PAGING_SELECTOR} from "@/core/list";
 import {defineModule} from "@/core/module/define";
 import {useUiStore} from "@/stores/ui";
@@ -29,7 +29,7 @@ export default defineModule({
     setup(ctx) {
         if (!queryString("s_keyword")) return;
 
-        const gallery = queryString("id") ?? "";
+        const gallery = documentUrl.searchParams.get("id") ?? "";
         // 새로고침 모듈이 목록을 갈아끼우면 다시 이어 붙이는데, 이미 받은 검색 페이지는 다시 요청·파싱하지 않는다. 검색어를 칠한 결과 행과 페이징 HTML만 담는다.
         // 다시 이을 때 같은 다음 검색을 처음부터 따라가므로 최대 다음 검색 횟수만큼 둔다. 더 작으면 따라가는 동안 앞 페이지가 밀려나 하나도 맞지 않는다.
         // quick-lru는 두 세대로 나눠 두어 그 두 배 가까이 남긴다.

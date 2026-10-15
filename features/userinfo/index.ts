@@ -6,7 +6,7 @@ import {defineModule} from "@/core/module/define";
 import {type GallogActivity, getGallogActivity, onGallogActivity, type RatioInfo} from "@/core/gallog";
 import {ROWS_HIDDEN_EVENT} from "@/core/block";
 import {FILTER_SKIP_ATTR} from "@/core/filtering";
-import {queryString} from "@/core/http/urls";
+import {documentUrl} from "@/core/http/urls";
 import {WRITER_ROW_SELECTOR} from "@/core/list";
 import {batchedSave} from "@/core/storage/batched";
 import {moduleDataKey, moduleDataStorage} from "@/core/storage/items";
@@ -158,7 +158,7 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
 const readBadgeSettings = (ctx: Ctx): void => {
     colors = colorsOf(ctx);
     view = badgeViewOf(ctx.settings);
-    gallery = queryString("id");
+    gallery = documentUrl.searchParams.get("id");
 };
 
 /** 미리보기도 같은 글댓비를 쓰도록 ui 스토어에 올린다. 지난 값은 미리보기·버블이 읽을 때 isFresh로 걸러 새로 조회한다. */
