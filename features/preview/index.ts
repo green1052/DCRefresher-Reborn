@@ -278,11 +278,14 @@ const controller = (ctx: Ctx) => {
         const st = store.getState();
         if (!st.visible || !st.preData || !st.post || !abort) return true;
 
+        // 받지 못했던 댓글을 다시 받는 동안은 안내 대신 받는 중 표시를 보인다.
+        if (st.commentsFailed) store.setState({commentsFailed: false});
         try {
             await pullComments(st.preData, st.post, st.signalId);
             return true;
         } catch (e) {
             if (isAbortError(e)) return true;
+            if (store.getState().signalId === st.signalId) store.setState({commentsFailed: true});
             // 임시 차단은 HTTP 클라이언트가 이미 알렸다. 덮어쓰지 않는다.
             if (!(e instanceof BlockedError)) {
                 console.error("Comment refresh failed:", e);
@@ -358,10 +361,14 @@ const controller = (ctx: Ctx) => {
                 await pullComments(preData, post, mySignal, skip, given);
             }
         } catch (e) {
-            // 댓글만 못 받았으면 본문은 그대로 두고 알린다. 임시 차단은 HTTP 클라이언트가 이미 알렸다.
-            if (store.getState().signalId === mySignal && !(e instanceof BlockedError)) {
-                console.error("Comment load failed:", e);
-                ui.showToast("댓글을 불러오지 못했습니다.", "error");
+            // 댓글만 못 받았으면 본문은 그대로 두고 댓글 칸에 '다시 시도' 안내를 보인다. 임시 차단은 HTTP 클라이언트가 이미 알렸다.
+            if (store.getState().signalId === mySignal && !isAbortError(e)) {
+                store.setState({commentsFailed: true});
+                if (!(e instanceof BlockedError)) {
+                    console.error("Comment load failed:", e);
+                    // 캐시의 지난 댓글을 보이고 있으면 안내가 뜨지 않으므로 토스트로 알린다.
+                    if (store.getState().comments !== undefined) ui.showToast("댓글을 불러오지 못했습니다.", "error");
+                }
             }
         }
 

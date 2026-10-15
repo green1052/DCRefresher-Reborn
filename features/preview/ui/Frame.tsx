@@ -1,5 +1,5 @@
 import {Dialog} from "@base-ui/react/dialog";
-import {Archive, ArrowUp, Eye, MessageSquare, RotateCw} from "lucide-react";
+import {Archive, ArrowUp, CircleAlert, Eye, MessageSquare, RotateCw} from "lucide-react";
 import {type CSSProperties, Fragment, useEffect, useLayoutEffect, useRef, useState} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
@@ -138,6 +138,7 @@ export const Frame = () => {
     const error = usePreviewStore((s) => s.error);
     const archived = usePreviewStore((s) => s.archived);
     const comments = usePreviewStore((s) => s.comments);
+    const commentsFailed = usePreviewStore((s) => s.commentsFailed);
     const allowReply = usePreviewStore((s) => s.allowReply);
     const commentsOnly = usePreviewStore((s) => s.commentsOnly);
     const {previewWidth: frameWidth, toggleBackgroundBlur: backgroundBlur, scrollToSkip} = useContentModuleSettings("preview");
@@ -217,6 +218,8 @@ export const Frame = () => {
     if (!visible && !fading) return null;
 
     const busy = !error && !post;
+    // 본문이 오면 댓글 칸을 둔다. 댓글을 받는 중이거나 받지 못해도 칸과 새로고침 버튼은 남긴다. 닫는 페이드 동안에는 비운 댓글 칸을 빼낸다.
+    const hasComments = comments !== undefined || (post !== undefined && visible);
 
     return (
         // 비모달 창이다. 스크롤 잠금과 PageUp/Down 이동은 직접 처리한다. 바깥 클릭 닫기는 아래 click이 맡는다(위에 뜬 팝업·버블을 눌러도 닫히지 않게).
@@ -350,14 +353,31 @@ export const Frame = () => {
                         )}
                     </div>
 
-                    {comments !== undefined && (
+                    {hasComments && (
                         <div ref={commentsSection}>
                             <Separator/>
                             <div className="flex items-center justify-between gap-3 px-8 pt-3">
-                                <span className="text-muted-foreground">{subtitleOf(comments)}</span>
+                                <span className="text-muted-foreground">{comments && subtitleOf(comments)}</span>
                                 <RefreshButton label="댓글 새로고침" run={() => usePreviewStore.getState().requestRefresh(true)}/>
                             </div>
-                            {comments.length === 0 ? (
+                            {comments === undefined ? (commentsFailed ? (
+                                <Alert variant="destructive" className="mx-8 my-4 w-auto">
+                                    <CircleAlert/>
+                                    <AlertDescription className="text-current">
+                                        댓글을 불러오지 못했습니다.
+                                        <div className="mt-2">
+                                            {/* 안내가 곧 알림이라 실패를 토스트로 다시 알리지 않는다. */}
+                                            <Button size="sm" variant="destructive" onClick={() => void usePreviewStore.getState().requestRefresh()}>
+                                                다시 시도
+                                            </Button>
+                                        </div>
+                                    </AlertDescription>
+                                </Alert>
+                            ) : (
+                                <div className="flex justify-center py-8">
+                                    <Spinner className="size-6" aria-label="댓글을 불러오는 중"/>
+                                </div>
+                            )) : comments.length === 0 ? (
                                 <p className="py-8 text-center text-muted-foreground">댓글이 없습니다.</p>
                             ) : (
                                 <CommentList/>
@@ -377,7 +397,7 @@ export const Frame = () => {
                                                                                     onClick={() => scroller.current?.scrollTo({top: 0, behavior: smoothScroll()})}/>}>
                                 <ArrowUp/>
                             </WithTooltip>
-                            {comments !== undefined && (
+                            {hasComments && (
                                 <WithTooltip tip="댓글로" side="left" trigger={<Button variant="secondary" size="icon" className="rounded-full" aria-label="댓글로"
                                                                                        onClick={() => commentsSection.current?.scrollIntoView({behavior: smoothScroll(), block: "start"})}/>}>
                                     <MessageSquare/>

@@ -148,6 +148,23 @@ test.describe("미리보기", () => {
         await expect.poll(() => requests).toEqual(["/board/view/", "/board/comment/", "/board/comment/"]);
     });
 
+    test("댓글을 받지 못하면 댓글 칸에 다시 시도 안내를 두고, 누르면 다시 받는다", async ({listPage, context, errors}) => {
+        let fail = true;
+        await context.route(/\/board\/comment\//, (route) => (fail ? route.fulfill({status: 500}) : route.fallback()));
+        const {frame} = listPage;
+        const failed = frame.getByRole("alert").filter({hasText: "댓글을 불러오지 못했습니다."});
+        await listPage.openPreview();
+        await expect(failed).toBeVisible();
+        await expect(frame.getByRole("button", {name: "댓글 새로고침", exact: true})).toBeVisible();
+
+        fail = false;
+        await failed.getByRole("button", {name: "다시 시도", exact: true}).click();
+        await expect(listPage.comments).toHaveCount(2);
+        await expect(failed).toHaveCount(0);
+        // 일부러 낸 실패는 브라우저(500 응답)와 컨트롤러가 콘솔에 남긴다. 그것만 걷어 낸다.
+        errors.splice(0, errors.length, ...errors.filter((error) => !/500|Comment load failed/.test(error)));
+    });
+
     test("댓글 수를 우클릭하면 댓글만 보기로 열고, 좌클릭은 원래대로 글로 간다", async ({listPage}) => {
         const reply = listPage.replyCounts.first();
         await reply.click({button: "right"});

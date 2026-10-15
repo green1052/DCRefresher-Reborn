@@ -43,6 +43,8 @@ interface PostState {
     archived: boolean;
 
     comments: ProcessedComment[] | undefined;
+    /** 댓글을 받지 못했다. comments가 없는 동안 받는 중 표시 대신 '다시 시도' 안내를 보인다. */
+    commentsFailed: boolean;
     /** 댓글·답글 쓰기 허용. 멤버만 댓글을 쓸 수 있는 갤러리면 댓글 응답의 allow_reply가 0이다. */
     allowReply: boolean;
     collapsed: Set<string>;
@@ -154,6 +156,7 @@ const freshPost = (): PostState => ({
     post: undefined,
     archived: false,
     comments: undefined,
+    commentsFailed: false,
     allowReply: true,
     collapsed: new Set(),
     freshComments: NO_FRESH,
