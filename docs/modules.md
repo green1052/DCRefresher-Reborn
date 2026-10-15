@@ -67,6 +67,8 @@ export default defineModule({
 
 `addFilter`의 `fn`은 같은 요소에 여러 번 불릴 수 있습니다. 넣은 요소가 이미 있는지 보고 건너뛰게 만드세요. 예로는 글 목록 새로고침의 버튼이 있습니다.
 
+목록 행마다 장식 요소를 넣는 모듈은 그 요소에 `FILTER_SKIP_ATTR`(`core/filtering.ts`) 속성을 붙입니다. 붙이지 않으면 추가된 요소를 감싼 작성자 칸이 다시 잡혀 행마다 모든 필터(차단 정규식 등)가 한 번 더 돕니다. 예로는 유저 정보의 배지 묶음이 있습니다. 필터 코드에는 특정 모듈의 클래스 이름을 적지 않습니다.
+
 모듈 안의 도우미 함수가 ctx를 받을 때는 `meta.ts`에서 설정 스키마를 상수로 빼서 `Ctx` 타입을 내보냅니다(`features/fonts`). 설정 스키마가 쓰는 상수도 `meta.ts`에 두고 `index.ts`가 가져다 씁니다.
 
 ```ts
@@ -98,7 +100,7 @@ const apply = (ctx: Ctx): void => { … ctx.settings.bodyFontSize … }; // numb
 
 ## 단축키와 팝업 토글
 
-- **commands** (meta.ts): `{명령 이름: {description, key?}}`. 빌드할 때 `modules/commands.ts`가 모든 모듈의 것을 모아 manifest `commands`로 넣습니다. `key`는 처음 설치할 때의 기본 키입니다. 크롬은 기본 키가 있는 명령을 4개까지만 받고 dev 빌드의 다시 불러오기(Alt+Shift+R)가 한 자리를 쓰므로, 모듈의 기본 키는 모두 합쳐 3개까지입니다(넘으면 빌드가 멈춥니다).
+- **commands** (meta.ts): `{명령 이름: {description, key?}}`. 빌드할 때 `modules/commands.ts`가 모든 모듈의 것을 모아 manifest `commands`로 넣습니다. `key`는 처음 설치할 때의 기본 키입니다. 크롬은 기본 키가 있는 명령을 4개까지만 받고 dev 빌드의 다시 불러오기(Alt+Shift+R)가 한 자리를 쓰므로, 모듈의 기본 키는 모두 합쳐 3개까지입니다. 넘으면 단위 테스트(`tests/unit/features/meta.test.ts`)와 dev 빌드가 실패합니다.
 - **shortcuts** (index.ts): `{명령 이름: (ctx, api) => …}`. 메타의 `commands`와 이름이 같아야 합니다(`tests/unit/features/meta.test.ts`가 확인합니다). setup이 끝난 모듈에만 전달됩니다.
 - **pageToggles**: 팝업의 "현재 페이지"에 나오는 이 페이지 한정 토글입니다. 표시 정보(`id`, `label`, `icon`)는 `meta.ts`의 `toggles`에 두고(팝업이 아이콘을 여기서 찾습니다), `index.ts`의 `pageToggles`가 같은 객체를 펼쳐 `desc`(문자열 또는 `(api) => string`), `isOn(api)`, `toggle(api)`를 붙입니다. setup이 끝난 모듈의 토글만 보입니다.
 
@@ -126,6 +128,7 @@ getModuleApi("preview")?.archiveArticle() === true
 
 - `listen()`: 배경이 뜰 때마다 동기로 실행됩니다. 서비스 워커를 깨울 이벤트 리스너는 여기서 겁니다. 던지면 오류만 남기고 그 모듈은 `apply`하지 않습니다. 메시지 이름은 배경 전체에서 한 번만 걸 수 있으며, 겹치면 단위 테스트(`tests/unit/entrypoints/background/messages.test.ts`)가 잡습니다.
 - `apply({enabled, settings})`: 모듈을 켜고 끄거나 설정이 바뀔 때, 설치·브라우저 시작 때(Firefox는 배경이 뜰 때마다) 실행됩니다. 맞출 상태 없이 리스너만 거는 모듈은 두지 않습니다(`features/write/background.ts`).
+- 설치·업데이트 때 한 번만 할 일(옛 모듈 데이터 지우기 등)은 `listen()`에서 `browser.runtime.onInstalled`에 겁니다(`features/preview/background.ts`). `entrypoints/background/index.ts`에 모듈 코드를 넣지 않습니다.
 - 탭이 메시지로 요청한 일을 그 페이지(MAIN world)에서 할 때는 `hasTab`으로 탭에서 온 것인지 보고 `runInPage`로 실행합니다.
 
 배경 번들에는 Preact가 들어가면 안 됩니다. `background.ts`는 `index.ts`·`meta.ts`(lucide 아이콘 import)를 불러오지 않고, `id`·`settings`·`defaultEnable`처럼 양쪽이 같아야 하는 값은 UI를 불러오지 않는 파일로 빼서 같이 씁니다(`features/imagesearch/engines.ts`). `defaultEnable`이 다르면 옵션에서는 꺼져 있는데 배경은 켜진 것으로 봅니다. 페이지에서 할 일이 없는 모듈은 `index.ts`를 두지 않습니다.
