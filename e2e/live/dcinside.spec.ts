@@ -1,3 +1,4 @@
+import {COMMENT_SITE_KEYS, D_ALPHABET, decodeD, ICON_SITE_KEY} from "../../core/preview/dcinside-js";
 import {expect, test} from "../fixtures";
 import {openListPage} from "../pages/list";
 
@@ -5,8 +6,9 @@ import {openListPage} from "../pages/list";
  * 실제 디시에서 읽기만 한다 (bun run e2e:live). 디시 마크업·API가 바뀌면 여기서 걸린다. 쓰기 요청은 픽스처가 끊는다.
  * 글·댓글은 그때그때 다르므로 개수·내용이 아니라 모양만 본다.
  * 기본은 미니 갤러리 bjwg64다. 콘텐츠 스크립트는 모바일 페이지에서 돌지 않아 PC 주소로 연다. DC_LIST_URL로 다른 갤러리의 PC 목록 주소를 줄 수 있다.
+ * GitHub의 Live 워크플로(손으로 실행)가 비워 두면 빈 문자열이 오므로 그때도 기본값을 쓴다.
  */
-const LIST_URL = process.env.DC_LIST_URL ?? "https://gall.dcinside.com/mini/board/lists/?id=bjwg64";
+const LIST_URL = process.env.DC_LIST_URL || "https://gall.dcinside.com/mini/board/lists/?id=bjwg64";
 const {pathname: LIST_PATH, searchParams} = new URL(LIST_URL);
 const GALLERY = searchParams.get("id") ?? "";
 /** 공지·설문·광고가 아닌 글 행. */
@@ -74,5 +76,48 @@ test.describe("실제 디시", () => {
         // 글 아래 목록에도 새로고침 버튼을 붙인다.
         await expect(page.locator("button[data-refresher-refresh]")).toHaveCount(1);
         await expect.poll(() => page.locator(".refresher-user-badges").count()).toBeGreaterThan(0);
+    });
+
+    // 디시 JS에서 옮겨 쓴 값(core/preview/dcinside-js.ts)이 디시 파일에 그대로 있는지 본다. 바뀌면 댓글·디시콘 작성이 실패한다.
+    // 확장 없이 글 페이지와 디시 스크립트만 GET으로 받는다.
+    test("디시 JS에서 옮긴 reCAPTCHA 키와 _d() 해독표가 그대로 있다", async ({request}) => {
+        const get = async (url: string): Promise<string> => {
+            const response = await request.get(url);
+            expect(response.ok(), url).toBe(true);
+            return response.text();
+        };
+        const listHtml = await get(LIST_URL);
+        const href = /href="([^"]*\/board\/view\/\?[^"]*)"/.exec(listHtml)?.[1];
+        expect(href, "목록에 글 주소가 있다").toBeDefined();
+        const viewUrl = new URL((href ?? "").replaceAll("&amp;", "&"), LIST_URL).href;
+        const view = await get(viewUrl);
+        const script = (name: string): Promise<string> => {
+            const src = new RegExp(`src="([^"]*/_js/${escape(name)}\\.js[^"]*)"`).exec(view)?.[1];
+            expect(src, `${name}.js를 불러온다`).toBeDefined();
+            return get(new URL(src ?? "", viewUrl).href);
+        };
+
+        // 글 댓글: comment.js의 dc_rc_pairs에서 쌍 이름의 첫 키(v3)다.
+        const comment = await script("comment");
+        for (const [name, key] of Object.entries(COMMENT_SITE_KEYS)) {
+            expect(comment).toMatch(new RegExp(`dc_rc_pairs\\s*=\\s*\\{[^}]*['"]${name}['"]\\s*:\\s*\\[\\s*['"]${escape(key)}['"]`));
+        }
+        // 디시콘·글자콘: dccon.js·txtcon.js의 키다.
+        for (const name of ["dccon/dccon", "dccon/txtcon"]) expect(await script(name)).toContain(ICON_SITE_KEY);
+
+        // _d()는 common.js가 String.fromCharCode로 숨긴 알파벳으로 풀고, service_code 끝 10자리를 바꾸는 식은 _d()로 숨겨 둔다.
+        const common = await script("common");
+        const charCodes = [...common.matchAll(/String\.fromCharCode\(([\d,]+)\)/g)].map(([, codes = ""]) => String.fromCharCode(...codes.split(",").map(Number)));
+        expect(charCodes).toContain(D_ALPHABET);
+        expect(common).toContain("fi>5?fi-5:fi+4");
+        const hidden = [...common.matchAll(/eval\(_d\('([^']*)'\)\)/g)].map(([, value = ""]) => decodeD(value)).join("\n");
+        expect(hidden).toContain("2*(_rs[n]-n-1)/(13-n-1)");
+        expect(hidden).toContain(".replace(/(.{10})$/");
+
+        // 글 페이지: 파서(core/preview/parser.ts)가 읽는 자리에 _d('…')와 service_code가 있고, 푼 값은 숫자 목록이다.
+        const dValue = /id="reply-setting-tmpl"[\s\S]*?<\/script>\s*<script[^>]*>[^<]*?_d\('([^']*)'\)/.exec(view)?.[1];
+        expect(dValue, "reply-setting-tmpl 다음 스크립트에 _d('…')가 있다").toBeDefined();
+        expect(decodeD(dValue ?? "")).toMatch(/^\d+(\.\d+)?(,\d+(\.\d+)?)*$/);
+        expect(view).toMatch(/name="service_code" value="[^"]{10,}"/);
     });
 });

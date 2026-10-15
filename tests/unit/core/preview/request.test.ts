@@ -20,6 +20,7 @@ import {
     viewUrl,
     vote
 } from "@/core/preview/request";
+import {D_ALPHABET} from "@/core/preview/dcinside-js";
 import type {DcinsideComment, PostInfo} from "@/core/preview/types";
 
 import {preData} from "../../../helpers";
@@ -293,9 +294,9 @@ describe("댓글 관리", () => {
 
 describe("submitComment", () => {
     /** 디시 _d()가 푸는 값. 표준 base64를 디시가 섞은 알파벳으로 옮긴다. */
-    const dValue = (plain: string) => Array.from(btoa(plain), (char) => "yL/M=zNa0bcPQdReSfTgUhViWjXkYIZmnpo+qArOBs1Ct2D3uE4Fv5G6wHl78xJ9K"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".indexOf(char)]).join("");
+    const dValue = (plain: string) => Array.from(btoa(plain), (char) => D_ALPHABET["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".indexOf(char)]).join("");
     const form = (value?: string): PostInfo => post({commentForm: {fields: [["service_code", "x"], ["check_6", "c6"]], serviceCode: "abc0123456789", dValue: value, checks: {}}});
-    const submit = (info: PostInfo) => submitComment(preData({gallery: "a", id: "3"}), info, {name: "ㅇㅇ", pw: "1234"}, "댓글", null, null, false);
+    const submit = (info: PostInfo) => submitComment(preData({gallery: "a", id: "3"}), info, {user: {name: "ㅇㅇ", pw: "1234"}, memo: "댓글", commentNo: null, replyNo: null, bigDccon: false});
 
     it("_d() 값을 풀어 service_code 끝 10자리를 갈아 끼운다", async () => {
         const sent = serve(fetchMock, () => "1234");

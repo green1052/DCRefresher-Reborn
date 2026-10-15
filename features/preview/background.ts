@@ -1,19 +1,10 @@
 import {storage} from "wxt/utils/storage";
 
-import {type CommentRcKey, onMessage} from "@/core/messaging/protocol";
+import {onMessage} from "@/core/messaging/protocol";
 import {defineBackgroundModule, hasTab, runInPage} from "@/core/module/background";
+import {COMMENT_SITE_KEYS, ICON_SITE_KEY} from "@/core/preview/dcinside-js";
 import {moduleDataKey} from "@/core/storage/items";
 
-/** 디시콘·글자콘(insert_icon)은 예전 키를 그대로 쓴다 (디시 dccon.js·txtcon.js). */
-const ICON_SITE_KEY = "6Lc-Fr0UAAAAAOdqLYqPy53MxlRMIXpNXFvBliwI";
-/**
- * 글 댓글 작성·삭제는 디시 comment.js의 dc_rc_pairs 중 v3 키를 쓴다. 미리보기는 comment.js가 없는 목록에서도 돌아 페이지 값을 읽지 않고 옮겨 둔다.
- * 서버가 rc_key로 같은 쌍의 비밀키를 고르므로 키와 rc_key는 같은 쌍이어야 한다.
- */
-const COMMENT_SITE_KEYS: Record<CommentRcKey, string> = {
-    new: "6LfrAuMtAAAAABXdEPC0ZSItQjLjlt2lC4jo3VNX",
-    new3: "6LcjA-MtAAAAAIdgo8TKvID6HS34Ac9AkzRjuJfY"
-};
 /** api.js가 막히면(광고 차단 등) 끝나지 않으므로 이 시간까지만 기다린다. */
 const GRECAPTCHA_TIMEOUT = 15_000;
 

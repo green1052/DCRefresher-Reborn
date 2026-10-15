@@ -235,7 +235,7 @@ export const SERVICE_CODE_TAIL = "e2eRefresh";
  * 풀기: 섞은 base64 → 표준 base64 → atob → 첫 자리 숫자 f를 (f > 5 ? f − 5 : f + 4)로 → 쉼표로 나눈 수 v의 i번째는 글자 2(v − i − 1)/(12 − i).
  */
 function encodeServiceTail(tail: string): string {
-    const shuffled = "yL/M=zNa0bcPQdReSfTgUhViWjXkYIZmnpo+qArOBs1Ct2D3uE4Fv5G6wHl78xJ9K";
+    const shuffled = "yL/M=zNa0bcPQdReSfTgUhViWjXkYIZmnpo+qArOBslCt2D3uE4Fv5G6wH178xJ9K";
     const standard = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
     const numbers = Array.from(tail, (char, index) => (char.charCodeAt(0) * (12 - index)) / 2 + index + 1).join(",");
     const first = Number(numbers[0]);
