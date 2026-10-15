@@ -15,13 +15,19 @@ export async function openListPage(page: Page, url = FAKE_LIST_URL) {
     const overlay = page.locator("refresher-root");
     const titles = page.locator(".gall_list .ub-word");
     const frame = overlay.locator(".refresher-frame");
+    const rows = page.locator(".gall_list tbody tr");
+    const row = (no: number | string): Locator => page.locator(`.gall_list tbody tr[data-no="${no}"]`);
 
     return {
         page,
         overlay,
-        rows: page.locator(".gall_list tbody tr"),
+        rows,
         /** 글 번호로 찾은 행. */
-        row: (no: number | string): Locator => page.locator(`.gall_list tbody tr[data-no="${no}"]`),
+        row,
+        /** 글 번호로 찾은 행의 작성자 칸. */
+        writer: (no: number | string): Locator => row(no).locator(".ub-writer"),
+        /** 관리 체크박스를 체크한 행의 글 번호 칸. */
+        checkedNumbers: rows.filter({has: page.getByRole("checkbox", {checked: true})}).locator(".gall_num"),
         /** 제목 칸 (우클릭은 미리보기, 마우스를 올리면 미니 미리보기). */
         titles,
         /** 댓글 수 링크 (댓글만 보기). */

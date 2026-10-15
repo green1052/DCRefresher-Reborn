@@ -45,7 +45,6 @@ test.describe("관리", () => {
 
         await listPage.row(2).getByRole("checkbox").click({modifiers: ["Shift"]});
         // 회원 글(3, 1)은 data-ip가 비어 있다. 유동 글을 [data-ip=""]로 찾으면 회원 글이 모두 체크된다.
-        const checked = listPage.rows.filter({has: listPage.page.getByRole("checkbox", {checked: true})});
-        await expect(checked.locator(".gall_num")).toHaveText(["5", "2"]);
+        await expect(listPage.checkedNumbers).toHaveText(["5", "2"]);
     });
 });

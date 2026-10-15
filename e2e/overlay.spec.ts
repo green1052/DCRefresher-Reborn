@@ -2,6 +2,7 @@ import type {Page} from "@playwright/test";
 
 import {fakeComment} from "./dcinside";
 import {expect, test} from "./fixtures";
+import {viewPage} from "./pages/gallery";
 
 test.describe("유저 버블", () => {
     test("작성자를 우클릭하면 갤로그 글/댓글 수가 보이고, 차단하면 행을 가린다", async ({listPage, storage}) => {
@@ -34,7 +35,7 @@ test.describe("유저 버블", () => {
         await storage.setModuleSettings("block", {blur: true});
         await storage.set({"refresher:block:NICK": [{id: "a", content: "고닉", isRegex: false, mode: "NOT_SAME"}, {id: "b", content: "ㅇㅇ", isRegex: false, mode: "SAME"}]});
         await expect(listPage.row(2)).toHaveClass(/refresherBlur/);
-        await listPage.row(2).locator(".ub-writer").click({button: "right"});
+        await listPage.writer(2).click({button: "right"});
 
         const {bubble} = listPage;
         await expect(bubble.getByRole("button", {name: "닉네임 ㅇㅇ 차단 해제"})).toBeVisible();
@@ -47,7 +48,7 @@ test.describe("유저 버블", () => {
         await storage.setModuleSettings("block", {blur: true});
         await storage.set({"refresher:block:NICK": [{id: "b", content: "ㅇㅇ", isRegex: false, mode: "SAME"}]});
         await expect(listPage.row(2)).toHaveClass(/refresherBlur/);
-        await listPage.row(2).locator(".ub-writer").click({button: "right"});
+        await listPage.writer(2).click({button: "right"});
         await listPage.bubble.getByRole("button", {name: "닉네임 ㅇㅇ 차단 해제"}).click();
 
         const {toast} = listPage;
@@ -139,7 +140,7 @@ test.describe("글 페이지 댓글", () => {
     const SAME = "같은 내용의 댓글입니다";
     const openView = async (page: Page) => {
         await page.goto("https://gall.dcinside.com/board/view/?id=test&no=3");
-        return page.locator(".cmt_list > li");
+        return viewPage(page).comments;
     };
 
     test("같은 댓글은 첫 댓글에 배지를 달고 접는다. 첫 댓글을 차단하면 남은 댓글로 다시 센다", async ({page, site, storage}) => {
@@ -189,6 +190,6 @@ test.describe("글 페이지 댓글", () => {
 
     test("글 머리의 작성자에도 유저 정보 배지를 붙인다", async ({page}) => {
         await openView(page);
-        await expect(page.locator(".gallview_head .refresher-user-badges")).toHaveText("(user3)");
+        await expect(viewPage(page).headBadges).toHaveText("(user3)");
     });
 });

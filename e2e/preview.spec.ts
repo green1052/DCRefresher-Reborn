@@ -1,5 +1,6 @@
 import {DCCON, fakeComment, SERVICE_CODE_TAIL} from "./dcinside";
 import {expect, test} from "./fixtures";
+import {viewPage} from "./pages/gallery";
 
 const LIST_URL = /\/board\/lists\/\?id=test$/;
 const viewUrl = (no: number): RegExp => new RegExp(`/board/view/\\?id=test&no=${no}&page=1$`);
@@ -31,7 +32,7 @@ test.describe("미리보기", () => {
         await listPage.openPreview();
         await expect(page).toHaveURL(viewUrl(3));
         await page.reload();
-        await expect(page.locator(".write_div")).toContainText("본문 3 내용입니다.");
+        await expect(viewPage(page).body).toContainText("본문 3 내용입니다.");
         // 표시가 남으면 목록으로 뒤로 갔다 앞으로 올 때(bfcache 없이) 다시 목록·미리보기로 바뀐다.
         await expect.poll(() => page.evaluate(() => history.state)).toBeNull();
     });
