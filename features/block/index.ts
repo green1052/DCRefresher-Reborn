@@ -1,4 +1,5 @@
 import {BLOCKED_TEXT, dcconCode, duplicateOf, groupDuplicates, HIDDEN_ROW_SELECTOR, isAnyBlocked, isBlocked, ROWS_HIDDEN_EVENT} from "@/core/block";
+import {FILTER_SKIP_ATTR} from "@/core/filtering";
 import {defineModule} from "@/core/module/define";
 import {documentUrl, isViewPage} from "@/core/http/urls";
 import {WRITER_ROW_SELECTOR} from "@/core/list";
@@ -146,8 +147,12 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
             const existing = item.querySelector(".refresherDuplicateBadge");
             if (existing?.textContent === text) continue;
             existing?.remove();
+            if (!text) continue;
+            const badge = Object.assign(document.createElement("span"), {className: "refresherDuplicateBadge", textContent: text});
+            // 붙이지 않으면 core/filtering이 배지를 감싼 댓글 목록을 다시 잡아 한 번 더 접는다.
+            badge.setAttribute(FILTER_SKIP_ATTR, "");
             // 글자콘은 크기가 정해진 상자(.coment_dccon_txt) 안이 아니라 디시콘 칸(.comment_dccon) 뒤에 붙인다.
-            if (text) item.querySelector(".usertxt, .comment_dccon")?.after(Object.assign(document.createElement("span"), {className: "refresherDuplicateBadge", textContent: text}));
+            item.querySelector(".usertxt, .comment_dccon")?.after(badge);
         }
     };
     // userinfo는 같은 필터 묶음에서 이 필터 뒤에 깡계를 가린다. 그 뒤에 접도록 미룬다.
