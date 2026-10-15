@@ -36,8 +36,12 @@ const CHUNK_CHARS = (browser.storage.sync.QUOTA_BYTES_PER_ITEM ?? 8_192) - 192;
 /** 전체 한도에서 메타·키 몫을 뺐다 (두 칸 합계). */
 const TOTAL_CHARS = CLOUD_QUOTA - 2400;
 
+/** 이 버전이 쓰고 읽는 백업 형식. */
+const FORMAT = 1;
+
 interface BackupMeta {
-    format: 1;
+    /** 형식을 올려도 chunks·size·createdAt은 그대로 둔다. 옛 버전이 새 형식 백업도 '있음'으로 보고 덮기 전에 확인하게 하려는 것이다. */
+    format: number;
     chunks: number;
     /** 압축 데이터의 SHA-256 (hex). */
     hash: string;
@@ -93,7 +97,8 @@ const gunzip = (bytes: Uint8Array<ArrayBuffer>): Promise<string> =>
 const sha256 = async (bytes: Uint8Array<ArrayBuffer>): Promise<string> =>
     new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)).toHex();
 
-const isMeta = (value: unknown): value is BackupMeta => isRecord(value) && value.format === 1 && Number.isInteger(value.chunks);
+/** 형식 번호의 크기는 따지지 않는다. 더 높은 형식(새 버전이 올린 백업)도 백업이 있는 것으로 보고, 읽을 때만 막는다. */
+const isMeta = (value: unknown): value is BackupMeta => isRecord(value) && Number.isInteger(value.format) && Number.isInteger(value.chunks);
 
 const backupToCloud = async (slot: BackupSlot): Promise<void> => {
     const bytes = await gzip(JSON.stringify(await collectLocalData()));
@@ -110,7 +115,7 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
     const chunks: string[] = [];
     for (let at = 0; at < encoded.length; at += CHUNK_CHARS) chunks.push(encoded.slice(at, at + CHUNK_CHARS));
 
-    const meta: BackupMeta = {format: 1, chunks: chunks.length, hash: await sha256(bytes), size: encoded.length, createdAt: Date.now()};
+    const meta: BackupMeta = {format: FORMAT, chunks: chunks.length, hash: await sha256(bytes), size: encoded.length, createdAt: Date.now()};
     const items: Record<string, unknown> = {
         ...Object.fromEntries(chunks.map((chunk, index) => [chunkKey(slot, index), chunk])),
         [SLOT_KEYS[slot]]: meta
@@ -159,6 +164,7 @@ export const readCloudBackup = async (slot: BackupSlot): Promise<CloudBackup | n
     const meta = all[SLOT_KEYS[slot]];
 
     if (!isMeta(meta)) return null;
+    if (meta.format > FORMAT) throw new Error("새 버전 확장에서 만든 백업입니다. 확장을 업데이트해 주세요.");
 
     const chunks = Array.from({length: meta.chunks}, (_, index) => all[chunkKey(slot, index)]);
     if (chunks.some((chunk) => typeof chunk !== "string")) {

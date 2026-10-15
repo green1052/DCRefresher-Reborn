@@ -4,12 +4,21 @@ import {beforeEach, describe, expect, it, vi} from "vitest";
 
 import {clearCloudBackups, collectLocalData, isBackupTarget, readBackupTargets, readCloudBackup, readCloudBackupStatus, runBackup} from "@/core/backup";
 
+import {isRecord} from "@/utils/record";
+
 import {stored} from "../../helpers";
 
 const ERROR = "refresher:backup:error";
 
 /** 압축되지 않는 글자. 조각 수를 늘릴 때 쓴다. */
 const noise = (length: number): string => Array.from(crypto.getRandomValues(new Uint8Array(length)), (byte) => String.fromCharCode(0xac00 + byte)).join("");
+
+/** 수동 칸 메타를 고친다. 새 버전 확장이 올린 백업처럼 꾸밀 때 쓴다. */
+const patchManualMeta = async (patch: Record<string, unknown>): Promise<void> => {
+    const {backup} = await browser.storage.sync.get("backup");
+    if (!isRecord(backup)) throw new Error("수동 백업이 없습니다.");
+    await browser.storage.sync.set({backup: {...backup, ...patch}});
+};
 
 const syncKeys = async (): Promise<string[]> => Object.keys(await browser.storage.sync.get(null)).sort();
 
@@ -105,6 +114,23 @@ describe("runBackup / readCloudBackup", () => {
         await runBackup("auto");
         await browser.storage.sync.set({"backup:0": (await browser.storage.sync.get("autoBackup:0"))["autoBackup:0"]});
         await expect(readCloudBackup("manual")).rejects.toThrow("백업 데이터가 맞지 않습니다");
+    });
+
+    it("더 높은 형식의 백업은 있다고 알리고 읽지 않는다", async () => {
+        await browser.storage.local.set({"refresher:modules": {a: true}});
+        await runBackup("manual");
+        await patchManualMeta({format: 2, createdAt: 99});
+
+        expect((await readCloudBackupStatus()).manual).toEqual({createdAt: 99, size: expect.any(Number)});
+        await expect(readCloudBackup("manual")).rejects.toThrow("새 버전 확장에서 만든 백업입니다");
+    });
+
+    it("다른 칸 크기는 더 높은 형식이어도 한도 계산에 넣는다", async () => {
+        await browser.storage.local.set({"refresher:modules": {big: noise(40_000)}});
+        await runBackup("manual");
+        await patchManualMeta({format: 2});
+
+        await expect(runBackup("auto")).rejects.toThrow(/클라우드 한도를 넘습니다/);
     });
 
     it("성공하면 남은 실패 이유를 지운다", async () => {
