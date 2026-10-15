@@ -346,6 +346,19 @@ test.describe("미리보기 댓글", () => {
         await expect(listPage.comments).toHaveCount(1);
     });
 
+    test("깡계 숨기기는 미리보기 댓글도 가리고 가린 댓글 보기로 펼친다", async ({listPage, storage}) => {
+        await storage.setModuleSettings("userinfo", {checkRatio: true, alarmRatio: 10, lowActivityAction: "hide"});
+        // 첫 댓글 작성자(user1)는 글댓비를 받아 둔 깡계다.
+        await storage.set({"refresher:module:userinfo:data": {ratio: {user1: {article: 1, comment: 2, date: Date.now()}}}});
+        const frame = await listPage.openPreview();
+        await expect(listPage.comments).toHaveCount(1);
+        await expect(frame.getByText("스레드 1개, 총 댓글 2개 (깡계 1개)")).toBeVisible();
+
+        await frame.getByRole("button", {name: "가린 댓글 보기", exact: true}).click();
+        await expect(listPage.comments).toHaveCount(2);
+        await expect(listPage.comments.first()).toHaveAttribute("data-blocked", "hide");
+    });
+
     test("글 댓글의 줄바꿈은 그대로 보인다", async ({listPage, site}) => {
         const frame = await listPage.openPreview();
         site.comments.push(fakeComment(12, {user_id: "user2", name: "고닉", ip: "", memo: "첫 줄\n둘째 줄"}));

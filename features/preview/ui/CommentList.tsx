@@ -26,13 +26,14 @@ export const threadParents = (comments: ProcessedComment[], newestFirst = false)
     return newestFirst ? parents.reverse() : parents;
 };
 
-/** 댓글 머리의 개수 요약. hidden은 가린 댓글 수(차단·접은 같은 댓글)로, 0이 아닌 것만 적고 없으면 빈 글자다. */
+/** 댓글 머리의 개수 요약. hidden은 가린 댓글 수(차단·깡계·접은 같은 댓글)로, 0이 아닌 것만 적고 없으면 빈 글자다. */
 export const summaryOf = (comments: ProcessedComment[]): { counts: string; hidden: string } => {
-    const blocked = comments.filter((comment) => comment.blocked).length;
+    const blocked = comments.filter((comment) => comment.blocked && !comment.lowActivity).length;
+    const lowActivity = comments.filter((comment) => comment.lowActivity).length;
     const folded = comments.filter((comment) => comment.duplicates === 0).length;
     return {
         counts: `스레드 ${threadParents(comments).length}개, 총 댓글 ${comments.length}개`,
-        hidden: [blocked && `차단 ${blocked}개`, folded && `같은 댓글 ${folded}개 접음`].filter(Boolean).join(", ")
+        hidden: [blocked && `차단 ${blocked}개`, lowActivity && `깡계 ${lowActivity}개`, folded && `같은 댓글 ${folded}개 접음`].filter(Boolean).join(", ")
     };
 };
 
@@ -163,7 +164,7 @@ export const CommentList = () => {
     const revealed = pageRevealed || postRevealed;
     const newestFirst = usePreviewStore((s) => s.newestFirst);
 
-    // 숨김 차단과 접힌 같은 댓글은 '가린 내용 보기'나 이 글에서 가린 댓글 보기 동안만 (흐리게) 그린다. 블러 차단은 그려 두고 features/preview/overlay.css가 흐린다.
+    // 숨김 차단(깡계 숨기기 포함)과 접힌 같은 댓글은 '가린 내용 보기'나 이 글에서 가린 댓글 보기 동안만 (흐리게) 그린다. 블러 차단은 그려 두고 features/preview/overlay.css가 흐린다.
     // 트리 선과 답글 수도 그리는 댓글만 센다.
     const shown = new Set(revealed ? comments : comments.filter((comment) => comment.blocked !== "hide" && comment.duplicates !== 0));
     const parents = threadParents(comments, newestFirst);

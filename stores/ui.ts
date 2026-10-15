@@ -2,6 +2,7 @@ import {create} from "zustand";
 
 import {needOverlayWhen} from "@/components/overlay/demands";
 import type {GallogActivity, RatioInfo} from "@/core/gallog";
+import type {ModuleSettings} from "@/core/module/types";
 import type {MemoType} from "@/core/storage/types";
 import {eventTarget} from "@/utils/event";
 
@@ -37,14 +38,31 @@ export const isLowActivity = (ratio: GallogActivity, alarm: number): boolean => 
  */
 export const isFresh = <T extends { date: number }>(info?: T): info is T => info !== undefined && Date.now() - info.date <= 3600_000;
 
+/** 미리보기도 쓰는 userinfo의 글댓비 캐시와 깡계 설정. action은 깡계 처리(태그·흐리게·숨기기)다. */
+export interface Ratios {
+    cache: Record<string, RatioInfo>;
+    alarm: number;
+    action: ModuleSettings["userinfo"]["lowActivityAction"];
+}
+
+/**
+ * 이 아이디의 글·댓글을 깡계로 가리는 방식 (흐리게·숨기기). 가리지 않으면 undefined다. 미리보기 댓글이 쓴다.
+ * 페이지(userinfo)처럼 글댓비를 받아 둔 유저만 판정한다. hasOwn은 아이디가 constructor 같은 프로토타입 키일 때 캐시로 잘못 잡히지 않게 한다.
+ */
+export const lowActivityOf = (ratios: Ratios | null, uid: string | undefined): "blur" | "hide" | undefined => {
+    if (!ratios || !uid || (ratios.action !== "blur" && ratios.action !== "hide") || !Object.hasOwn(ratios.cache, uid)) return;
+    const ratio = ratios.cache[uid];
+    return ratio && isLowActivity(ratio, ratios.alarm) ? ratios.action : undefined;
+};
+
 interface UiState {
     /** 오버레이가 아직 받지 않은 토스트. 마지막이 가장 최근 것이다. 띄우고 닫는 것은 ToastHost(Base UI Toast)가 맡는다. */
     toasts: ToastData[];
     selected: SelectedUser | null;
     bubble: { x: number; y: number } | null;
     memo: MemoTargetState | null;
-    /** 글댓비 캐시와 깡계 기준 (userinfo). 글댓비 표시를 끄거나 모듈이 꺼져 있으면 null. 지난 값도 있으니 isFresh로 가려 읽는다. */
-    ratios: { cache: Record<string, RatioInfo>; alarm: number } | null;
+    /** 글댓비 캐시와 깡계 기준·처리 (userinfo). 글댓비 표시를 끄거나 모듈이 꺼져 있으면 null. 지난 값도 있으니 isFresh로 가려 읽는다. */
+    ratios: Ratios | null;
     /** 차단 모듈의 '가린 내용 보기' (이 페이지에서만, 저장하지 않는다). 미리보기도 따른다. 모듈이 꺼져 있으면 false다. */
     blockRevealed: boolean;
 

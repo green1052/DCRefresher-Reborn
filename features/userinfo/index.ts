@@ -163,7 +163,7 @@ const readBadgeSettings = (ctx: Ctx): void => {
 
 /** 미리보기도 같은 글댓비를 쓰도록 ui 스토어에 올린다. 지난 값은 미리보기·버블이 읽을 때 isFresh로 걸러 새로 조회한다. */
 const publishRatios = (ctx: Ctx): void => {
-    useUiStore.setState({ratios: ctx.settings.checkRatio ? {cache: ratios, alarm: ctx.settings.alarmRatio} : null});
+    useUiStore.setState({ratios: ctx.settings.checkRatio ? {cache: ratios, alarm: ctx.settings.alarmRatio, action: ctx.settings.lowActivityAction} : null});
 };
 
 // 숨김이 다시 붙으면 process가 알린다. 여기서는 뗀 것이 있을 때만 알려 차단 모듈이 같은 댓글 접기를 괜히 다시 하지 않게 한다.

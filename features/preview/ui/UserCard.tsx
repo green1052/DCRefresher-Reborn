@@ -37,11 +37,13 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
     // 1시간이 지난 값도 페이지처럼 보이고, 글쓴이(fetchRatio)만 새로 받아 받는 대로 바꾼다.
     const showsRatio = useUiStore((state) => state.ratios !== null);
     const alarm = useUiStore((state) => state.ratios?.alarm ?? 0);
+    const action = useUiStore((state) => state.ratios?.action);
     const cached = useUiStore(useShallow((state) =>
         user.id && state.ratios && Object.hasOwn(state.ratios.cache, user.id) ? state.ratios.cache[user.id] : undefined));
     const fetched = useGallogActivity(fetchRatio && showsRatio && !isFresh(cached) ? user.id : undefined);
     const ratio = (typeof fetched === "object" ? fetched : undefined) ?? cached;
-    const ratioColor = ratio && isLowActivity(ratio, alarm) ? userinfo?.ratioAlarmColor : userinfo?.ratioColor;
+    const lowActivity = ratio !== undefined && isLowActivity(ratio, alarm);
+    const ratioColor = lowActivity ? userinfo?.ratioAlarmColor : userinfo?.ratioColor;
 
     // 이 사람의 버블이 열려 있는지 (닉네임 버튼의 aria-expanded). 열렸는지만 구독해 버블을 여닫을 때 다른 작성자는 다시 그리지 않는다.
     const expanded = useUiStore(({bubble, selected}) =>
@@ -84,6 +86,8 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
             {/* 유동 IP는 디시가 닉 옆에 바로 보여 주는 값이라 배지 순서와 상관없이 여기 둔다. */}
             {user.ip && <span className={identityClass} style={{color: uidColor}}>({user.ip})</span>}
             {view.order.map((key) => <Fragment key={key}>{badges[key]}</Fragment>)}
+            {/* 페이지처럼 배지 뒤에 붙인다. 흐리게·숨기기는 댓글을 가린다 (core/preview/comments.ts). */}
+            {lowActivity && action === "tag" && <span className="truncate text-xs" style={{color: userinfo?.ratioAlarmColor}} title={`글댓합 ${alarm}개 이하`}>[깡계]</span>}
         </div>
     );
 };

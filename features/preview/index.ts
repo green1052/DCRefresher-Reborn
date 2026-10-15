@@ -9,7 +9,7 @@ import type {ModuleSettings} from "@/core/module/types";
 import type {ProcessedComment} from "@/core/preview/comments";
 import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
 import {useBlocksStore} from "@/stores/blocks";
-import {useUiStore} from "@/stores/ui";
+import {lowActivityOf, useUiStore} from "@/stores/ui";
 import {whenDomReady} from "@/utils/dom";
 import {messageOf} from "@/utils/error";
 import {isTyping, pressedKey} from "@/utils/event";
@@ -230,7 +230,7 @@ const controller = (ctx: Ctx) => {
             const before = shown?.signal === mySignal && ctx.settings.highlightNewComments ? new Set(shown.source.map((comment) => comment.no)) : null;
             const added = before ? source.filter((comment) => !before.has(comment.no) && comment.is_delete !== "1").map((comment) => comment.no) : [];
             shown = {signal: mySignal, source, raw};
-            store.setState({comments: keepUnchanged(processComments(source, preData, runningModuleSettings("block"))), allowReply, freshComments: added.length > 0 ? new Set(added) : NO_FRESH});
+            store.setState({comments: keepUnchanged(processComments(source, preData, runningModuleSettings("block"), useUiStore.getState().ratios)), allowReply, freshComments: added.length > 0 ? new Set(added) : NO_FRESH});
             // 강조(3초)가 끝나면 지운다. 남겨 두면 답글을 접었다 펴는 등 다시 그릴 때마다 강조가 되풀이된다.
             window.clearTimeout(freshTimer);
             if (added.length > 0) {
@@ -252,7 +252,7 @@ const controller = (ctx: Ctx) => {
         const {processComments} = await import("@/core/preview/comments");
         store.setState((s) => (s.signalId !== signalId ? {} : {
             post: s.post && {...s.post, textBlocked: textBlockOf(preData, s.post)},
-            comments: shown?.signal === signalId ? keepUnchanged(processComments(shown.source, preData, runningModuleSettings("block"))) : s.comments
+            comments: shown?.signal === signalId ? keepUnchanged(processComments(shown.source, preData, runningModuleSettings("block"), useUiStore.getState().ratios)) : s.comments
         }));
         dropStaleReply();
     };
@@ -271,6 +271,11 @@ const controller = (ctx: Ctx) => {
     };
     ctx.addCleanup(moduleSettingsStore.subscribe(onBlockChange));
     ctx.addCleanup(runningModulesStore.subscribe(onBlockChange));
+    // 깡계 가림(userinfo의 글댓비·깡계 설정)이 바뀌면 다시 가공한다. 글댓비는 새 글마다 받으므로, 열린 글 댓글의 깡계 판정이 달라질 때만 한다.
+    ctx.addCleanup(useUiStore.subscribe(({ratios}, previous) => {
+        if (ratios === previous.ratios || !shown) return;
+        if (shown.source.some((comment) => lowActivityOf(ratios, comment.user_id) !== lowActivityOf(previous.ratios, comment.user_id))) void reapplyBlocks();
+    }));
 
     /** report: 사용자가 누른 새로고침이면 실패를 알린다. 자동 갱신 실패는 조용히 넘긴다. */
     /** 받지 못했으면 false (자동 새로고침이 주기를 늘린다). 받을 글이 없거나 끊은 요청은 실패로 치지 않는다. */

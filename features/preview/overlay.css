@@ -309,6 +309,11 @@
         @apply refresher-blur-reveal;
     }
 
+    /* 깡계 흐리게(Comment의 data-low-activity)는 페이지처럼 마우스를 올리면 늘 보인다 (assets/styles/content.css). */
+    [data-low-activity][data-blocked="blur"] {
+        @apply refresher-blur-reveal;
+    }
+
     /* 본문에 든 차단 디시콘 (Frame의 markBlockedDccons). 가린 내용 보기 동안은 아래 규칙으로 흐리게 보인다. */
     &:not([data-block-revealed]) .refresher-preview-contents .written_dccon[data-blocked="hide"] {
         display: none;

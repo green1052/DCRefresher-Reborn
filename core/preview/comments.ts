@@ -2,6 +2,7 @@ import QuickLRU from "quick-lru";
 
 import {duplicateOf, groupDuplicates, isAnyBlocked, isBlocked} from "@/core/block";
 import type {ModuleSettings} from "@/core/module/types";
+import {lowActivityOf, type Ratios} from "@/stores/ui";
 import {htmlToText, sanitizeHtml} from "@/utils/sanitize";
 
 import {restoreArchive} from "./cache";
@@ -10,8 +11,10 @@ import type {DcinsideComment, GalleryPreData} from "./types";
 export interface ProcessedComment extends DcinsideComment {
     /** 음성댓글. iframe이면 src가 음성 파일이 아니라 플레이어 페이지라 <audio>로 틀 수 없다. */
     voice?: { src: string; iframe: boolean };
-    /** 차단에 걸린 댓글을 가리는 방식 (차단 모듈 설정). blur는 흐리게, hide는 숨긴다. */
+    /** 차단에 걸린 댓글을 가리는 방식 (차단 모듈 설정). blur는 흐리게, hide는 숨긴다. 깡계 댓글은 깡계 처리(userinfo)를 따른다. */
     blocked?: "blur" | "hide";
+    /** 차단이 아니라 깡계라서 가렸다. 댓글 머리의 개수 요약이 따로 센다. */
+    lowActivity?: true;
     /** 같은 댓글 묶음. 첫 댓글은 반복 수, 나머지는 0이며 접힌다. */
     duplicates?: number;
 }
@@ -92,11 +95,22 @@ export const sameComments = <T extends object>(a: T[], b: T[]): boolean => {
     return true;
 };
 
+/** 차단하지 않은 깡계 댓글을 깡계 처리대로 가린다. 차단한 댓글은 차단 방식을 따른다. */
+const markLowActivity = (list: ProcessedComment[], ratios: Ratios | null): ProcessedComment[] => {
+    for (const comment of list) {
+        const action = comment.blocked ? undefined : lowActivityOf(ratios, comment.user_id);
+        if (action) Object.assign(comment, {blocked: action, lowActivity: true});
+    }
+    return list;
+};
+
 /**
- * 정화 → 차단 표시 → 같은 댓글 묶기. 차단 목록이 바뀌면 같은 prepareComments 결과로 다시 부르므로
- * 입력(캐시된 원본)은 고치지 않고 복사본을 가공한다. block은 차단 모듈 설정이다.
+ * 정화 → 차단 표시 → 깡계 가림 → 같은 댓글 묶기. 차단 목록이 바뀌면 같은 prepareComments 결과로 다시 부르므로
+ * 입력(캐시된 원본)은 고치지 않고 복사본을 가공한다. block은 차단 모듈 설정, ratios는 userinfo의 글댓비 캐시와 깡계 설정이다.
  */
-export const processComments = (source: DcinsideComment[], preData: GalleryPreData, block: ModuleSettings["block"] | undefined): ProcessedComment[] => {
+export const processComments = (
+    source: DcinsideComment[], preData: GalleryPreData, block: ModuleSettings["block"] | undefined, ratios: Ratios | null = null
+): ProcessedComment[] => {
     const list: ProcessedComment[] = source.map((comment) => ({...comment}));
 
     // 음성 URL은 정화(재직렬화)하면 &가 &amp;로 바뀌므로 정화 전에 떼어 낸다.
@@ -108,8 +122,8 @@ export const processComments = (source: DcinsideComment[], preData: GalleryPreDa
         comment.memo = remember(cleaned, voice?.memo ?? memo, sanitizeMemo);
     }
 
-    // 차단 모듈이 꺼져 있으면 block이 없고 아무것도 가리지 않는다.
-    if (!block) return list;
+    // 차단 모듈이 꺼져 있으면 block이 없고 깡계만 가린다.
+    if (!block) return markLowActivity(list, ratios);
     // 페이지 쪽 검사처럼 앞뒤 공백을 뗀다. 디시콘만 있는 댓글이 " "로 남아 빈 글과 달라지지 않게.
     const texts = new Map(list.map((comment) => [comment, plainTextOf(comment.memo)]));
 
@@ -139,8 +153,12 @@ export const processComments = (source: DcinsideComment[], preData: GalleryPreDa
         for (const comment of list) if (comment.depth === 1 && blockedThreads.has(comment.c_no)) comment.blocked ??= block.blur ? "blur" : "hide";
     }
 
+    // 답글 함께 가리기 뒤에 매긴다. 페이지처럼 깡계 댓글의 답글은 가리지 않는다.
+    markLowActivity(list, ratios);
+
     const duplicate = duplicateOf(block);
     if (duplicate) {
+        // 페이지처럼 가린 댓글(차단·깡계)은 세지 않는다.
         const candidates = list.filter((comment) => !comment.blocked && comment.is_delete !== "1");
         for (const [comment, repeats] of groupDuplicates(candidates, (comment) => texts.get(comment) ?? "", duplicate)) comment.duplicates = repeats;
     }

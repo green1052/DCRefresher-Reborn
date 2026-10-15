@@ -35,4 +35,9 @@ describe("summaryOf", () => {
         expect(summaryOf(hidden).hidden).toBe("차단 2개, 같은 댓글 1개 접음");
         expect(summaryOf(hidden.slice(2)).hidden).toBe("같은 댓글 1개 접음");
     });
+
+    it("깡계로 가린 댓글은 차단과 따로 센다", () => {
+        const hidden = [comment(1, {blocked: "hide"}), comment(2, {blocked: "hide", lowActivity: true}), comment(3, {blocked: "blur", lowActivity: true})];
+        expect(summaryOf(hidden).hidden).toBe("차단 1개, 깡계 2개");
+    });
 });

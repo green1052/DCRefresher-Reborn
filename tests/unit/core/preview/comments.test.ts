@@ -5,6 +5,7 @@ import {getEntry} from "@/core/preview/cache";
 import {prepareComments, type ProcessedComment, processComments, sameComments} from "@/core/preview/comments";
 import type {DcinsideComment} from "@/core/preview/types";
 import type {BlockEntry} from "@/core/storage/types";
+import type {Ratios} from "@/stores/ui";
 
 import {preData, setBlockLists} from "../../../helpers";
 
@@ -19,6 +20,11 @@ const entry = (content: string, fields: Partial<BlockEntry> = {}): BlockEntry =>
 
 const block = (fields: Partial<ModuleSettings["block"]> = {}): ModuleSettings["block"] => ({
     replyRemove: false, blur: false, blurReveal: false, blurStrength: 5, foldDuplicate: false, duplicateCount: 3, duplicateMinLength: 5, ...fields
+});
+
+// low는 글댓합 3(깡계), busy는 300, 기준은 10.
+const ratios = (action: Ratios["action"]): Ratios => ({
+    cache: {low: {article: 1, comment: 2, date: 0}, busy: {article: 100, comment: 200, date: 0}}, alarm: 10, action
 });
 
 const blocked = (list: ProcessedComment[]) => Object.fromEntries(list.map((item) => [item.no, item.blocked ?? null]));
@@ -187,6 +193,36 @@ describe("processComments", () => {
             const source = [comment(1, {name: "닉"}), comment(2, {c_no: "1", depth: 1}), comment(3), comment(4, {c_no: "3", depth: 1})];
             expect(blocked(processComments(source, preData(), block({replyRemove: true})))).toEqual({1: "hide", 2: "hide", 3: null, 4: null});
             expect(blocked(processComments(source, preData(), block({replyRemove: false})))).toEqual({1: "hide", 2: null, 3: null, 4: null});
+        });
+    });
+
+    describe("깡계", () => {
+        it("글댓비를 받아 둔 깡계 댓글만 깡계 처리대로 가린다", () => {
+            const source = [comment(1, {user_id: "low"}), comment(2, {user_id: "busy"}), comment(3, {user_id: "unknown"}), comment(4, {user_id: "constructor"})];
+            expect(blocked(processComments(source, preData(), undefined, ratios("hide")))).toEqual({1: "hide", 2: null, 3: null, 4: null});
+            expect(blocked(processComments(source, preData(), block({blur: false}), ratios("blur")))).toEqual({1: "blur", 2: null, 3: null, 4: null});
+            expect(processComments(source, preData(), undefined, ratios("hide"))[0]?.lowActivity).toBe(true);
+        });
+
+        it("태그·배지 색만이면 가리지 않는다", () => {
+            expect(processComments([comment(1, {user_id: "low"})], preData(), block(), ratios("tag"))[0]?.blocked).toBeUndefined();
+            expect(processComments([comment(1, {user_id: "low"})], preData(), block(), ratios("none"))[0]?.blocked).toBeUndefined();
+        });
+
+        it("차단한 댓글은 차단 방식을 따르고 깡계로 세지 않는다", () => {
+            setBlockLists({ID: [entry("low")]});
+            const [output] = processComments([comment(1, {user_id: "low"})], preData(), block({blur: true}), ratios("hide"));
+            expect([output?.blocked, output?.lowActivity]).toEqual(["blur", undefined]);
+        });
+
+        it("답글은 가리지 않고, 같은 댓글 접기에서 뺀다", () => {
+            const output = processComments([
+                comment(1, {user_id: "low", memo: "도배 글"}),
+                comment(2, {c_no: "1", depth: 1, memo: "도배 글"}),
+                comment(3, {memo: "도배 글"})
+            ], preData(), block({replyRemove: true, foldDuplicate: true, duplicateCount: 3, duplicateMinLength: 2}), ratios("hide"));
+            expect(blocked(output)).toEqual({1: "hide", 2: null, 3: null});
+            expect(output.every((item) => item.duplicates === undefined)).toBe(true);
         });
     });
 
