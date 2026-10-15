@@ -1,4 +1,4 @@
-import {Download, Plus, Search, Trash2, Upload} from "lucide-react";
+import {ClipboardCopy, FileDown, Plus, Search, Trash2, Upload} from "lucide-react";
 import {type ReactNode, useRef, useState} from "react";
 
 import {ConfirmDialog} from "@/components/dialogs";
@@ -14,7 +14,7 @@ import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {friendlyMessage, SAVE_FAILED} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 
-import {ImportDialog} from "./Layout";
+import {downloadJson, ImportDialog} from "./Layout";
 import {notify, notifyDone} from "./optionsStore";
 import {RefresherSelect} from "./RefresherSelect";
 
@@ -113,13 +113,14 @@ export const ListRow = ({head, label, info, used, onEdit, onRemove}: {
 };
 
 /**
- * 차단/메모 탭 공용 틀. 종류별 탭, 검색, 클립보드 내보내기/가져오기, 전체 삭제/추가, 빈 목록 안내, 표 머리를 그린다.
+ * 차단/메모 탭 공용 틀. 종류별 탭, 검색, 클립보드·파일 내보내기/가져오기, 전체 삭제/추가, 빈 목록 안내, 표 머리를 그린다.
  * 줄(ListRow)은 row가 그린다.
  */
 export const ListTabs = <T extends string, I>({
                                                   types,
                                                   names,
                                                   label,
+                                                  fileName,
                                                   columns,
                                                   emptyText,
                                                   exportData,
@@ -140,6 +141,8 @@ export const ListTabs = <T extends string, I>({
     names: Record<T, string>;
     /** "차단 목록", "메모" 등. 알림·확인 문구에 쓴다. */
     label: string;
+    /** 파일로 내보낼 때 이름 앞부분 (뒤에 날짜가 붙는다). */
+    fileName: string;
     columns: [string, string];
     emptyText: (type: T) => string;
     exportData: () => unknown;
@@ -225,6 +228,15 @@ export const ListTabs = <T extends string, I>({
         }
     };
 
+    const exportFile = (): void => {
+        try {
+            downloadJson(fileName, exportData());
+            notifyDone(`${object} 파일로 내보냈습니다.`);
+        } catch {
+            notify(`${object} 내보내지 못했습니다.`);
+        }
+    };
+
     const submitImport = async (text: string): Promise<string | undefined> => {
         let data: unknown;
         try {
@@ -239,7 +251,7 @@ export const ListTabs = <T extends string, I>({
             // 데이터 탭의 전체 내보내기는 저장소 키(refresher:…)로 되어 있다.
             notify(isRecord(data) && Object.keys(data).some((key) => key.startsWith("refresher:"))
                 ? "전체 데이터는 데이터 탭에서 가져와 주세요."
-                : `${label} 데이터가 아닙니다. 이 탭에서 내보낸 JSON을 붙여 넣어 주세요.`);
+                : `${label} 데이터가 아닙니다. 이 탭에서 내보낸 JSON인지 확인해 주세요.`);
         } catch {
             // 종류마다 따로 쓰므로 앞 종류는 이미 들어갔을 수 있다. 실패한 종류는 스토어가 되돌린다.
             notify(SAVE_FAILED);
@@ -267,8 +279,11 @@ export const ListTabs = <T extends string, I>({
                             })}
                         </TabsList>
                         <div className="flex gap-1 pb-1">
-                            <WithTooltip tip="클립보드로 내보내기" trigger={<Button variant="ghost" size="icon" aria-label="내보내기" onClick={() => void exportList()}/>}>
-                                <Download/>
+                            <WithTooltip tip="클립보드로 내보내기" trigger={<Button variant="ghost" size="icon" aria-label="클립보드로 내보내기" onClick={() => void exportList()}/>}>
+                                <ClipboardCopy/>
+                            </WithTooltip>
+                            <WithTooltip tip="파일로 내보내기" trigger={<Button variant="ghost" size="icon" aria-label="파일로 내보내기" onClick={exportFile}/>}>
+                                <FileDown/>
                             </WithTooltip>
                             <WithTooltip tip="가져오기" trigger={<Button variant="ghost" size="icon" aria-label="가져오기" onClick={() => setImportOpen(true)}/>}>
                                 <Upload/>

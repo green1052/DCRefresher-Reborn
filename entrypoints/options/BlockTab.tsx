@@ -67,6 +67,7 @@ export function BlockTab() {
                 types={BLOCK_TYPES}
                 names={TYPE_NAMES}
                 label="차단 목록"
+                fileName="dcrefresher-block"
                 columns={["항목", "정보"]}
                 emptyText={(type) => `차단된 ${TYPE_NAMES[type]} 없음`}
                 exportData={() => ({...entries, defaults})}

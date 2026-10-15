@@ -1,4 +1,5 @@
 import type {Dialog as DialogPrimitive} from "@base-ui/react/dialog";
+import {FileUp} from "lucide-react";
 import {type ReactNode, useEffect, useRef, useState} from "react";
 import {storage, type WxtStorageItem} from "wxt/utils/storage";
 
@@ -12,7 +13,7 @@ import {sendMessage} from "@/core/messaging/protocol";
 import {USAGE_KEY} from "@/core/storage/items";
 import type {UsageKind} from "@/core/usage";
 
-import {type Done, notifyDone} from "./optionsStore";
+import {type Done, notify, notifyDone} from "./optionsStore";
 
 /** 저장소 항목 하나의 값. 배경·다른 탭에서 바뀌어도 따라가고, 읽기 전에는 fallback이다. */
 export const useStorageItem = <T, >(item: WxtStorageItem<T, {}>): T => {
@@ -65,6 +66,19 @@ export const useUsage = (kind: UsageKind, ids: readonly string[]): Record<string
     return times;
 };
 
+/** data를 JSON 파일(name-YYYYMMDD.json)로 내려받는다. 옵션 페이지라 downloads 권한 없이 a[download]로 된다. */
+export const downloadJson = (name: string, data: unknown): void => {
+    const now = new Date();
+    const date = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
+    const url = URL.createObjectURL(new Blob([JSON.stringify(data)], {type: "application/json"}));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${name}-${date}.json`;
+    link.click();
+    // 바로 풀면 내려받기가 시작되기 전에 주소가 사라지는 브라우저가 있어 조금 두었다가 푼다.
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+};
+
 export const Section = ({title, desc, actions, children}: {
     title?: ReactNode;
     desc?: ReactNode;
@@ -84,14 +98,16 @@ export const Section = ({title, desc, actions, children}: {
 );
 
 /**
- * 내보낸 JSON을 붙여넣는 가져오기 다이얼로그(차단/메모/데이터 공용).
+ * 내보낸 JSON을 붙여넣거나 파일에서 불러오는 가져오기 다이얼로그(차단/메모/데이터 공용).
  * 열 때만 마운트하므로 닫으면 입력이 초기화되고, 가져오기에 실패해 열려 있으면 붙여넣은 텍스트가 남는다.
  */
-export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 넣어 주세요.", placeholder = "JSON 데이터", onClose, onSubmit}: {
+export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 넣거나 파일에서 불러와 주세요.", placeholder = "JSON 데이터", fromFile = true, onClose, onSubmit}: {
     title: string;
     desc?: ReactNode;
     /** 입력칸 안내이자 이름. */
     placeholder?: string;
+    /** JSON 파일에서 불러오기 버튼을 단다. 고른 파일의 내용을 바로 가져온다. */
+    fromFile?: boolean;
     onClose: () => void;
     /** 가져왔으면 알림 문구를 돌려준다. 실패는 직접 알리고 undefined를 돌려줘 다이얼로그를 열어 둔다. */
     onSubmit: (text: string) => Promise<Done | undefined>;
@@ -100,13 +116,29 @@ export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 
     const [busy, setBusy] = useState(false);
     const actions = useRef<DialogPrimitive.Root.Actions>(null);
     const input = useRef<HTMLTextAreaElement>(null);
+    const file = useRef<HTMLInputElement>(null);
 
-    const submit = async (): Promise<void> => {
+    const submit = async (value: string): Promise<void> => {
         setBusy(true);
-        const done = await onSubmit(text).finally(() => setBusy(false));
+        const done = await onSubmit(value).finally(() => setBusy(false));
         if (!done) return;
         actions.current?.close();
         notifyDone(done);
+    };
+
+    const submitFile = async (picked: File | undefined): Promise<void> => {
+        // 같은 파일을 다시 골라도 change가 오도록 비운다.
+        if (file.current) file.current.value = "";
+        if (!picked) return;
+        let value: string;
+        try {
+            value = await picked.text();
+        } catch (e) {
+            console.error(e);
+            notify("파일을 읽지 못했습니다.");
+            return;
+        }
+        await submit(value);
     };
 
     // 가져오는 중에는 닫지 않는다. 다 들어가기 전에 닫혀 끝난 줄 알지 않게 한다.
@@ -121,7 +153,16 @@ export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 
                       onChange={(ev) => setText(ev.target.value)}/>
 
             <DialogActions>
-                <Button disabled={busy || !text.trim()} onClick={() => void submit()}>
+                {fromFile && (
+                    <>
+                        <input ref={file} type="file" accept=".json,application/json" hidden aria-label="JSON 파일"
+                               onChange={(ev) => void submitFile(ev.currentTarget.files?.[0])}/>
+                        <Button variant="secondary" disabled={busy} onClick={() => file.current?.click()}>
+                            <FileUp data-icon="inline-start"/> 파일에서 불러오기
+                        </Button>
+                    </>
+                )}
+                <Button disabled={busy || !text.trim()} onClick={() => void submit(text)}>
                     {busy && <Spinner aria-hidden data-icon="inline-start"/>}가져오기
                 </Button>
             </DialogActions>

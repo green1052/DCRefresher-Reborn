@@ -219,6 +219,7 @@ export function MemoTab() {
                 types={MEMO_TYPES}
                 names={MEMO_TYPE_NAMES}
                 label="메모"
+                fileName="dcrefresher-memo"
                 columns={["대상", "메모"]}
                 emptyText={(type) => `${MEMO_TYPE_NAMES[type]} 메모 없음`}
                 exportData={() => memos}
@@ -272,6 +273,7 @@ export function MemoTab() {
                     title="공앱 메모 가져오기"
                     desc={<>공앱에서 복사한 메모를 붙여 넣어 주세요. 한 줄에 하나씩 <code>아이디-메모</code> 형식이고, 아이디 자리가 IP(예: <code>123.45</code>)면 IP 메모로 넣습니다.</>}
                     placeholder="아이디-메모"
+                    fromFile={false}
                     onClose={() => setAppImport(false)}
                     onSubmit={importAppMemos}
                 />

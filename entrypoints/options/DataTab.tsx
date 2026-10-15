@@ -1,4 +1,4 @@
-import {CloudDownload, CloudUpload, Download, RefreshCw, Trash2, Undo2, Upload} from "lucide-react";
+import {ClipboardCopy, CloudDownload, CloudUpload, FileDown, RefreshCw, Trash2, Undo2, Upload} from "lucide-react";
 import {useEffect, useId, useRef, useState} from "react";
 
 import {ConfirmDialog, DialogActions} from "@/components/dialogs";
@@ -15,7 +15,7 @@ import {backupStorage, dbStorage} from "@/core/storage/items";
 import {friendlyMessage} from "@/utils/error";
 import {arrayIncludes, objectKeys} from "@/utils/typed";
 
-import {formatTime, ImportDialog, Section, useStorageItem} from "./Layout";
+import {downloadJson, formatTime, ImportDialog, Section, useStorageItem} from "./Layout";
 import {type Done, notify, notifyDone} from "./optionsStore";
 
 type RestoreMode = "replace" | "merge";
@@ -133,6 +133,9 @@ export function DataTab() {
             () => collectLocalData().then((data) => navigator.clipboard.writeText(JSON.stringify(data))).then(() => "데이터를 클립보드로 내보냈습니다."),
             "클립보드로 내보내지 못했습니다."
         );
+
+    const exportFile = () =>
+        run(() => collectLocalData().then((data) => downloadJson("dcrefresher", data)).then(() => "데이터를 파일로 내보냈습니다."), "파일로 내보내지 못했습니다.");
 
     // run()을 거치지 않는다. loading이 가져오기 버튼을 막으면 다이얼로그를 닫을 때 포커스가 그 버튼으로 돌아가지 못한다.
     const submitImport = async (text: string): Promise<Done | undefined> => {
@@ -258,7 +261,10 @@ export function DataTab() {
                      desc="IP/밴 데이터베이스와 캐시를 뺀 모든 설정과 차단/메모 목록을 JSON으로 옮깁니다. 가져오기는 JSON에 든 설정과 목록만 바꾸고, JSON에 없는 것은 그대로 둡니다.">
                 <div className="flex flex-wrap gap-2">
                     <Button variant="secondary" disabled={loading} onClick={() => void exportData()}>
-                        <Download data-icon="inline-start"/> 클립보드로 내보내기
+                        <ClipboardCopy data-icon="inline-start"/> 클립보드로 내보내기
+                    </Button>
+                    <Button variant="secondary" disabled={loading} onClick={() => void exportFile()}>
+                        <FileDown data-icon="inline-start"/> 파일로 내보내기
                     </Button>
                     <Button variant="secondary" disabled={loading} onClick={() => setImportOpen(true)}>
                         <Upload data-icon="inline-start"/> 가져오기
@@ -292,7 +298,7 @@ export function DataTab() {
 
             {importOpen && (
                 <ImportDialog title="데이터 가져오기"
-                              desc="내보낸 JSON 데이터를 붙여 넣어 주세요. JSON에 든 설정과 목록만 바꾸고 나머지는 그대로 둡니다. 들어 있는 차단/메모 목록은 합치지 않고 통째로 바꿉니다. 기본 차단 모드는 이 기기 것을 남깁니다. 합치려면 차단/메모 탭의 가져오기를 써 주세요."
+                              desc="내보낸 JSON 데이터를 붙여 넣거나 파일에서 불러와 주세요. JSON에 든 설정과 목록만 바꾸고 나머지는 그대로 둡니다. 들어 있는 차단/메모 목록은 합치지 않고 통째로 바꿉니다. 기본 차단 모드는 이 기기 것을 남깁니다. 합치려면 차단/메모 탭의 가져오기를 써 주세요."
                               onClose={() => setImportOpen(false)} onSubmit={submitImport}/>
             )}
         </div>
