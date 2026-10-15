@@ -166,6 +166,7 @@ export default defineModule({
                 const listHtml = end === -1 ? "" : response.slice(start, end);
                 if (!customURL && listHtml && listHtml === lastListHtml) {
                     failures = 0;
+                    unseen.count([]);
                     return true;
                 }
 
@@ -208,10 +209,8 @@ export default defineModule({
                 }
 
                 // 페이지를 넘긴 목록은 옛 목록과 겹치는 행이 없으면 전부 새 글로 잡히므로 알리지 않는다 (글댓비 조회가 몰린다).
-                if (!customURL && newPostList.length > 0) {
-                    getModuleApi("userinfo")?.checkNewPosts(newPostList);
-                    unseen.count(newPostList);
-                }
+                if (!customURL && newPostList.length > 0) getModuleApi("userinfo")?.checkNewPosts(newPostList);
+                unseen.count(customURL ? [] : newPostList);
 
                 return true;
             } catch (e) {

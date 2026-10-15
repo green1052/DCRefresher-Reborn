@@ -367,6 +367,55 @@ describe("탭 제목 새 글 수·여기까지 읽음", () => {
         running = undefined;
     });
 
+    it("숨긴 탭에서 돌아온 뒤 첫 로드에 새 글이 있으면 선을 긋는다", async () => {
+        Element.prototype.checkVisibility = () => true;
+        document.title = "갤러리";
+        const hidden = vi.spyOn(document, "hidden", "get").mockReturnValue(true);
+        const focus = vi.spyOn(document, "hasFocus").mockReturnValue(false);
+        await start();
+        document.dispatchEvent(new Event("visibilitychange"));
+
+        // 숨은 탭은 새로고침을 쉬어 돌아오면서 받는다.
+        respond(["4", "3", "2", "1"]);
+        hidden.mockReturnValue(false);
+        focus.mockReturnValue(true);
+        document.dispatchEvent(new Event("visibilitychange"));
+        await vi.waitFor(() => expect(listed()).toEqual(["4", "3", "2", "1"]));
+        await tick();
+        expect(document.title).toBe("갤러리");
+        expect(marked()).toEqual(["2"]);
+    });
+
+    it("실패가 쌓여 돌아오자마자 받지 않으면 다음 로드에 선을 긋는다", async () => {
+        vi.useFakeTimers();
+        vi.spyOn(console, "error").mockImplementation(() => {});
+        Element.prototype.checkVisibility = () => true;
+        get.mockRejectedValue(new TypeError("Failed to fetch"));
+        const hidden = vi.spyOn(document, "hidden", "get").mockReturnValue(false);
+        const focus = vi.spyOn(document, "hasFocus").mockReturnValue(true);
+        await start();
+        await vi.advanceTimersByTimeAsync(5500);
+        expect(get).toHaveBeenCalledTimes(1);
+
+        hidden.mockReturnValue(true);
+        focus.mockReturnValue(false);
+        document.dispatchEvent(new Event("visibilitychange"));
+        respond(["4", "3", "2", "1"]);
+        hidden.mockReturnValue(false);
+        focus.mockReturnValue(true);
+        document.dispatchEvent(new Event("visibilitychange"));
+        await vi.advanceTimersByTimeAsync(0);
+        expect(get).toHaveBeenCalledTimes(1);
+        expect(marked()).toEqual([]);
+
+        // 늘어난 주기(10초 + 0.5초) 뒤에 받는다.
+        await vi.advanceTimersByTimeAsync(10_500);
+        expect(listed()).toEqual(["4", "3", "2", "1"]);
+        // 새 글은 필터가 돈 뒤 한 차례 뒤에 센다.
+        await vi.advanceTimersByTimeAsync(1);
+        expect(marked()).toEqual(["2"]);
+    });
+
     it("titleCount를 끄면 선을 긋지 않는다", async () => {
         Element.prototype.checkVisibility = () => true;
         const focus = vi.spyOn(document, "hasFocus").mockReturnValue(false);

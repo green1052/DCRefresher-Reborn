@@ -43,13 +43,19 @@ const isWatching = (): boolean => !document.hidden && document.hasFocus();
 /**
  * 이 탭을 보지 않는 동안 들어온 새 글 수를 탭 제목에 붙인다. 탭으로 돌아오면(창 포커스·탭 표시) 지운다.
  * 가린 글(차단·깡계 숨김과 흐리게)은 세지 않는다. 필터는 행을 넣은 뒤(MutationObserver)에 돌므로 한 차례 뒤에 센다.
- * 돌아왔을 때 센 글이 있으면 떠날 때 맨 위에 있던 글 위에 '여기까지 읽음' 선을 긋는다. 다음에 돌아올 때까지 남긴다.
+ * 돌아왔을 때 센 글이 있거나 숨긴 탭에서 돌아온 뒤 첫 로드에 새 글이 있으면 떠날 때 맨 위에 있던 글 위에 '여기까지 읽음' 선을 긋는다.
+ * 다음에 돌아올 때까지 남긴다.
  */
 export const createUnseenCounter = (ctx: Ctx) => {
     let unseen = 0;
     // 탭을 떠나 있는지와 떠날 때 맨 위에 있던 글 번호. 창을 옮긴 뒤 탭을 숨기면 두 번 떠나므로 처음 것만 둔다.
     let away = false;
     let leftAt: string | undefined;
+    // 떠난 동안 탭이 숨었는지와, 숨긴 탭에서 돌아온 뒤 아직 받지 못한 첫 로드에 쓸 leftAt.
+    // 숨은 탭은 새로고침을 쉬므로(숨은 탭 새로고침을 켜도 주기 사이에) 떠난 동안 들어온 글이 돌아온 뒤 첫 로드에 오는데,
+    // 그때는 이미 보고 있어 세지 않는다. 실패가 쌓여 돌아오자마자 받지 않으면 다음 로드까지 남긴다.
+    let hiddenAway = false;
+    let returnedFrom: string | undefined;
     // 구분선을 그은 글 번호.
     let readMark: string | undefined;
 
@@ -60,11 +66,21 @@ export const createUnseenCounter = (ctx: Ctx) => {
         }
     };
 
+    /** 목록을 받을 때마다 새로 들어온 행으로 부른다. 받은 목록이 그대로였거나 페이지를 넘겼으면 빈 배열이다. */
     const count = (rows: HTMLElement[]): void => {
+        const mark = returnedFrom;
+        returnedFrom = undefined;
+        if (rows.length === 0) return;
         window.setTimeout(() => {
-            if (ctx.signal.aborted || isWatching() || !ctx.settings.titleCount) return;
-            unseen += rows.filter((row) => row.isConnected && row.checkVisibility() && !row.closest(BLURRED_ROW_SELECTOR)).length;
-            setTitleCount(unseen);
+            if (ctx.signal.aborted || !ctx.settings.titleCount) return;
+            const added = rows.filter((row) => row.isConnected && row.checkVisibility() && !row.closest(BLURRED_ROW_SELECTOR)).length;
+            if (!isWatching()) {
+                unseen += added;
+                setTitleCount(unseen);
+            } else if (mark !== undefined && added > 0) {
+                readMark = mark;
+                showMark();
+            }
         });
     };
 
@@ -72,6 +88,7 @@ export const createUnseenCounter = (ctx: Ctx) => {
         unseen = 0;
         setTitleCount(0);
         readMark = undefined;
+        returnedFrom = undefined;
         showMark();
     };
 
@@ -79,12 +96,15 @@ export const createUnseenCounter = (ctx: Ctx) => {
         if (!isWatching()) {
             if (!away) leftAt = topPostNo();
             away = true;
+            hiddenAway ||= document.hidden;
             return;
         }
 
         // 돌아오면 focus와 visibilitychange가 함께 온다(페이지 안 iframe으로 포커스가 옮겨도 blur가 온다). 떠났다 돌아온 첫 번만 선을 고친다.
         if (away) readMark = unseen > 0 ? leftAt : undefined;
+        if (hiddenAway) returnedFrom = leftAt;
         away = false;
+        hiddenAway = false;
         unseen = 0;
         setTitleCount(0);
         showMark();
