@@ -5,6 +5,7 @@ import {banReasonsOf, initDatabase, ipInfoOf, onDatabaseChange, passesIpFilter} 
 import {defineModule} from "@/core/module/define";
 import {type GallogActivity, getGallogActivity, type RatioInfo} from "@/core/gallog";
 import {ROWS_HIDDEN_EVENT} from "@/core/block";
+import {FILTER_SKIP_ATTR} from "@/core/filtering";
 import {queryString} from "@/core/http/urls";
 import {WRITER_ROW_SELECTOR} from "@/core/list";
 import {batchedSave} from "@/core/storage/batched";
@@ -35,7 +36,7 @@ let ratios: Record<string, RatioInfo> = {};
 
 /** 배지를 붙이는 작성자 칸. user_name이 붙은 칸은 디시가 이미 처리한 자리라 건너뛴다. */
 const WRITER_SELECTOR = ".ub-writer:not([user_name])";
-/** 작성자 칸 하나에 붙이는 배지 묶음. core/filtering이 이 클래스의 노드는 훑지 않는다. */
+/** 작성자 칸 하나에 붙이는 배지 묶음. FILTER_SKIP_ATTR을 붙여 core/filtering이 훑지 않게 한다. */
 const BADGES_CLASS = "refresher-user-badges";
 
 /** 글댓비 저장 상한. 최근에 받은 사람부터 이만큼만 남긴다. */
@@ -147,6 +148,7 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
 
     if (badges.length > 0) {
         const group = Object.assign(document.createElement("span"), {className: BADGES_CLASS});
+        group.setAttribute(FILTER_SKIP_ATTR, "");
         group.append(...badges);
         insertBadges(element, group);
     }

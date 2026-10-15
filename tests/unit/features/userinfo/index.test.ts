@@ -5,6 +5,7 @@ import {storage} from "wxt/utils/storage";
 
 import {ROWS_HIDDEN_EVENT} from "@/core/block";
 import type {IpCategory} from "@/core/database";
+import {FILTER_SKIP_ATTR} from "@/core/filtering";
 import type {GallogActivity, RatioInfo} from "@/core/gallog";
 import userinfo from "@/features/userinfo/index";
 import {useMemosStore} from "@/stores/memos";
@@ -107,6 +108,8 @@ describe("아이디·IP 배지", () => {
         mountRows([{no: "1", ip: "1.2"}]);
         await start();
         expect(document.querySelector(".ip")?.nextElementSibling?.className).toBe("refresher-user-badges");
+        // 행마다 필터가 다시 돌지 않도록 core/filtering이 건너뛰는 표시를 붙인다.
+        expect(document.querySelector(".refresher-user-badges")?.hasAttribute(FILTER_SKIP_ATTR)).toBe(true);
     });
 
     it("IP 표시 대상을 거른다", async () => {
