@@ -1,4 +1,4 @@
-import {useMemo, useState} from "react";
+import {useId, useMemo, useState} from "react";
 
 import {pinDefaultMode} from "@/core/settings-transfer";
 import {BLOCK_TYPES, DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
@@ -6,7 +6,7 @@ import type {BlockEntry, BlockType} from "@/core/storage/types";
 import {type BlockInputFields, blockKey, composeExtra, normalizeBlockList, normalizeDefaults, useBlocksStore} from "@/stores/blocks";
 import {SAVE_FAILED} from "@/utils/error";
 
-import {BlockDialog} from "./BlockDialog";
+import {BlockDialog, DETECT_MODE_DESCRIPTIONS} from "./BlockDialog";
 import {useUsage} from "./Layout";
 import {ListRow, ListTabs} from "./ListTabs";
 import {notify} from "./optionsStore";
@@ -38,6 +38,7 @@ export function BlockTab() {
     const used = useUsage("block", ids);
 
     const [dialog, setDialog] = useState<{ type: BlockType; initial: BlockEntry | null } | null>(null);
+    const modeDescId = useId();
 
     const importBlocks = async (parsed: Record<string, unknown>): Promise<number> => {
         // 차단 목록이 하나도 없으면(0 반환) 메모/설정 등 다른 데이터를 붙여넣은 것이다.
@@ -75,14 +76,21 @@ export function BlockTab() {
                 onClear={(type) => updateEntries(type, () => [])}
                 onAdd={(type) => setDialog({type, initial: null})}
                 toolbar={(type) => (
-                    <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">기본 차단 모드</span>
-                        <RefresherSelect
-                            value={defaults[type]}
-                            aria-label="기본 차단 모드"
-                            onChange={(next) => void setDefault(type, next).catch(() => notify(SAVE_FAILED))}
-                            options={DETECT_MODE_NAMES}
-                        />
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground">기본 차단 모드</span>
+                            <RefresherSelect
+                                value={defaults[type]}
+                                aria-label="기본 차단 모드"
+                                aria-describedby={modeDescId}
+                                onChange={(next) => void setDefault(type, next).catch(() => notify(SAVE_FAILED))}
+                                options={DETECT_MODE_NAMES}
+                            />
+                        </div>
+                        {/* 모드를 '기본값'으로 둔 항목이 따르는 모드라, 불일치·불포함으로 바꾸면 그 항목들이 곧바로 허용 목록이 된다. */}
+                        <p id={modeDescId} className="max-w-md text-sm text-muted-foreground">
+                            모드가 '기본값'인 항목에 씁니다. {DETECT_MODE_DESCRIPTIONS[defaults[type]]}
+                        </p>
                     </div>
                 )}
                 items={(type) => entries[type]}

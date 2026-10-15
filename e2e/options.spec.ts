@@ -75,12 +75,16 @@ test.describe("옵션 - 차단 탭", () => {
     test("항목을 추가하면 표에 보이고 저장소에 남는다", async ({page, extensionId, storage}) => {
         const options = await openOptions(page, extensionId, "block");
         await expect(page.getByText("기본 차단 모드")).toBeVisible();
+        // 모드마다 무엇을 가리는지 적는다. 불일치·불포함은 나머지를 모두 가린다고 알린다.
+        const defaultMode = page.getByRole("combobox", {name: "기본 차단 모드", exact: true});
+        await expect(defaultMode).toHaveAccessibleDescription("모드가 '기본값'인 항목에 씁니다. 값과 똑같으면 가립니다.");
 
         await page.getByRole("button", {name: "추가", exact: true}).click();
         const {dialog} = options;
         // 차단 모드의 '기본값'은 고른 값으로 보인다 (빈 값이 자리표시자로 흐려지지 않는다).
         const mode = dialog.getByRole("combobox", {name: "차단 모드", exact: true});
         await expect(mode).not.toHaveAttribute("data-placeholder");
+        await expect(mode).toHaveAccessibleDescription("기본 차단 모드(일치): 값과 똑같으면 가립니다.");
         const input = dialog.getByPlaceholder("닉네임 값을 입력해 주세요");
         await expect(input).toBeFocused();
         await input.fill("차단닉");
@@ -88,6 +92,10 @@ test.describe("옵션 - 차단 탭", () => {
         await mode.click();
         await page.getByRole("option", {name: "포함", exact: true}).click();
         await expect(mode.getByText("포함", {exact: true})).toBeVisible();
+        await expect(mode).toHaveAccessibleDescription("값이 들어 있으면 가립니다.");
+        await mode.click();
+        await page.getByRole("option", {name: "불일치", exact: true}).click();
+        await expect(mode).toHaveAccessibleDescription(/나머지를 모두 가립니다/);
         await mode.click();
         await page.getByRole("option", {name: "기본값", exact: true}).click();
         await dialog.getByRole("button", {name: "추가", exact: true}).click();
