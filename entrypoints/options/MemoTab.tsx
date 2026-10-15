@@ -156,7 +156,6 @@ const MemoFormDialog = ({
 export function MemoTab() {
     const memos = useMemosStore((state) => state.memos);
     const setMemo = useMemosStore((state) => state.setMemo);
-    const removeMemo = useMemosStore((state) => state.removeMemo);
     const updateMemos = useMemosStore((state) => state.updateMemos);
     const ids = useMemo(() => MEMO_TYPES.flatMap((type) => Object.keys(memos[type]).map((user) => memoUsageKey(type, user))), [memos]);
     const used = useUsage("memo", ids);
@@ -246,7 +245,9 @@ export function MemoTab() {
                     const users = new Set(removed.map(([user]) => user));
                     return updateMemos(type, (current) => Object.fromEntries(Object.entries(current).filter(([user]) => !users.has(user))));
                 }}
-                row={(type, [user, entry]) => (
+                itemKey={([user]) => user}
+                onRestore={(type, restore) => updateMemos(type, (current) => Object.fromEntries(restore(Object.entries(current))))}
+                row={(type, [user, entry], remove) => (
                     <ListRow
                         key={user}
                         head={
@@ -261,7 +262,7 @@ export function MemoTab() {
                         info={<span className="text-muted-foreground">{entry.text}</span>}
                         used={used[memoUsageKey(type, user)]}
                         onEdit={() => setForm({type, user, text: entry.text, color: entry.color, gallery: entry.gallery ?? ""})}
-                        onRemove={() => void removeMemo(type, user).catch(() => notify(SAVE_FAILED))}
+                        onRemove={remove}
                     />
                 )}
             />

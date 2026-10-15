@@ -43,6 +43,19 @@ const formatUsed = (time: number | undefined): string => {
     return days < 1 ? "오늘" : `${days}일 전`;
 };
 
+/**
+ * 지운 항목(index는 지우기 전 저장된 자리)을 그 자리에 되살린다. 그사이 같은 키의 항목이 다시 생겼으면 그것을 두고 건너뛴다.
+ * 그사이 목록이 바뀌었으면 자리는 어림이다. removed는 index 순이어야 한다.
+ */
+export const restoreRemoved = <I, >(current: readonly I[], removed: readonly { index: number; item: I }[], key: (item: I) => string): I[] => {
+    const next = [...current];
+    const kept = new Set(current.map(key));
+    for (const {index, item} of removed) {
+        if (!kept.has(key(item))) next.splice(index, 0, item);
+    }
+    return next;
+};
+
 /** 표 한 줄. 줄을 누르면 편집하고, 휴지통 버튼은 확인을 받고 삭제한다. */
 export const ListRow = ({head, label, info, used, onEdit, onRemove}: {
     head: ReactNode;
@@ -119,6 +132,8 @@ export const ListTabs = <T extends string, I>({
                                                   galleryOf,
                                                   usedAt,
                                                   onRemoveMany,
+                                                  itemKey,
+                                                  onRestore,
                                                   row
                                               }: {
     types: readonly T[];
@@ -142,9 +157,14 @@ export const ListTabs = <T extends string, I>({
     galleryOf: (item: I) => string | undefined;
     /** 마지막으로 쓰인 시각 (useUsage). 오래 안 쓴 항목을 거를 때 쓴다. */
     usedAt: (type: T, item: I) => number | undefined;
-    /** 걸러 보이는 항목을 한꺼번에 지운다. */
+    /** 주어진 항목(줄 하나, 걸러 보이는 항목)을 지운다. */
     onRemoveMany: (type: T, items: readonly I[]) => Promise<void>;
-    row: (type: T, item: I) => ReactNode;
+    /** 항목을 가리키는 키 (차단은 content+gallery, 메모는 대상). 지운 항목을 되살릴 때 쓴다. */
+    itemKey: (item: I) => string;
+    /** 저장소의 현재 목록에 restore를 붙여 쓴다. 삭제 알림의 되돌리기가 부른다. */
+    onRestore: (type: T, restore: (current: I[]) => I[]) => Promise<void>;
+    /** remove: 이 줄을 지운다 (ListRow의 onRemove). */
+    row: (type: T, item: I, remove: () => void) => ReactNode;
 }) => {
     // 모든 탭이 같은 검색어를 쓴다. 탭 배지에 탭마다 걸린 개수가 보여 다른 탭에 있는지도 알 수 있다.
     const [query, setQuery] = useState("");
@@ -182,6 +202,19 @@ export const ListTabs = <T extends string, I>({
     const filterRow = useRef<HTMLDivElement>(null);
     const [importOpen, setImportOpen] = useState(false);
     const object = label + objectParticle(label);
+
+    // 지울 항목을 저장된 자리와 함께 잡아 두고, 지운 뒤 알림의 되돌리기로 그 자리에 되살린다.
+    const removeItems = (type: T, targets: readonly I[], run: () => Promise<void>): void => {
+        const picked = new Set(targets.map(itemKey));
+        const removed = items(type).flatMap((item, index) => (picked.has(itemKey(item)) ? [{index, item}] : []));
+        run().then(
+            () => notifyDone({
+                message: `${names[type]} ${object} ${removed.length}개 삭제했습니다.`,
+                undo: () => void onRestore(type, (current) => restoreRemoved(current, removed, itemKey)).catch(() => notify(SAVE_FAILED))
+            }),
+            () => notify(`${object} 삭제하지 못했습니다.`)
+        );
+    };
 
     const exportList = async (): Promise<void> => {
         try {
@@ -307,7 +340,7 @@ export const ListTabs = <T extends string, I>({
                                                         <TableHead className="w-12"/>
                                                     </TableRow>
                                                 </TableHeader>
-                                                <TableBody>{list.slice(0, limit).map((item) => row(type, item))}</TableBody>
+                                                <TableBody>{list.slice(0, limit).map((item) => row(type, item, () => removeItems(type, [item], () => onRemoveMany(type, [item]))))}</TableBody>
                                             </Table>
                                         </div>
                                         {list.length > limit && (
@@ -339,7 +372,8 @@ export const ListTabs = <T extends string, I>({
                     onConfirm={() => {
                         focusPanel(filterRow.current);
                         const {kind, type} = confirm;
-                        (kind === "clear" ? onClear(type) : onRemoveMany(type, shown.get(type)!.list)).catch(() => notify(`${object} 삭제하지 못했습니다.`));
+                        const targets = kind === "clear" ? items(type) : shown.get(type)!.list;
+                        removeItems(type, targets, () => (kind === "clear" ? onClear(type) : onRemoveMany(type, targets)));
                         setConfirm(null);
                     }}
                     onClose={() => setConfirm(null)}

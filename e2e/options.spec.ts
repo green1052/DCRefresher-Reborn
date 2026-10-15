@@ -107,8 +107,41 @@ test.describe("옵션 - 차단 탭", () => {
         await alert.getByRole("button", {name: "삭제", exact: true}).click();
         await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([{id: "a", content: "남길닉", isRegex: false}]);
         await expect(table.getByText("지울닉", {exact: true})).toHaveCount(0);
-        await expect(dialog).toHaveCount(0);
+        // 삭제 알림 토스트도 role=dialog라 편집 창은 제목으로 확인한다.
+        await expect(dialog.getByRole("heading", {name: "닉네임 차단 수정"})).toHaveCount(0);
         await expect(page.getByRole("tabpanel")).toBeFocused();
+    });
+
+    test("삭제 알림의 되돌리기는 지운 항목을 id 그대로 원래 자리에 되살린다", async ({page, extensionId, storage}) => {
+        const list = [{id: "a", content: "가닉", isRegex: false}, {id: "b", content: "나닉", isRegex: false}, {id: "c", content: "다닉", isRegex: false}];
+        await storage.set({"refresher:block:NICK": list});
+        const {table, alert, toasts} = await openOptions(page, extensionId, "block");
+
+        await table.getByRole("button", {name: "나닉 삭제", exact: true}).click();
+        await alert.getByRole("button", {name: "삭제", exact: true}).click();
+        await expect(toasts).toContainText("닉네임 차단 목록을 1개 삭제했습니다.");
+        await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([list[0], list[2]]);
+
+        await toasts.getByRole("button", {name: "되돌리기", exact: true}).click();
+        await expect.poll(() => storage.get("refresher:block:NICK")).toEqual(list);
+        await expect(table.getByText("나닉", {exact: true})).toBeVisible();
+    });
+
+    test("지운 뒤 같은 차단을 다시 넣었으면 되돌리기가 그것을 겹쳐 넣지 않는다", async ({page, extensionId, storage}) => {
+        const list = [{id: "a", content: "가닉", isRegex: false}, {id: "b", content: "나닉", isRegex: false}];
+        await storage.set({"refresher:block:NICK": list});
+        const {table, alert, toasts} = await openOptions(page, extensionId, "block");
+
+        await page.getByRole("button", {name: "전체 삭제", exact: true}).click();
+        await alert.getByRole("button", {name: "삭제", exact: true}).click();
+        await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([]);
+        // 다른 곳에서 같은 닉을 새 id로 다시 차단했다.
+        const readded = {id: "z", content: "가닉", isRegex: false};
+        await storage.set({"refresher:block:NICK": [readded]});
+        await expect(table.getByText("가닉", {exact: true})).toBeVisible();
+
+        await toasts.getByRole("button", {name: "되돌리기", exact: true}).click();
+        await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([readded, list[1]]);
     });
 
     test("전체 삭제는 확인한 뒤 그 종류의 항목을 모두 지운다", async ({page, extensionId, storage}) => {
@@ -223,6 +256,20 @@ test.describe("옵션 - 메모·데이터 탭", () => {
         await expect(dialog).toHaveCount(0);
         await expect(table.getByText("옵션 메모")).toBeVisible();
         await expect.poll(() => storage.get("refresher:memo:UID")).toMatchObject({user9: {text: "옵션 메모"}});
+    });
+
+    test("메모 전체 삭제도 알림의 되돌리기로 되살린다", async ({page, extensionId, storage}) => {
+        const memos = {user1: {text: "하나", color: "#ff0000"}, user2: {text: "둘", color: "#00ff00"}};
+        await storage.set({"refresher:memo:UID": memos});
+        const {alert, toasts} = await openOptions(page, extensionId, "memo");
+
+        await page.getByRole("button", {name: "전체 삭제", exact: true}).click();
+        await alert.getByRole("button", {name: "삭제", exact: true}).click();
+        await expect(toasts).toContainText("메모를 2개 삭제했습니다.");
+        await expect.poll(() => storage.get("refresher:memo:UID")).toEqual({});
+
+        await toasts.getByRole("button", {name: "되돌리기", exact: true}).click();
+        await expect.poll(() => storage.get("refresher:memo:UID")).toEqual(memos);
     });
 });
 

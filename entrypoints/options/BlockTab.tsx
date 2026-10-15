@@ -3,7 +3,7 @@ import {useMemo, useState} from "react";
 import {pinDefaultMode} from "@/core/settings-transfer";
 import {BLOCK_TYPES, DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType} from "@/core/storage/types";
-import {type BlockInputFields, composeExtra, normalizeBlockList, normalizeDefaults, useBlocksStore} from "@/stores/blocks";
+import {type BlockInputFields, blockKey, composeExtra, normalizeBlockList, normalizeDefaults, useBlocksStore} from "@/stores/blocks";
 import {SAVE_FAILED} from "@/utils/error";
 
 import {BlockDialog} from "./BlockDialog";
@@ -30,7 +30,6 @@ export function BlockTab() {
     const defaults = useBlocksStore((state) => state.defaults);
     const addEntry = useBlocksStore((state) => state.addEntry);
     const updateEntry = useBlocksStore((state) => state.updateEntry);
-    const removeEntry = useBlocksStore((state) => state.removeEntry);
     const updateEntries = useBlocksStore((state) => state.updateEntries);
     const setDefault = useBlocksStore((state) => state.setDefault);
     const addEntries = useBlocksStore((state) => state.addEntries);
@@ -94,7 +93,10 @@ export function BlockTab() {
                     const removedIds = new Set(removed.map((entry) => entry.id));
                     return updateEntries(type, (current) => current.filter((entry) => !removedIds.has(entry.id)));
                 }}
-                row={(type, entry) => (
+                // 같은 content+gallery는 한 항목이라, 지운 뒤 같은 것을 다시 추가했으면 되돌리기가 겹쳐 넣지 않는다.
+                itemKey={blockKey}
+                onRestore={updateEntries}
+                row={(type, entry, remove) => (
                     <ListRow
                         key={entry.id}
                         head={type === "DCCON" ? (
@@ -107,7 +109,7 @@ export function BlockTab() {
                         info={<span className="text-muted-foreground">{entryInfo(entry)}</span>}
                         used={used[entry.id]}
                         onEdit={() => setDialog({type, initial: entry})}
-                        onRemove={() => void removeEntry(type, entry.id).catch(() => notify(SAVE_FAILED))}
+                        onRemove={remove}
                     />
                 )}
             />
