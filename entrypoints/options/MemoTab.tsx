@@ -254,7 +254,8 @@ export function MemoTab() {
                         head={
                             // 편집 버튼 안에 들어가므로 div 대신 span으로 그린다.
                             <span className="flex items-center gap-2">
-                                <span className="size-2.5 shrink-0 rounded-full" style={{background: entry.color}}/>
+                                {/* background 축약은 가져온 메모의 url(…)을 배경 이미지로 불러온다. 색 속성만 쓴다. */}
+                                <span className="size-2.5 shrink-0 rounded-full" style={{backgroundColor: entry.color}}/>
                                 <span className="font-medium">{user}</span>
                                 {entry.gallery && <Badge variant="secondary">{entry.gallery}</Badge>}
                             </span>
