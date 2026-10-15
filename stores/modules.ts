@@ -1,4 +1,4 @@
-import {useEffect} from "react";
+import {useLayoutEffect} from "react";
 import {storage} from "wxt/utils/storage";
 import {create} from "zustand";
 
@@ -65,7 +65,8 @@ export const ExtensionPageVars = (): null => {
     const enables = useModulesStore((state) => state.enables);
     const values = useModulesStore((state) => state.values);
 
-    useEffect(() => {
+    // 화면을 그리기 전에 넣는다. useEffect면 첫 프레임이 기본 폰트로 그려졌다가 바뀐다.
+    useLayoutEffect(() => {
         const root = document.documentElement.style;
         const vars = features.flatMap((feature) =>
             enables[feature.id] && feature.extensionPageVars ? Object.entries(feature.extensionPageVars(values[feature.id] ?? {})) : []);

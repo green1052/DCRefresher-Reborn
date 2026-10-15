@@ -151,4 +151,11 @@ describe("ExtensionPageVars", () => {
         unmount();
         expect(fontVar()).toBe("");
     });
+
+    it("그리는 그 자리에서 변수를 넣는다 (첫 프레임이 기본 폰트로 그려지지 않게)", () => {
+        const root = document.createElement("div");
+        render(<modules.ExtensionPageVars/>, root);
+        expect(fontVar()).not.toBe("");
+        act(() => render(null, root));
+    });
 });
