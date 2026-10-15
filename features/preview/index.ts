@@ -277,8 +277,10 @@ const controller = (ctx: Ctx) => {
         if (shown.source.some((comment) => lowActivityOf(ratios, comment.user_id) !== lowActivityOf(previous.ratios, comment.user_id))) void reapplyBlocks();
     }));
 
-    /** report: 사용자가 누른 새로고침이면 실패를 알린다. 자동 갱신 실패는 조용히 넘긴다. */
-    /** 받지 못했으면 false (자동 새로고침이 주기를 늘린다). 받을 글이 없거나 끊은 요청은 실패로 치지 않는다. */
+    /**
+     * 받지 못했으면 false (자동 새로고침이 주기를 늘린다). 받을 글이 없거나 끊은 요청은 실패로 치지 않는다.
+     * report: 사용자가 누른 새로고침이면 실패를 알린다. 자동 갱신 실패는 조용히 넘긴다.
+     */
     const refreshComments = async (report = false): Promise<boolean> => {
         const st = store.getState();
         if (!st.visible || !st.preData || !st.post || !abort) return true;
