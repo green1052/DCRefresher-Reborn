@@ -89,7 +89,7 @@ const versionStore = createStore(() => 0);
 
 export const databaseVersion = versionStore.getState;
 /**
- * DB 변경 구독. 처음 구독할 때 DB를 읽기 시작한다(initDatabase). 유저 정보 모듈이 꺼져 있으면 버블·미리보기가 IP 정보를 처음
+ * DB 변경 구독. 처음 구독할 때 DB를 읽기 시작한다(initDatabase). 유저 정보 모듈이 꺼져 있으면 버블이 IP 정보를 처음
  * 그릴 때에야 수백 KB짜리 IP DB를 읽고, 읽은 뒤 번호가 올라 다시 그려진다. 모듈이 켜져 있으면 setup이 먼저 읽는다.
  */
 export const subscribeDatabase = (listener: () => void): (() => void) => {
@@ -132,7 +132,7 @@ const indexBans = (list: BanList): Map<string, string> => {
     return index;
 };
 
-// 감시는 모듈이 아니라 페이지 단위다 (모듈이 꺼져도 버블·미리보기가 쓴다). 그래서 콘텐츠 스크립트가 무효화될 때 releaseDatabase로 푼다.
+// 감시는 모듈이 아니라 페이지 단위다 (모듈이 꺼져도 버블이 쓴다). 그래서 콘텐츠 스크립트가 무효화될 때 releaseDatabase로 푼다.
 const watching = new AbortController();
 
 /**

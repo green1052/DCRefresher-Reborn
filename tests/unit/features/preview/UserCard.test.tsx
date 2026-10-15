@@ -10,10 +10,13 @@ import userinfo from "@/features/userinfo/meta";
 
 // 밴 DB는 저장소 대신 표로 두고, 이미 읽은 것(버전 1)으로 본다.
 const bans = vi.hoisted(() => new Map<string, string>());
+// 읽기를 시작하는 구독. 미리보기는 부르지 않아야 한다.
+const subscribeDatabase = vi.hoisted(() => vi.fn(() => () => {}));
 vi.mock("@/core/database", async (importOriginal) => ({
     ...await importOriginal<typeof import("@/core/database")>(),
     databaseVersion: () => 1,
-    subscribeDatabase: () => () => {},
+    subscribeDatabase,
+    onDatabaseChange: () => () => {},
     ipInfoOf: () => undefined,
     banReasonsOf: (uid: string) => bans.get(uid)
 }));
@@ -43,6 +46,7 @@ afterEach(() => {
     act(() => render(null, container));
     container.remove();
     bans.clear();
+    subscribeDatabase.mockClear();
     moduleSettingsStore.setState({}, true);
     runningModulesStore.setState({}, true);
 });
@@ -64,5 +68,13 @@ describe("UserCard 갱차 배지", () => {
         setUserinfo({checkPermBan: true}, false);
         renderCard();
         expect(badges()).toEqual(["(member)"]);
+    });
+});
+
+describe("UserCard DB 읽기", () => {
+    it("유저 정보 모듈이 꺼져 있으면 IP DB를 읽기 시작하지 않는다", () => {
+        setUserinfo({}, false);
+        renderCard();
+        expect(subscribeDatabase).not.toHaveBeenCalled();
     });
 });

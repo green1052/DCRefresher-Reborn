@@ -197,7 +197,7 @@ export default defineModule({
         document.documentElement.classList.add("refresherUserInfo");
         // await 전에 읽는다. 뒤에 두면 기다리는 동안 모듈이 꺼졌을 때 revoke가 지운 값을 다시 쓴다.
         readBadgeSettings(ctx);
-        // IP 정보를 보이지 않고 갱차도 보지 않으면 수백 KB짜리 IP DB를 읽지 않는다. 버블·미리보기는 열 때 따로 읽는다 (subscribeDatabase).
+        // IP 정보를 보이지 않고 갱차도 보지 않으면 수백 KB짜리 IP DB를 읽지 않는다. 버블은 열 때 따로 읽는다 (subscribeDatabase).
         // 갱차 목록은 banReasonsOf가 처음 불릴 때 읽지만, 갱신 감시는 initDatabase가 건다.
         const needsDatabase = (): boolean => view.ipFilter !== "none" || ctx.settings.checkPermBan;
         ctx.onSettingsChanged(() => {
@@ -244,7 +244,7 @@ export default defineModule({
         // bfcache에 있는 동안 받은 저장은 감시로 오지 않는다. 돌아올 때 다시 읽는다.
         onBfcacheRestore(async () => applyStored(await ratioStorage.getValue()), signal);
 
-        // IP/밴 DB는 모듈 설정을 읽은 뒤 여기서 처음 읽는다 (이 모듈이 꺼져 있으면 버블·미리보기의 subscribeDatabase가 읽는다).
+        // IP/밴 DB는 모듈 설정을 읽은 뒤 여기서 처음 읽는다 (이 모듈이 꺼져 있으면 버블의 subscribeDatabase가 읽는다).
         // 읽기가 끝난 뒤 필터를 걸어야 첫 배지부터 IP 정보가 붙는다.
         const [stored] = await Promise.all([ratioStorage.getValue(), needsDatabase() ? initDatabase() : null]);
         if (signal.aborted) return;

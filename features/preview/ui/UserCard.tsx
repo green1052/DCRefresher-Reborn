@@ -2,7 +2,7 @@ import {Fragment, type MouseEvent, type ReactNode, useSyncExternalStore} from "r
 import {useShallow} from "zustand/react/shallow";
 
 import {type BadgeKey, badgeViewOf, DEFAULT_BADGE_VIEW, showsUid} from "@/core/badges";
-import {banReasonsOf, databaseVersion, ipInfoOf, passesIpFilter, subscribeDatabase} from "@/core/database";
+import {banReasonsOf, databaseVersion, ipInfoOf, onDatabaseChange, passesIpFilter} from "@/core/database";
 import {useRunningModuleSettings} from "@/core/module/useModuleSettings";
 import type {User} from "@/core/preview/types";
 import {useUserMemo} from "@/stores/memos";
@@ -22,7 +22,8 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
     const userinfo = useRunningModuleSettings("userinfo");
     const view = userinfo ? badgeViewOf(userinfo) : DEFAULT_BADGE_VIEW;
     // DB를 읽을 때마다 오르는 번호를 구독해 다시 그린다. 0이면 아직 읽지 않아 IP·밴을 찾지 않는다.
-    const dbVersion = useSyncExternalStore(subscribeDatabase, databaseVersion);
+    // 읽기는 시작하지 않는다(onDatabaseChange). IP·갱차 배지를 그릴 설정이면 userinfo setup이 이미 읽고, 아니면 읽어도 쓸 데가 없다.
+    const dbVersion = useSyncExternalStore(onDatabaseChange, databaseVersion);
     const ipInfo = dbVersion > 0 && !user.id && user.ip ? ipInfoOf(user.ip) : undefined;
     const ipColor = ipInfo ? userinfo?.[`${ipInfo.category}Color`] : undefined;
     const banColor = userinfo?.checkPermBan ? userinfo.permBanColor : undefined;
