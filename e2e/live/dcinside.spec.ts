@@ -1,5 +1,6 @@
 import {COMMENT_SITE_KEYS, D_ALPHABET, decodeD, ICON_SITE_KEY} from "../../core/preview/dcinside-js";
 import {COUNT_CELLS, COUNT_TEXT, LIST_TABLE} from "../../features/refresh/markup";
+import {AUTO, EDITOR, LEAVE, POSTED, SUBJECT, SUBMIT} from "../../features/write/markup";
 import {expect, test} from "../fixtures";
 import {openListPage} from "../pages/list";
 
@@ -60,6 +61,14 @@ const SEARCH_MARKUP: Markup[] = [
     {feature: "검색 이어 보기 (페이징의 현재 쪽)", selector: `${PAGING} em`},
     // 검색 구간이 하나뿐인 작은 갤러리에는 없다.
     {feature: "검색 이어 보기 (다음 검색)", selector: `${PAGING} a.search_next`, optional: true}
+];
+
+// 에디터(EDITOR)와 자동 짤방·작성 가이드(AUTO)는 디시 스크립트가 그려 여기 없다. 테스트에서 디시 스크립트가 그 선택자를 쓰는지 따로 본다.
+const WRITE_MARKUP: Markup[] = [
+    {feature: "글쓰기 나가기 방지 (등록 버튼)", selector: SUBMIT},
+    {feature: "글쓰기 나가기 방지 (취소 레이어의 확인 버튼)", selector: LEAVE},
+    {feature: "글쓰기 나가기 방지 (제목)", selector: SUBJECT},
+    {feature: "글쓰기 나가기 방지 (등록 성공 표시)", selector: POSTED}
 ];
 
 test.describe("실제 디시", () => {
@@ -168,9 +177,9 @@ test.describe("실제 디시", () => {
         expect(view).toMatch(/name="service_code" value="[^"]{10,}"/);
     });
 
-    // 목록·글·검색 결과를 한 번씩 GET으로 받아(요청 3개) 디시 스크립트를 뺀 채 빈 페이지에 그리고 선택자를 센다.
+    // 목록·글·검색 결과·글쓰기 페이지를 한 번씩 GET으로 받아(요청 4개) 디시 스크립트를 뺀 채 빈 페이지에 그리고 선택자를 센다.
     // 확장이 고치기 전의 디시 마크업을 봐야 하므로 디시 주소로 열지 않는다. 댓글은 댓글 API로 따로 받아 그리므로 여기서 보지 않는다.
-    test("새로고침·차단·검색 이어 보기·레이아웃·스텔스가 찾는 디시 마크업이 그대로 있다", async ({page, request}) => {
+    test("새로고침·차단·검색 이어 보기·레이아웃·스텔스·글쓰기가 찾는 디시 마크업이 그대로 있다", async ({page, request}) => {
         // 그린 HTML의 스타일·이미지·iframe은 받지 않는다. 마크업만 보면 된다.
         await page.route("**/*", (route) => route.abort());
         // 받은 HTML을 돌려준다. 문자열로 찾는 마크업은 그것으로 본다.
@@ -216,5 +225,11 @@ test.describe("실제 디시", () => {
         search.searchParams.set("s_type", "search_subject");
         search.searchParams.set("s_keyword", title);
         await check(search.href, SEARCH_MARKUP);
+
+        // 글쓰기 페이지는 로그인하지 않아도 열린다.
+        const writeHtml = await check(new URL(`${LIST_PATH.replace("/lists", "/write")}?id=${GALLERY}`, LIST_URL).href, WRITE_MARKUP);
+        for (const name of [EDITOR, ...AUTO.split(", ").map((selector) => selector.slice(1))]) {
+            expect.soft(writeHtml, `글쓰기 나가기 방지: 디시 스크립트가 ${name}를 쓰지 않는다`).toContain(name);
+        }
     });
 });

@@ -3,15 +3,8 @@ import {defineModule} from "@/core/module/define";
 import {WRITE_PAGE} from "@/core/pages";
 
 import {type ImageOptions, UPLOAD_OPTIONS_KEY} from "./images";
+import {AUTO, EDITOR, LEAVE, POSTED, SUBJECT, SUBMIT} from "./markup";
 import meta from "./meta";
-
-const SUBMIT = "button.write";
-const EDITOR = ".note-editable";
-const SUBJECT = "input#subject";
-// 디시가 에디터에 넣는 자동 짤방·작성 가이드 (contenteditable=false라 사용자 글이 안에 들어가지 않는다).
-const AUTO = "#auto_zzal_img_div, .wrt_guide_preview_inn";
-// 디시 '글 작성을 취소하시겠습니까?' 레이어의 확인 버튼.
-const LEAVE = "#leave_confirm_box .btn_blue";
 
 /**
  * 나가기 방지 리스너의 수명. ctx.signal에 묶지 않는다: 확장이 업데이트되어 컨텍스트가 무효화되면(stopAll) ctx.signal이 풀려,
@@ -75,7 +68,7 @@ export default defineModule({
 
         const onBeforeUnload = (ev: BeforeUnloadEvent): void => {
             // 디시는 등록에 성공해야 #clickbutton을 Y로 바꾸고 페이지를 옮긴다. 실패(alert)하면 N 그대로라 계속 막는다.
-            const flag = document.querySelector<HTMLInputElement>("#clickbutton");
+            const flag = document.querySelector<HTMLInputElement>(POSTED);
             const posted = flag ? flag.value === "Y" : submitting;
             if (!ctx.settings.preventExit || posted || leaving || !edited) return;
 
