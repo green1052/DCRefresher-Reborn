@@ -208,6 +208,12 @@ const Bubble = ({bubble, selected, onBlockPackage}: BubbleProps) => {
                             <Button size="sm" variant="destructive" onClick={() => requestBlock({target: "user"})}>
                                 유저 차단
                             </Button>
+                            {gallery && (
+                                <Button size="sm" variant="outline" className="text-destructive" title={`${gallery} 갤러리에서만 가립니다.`}
+                                        onClick={() => requestBlock({target: "user", gallery})}>
+                                    이 갤러리에서만 차단
+                                </Button>
+                            )}
                             <Button size="sm" variant="secondary"
                                     onClick={() => {
                                         focus.returnFocus();

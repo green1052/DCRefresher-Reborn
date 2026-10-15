@@ -41,6 +41,15 @@ describe("handleBlockRequest", () => {
         expect(await list("IP")).toMatchObject([{content: "1.2", extra: "ㅇㅇ"}]);
     });
 
+    it("갤러리를 주면 그 갤러리에서만 막는 항목으로 넣는다", async () => {
+        await handleBlockRequest({target: "user", gallery: "gal"}, {uid: "user1", nick: "닉"});
+        await handleBlockRequest({target: "user"}, {uid: "user2", nick: "닉"});
+
+        const [scoped, global] = await list("ID");
+        expect(scoped).toMatchObject({content: "user1", gallery: "gal"});
+        expect(global?.gallery).toBeUndefined();
+    });
+
     it("디시콘 하나는 그 코드를 넣는다", async () => {
         vi.mocked(fetchDcconPackage).mockResolvedValue(dcconPackage(["a", "b"]));
 

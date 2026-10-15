@@ -16,18 +16,19 @@ type DcconPackageMode = "bundle" | "each";
  */
 const blockMode = (type: BlockType) => (useBlocksStore.getState().defaults[type].startsWith("NOT_") ? "SAME" : undefined);
 
-/** 유저 차단. uid > ip > nick 순으로 있는 값 하나를 쓴다. */
-const blockUser = async (selected: SelectedUser): Promise<void> => {
+/** 유저 차단. uid > ip > nick 순으로 있는 값 하나를 쓴다. gallery가 있으면 그 갤러리에서만 막는다. */
+const blockUser = async (selected: SelectedUser, gallery?: string): Promise<void> => {
     // 유동은 작성자 칸에 data-uid=""가 붙어 오므로 ??로는 ip로 넘어가지 않는다.
     const value = selected.uid || selected.ip || selected.nick;
     if (!value) return;
 
     const type: BlockType = selected.uid ? "ID" : selected.ip ? "IP" : "NICK";
-    await useBlocksStore.getState().addEntry(type, {content: value, isRegex: false, extra: selected.nick || value, mode: blockMode(type)});
+    await useBlocksStore.getState().addEntry(type, {content: value, isRegex: false, extra: selected.nick || value, mode: blockMode(type), gallery});
 
     // 유저 정보 모듈만 켜져 있어도 버블이 열린다. 목록에는 넣었지만 가리지는 않는다는 것을 알린다.
     const off = runningModuleSettings("block") === undefined ? " 콘텐츠 차단 모듈이 꺼져 있어 지금은 가리지 않습니다." : "";
-    useUiStore.getState().showToast(`차단 목록에 추가했습니다. (${TYPE_NAMES[type]}: ${value})${off}`);
+    const scope = gallery ? ", 이 갤러리만" : "";
+    useUiStore.getState().showToast(`차단 목록에 추가했습니다. (${TYPE_NAMES[type]}: ${value}${scope})${off}`);
 };
 
 const blockDccon = async (selected: SelectedUser, dcconPackage?: DcconPackageMode): Promise<void> => {
@@ -57,13 +58,15 @@ export type BlockRequestOptions = {
     target: "user" | "dccon";
     /** 디시콘이 든 패키지 전체를 차단한다. 없으면 그 디시콘 하나만. */
     dcconPackage?: DcconPackageMode;
+    /** 유저 차단을 이 갤러리 id에서만 건다. 없으면 모든 갤러리. */
+    gallery?: string;
 };
 
 /** 유저 버블의 차단 요청을 처리한다. */
 export const handleBlockRequest = async (options: BlockRequestOptions, selected: SelectedUser): Promise<void> => {
     try {
         if (options.target === "dccon") await blockDccon(selected, options.dcconPackage);
-        else await blockUser(selected);
+        else await blockUser(selected, options.gallery);
     } catch (e) {
         console.error("Block request failed:", e);
         // 임시 차단은 HTTP 클라이언트가 이미 알렸다.

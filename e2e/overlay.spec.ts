@@ -20,6 +20,15 @@ test.describe("유저 버블", () => {
         expect(await storage.get("refresher:block:ID")).toMatchObject([{content: "user3", extra: "고닉"}]);
     });
 
+    test("이 갤러리에서만 차단하면 갤러리 한정 항목으로 넣고 행을 가린다", async ({listPage, storage}) => {
+        await listPage.writers.first().click({button: "right"});
+        await listPage.bubble.getByRole("button", {name: "이 갤러리에서만 차단"}).click();
+
+        await expect(listPage.toast).toContainText("이 갤러리만");
+        await expect(listPage.row(3)).toHaveClass(/refresherBlocked/);
+        expect(await storage.get("refresher:block:ID")).toMatchObject([{content: "user3", gallery: "test"}]);
+    });
+
     test("버블은 막은 규칙을 보이고, 허용 목록 항목에는 해제 버튼을 두지 않는다", async ({listPage, storage}) => {
         // 흐리게 가려야 가린 행의 작성자를 우클릭할 수 있다.
         await storage.setModuleSettings("block", {blur: true});
