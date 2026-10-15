@@ -1,7 +1,10 @@
-import {Fragment} from "react";
+import {Search} from "lucide-react";
+import {Fragment, useState} from "react";
 
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Collapsible, CollapsibleContent} from "@/components/ui/collapsible";
+import {Empty, EmptyDescription} from "@/components/ui/empty";
+import {InputGroup, InputGroupAddon, InputGroupInput} from "@/components/ui/input-group";
 import {Separator} from "@/components/ui/separator";
 import {Switch} from "@/components/ui/switch";
 import {defaultValue} from "@/core/module/settings";
@@ -15,14 +18,26 @@ import {SettingItem} from "./SettingItem";
 
 type SettingEntry = [key: string, schema: SettingSchema];
 
-/** 모듈 하나의 세부 설정. 같은 group 객체를 가진 설정은 첫 설정 자리에 한 칸으로 묶는다. */
-const ModuleSettings = ({feature, settings}: { feature: AnyModuleMeta; settings: SettingEntry[] }) => {
+/**
+ * 검색어(소문자)에 맞는 설정. 모듈 이름·설명이 맞으면 전부, 아니면 이름·설명·묶음 이름이 맞는 설정만 남긴다.
+ * 맞는 것이 없으면 undefined. 검색어가 비면 전부다.
+ */
+export const matchSettings = (feature: AnyModuleMeta, needle: string): SettingEntry[] | undefined => {
+    const settings = Object.entries(feature.settings ?? {});
+    const has = (...texts: string[]) => texts.some((text) => text.toLowerCase().includes(needle));
+    if (has(feature.name, feature.description)) return settings;
+    const matched = settings.filter(([, schema]) => has(schema.name, schema.desc, schema.group?.name ?? ""));
+    return matched.length > 0 ? matched : undefined;
+};
+
+/** 모듈 하나의 세부 설정. 같은 group 객체를 가진 설정은 첫 설정 자리에 한 칸으로 묶는다. shown은 그릴 설정(검색에 맞는 것)이다. */
+const ModuleSettings = ({feature, settings, shown}: { feature: AnyModuleMeta; settings: SettingEntry[]; shown: SettingEntry[] }) => {
     // 이 모듈의 값만 구독한다. 다른 모듈의 설정을 바꿔도 이 카드는 다시 그리지 않는다.
     const values = useModulesStore((state) => state.values[feature.id]);
     const changeSetting = useModulesStore((state) => state.changeSetting);
     const valueOf = (key: string, schema: SettingSchema) => values?.[key] ?? defaultValue(schema);
 
-    // 같은 모듈의 다른 단축키 설정이 쓰는 키. 고를 수 없게 한다.
+    // 같은 모듈의 다른 단축키 설정이 쓰는 키. 고를 수 없게 한다. 검색으로 숨은 설정의 키도 막는다.
     const takenKeys = (key: string): string[] =>
         settings.filter(([other, schema]) => other !== key && schema.type === "key").map(([other, schema]) => String(valueOf(other, schema)));
 
@@ -39,7 +54,7 @@ const ModuleSettings = ({feature, settings}: { feature: AnyModuleMeta; settings:
 
     return (
         <div className="pt-4">
-            {[...Map.groupBy(settings, ([key, schema]) => schema.group ?? key).values()].map((entries) => {
+            {[...Map.groupBy(shown, ([key, schema]) => schema.group ?? key).values()].map((entries) => {
                 const [first] = entries;
                 const group = first![1].group;
                 return (
@@ -64,8 +79,8 @@ const ModuleSettings = ({feature, settings}: { feature: AnyModuleMeta; settings:
     );
 };
 
-/** 모듈 카드. 헤더의 스위치로 켜고 끄며, 켜져 있을 때 세부 설정을 펼친다. */
-const ModuleCard = ({feature}: { feature: AnyModuleMeta }) => {
+/** 모듈 카드. 헤더의 스위치로 켜고 끄며, 켜져 있거나 검색 중일 때 세부 설정(shown)을 펼친다. */
+const ModuleCard = ({feature, shown, searching}: { feature: AnyModuleMeta; shown: SettingEntry[]; searching: boolean }) => {
     const enabled = useModulesStore((state) => state.enables[feature.id] === true);
     const toggle = useModulesStore((state) => state.toggle);
     const settings = Object.entries(feature.settings ?? {});
@@ -84,14 +99,18 @@ const ModuleCard = ({feature}: { feature: AnyModuleMeta }) => {
                 </CardAction>
             </CardHeader>
 
-            {settings.length > 0 && (
-                <Collapsible open={enabled}>
+            {shown.length > 0 && (
+                <Collapsible open={enabled || searching}>
                     {/* 켜고 끌 때 펼치고 접는다. 닫히는 애니메이션이 끝난 뒤 빠진다.
                         overflow-clip에 여백을 둔다. 없으면 가장자리 스위치·입력칸의 포커스 테두리가 잘린다. */}
                     <CollapsibleContent
                         className="h-(--collapsible-panel-height) overflow-clip transition-[height,opacity] duration-200 ease-out [overflow-clip-margin:6px] data-ending-style:h-0 data-ending-style:opacity-0 data-starting-style:h-0 data-starting-style:opacity-0 motion-reduce:transition-none">
                         <CardContent className="-mt-4">
-                            <ModuleSettings feature={feature} settings={settings}/>
+                            {/* 검색으로 펼친 꺼진 모듈. 값은 바꿀 수 있지만 켜야 적용되므로 흐리게 그린다. */}
+                            {!enabled && <p className="pt-4 text-xs text-muted-foreground">모듈을 켜야 적용됩니다.</p>}
+                            <div className={enabled ? undefined : "opacity-60"}>
+                                <ModuleSettings feature={feature} settings={settings} shown={shown}/>
+                            </div>
                         </CardContent>
                     </CollapsibleContent>
                 </Collapsible>
@@ -101,9 +120,27 @@ const ModuleCard = ({feature}: { feature: AnyModuleMeta }) => {
 };
 
 export function GeneralTab() {
+    const [query, setQuery] = useState("");
+    const needle = query.trim().toLowerCase();
+    const matched = features.flatMap((feature) => {
+        const shown = matchSettings(feature, needle);
+        return shown ? [{feature, shown}] : [];
+    });
+
     return (
         <div className="flex flex-col gap-4">
-            {features.map((feature) => <ModuleCard key={feature.id} feature={feature}/>)}
+            <InputGroup>
+                <InputGroupAddon>
+                    <Search/>
+                </InputGroupAddon>
+                <InputGroupInput type="search" placeholder="설정 검색" aria-label="설정 검색" value={query} onChange={(ev) => setQuery(ev.target.value)}/>
+            </InputGroup>
+            {matched.map(({feature, shown}) => <ModuleCard key={feature.id} feature={feature} shown={shown} searching={Boolean(needle)}/>)}
+            {matched.length === 0 && (
+                <Empty>
+                    <EmptyDescription>"{query.trim()}" 검색 결과 없음</EmptyDescription>
+                </Empty>
+            )}
         </div>
     );
 }

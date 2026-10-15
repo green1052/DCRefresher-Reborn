@@ -25,6 +25,28 @@ test.describe("옵션 - 설정 탭", () => {
         await expect(stealth).toBeChecked();
     });
 
+    test("설정 검색은 맞는 설정만 남기고, 꺼진 모듈의 설정도 펼쳐 켜야 적용된다고 알린다", async ({page, extensionId}) => {
+        const options = await openOptions(page, extensionId, "general");
+        const search = page.getByRole("searchbox", {name: "설정 검색", exact: true});
+        const card = options.card("검색 이어 보기");
+        const slider = card.getByRole("slider", {name: "최대 다음 검색 횟수", exact: true});
+        await expect(slider).toHaveCount(0);
+
+        await search.fill("최대 다음 검색");
+        await expect(options.cards).toHaveCount(1);
+        await expect(card.getByRole("switch", {name: "검색 이어 보기 사용", exact: true})).not.toBeChecked();
+        await expect(slider).toBeVisible();
+        await expect(card.getByText("모듈을 켜야 적용됩니다.")).toBeVisible();
+
+        await search.fill("없는 설정");
+        await expect(options.cards).toHaveCount(0);
+        await expect(page.getByText("\"없는 설정\" 검색 결과 없음")).toBeVisible();
+
+        await search.fill("");
+        expect(await options.cards.count()).toBeGreaterThanOrEqual(10);
+        await expect(slider).toHaveCount(0);
+    });
+
     test("설정을 바꾸면 모듈 설정에 저장하고, 기본값으로 되돌리기 버튼이 되돌린다", async ({page, extensionId, storage}) => {
         const options = await openOptions(page, extensionId, "general");
         const card = options.card("글 목록 새로고침");
