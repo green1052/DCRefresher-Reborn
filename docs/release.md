@@ -7,7 +7,7 @@
 1. develop에서 `package.json`의 `version`을 올리고 `chore(release): X.Y.Z`로 커밋합니다.
 2. release 브랜치에 develop을 머지 커밋(`Merge X.Y.Z into release`)으로 합치고 push합니다.
 
-release 브랜치에 push하면 `.github/workflows/release.yml`이 `package.json` 버전에 태그가 있는지 봅니다. 없으면 CI(`ci.yml`)를 통과한 뒤 그 커밋에 `X.Y.Z` 태그를 달고 zip을 GitHub 릴리즈에 올리고 Chrome 웹 스토어와 Firefox Add-ons에 제출합니다. 태그가 이미 있으면(버전을 올리지 않은 push) 아무것도 하지 않습니다. CI에는 `content.js` 크기 상한도 있어 넘으면 릴리즈도 멈춥니다([시작하기](getting-started.md#명령)). 태그는 손으로 만들지 않습니다. 제출 단계는 실패해도 넘어가므로(`continue-on-error`) 결과는 그 단계의 로그에서 확인합니다.
+release 브랜치에 push하면 `.github/workflows/release.yml`이 `package.json` 버전에 태그가 있는지 봅니다. 없으면 CI(`ci.yml`)를 통과한 뒤 머지해 온 develop 쪽 커밋(머지 커밋의 두 번째 부모인 `chore(release)` 커밋, 머지 커밋이 아니면 push한 커밋)에 `X.Y.Z` 태그를 달고 zip을 GitHub 릴리즈에 올리고 Chrome 웹 스토어와 Firefox Add-ons에 제출합니다. 머지 커밋이 아니라 develop 쪽에 태그를 다는 것은 release에만 있는 옛 기록이 릴리즈 노트에 들어가지 않게 하려는 것입니다. 태그가 이미 있으면(버전을 올리지 않은 push) 아무것도 하지 않습니다. CI에는 `content.js` 크기 상한도 있어 넘으면 릴리즈도 멈춥니다([시작하기](getting-started.md#명령)). 태그는 손으로 만들지 않습니다. 제출 단계는 실패해도 넘어가므로(`continue-on-error`) 결과는 그 단계의 로그에서 확인합니다.
 
 릴리즈는 IP·밴 DB를 만들지 않습니다([IP·밴 DB](#ip밴-db)).
 
