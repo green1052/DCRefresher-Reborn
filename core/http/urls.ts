@@ -66,7 +66,8 @@ export const managerAjaxUrl = (url: string, action: string): string => `${urls.b
 /**
  * 게시글/목록 URL → 같은 갤러리·쿼리의 목록 URL.
  * 같은 목록이면 같은 문자열이 되도록 글 보기 전용 값(no, t)과 page=1을 빼고 쿼리를 정렬한다.
- * 그래서 미리보기가 pushState로 바꾼 글 주소도 원래 목록과 같은 값이 나온다.
+ * 글 주소는 목록과 쿼리가 같을 때만 원래 목록과 같은 값이 나온다. 미리보기가 쌓는 행 링크는 목록 주소의 기본값 쿼리
+ * (sort_type=N, 빈 search_pos 등)가 빠져 다를 수 있다.
  */
 export const listUrl = (url: string): string => {
     const queries = new URL(url).searchParams;
