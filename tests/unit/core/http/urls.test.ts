@@ -104,4 +104,14 @@ describe("rowPostNo", () => {
         expect(rowPostNo(row("/board/lists/?id=test"))).toBeUndefined();
         expect(rowPostNo(document.createElement("tr"))).toBeUndefined();
     });
+
+    it("미리보기가 주소를 다른 갤러리 글로 바꿔도 이 문서의 갤러리로 고른다", () => {
+        history.replaceState(null, "", "/board/view/?id=other&no=5");
+        try {
+            expect(rowPostNo(row("/board/view/?id=test&no=42"))).toBe("42");
+            expect(rowPostNo(row("/board/view/?id=other&no=42"))).toBeUndefined();
+        } finally {
+            history.replaceState(null, "", "/board/view/?id=test&no=9");
+        }
+    });
 });

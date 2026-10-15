@@ -107,5 +107,5 @@ export const rowPostNo = (row: HTMLElement): string | undefined => {
 
     const href = row.querySelector(".gall_tit > a")?.getAttribute("href");
     const params = href ? URL.parse(href, location.href)?.searchParams : undefined;
-    return (params?.get("id") === queryString("id") && params?.get("no")) || undefined;
+    return (params?.get("id") === documentUrl.searchParams.get("id") && params?.get("no")) || undefined;
 };

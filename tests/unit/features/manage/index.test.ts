@@ -49,6 +49,19 @@ describe("Ctrl+클릭 삭제", () => {
         expect(document.querySelector(".ub-content")).toBeNull();
     });
 
+    it("주소를 다른 갤러리 글로 바꿔도 이 문서의 갤러리 글로 지운다", async () => {
+        mountList(true);
+        await start({deleteViaCtrl: true});
+        history.replaceState(null, "", "/board/view/?id=other&no=5");
+        try {
+            ctrlClick(row().querySelector(".gall_tit a")!);
+            await tick();
+            expect(deletePost).toHaveBeenCalledWith(expect.objectContaining({gallery: "test", id: "7", link: "https://gall.dcinside.com/board/lists/?id=test"}));
+        } finally {
+            history.replaceState(null, "", "/board/lists/?id=test");
+        }
+    });
+
     it("관리하지 않는 갤러리, 설정을 끈 때, 체크박스 칸·댓글 수는 지우지 않고 클릭을 그대로 둔다", async () => {
         mountList(false);
         await start({deleteViaCtrl: true});
