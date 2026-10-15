@@ -1,6 +1,6 @@
 import {addFilter} from "@/core/filtering";
 import {documentUrl} from "@/core/http/urls";
-import type {PageAction, PageToggleState} from "@/core/messaging/protocol";
+import type {PageAction, PageState, PageToggleState} from "@/core/messaging/protocol";
 import {storage} from "wxt/utils/storage";
 import {createStore} from "zustand/vanilla";
 
@@ -188,6 +188,12 @@ export const pageToggleStates = (): PageToggleState[] =>
         on: toggle.isOn(running.api)
     })));
 
+/** 팝업 '현재 페이지'의 상태. 켜져 있는데 이 페이지에서 setup이 던진 모듈도 알린다 (콘솔 말고는 알 길이 없다). */
+export const pageState = (): PageState => ({
+    toggles: pageToggleStates(),
+    failed: [...instances.values()].flatMap(({def, failed}) => (failed ? [def.id] : []))
+});
+
 /** loadAll이 끝난 뒤에 생긴다. 저장소의 on/off를 다시 읽어 맞추고, 시작하는 모듈의 setup을 기다린다. */
 let resync: (() => Promise<void>) | null = null;
 
@@ -195,9 +201,9 @@ let resync: (() => Promise<void>) | null = null;
  * 팝업이 묻는 토글 상태. 팝업은 모듈을 켜고 끈 저장이 끝난 뒤에 묻는데, 저장소 감시 알림은 그보다 늦게 올 수 있으므로
  * 저장소를 직접 읽어 맞추고 모듈이 다 뜬 뒤에 답한다.
  */
-export const settledPageToggleStates = async (): Promise<PageToggleState[]> => {
+export const settledPageState = async (): Promise<PageState> => {
     await resync?.();
-    return pageToggleStates();
+    return pageState();
 };
 
 /** 팝업에서 누른 토글을 실행한다. */

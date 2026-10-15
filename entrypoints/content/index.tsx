@@ -4,7 +4,7 @@ import "@/components/overlay/styles";
 import {releaseDatabase} from "@/core/database";
 import {documentUrl} from "@/core/http/urls";
 import {onMessage} from "@/core/messaging/protocol";
-import {loadAll, pageToggleStates, runPageToggle, runShortcut, settledPageToggleStates, stopAll} from "@/core/module/registry";
+import {loadAll, pageState, runPageToggle, runShortcut, settledPageState, stopAll} from "@/core/module/registry";
 import {BOARD_PAGE, CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES} from "@/core/pages";
 import features from "@/features";
 import {initBlocksStore} from "@/stores/blocks";
@@ -36,10 +36,10 @@ export default defineContentScript({
         // ===== 메시징 (배경·팝업→탭) =====
         onMessage("refresher:executeShortcut", ({data: command}) => runShortcut(command));
 
-        onMessage("refresher:pageState", settledPageToggleStates);
+        onMessage("refresher:pageState", settledPageState);
         onMessage("refresher:pageAction", ({data: action}) => {
             runPageToggle(action);
-            return pageToggleStates();
+            return pageState();
         });
 
         // 확장을 끄거나 업데이트해도 이 스크립트는 남아 새로고침 폴링·저장소 호출을 하다 실패하므로 모듈을 멈춘다.

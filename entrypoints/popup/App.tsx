@@ -7,7 +7,7 @@ import {Card, CardContent} from "@/components/ui/card";
 import {Field, FieldContent, FieldDescription, FieldLabel} from "@/components/ui/field";
 import {Switch} from "@/components/ui/switch";
 import {Toggle} from "@/components/ui/toggle";
-import {type PageAction, type PageToggleState, sendMessage} from "@/core/messaging/protocol";
+import {type PageAction, type PageState, sendMessage} from "@/core/messaging/protocol";
 import {backupStorage} from "@/core/storage/items";
 import features from "@/features/meta";
 import {initBlocksStore, useBlocksStore} from "@/stores/blocks";
@@ -21,7 +21,7 @@ interface Page {
     tabId: number;
     gallery: string;
     /** 처음 물었을 때의 탭 상태. 콘텐츠 스크립트가 없으면 null이다. */
-    state: PageToggleState[] | null;
+    state: PageState | null;
 }
 
 /** 활성 탭이 디시 갤러리 페이지면 탭과 갤러리 id를 돌려준다. tabs 권한이 없어 탭 주소는 host_permissions가 있는 디시 탭에서만 보인다. */
@@ -103,6 +103,7 @@ function PageSection({tabId, gallery, state: initial, toggled}: Page & { toggled
     const visible = (entry: { gallery?: string }): boolean => !entry.gallery || entry.gallery === gallery;
     const blockCount = Object.values(blocks).flat().filter(visible).length;
     const memoCount = Object.values(memos).flatMap((map) => Object.values(map)).filter(visible).length;
+    const failed = features.filter((feature) => state?.failed.includes(feature.id)).map((feature) => feature.name);
 
     return (
         <div>
@@ -117,12 +118,18 @@ function PageSection({tabId, gallery, state: initial, toggled}: Page & { toggled
 
             {/* 확장을 업데이트하기 전에 열린 탭 등 콘텐츠 스크립트가 없으면 토글을 받을 수 없다. */}
             {state === null && <p className="text-center text-xs text-muted-foreground">페이지를 새로고침하면 이 페이지 설정이 나옵니다.</p>}
+            {/* 켜져 있는데 setup이 던진 모듈. 모듈 타일은 켜짐으로만 보여 왜 안 되는지 알 수 없다. */}
+            {failed.length > 0 && (
+                <p className="mb-2 text-center text-xs text-destructive" role="alert">
+                    이 페이지에서 시작하지 못한 모듈: {failed.join(", ")}. 페이지를 새로고침해 보세요.
+                </p>
+            )}
             {/* 이 페이지에서 바꿀 수 있는 것이 없어도 빈 칸으로 두지 않는다. */}
-            {state?.length === 0 && <p className="text-center text-xs text-muted-foreground">이 페이지에서 바꿀 수 있는 설정이 없습니다.</p>}
-            {state && state.length > 0 && (
+            {state?.toggles.length === 0 && <p className="text-center text-xs text-muted-foreground">이 페이지에서 바꿀 수 있는 설정이 없습니다.</p>}
+            {state && state.toggles.length > 0 && (
                 <Card className="py-3">
                     <CardContent className="flex flex-col gap-3 px-3">
-                        {state.map((toggle) => (
+                        {state.toggles.map((toggle) => (
                             <ToggleRow key={`${toggle.module}:${toggle.id}`} icon={toggleIcon(toggle)} label={toggle.label} desc={toggle.desc}
                                        checked={toggle.on} onChange={() => act({module: toggle.module, id: toggle.id})}/>
                         ))}

@@ -16,6 +16,12 @@ export interface PageToggleState {
 
 export type PageAction = Pick<PageToggleState, "module" | "id">;
 
+/** 팝업 '현재 페이지'의 상태. failed는 이 페이지에서 setup이 던져 멈춘 모듈 id다 (껐다 켜거나 새로고침할 때까지 다시 시작하지 않는다). */
+export interface PageState {
+    toggles: PageToggleState[];
+    failed: string[];
+}
+
 /** 디시 comment.js의 dc_rc_pairs 이름. 글 댓글은 이 쌍의 v3 키로 토큰을 받고, 서버가 같은 쌍의 비밀키로 확인하게 rc_key로 보낸다. */
 export type CommentRcKey = "new" | "new3";
 
@@ -50,11 +56,11 @@ interface ProtocolMap {
     /** 옵션 → 배경: IP·밴 DB "지금 갱신". 같은 버전이어도 다시 받는다. 배경 한 곳에서 받아야 진행 중인 갱신과 겹쳐 두 번 받지 않는다. */
     "refresher:updateDatabase"(): void;
 
-    /** 팝업 → 탭: 이 페이지의 토글 상태. */
-    "refresher:pageState"(): PageToggleState[];
+    /** 팝업 → 탭: 이 페이지의 토글 상태와 시작하지 못한 모듈. */
+    "refresher:pageState"(): PageState;
 
     /** 팝업 → 탭: 이 페이지에서만 토글. 바뀐 상태를 돌려준다. */
-    "refresher:pageAction"(action: PageAction): PageToggleState[];
+    "refresher:pageAction"(action: PageAction): PageState;
 }
 
 export const {sendMessage, onMessage} = defineExtensionMessaging<ProtocolMap>();

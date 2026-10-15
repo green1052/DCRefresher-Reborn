@@ -162,6 +162,17 @@ describe("loadAll", () => {
         expect(registry.runningModulesStore.getState()).toEqual({broken: false, fine: true});
     });
 
+    it("setup이 실패한 모듈을 페이지 상태에 알리고, 끄면 지운다", async () => {
+        vi.spyOn(console, "error").mockImplementation(() => {});
+
+        await load([testModule({id: "broken", setup: () => Promise.reject(new Error("boom"))}), testModule({id: "fine", setup: () => {}})]);
+        expect(registry.pageState().failed).toEqual(["broken"]);
+
+        await setEnables({broken: false});
+        await tick();
+        expect(registry.pageState().failed).toEqual([]);
+    });
+
     it("setup이 실패한 모듈은 껐다 켤 때만 다시 setup한다", async () => {
         vi.spyOn(console, "error").mockImplementation(() => {});
         const setup = vi.fn(() => {
@@ -462,7 +473,7 @@ describe("단축키·페이지 토글", () => {
         expect(toggled).toHaveBeenCalledWith("on", {count: 2, on: true});
     });
 
-    it("settledPageToggleStates는 저장소를 다시 읽고 켜지는 모듈을 기다린다", async () => {
+    it("settledPageState는 저장소를 다시 읽고 켜지는 모듈을 기다린다", async () => {
         const gate = Promise.withResolvers<void>();
         await load([testModule({
             id: "late", defaultEnable: false,
@@ -476,11 +487,11 @@ describe("단축키·페이지 토글", () => {
         muteWatchers();
         await setEnables({late: true});
 
-        const states = registry.settledPageToggleStates();
+        const state = registry.settledPageState();
         await tick();
         gate.resolve();
 
-        expect(await states).toEqual([{module: "late", id: "t", label: "", desc: "", on: true}]);
+        expect(await state).toEqual({toggles: [{module: "late", id: "t", label: "", desc: "", on: true}], failed: []});
     });
 
     it("컨텍스트가 끝난 뒤에는 다시 읽지 않는다", async () => {
@@ -489,7 +500,7 @@ describe("단축키·페이지 토글", () => {
         controller.abort();
         const get = vi.spyOn(fakeBrowser.storage.local, "get");
 
-        await registry.settledPageToggleStates();
+        await registry.settledPageState();
 
         expect(get).not.toHaveBeenCalled();
     });
