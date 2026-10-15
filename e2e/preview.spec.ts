@@ -364,6 +364,37 @@ test.describe("댓글 쓰기·지우기", () => {
         expect(body.get("rc_key")).toMatch(/^new3?$/);
     });
 
+    test("쓰던 댓글은 글마다 남아 다른 글에 갔다 돌아와도 되살리고, 보내면 그 글의 초안만 지운다", async ({listPage}) => {
+        const {page} = listPage;
+        const frame = await listPage.openPreview();
+        const input = frame.getByRole("textbox", {name: "댓글 입력", exact: true});
+        await input.fill("글 3에 쓰던 댓글");
+        await input.blur();
+        await page.keyboard.press("PageDown");
+        await expect(listPage.frameTitle).toHaveText("[말머리] 글 2 제목");
+        await expect(input).toHaveValue("");
+        await input.fill("글 2에 쓰던 댓글");
+        await input.blur();
+
+        await page.keyboard.press("PageUp");
+        await expect(listPage.frameTitle).toHaveText("[말머리] 글 3 제목");
+        await expect(input).toHaveValue("글 3에 쓰던 댓글");
+        await frame.getByRole("button", {name: "작성", exact: true}).click();
+        await expect(frame.getByText("글 3에 쓰던 댓글", {exact: true})).toBeVisible();
+        await expect(input).toHaveValue("");
+
+        // 보낸 글의 초안은 지우고, 다른 글의 초안은 그대로 둔다.
+        await input.blur();
+        await page.keyboard.press("PageDown");
+        await expect(listPage.frameTitle).toHaveText("[말머리] 글 2 제목");
+        await expect(input).toHaveValue("글 2에 쓰던 댓글");
+        await page.keyboard.press("Escape");
+        await expect(frame).toHaveCount(0);
+        await listPage.openPreview();
+        await expect(listPage.frameTitle).toHaveText("[말머리] 글 3 제목");
+        await expect(input).toHaveValue("");
+    });
+
     test("멤버만 댓글 갤러리는 댓글 0개 글에도 입력칸 대신 안내를 보인다", async ({listPage, site}) => {
         site.allowReply = 0;
         site.comments = [];

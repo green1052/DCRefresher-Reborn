@@ -1,4 +1,5 @@
 import {Send, Smile, Type, X} from "lucide-react";
+import QuickLRU from "quick-lru";
 import {useEffect, useLayoutEffect, useRef, useState} from "react";
 
 import {Button} from "@/components/ui/button";
@@ -35,8 +36,11 @@ const Swatch = ({color, label}: { color: string; label: string }) => (
 
 const NO_DCCON: { list: DcinsideDccon[]; big: boolean } = {list: [], big: false};
 
-/** 쓰던 댓글 하나를 모듈 전역에 둔다. 창을 닫았다 같은 글을 다시 열면 되살리고, 다른 글을 열면 버린다. */
-let draft = {key: "", text: ""};
+/**
+ * 쓰던 댓글을 글마다 모듈 전역에 둔다. 다른 글에 갔다 오거나 창을 닫았다 다시 열면 되살린다. 페이지가 살아 있는 동안만 기억한다.
+ * quick-lru는 두 세대로 나눠 두어 maxSize의 두 배 가까이 남긴다.
+ */
+const drafts = new QuickLRU<string, string>({maxSize: 10});
 /** 댓글을 보내는 중인 글. 보내는 사이 폼이 다시 마운트돼도(다른 글에 갔다 돌아옴) 같은 댓글을 또 보내지 않게 모듈 전역에 둔다. */
 const sendingKeys = new Set<string>();
 
@@ -46,12 +50,16 @@ export const WriteComment = () => {
     const replyName = usePreviewStore((s) => s.comments?.find((comment) => comment.no === s.reply.replyNo)?.name);
     // 폼은 글마다 새로 마운트된다 (Frame의 key). 마운트할 때 이 글에서 쓰던 댓글이 있으면 되살린다.
     // 보내는 중인 댓글은 되살리지 않는다. 올라간 댓글이 입력칸에 남아 한 번 더 보내게 된다.
-    const [initialText] = useState(() => {
+    const [draftKey] = useState(() => {
         const preData = usePreviewStore.getState().preData;
-        const key = preData ? postKey(preData) : "";
-        if (draft.key !== key) draft = {key, text: ""};
-        return sendingKeys.has(key) ? "" : draft.text;
+        return preData ? postKey(preData) : "";
     });
+    const [initialText] = useState(() => (sendingKeys.has(draftKey) ? "" : (drafts.get(draftKey) ?? "")));
+    // 입력칸을 바꾸는 곳마다 이 글의 초안으로 적어 둔다. 비우면 지워 자리를 차지하지 않게 한다.
+    const saveDraft = (text: string): void => {
+        if (text) drafts.set(draftKey, text);
+        else drafts.delete(draftKey);
+    };
     const [login] = useState(() => Boolean(document.querySelector("#login_box .user_info .nickname > em")));
     const [accountId] = useState(loggedInUserId);
     const [saved] = useState(savedNonmember);
@@ -144,7 +152,7 @@ export const WriteComment = () => {
                 // 보내는 사이 더 쓴 글은 남긴다. 디시콘만 보냈으면 입력칸의 글은 보내지 않았으니 둔다.
                 if (!useDccon) {
                     if (textarea.current?.value === raw) textarea.current.value = "";
-                    if (draft.text === raw) draft.text = "";
+                    if (drafts.get(key) === raw) drafts.delete(key);
                 }
                 setDccon(NO_DCCON);
                 setTxtcon(false);
@@ -188,7 +196,7 @@ export const WriteComment = () => {
 
         const next = normalizeTxtcon(element.value);
         if (next !== element.value) element.value = next;
-        draft.text = element.value;
+        saveDraft(element.value);
     };
 
     /** 글자콘을 끈다. 켤 때 잘린 글을 그대로 두었으면 원문으로 되돌린다. 토글 버튼과 디시콘 선택이 같이 쓴다. */
@@ -196,7 +204,7 @@ export const WriteComment = () => {
         const element = textarea.current;
         if (element && beforeTxtcon.current !== null && element.value === normalizeTxtcon(beforeTxtcon.current)) {
             element.value = beforeTxtcon.current;
-            draft.text = element.value;
+            saveDraft(element.value);
         }
         beforeTxtcon.current = null;
         setTxtcon(false);
@@ -259,11 +267,11 @@ export const WriteComment = () => {
                     className="min-h-16 flex-1 resize-y"
                     onChange={(ev) => {
                         if (txtcon && !(ev.nativeEvent instanceof InputEvent && ev.nativeEvent.isComposing)) applyTxtcon();
-                        draft.text = ev.target.value;
+                        saveDraft(ev.target.value);
                     }}
                     onCompositionEnd={(ev) => {
                         if (txtcon) applyTxtcon();
-                        draft.text = ev.currentTarget.value;
+                        saveDraft(ev.currentTarget.value);
                     }}
                     onKeyDown={(ev) => {
                         if (ev.key === "Enter" && !ev.shiftKey && !ev.nativeEvent.isComposing) {
