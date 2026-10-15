@@ -49,7 +49,7 @@ export default defineModule({
 ```
 
 - **setup(ctx)**: 모듈이 켜진 페이지에서 실행됩니다. 돌려준 값은 모듈의 api가 되어 단축키·팝업 토글·다른 모듈이 받습니다. setup이 던지면 실패로 표시하고 모듈을 껐다 켤 때까지 그 페이지에서는 다시 시작하지 않습니다.
-- **revoke()**: 모듈을 끄면 signal을 abort한 뒤 실행됩니다. 페이지에 넣은 DOM·클래스·스타일을 되돌립니다. 컨텍스트가 무효가 됐을 때(확장 업데이트 등)는 abort만 하고 revoke는 부르지 않아 페이지를 그대로 둡니다.
+- **revoke()**: 모듈을 끄면 signal을 abort한 뒤 실행됩니다. 페이지에 넣은 DOM·클래스·스타일을 되돌립니다. 던져도 오류만 남기고 다른 모듈의 켜기·끄기는 이어집니다. 컨텍스트가 무효가 됐을 때(확장 업데이트 등)는 abort만 하고 revoke는 부르지 않아 페이지를 그대로 둡니다.
 - **ctx.onSettingsChanged(listener)**: 켜져 있는 동안 설정이 바뀌면 바뀐 키들(Set)로 한 번 부릅니다. 여러 키가 한꺼번에 바뀌어도 한 번입니다. `ctx.settings`는 늘 최신 값이므로, 설정을 쓸 때마다 읽는 모듈은 등록하지 않아도 됩니다.
 - 객체를 쓸 때 `setup`을 `shortcuts`, `pageToggles`보다 앞에 둡니다. TypeScript가 api 타입을 `setup`의 반환값에서 추론하기 때문입니다.
 
@@ -124,7 +124,7 @@ getModuleApi("preview")?.archiveArticle() === true
 
 배경 스크립트에서 할 일(컨텍스트 메뉴 등)이 있으면 `features/<id>/background.ts`에서 `defineBackgroundModule`로 default 내보냅니다. `entrypoints/background/index.ts`가 glob으로 모아 실행합니다.
 
-- `listen()`: 배경이 뜰 때마다 동기로 실행됩니다. 서비스 워커를 깨울 이벤트 리스너는 여기서 겁니다.
+- `listen()`: 배경이 뜰 때마다 동기로 실행됩니다. 서비스 워커를 깨울 이벤트 리스너는 여기서 겁니다. 던지면 오류만 남기고 그 모듈은 `apply`하지 않습니다. 메시지 이름은 배경 전체에서 한 번만 걸 수 있으며, 겹치면 단위 테스트(`tests/unit/entrypoints/background/messages.test.ts`)가 잡습니다.
 - `apply({enabled, settings})`: 모듈을 켜고 끄거나 설정이 바뀔 때, 설치·브라우저 시작 때(Firefox는 배경이 뜰 때마다) 실행됩니다. 맞출 상태 없이 리스너만 거는 모듈은 두지 않습니다(`features/write/background.ts`).
 - 탭이 메시지로 요청한 일을 그 페이지(MAIN world)에서 할 때는 `hasTab`으로 탭에서 온 것인지 보고 `runInPage`로 실행합니다.
 

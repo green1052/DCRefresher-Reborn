@@ -102,7 +102,10 @@ const start = async (instance: ModuleInstance): Promise<void> => {
     return running.setup;
 };
 
-/** keepDom이면 revoke 없이 리스너·타이머만 푼다. abort를 revoke보다 먼저 해서 revoke가 던져도 리스너가 남지 않게 한다. */
+/**
+ * keepDom이면 revoke 없이 리스너·타이머만 푼다. abort를 revoke보다 먼저 해서 revoke가 던져도 리스너가 남지 않게 한다.
+ * revoke 오류는 남기기만 한다. 던지면 sync가 나머지 모듈을 건너뛰고, setup 실패 정리 중이면 실패 표시가 빠진다.
+ */
 const stop = (instance: ModuleInstance, keepDom = false): void => {
     const running = instance.running;
     if (!running) return;
@@ -110,7 +113,12 @@ const stop = (instance: ModuleInstance, keepDom = false): void => {
     runningModulesStore.setState({[instance.def.id]: false});
 
     running.controller.abort();
-    if (!keepDom) instance.def.revoke?.();
+    if (keepDom) return;
+    try {
+        instance.def.revoke?.();
+    } catch (e) {
+        console.error(`Module revoke failed: ${instance.def.id}`, e);
+    }
 };
 
 /** 저장된 설정을 반영. 바뀐 값만 실행 중인 모듈의 설정 리스너(ctx.onSettingsChanged)에 알린다. stored는 저장소에서 온 그대로(없으면 null)라 모양을 검사한다. */

@@ -184,6 +184,33 @@ describe("loadAll", () => {
         await tick();
         expect(setup).toHaveBeenCalledTimes(2);
     });
+
+    it("revoke가 던져도 남기기만 하고, 같은 변경의 다른 모듈과 setup 실패 표시는 그대로 반영한다", async () => {
+        const log = vi.spyOn(console, "error").mockImplementation(() => {});
+        const error = new Error("revoke");
+        const revoke = () => {
+            throw error;
+        };
+        const broken = vi.fn(() => {
+            throw new Error("boom");
+        });
+        const later = vi.fn();
+
+        await load([
+            testModule({id: "broken", revoke, setup: broken}),
+            testModule({id: "a", revoke, setup: () => {}}),
+            testModule({id: "b", defaultEnable: false, setup: later})
+        ]);
+        expect(log).toHaveBeenCalledWith("Module revoke failed: broken", error);
+
+        // a의 revoke가 던져도 뒤의 b를 켜고, 실패한 broken은 다시 setup하지 않는다.
+        await setEnables({a: false, b: true});
+        await tick();
+        expect(log).toHaveBeenCalledWith("Module revoke failed: a", error);
+        expect(later).toHaveBeenCalledOnce();
+        expect(broken).toHaveBeenCalledOnce();
+        expect(registry.runningModulesStore.getState()).toMatchObject({broken: false, a: false, b: true});
+    });
 });
 
 describe("설정 변경", () => {

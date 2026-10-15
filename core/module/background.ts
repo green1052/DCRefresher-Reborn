@@ -46,7 +46,13 @@ export const runInPage = <Args extends unknown[], Result>(sender: TabSender, fun
 /** 배경 모듈을 시작한다. 모든 모듈을 지금 상태에 다시 맞추는 함수를 돌려준다 (설치·브라우저 시작 때 배경이 부른다). */
 export const startBackgroundModules = (modules: BackgroundModule[]): (() => Promise<void>) => {
     const appliers = modules.map((module) => {
-        module.listen?.();
+        // 한 모듈의 listen이 던져도 다른 모듈과 배경의 나머지 리스너는 건다. 리스너를 다 걸지 못한 모듈은 맞추지 않는다.
+        try {
+            module.listen?.();
+        } catch (e) {
+            console.error(`Background module listen failed: ${module.id}`, e);
+            return async () => {};
+        }
         // listen만 하는 모듈은 맞출 상태가 없다.
         const applyState = module.apply?.bind(module);
         if (!applyState) return async () => {};
