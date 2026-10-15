@@ -1,27 +1,19 @@
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
-import type {SubmitResult} from "@/core/preview/request";
+const fetchMock = vi.hoisted(() => (globalThis.fetch = vi.fn<typeof fetch>()));
+
+import {urls} from "@/core/http/urls";
 import {submitResult} from "@/core/preview/response";
-import type {DcinsideDccon, GalleryPreData, PostInfo} from "@/core/preview/types";
+import type {DcinsideDccon, PostInfo} from "@/core/preview/types";
 import {deleteOwnComment, isCommentPosted, postComment} from "@/features/preview/comment-submit";
 
+import {preData as makePreData} from "../../../helpers";
+import {type Sent, serve} from "../../core/preview/net";
+
 const net = vi.hoisted(() => ({
-    responses: [] as string[],
-    tokens: [] as (string | undefined)[],
-    calls: [] as unknown[][],
     requests: [] as unknown[],
     token: "token" as string | undefined
 }));
-
-vi.mock("@/core/preview/request", async (importOriginal) => {
-    const {submitResult} = await import("@/core/preview/response");
-    const send = async (...args: unknown[]): Promise<SubmitResult> => {
-        net.tokens.push(args.at(-1) as string | undefined);
-        net.calls.push(args);
-        return submitResult(net.responses.shift() ?? "");
-    };
-    return {...await importOriginal<typeof import("@/core/preview/request")>(), submitComment: send, submitTxtcon: send, userDeleteComment: send};
-});
 
 vi.mock("@/core/messaging/protocol", () => ({
     sendMessage: async (_: string, data: unknown) => {
@@ -30,22 +22,28 @@ vi.mock("@/core/messaging/protocol", () => ({
     }
 }));
 
-const preData = {gallery: "test", id: "1"} as GalleryPreData;
-const post = {} as PostInfo;
+const preData = makePreData({gallery: "test", id: "1", link: "https://gall.dcinside.com/board/lists?id=test"});
+// dValue는 '5,10'을 디시 알파벳으로 바꾼 base64다. 이게 있어야 submitComment가 service_code를 만들어 보낸다.
+const post = {commentForm: {fields: [], serviceCode: "0123456789", dValue: "dTuEQyKK", checks: {}}} satisfies PostInfo;
 const user = {name: "ㅇㅇ", pw: "1234"};
 const reply = {commentNo: null, replyNo: null};
 const text = {text: "댓글", dccons: [], bigDccon: false};
 const dccon = {...text, dccons: [{package_idx: "1", detail_idx: "2", list_img: "", title: "콘"}] satisfies DcinsideDccon[]};
 const txtcon = {...text, txtcon: {bg: "1", txt: "2"}};
 
+/** 보낸 요청들. 응답은 responses를 차례로 쓴다. */
+let sent: Sent[] = [];
+const respond = (responses: string[]) => {
+    sent = serve(fetchMock, () => responses.shift() ?? "");
+};
+const field = (name: string) => sent.map(({body}) => body.get(name));
+
 const send = (responses: string[], content: Parameters<typeof postComment>[3] = text) => {
-    net.responses = responses;
+    respond(responses);
     return postComment(preData, post, user, content, reply);
 };
 
 beforeEach(() => {
-    net.tokens = [];
-    net.calls = [];
     net.requests = [];
     net.token = "token";
 });
@@ -65,7 +63,8 @@ describe("isCommentPosted", () => {
 describe("postComment", () => {
     it("글 댓글은 새 댓글 번호면 성공이다", async () => {
         expect(await send(["12345"])).toEqual({ok: true});
-        expect(net.tokens).toEqual([undefined]);
+        expect(sent.map(({url}) => url)).toEqual([urls.comments_submit]);
+        expect(field("g-recaptcha-token")).toEqual([null]);
     });
 
     it("디시 문구가 있는 실패는 그 문구를, 실패 코드는 우리 문구를 보인다", async () => {
@@ -77,26 +76,29 @@ describe("postComment", () => {
 
     it("v3 캡차를 요구하면 토큰을 붙여 한 번 더 보낸다", async () => {
         expect(await send(["false||captcha||v3", "12345"])).toEqual({ok: true});
-        expect(net.tokens).toEqual([undefined, "token"]);
+        expect(field("g-recaptcha-token")).toEqual([null, "token"]);
     });
 
     it("글 댓글은 매번 rc_key를 보내고 재전송 토큰도 그 쌍의 키로 받는다", async () => {
         await send(["false||captcha||v3", "12345"]);
-        // submitComment(..., captcha, rcKey, grecaptchaToken)
-        const [first, second] = net.calls.map((args) => args.at(-2));
+        const [first, second] = field("rc_key");
         expect(["new", "new3"]).toContain(first);
         expect(second).toBe(first);
+        expect(field("g-recaptcha-token")).toEqual([null, "token"]);
         expect(net.requests).toEqual([{action: "comment_submit", rcKey: first}]);
 
         net.requests = [];
         await send(["false||captcha||v3", "ok"], dccon);
+        expect(sent.map(({url}) => url)).toEqual([urls.dccon_comments_submit, urls.dccon_comments_submit]);
+        expect(field("rc_key")).toEqual([null, null]);
+        expect(field("g-recaptcha-token")).toEqual([null, "token"]);
         expect(net.requests).toEqual([{action: "insert_icon"}]);
     });
 
     it("토큰을 받지 못했거나 다시 보내도 캡차면 원문에서 풀게 한다", async () => {
         net.token = undefined;
         expect(await send(["false||captcha||v3"])).toEqual({ok: false, captcha: true});
-        expect(net.tokens).toEqual([undefined]);
+        expect(field("g-recaptcha-token")).toEqual([null]);
 
         net.token = "token";
         expect(await send(["false||captcha||v3", "false||captcha"])).toEqual({ok: false, captcha: true});
@@ -105,6 +107,7 @@ describe("postComment", () => {
     it("디시콘·글자콘은 ok만 성공이다", async () => {
         expect(await send(["ok"], dccon)).toEqual({ok: true});
         expect(await send(["ok"], txtcon)).toEqual({ok: true});
+        expect(sent.map(({url}) => url)).toEqual([urls.txtcon_submit]);
         // 댓글 번호처럼 보여도 디시콘 응답이면 성공이 아니다.
         expect((await send(["12345"], dccon)).ok).toBe(false);
     });
@@ -117,21 +120,21 @@ describe("postComment", () => {
 
 describe("deleteOwnComment", () => {
     it("v3를 요구하면 같은 rc_key 쌍의 토큰을 붙여 한 번 더 보낸다", async () => {
-        net.responses = ["false||captcha||v3", "true"];
+        respond(["false||captcha||v3", "true"]);
         expect(await deleteOwnComment(preData, post, "7", "pw")).toEqual({success: true});
-        const rcKey = net.calls[0]?.[4];
+        const rcKey = field("rc_key")[0];
         expect(rcKey).toMatch(/^new3?$/);
-        expect(net.calls.map((call) => [call[4], call[5]])).toEqual([[rcKey, undefined], [rcKey, "token"]]);
+        expect(sent.map(({body}) => [body.get("rc_key"), body.get("g-recaptcha-token")])).toEqual([[rcKey, null], [rcKey, "token"]]);
         expect(net.requests).toEqual([{action: "comment_delete_submit", rcKey}]);
     });
 
     it("재전송도 막히면 원문에서 지우라고 알린다", async () => {
-        net.responses = ["false||captcha||v3", "false||captcha"];
+        respond(["false||captcha||v3", "false||captcha"]);
         expect(await deleteOwnComment(preData, post, "7", "pw")).toEqual({success: false, message: "자동입력 방지 확인이 필요합니다. 원문에서 삭제해 주세요."});
     });
 
     it("비밀번호가 틀리면 디시 문구를 그대로 보인다", async () => {
-        net.responses = ["false||비밀번호가 맞지 않습니다."];
+        respond(["false||비밀번호가 맞지 않습니다."]);
         expect(await deleteOwnComment(preData, post, "7", "x")).toEqual({success: false, message: "비밀번호가 맞지 않습니다."});
         expect(net.requests).toEqual([]);
     });

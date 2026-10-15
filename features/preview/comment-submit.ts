@@ -53,10 +53,12 @@ export const postComment = async (
 ): Promise<CommentOutcome> => {
     const useDccon = content.dccons.length > 0;
     const rcKey = pickRcKey();
-    const send = (token?: string): Promise<SubmitResult> =>
-        content.txtcon
-            ? submitTxtcon(preData, post, user, content.text, content.txtcon, reply.commentNo, reply.replyNo, code, token)
-            : submitComment(preData, post, user, useDccon ? content.dccons : content.text, reply.commentNo, reply.replyNo, useDccon && content.bigDccon, code, rcKey, token);
+    const send = (grecaptchaToken?: string): Promise<SubmitResult> => {
+        const fields = {user, ...reply, captcha: code, grecaptchaToken};
+        return content.txtcon
+            ? submitTxtcon(preData, post, {...fields, text: content.text, colors: content.txtcon})
+            : submitComment(preData, post, {...fields, memo: useDccon ? content.dccons : content.text, bigDccon: useDccon && content.bigDccon, rcKey});
+    };
 
     let response = await send();
     if (response.message === "captcha" && response.detail === "v3") {

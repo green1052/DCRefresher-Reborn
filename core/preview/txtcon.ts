@@ -81,13 +81,15 @@ export const normalizeTxtcon = (value: string): string => {
 export const submitTxtcon = async (
     preData: GalleryPreData,
     postInfo: PostInfo,
-    user: { name: string; pw?: string },
-    text: string,
-    colors: { bg: string; txt: string },
-    commentNo: string | null,
-    replyNo: string | null,
-    captcha?: string,
-    grecaptchaToken?: string
+    {user, text, colors, commentNo, replyNo, captcha, grecaptchaToken}: {
+        user: { name: string; pw?: string };
+        text: string;
+        colors: { bg: string; txt: string };
+        commentNo: string | null;
+        replyNo: string | null;
+        captcha?: string;
+        grecaptchaToken?: string;
+    }
 ): Promise<SubmitResult> => {
     const form = postInfo.commentForm;
 

@@ -13,14 +13,16 @@ import type {DcinsideDccon, GalleryPreData, PostInfo} from "./types";
 export const submitComment = async (
     preData: GalleryPreData,
     postInfo: PostInfo,
-    user: { name: string; pw?: string },
-    memo: string | DcinsideDccon[],
-    commentNo: string | null,
-    replyNo: string | null,
-    bigDccon: boolean,
-    captcha?: string,
-    rcKey?: CommentRcKey,
-    grecaptchaToken?: string
+    {user, memo, commentNo, replyNo, bigDccon, captcha, rcKey, grecaptchaToken}: {
+        user: { name: string; pw?: string };
+        memo: string | DcinsideDccon[];
+        commentNo: string | null;
+        replyNo: string | null;
+        bigDccon: boolean;
+        captcha?: string;
+        rcKey?: CommentRcKey;
+        grecaptchaToken?: string;
+    }
 ): Promise<SubmitResult> => {
     const form = postInfo.commentForm;
 
