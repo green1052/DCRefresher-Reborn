@@ -129,13 +129,13 @@ export const dcconCode = (element: HTMLElement): string | undefined => {
 };
 
 /**
- * 차단 표시(data-blocked)로 가려진 요소인지. '가린 내용 보기'(data-block-revealed) 중이거나
+ * 차단 표시(data-blocked)로 가려진 요소인지. '가린 내용 보기'(data-block-revealed)나 미리보기의 이 글에서 가린 댓글 보기(data-comments-revealed) 중이거나
  * 흐림 차단을 흐림 풀기(data-blur-reveal)로 밝힌 동안은 가려지지 않은 것으로 본다.
  * 미리보기의 큰 이미지(Frame)와 디시콘 정보 창(openDcconInfo)이 같은 기준을 쓴다.
  */
 export const isBlockedHidden = (element: Element): boolean => {
     const blocked = element.closest("[data-blocked]");
-    if (!blocked || element.closest("[data-block-revealed]")) return false;
+    if (!blocked || element.closest("[data-block-revealed], [data-comments-revealed]")) return false;
     return !(blocked.getAttribute("data-blocked") === "blur" && element.closest("[data-blur-reveal]"));
 };
 

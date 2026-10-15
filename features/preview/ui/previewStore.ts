@@ -48,6 +48,8 @@ interface PostState {
     /** 댓글·답글 쓰기 허용. 멤버만 댓글을 쓸 수 있는 갤러리면 댓글 응답의 allow_reply가 0이다. */
     allowReply: boolean;
     collapsed: Set<string>;
+    /** 이 글에서만 가린 댓글(숨김 차단·접힌 같은 댓글) 보기. 댓글 머리의 요약에서 켜고 끈다. 페이지의 '가린 내용 보기'와 따로다. */
+    commentsRevealed: boolean;
     /** 댓글 새로고침으로 새로 들어온 댓글 번호. 잠깐 강조한다 (Comment.tsx의 animate-fresh-comment). */
     freshComments: ReadonlySet<string>;
     reply: Reply;
@@ -161,6 +163,7 @@ const freshPost = (): PostState => ({
     commentsFailed: false,
     allowReply: true,
     collapsed: new Set(),
+    commentsRevealed: false,
     freshComments: NO_FRESH,
     reply: NO_REPLY,
     commentsOnly: false,

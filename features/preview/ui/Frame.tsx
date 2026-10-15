@@ -12,7 +12,6 @@ import {focusedElement} from "@/components/useReturnFocus";
 import {BLOCKED_TEXT} from "@/core/block";
 import {useContentModuleSettings, useRunningModuleSettings} from "@/core/module/useModuleSettings";
 import {postKey as keyOfPost} from "@/core/preview/cache";
-import type {ProcessedComment} from "@/core/preview/comments";
 import {useBlocksStore} from "@/stores/blocks";
 import {useUiStore} from "@/stores/ui";
 import {smoothScroll} from "@/utils/dom";
@@ -22,7 +21,7 @@ import {cn} from "cn";
 import {adjacentPreData} from "../rows";
 import {TimeStamp} from "./TimeStamp";
 import {UserCard} from "./UserCard";
-import {CommentList, CommentOrder, threadParents} from "./CommentList";
+import {CommentList, CommentOrder, CommentSummary, threadParents} from "./CommentList";
 import {clickContents, markPressable, pressContents} from "./contentsClick";
 import {CountDown} from "./CountDown";
 import {ErrorBlock} from "./ErrorBlock";
@@ -43,14 +42,6 @@ const goToAdjacent = (dir: number): void => {
     const st = usePreviewStore.getState();
     const next = st.preData && adjacentPreData(st.preData, dir);
     if (next) st.requestOpen(next, false, dir);
-};
-
-/** 댓글 머리의 개수 요약. 차단·접은 수는 0이 아닐 때만 붙인다. */
-const subtitleOf = (comments: ProcessedComment[]): string => {
-    const blocked = comments.filter((comment) => comment.blocked).length;
-    const folded = comments.filter((comment) => comment.duplicates === 0).length;
-    const extra = [blocked && `차단 ${blocked}개`, folded && `같은 댓글 ${folded}개 접음`].filter(Boolean).join(", ");
-    return `스레드 ${threadParents(comments).length}개, 총 댓글 ${comments.length}개${extra ? ` (${extra})` : ""}`;
 };
 
 /** run이 끝날 때까지 로딩으로 돌며, 그동안은 다시 누를 수 없다. */
@@ -357,7 +348,7 @@ export const Frame = () => {
                         <div ref={commentsSection}>
                             <Separator/>
                             <div className="flex items-center justify-between gap-3 px-8 pt-3">
-                                <span className="text-muted-foreground">{comments && subtitleOf(comments)}</span>
+                                {comments && <CommentSummary comments={comments}/>}
                                 <div className="flex items-center gap-2">
                                     {comments && threadParents(comments).length > 1 && <CommentOrder/>}
                                     <RefreshButton label="댓글 새로고침" run={() => usePreviewStore.getState().requestRefresh(true)}/>

@@ -1,7 +1,7 @@
 import {describe, expect, it} from "vitest";
 
 import type {ProcessedComment} from "@/core/preview/comments";
-import {threadParents} from "@/features/preview/ui/CommentList";
+import {summaryOf, threadParents} from "@/features/preview/ui/CommentList";
 
 const comment = (no: number, fields: Partial<ProcessedComment> = {}): ProcessedComment => ({
     no: String(no), c_no: "0", depth: 0, user_id: "", name: "ㅇㅇ", ip: "", memo: `댓글 ${no}`, is_delete: "0", date_time: "", ...fields
@@ -22,5 +22,17 @@ describe("threadParents", () => {
     it("최신순이면 스레드만 거꾸로 세우고 받은 목록은 건드리지 않는다", () => {
         expect(nos(threadParents(comments, true))).toEqual(["6", "5", "1"]);
         expect(nos(comments)).toEqual(["1", "2", "3", "5", "6"]);
+    });
+});
+
+describe("summaryOf", () => {
+    it("가린 댓글이 없으면 개수만 적는다", () => {
+        expect(summaryOf(comments)).toEqual({counts: "스레드 3개, 총 댓글 5개", hidden: ""});
+    });
+
+    it("차단과 접은 같은 댓글을 0이 아닌 것만 센다", () => {
+        const hidden = [comment(1, {blocked: "hide"}), comment(2, {blocked: "blur"}), comment(3, {duplicates: 2}), comment(4, {duplicates: 0})];
+        expect(summaryOf(hidden).hidden).toBe("차단 2개, 같은 댓글 1개 접음");
+        expect(summaryOf(hidden.slice(2)).hidden).toBe("같은 댓글 1개 접음");
     });
 });

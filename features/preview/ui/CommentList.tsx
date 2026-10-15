@@ -26,6 +26,38 @@ export const threadParents = (comments: ProcessedComment[], newestFirst = false)
     return newestFirst ? parents.reverse() : parents;
 };
 
+/** 댓글 머리의 개수 요약. hidden은 가린 댓글 수(차단·접은 같은 댓글)로, 0이 아닌 것만 적고 없으면 빈 글자다. */
+export const summaryOf = (comments: ProcessedComment[]): { counts: string; hidden: string } => {
+    const blocked = comments.filter((comment) => comment.blocked).length;
+    const folded = comments.filter((comment) => comment.duplicates === 0).length;
+    return {
+        counts: `스레드 ${threadParents(comments).length}개, 총 댓글 ${comments.length}개`,
+        hidden: [blocked && `차단 ${blocked}개`, folded && `같은 댓글 ${folded}개 접음`].filter(Boolean).join(", ")
+    };
+};
+
+/**
+ * 댓글 머리의 개수 요약. 가린 댓글이 있으면 이 글에서만 펼쳐 보는 버튼을 단다. 페이지의 '가린 내용 보기' 중이면 이미 다 보이므로 달지 않는다.
+ * 펼침은 여기와 CommentList만 구독한다 (CommentOrder와 같은 까닭).
+ */
+export const CommentSummary = ({comments}: { comments: ProcessedComment[] }) => {
+    const pageRevealed = useUiStore((s) => s.blockRevealed);
+    const revealed = usePreviewStore((s) => s.commentsRevealed);
+    const {counts, hidden} = summaryOf(comments);
+
+    return (
+        <span className="text-muted-foreground">
+            {hidden ? `${counts} (${hidden})` : counts}
+            {hidden && !pageRevealed && (
+                <Button variant="link" size="xs" className="ml-1.5 h-auto p-0 align-baseline text-sm text-link"
+                        onClick={() => usePreviewStore.setState({commentsRevealed: !revealed})}>
+                    {revealed ? "다시 숨기기" : "가린 댓글 보기"}
+                </Button>
+            )}
+        </span>
+    );
+};
+
 /** 댓글 머리의 등록순·최신순 고르기. 순서는 여기와 CommentList만 구독한다. Frame이 구독하면 고를 때마다 본문까지 다시 그린다. */
 export const CommentOrder = () => {
     const newestFirst = usePreviewStore((s) => s.newestFirst);
@@ -126,10 +158,12 @@ const SelectionTools = ({shownSelectable, foldable}: { shownSelectable: Processe
 /** 스레드별 댓글과 접을 수 있는 답글. */
 export const CommentList = () => {
     const comments = usePreviewStore((s) => s.comments)!;
-    const revealed = useUiStore((s) => s.blockRevealed);
+    const pageRevealed = useUiStore((s) => s.blockRevealed);
+    const postRevealed = usePreviewStore((s) => s.commentsRevealed);
+    const revealed = pageRevealed || postRevealed;
     const newestFirst = usePreviewStore((s) => s.newestFirst);
 
-    // 숨김 차단과 접힌 같은 댓글은 '가린 내용 보기' 동안만 (흐리게) 그린다. 블러 차단은 그려 두고 features/preview/overlay.css가 흐린다.
+    // 숨김 차단과 접힌 같은 댓글은 '가린 내용 보기'나 이 글에서 가린 댓글 보기 동안만 (흐리게) 그린다. 블러 차단은 그려 두고 features/preview/overlay.css가 흐린다.
     // 트리 선과 답글 수도 그리는 댓글만 센다.
     const shown = new Set(revealed ? comments : comments.filter((comment) => comment.blocked !== "hide" && comment.duplicates !== 0));
     const parents = threadParents(comments, newestFirst);
@@ -140,7 +174,7 @@ export const CommentList = () => {
     const isAdmin = isGalleryManager();
 
     return (
-        <div className="py-1">
+        <div className="py-1" data-comments-revealed={postRevealed || undefined}>
             {isAdmin && (
                 <SelectionTools shownSelectable={comments.filter((comment) => shown.has(comment) && comment.is_delete !== "1")}
                                 foldable={new Set(parents.filter((parent) => shown.has(parent) && (repliesOf.get(parent.no)?.length ?? 0) > 1).map((parent) => parent.no))}/>

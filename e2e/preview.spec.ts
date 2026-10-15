@@ -330,6 +330,22 @@ test.describe("미리보기 댓글", () => {
         await expect(uid).not.toHaveCSS("color", "rgb(18, 52, 86)");
     });
 
+    test("숨김 차단한 댓글은 댓글 머리에서 이 글에서만 펼쳐 보고 다시 숨긴다", async ({listPage, storage}) => {
+        await storage.setModuleSettings("block", {blur: false, replyRemove: false});
+        await storage.set({"refresher:block:ID": [{id: "a", content: "user1", isRegex: false}]});
+        const frame = await listPage.openPreview();
+        await expect(listPage.comments).toHaveCount(1);
+        await expect(frame.getByText("스레드 1개, 총 댓글 2개 (차단 1개)")).toBeVisible();
+
+        await frame.getByRole("button", {name: "가린 댓글 보기", exact: true}).click();
+        await expect(listPage.comments).toHaveCount(2);
+        await expect(listPage.comments.first()).toHaveAttribute("data-blocked", "hide");
+        await expect(listPage.comments.first()).toHaveCSS("opacity", "0.35");
+
+        await frame.getByRole("button", {name: "다시 숨기기", exact: true}).click();
+        await expect(listPage.comments).toHaveCount(1);
+    });
+
     test("글 댓글의 줄바꿈은 그대로 보인다", async ({listPage, site}) => {
         const frame = await listPage.openPreview();
         site.comments.push(fakeComment(12, {user_id: "user2", name: "고닉", ip: "", memo: "첫 줄\n둘째 줄"}));

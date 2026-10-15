@@ -229,6 +229,7 @@ describe("isBlockedHidden", () => {
 
     it("가린 내용 보기 중이면 가려지지 않은 것이다", () => {
         expect(isBlockedHidden(target("<div data-block-revealed><div data-blocked='hide'><img id='t'></div></div>"))).toBe(false);
+        expect(isBlockedHidden(target("<div data-comments-revealed><div data-blocked='hide'><img id='t'></div></div>"))).toBe(false);
     });
 
     it("흐림 풀기는 흐림 차단만 밝힌다", () => {
