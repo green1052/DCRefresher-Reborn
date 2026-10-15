@@ -388,6 +388,9 @@ test.describe("댓글 쓰기·지우기", () => {
         const frame = await listPage.openPreview();
         // 답글(11)에 답한다. 부모는 스레드 첫 댓글(10)이다.
         await listPage.comments.nth(1).getByRole("button", {name: "ㅇㅇ 댓글에 답글", exact: true}).click();
+        // 입력칸으로 데려가고, 입력칸 위에 누구에게 답하는지 보인다.
+        await expect(frame.getByRole("textbox", {name: "답글 입력", exact: true})).toBeFocused();
+        await expect(frame.getByText("ㅇㅇ에게 답글", {exact: true})).toBeVisible();
         await frame.getByRole("textbox", {name: "답글 입력", exact: true}).fill("답글에 단 답글");
         await frame.getByRole("button", {name: "작성", exact: true}).click();
 
@@ -396,6 +399,17 @@ test.describe("댓글 쓰기·지우기", () => {
         expect([body.get("c_no"), body.get("reply_no")]).toEqual(["10", "11"]);
         // 보내면 답글 대상이 풀린다.
         await expect(frame.getByRole("textbox", {name: "댓글 입력", exact: true})).toBeVisible();
+    });
+
+    test("입력칸 쪽의 답글 취소 버튼으로 답글 쓰기를 푼다", async ({listPage}) => {
+        const frame = await listPage.openPreview();
+        await listPage.comments.nth(0).getByRole("button", {name: "고닉 댓글에 답글", exact: true}).click();
+        await expect(frame.getByText("고닉에게 답글", {exact: true})).toBeVisible();
+
+        await frame.getByRole("button", {name: "답글 취소", exact: true}).click();
+        await expect(frame.getByText("고닉에게 답글", {exact: true})).toHaveCount(0);
+        await expect(frame.getByRole("textbox", {name: "댓글 입력", exact: true})).toBeFocused();
+        await expect(listPage.comments.nth(0).getByRole("button", {name: "고닉 댓글에 답글", exact: true})).toHaveAttribute("aria-pressed", "false");
     });
 
     test("디시가 답글을 막은 댓글(reply_w N)에는 답글 버튼이 없다", async ({listPage, site}) => {

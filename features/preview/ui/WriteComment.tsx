@@ -1,5 +1,5 @@
 import {Send, Smile, Type, X} from "lucide-react";
-import {useLayoutEffect, useRef, useState} from "react";
+import {useEffect, useLayoutEffect, useRef, useState} from "react";
 
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
@@ -42,6 +42,8 @@ const sendingKeys = new Set<string>();
 
 export const WriteComment = () => {
     const reply = usePreviewStore((s) => s.reply);
+    // 입력칸 위에 보일 답글 대상의 이름 (Comment의 UserCard가 보여 주는 닉네임).
+    const replyName = usePreviewStore((s) => s.comments?.find((comment) => comment.no === s.reply.replyNo)?.name);
     // 폼은 글마다 새로 마운트된다 (Frame의 key). 마운트할 때 이 글에서 쓰던 댓글이 있으면 되살린다.
     // 보내는 중인 댓글은 되살리지 않는다. 올라간 댓글이 입력칸에 남아 한 번 더 보내게 된다.
     const [initialText] = useState(() => {
@@ -88,6 +90,11 @@ export const WriteComment = () => {
     const [sending, setSending] = useState(false);
     const textarea = useRef<HTMLTextAreaElement>(null);
     const beforeTxtcon = useRef<string | null>(null);
+
+    // 답글 버튼을 누르면 입력칸으로 데려간다. 포커스가 입력칸을 화면 안으로 스크롤한다.
+    useEffect(() => {
+        if (reply.replyNo) textarea.current?.focus();
+    }, [reply.replyNo]);
 
     const submit = async (): Promise<void> => {
         const st = usePreviewStore.getState();
@@ -220,6 +227,20 @@ export const WriteComment = () => {
                             setPassword(ev.target.value);
                         }}
                     />
+                </div>
+            )}
+
+            {reply.replyNo && (
+                <div className="mb-1 flex items-center gap-1 text-xs text-muted-foreground">
+                    <span className="truncate">{replyName}에게 답글</span>
+                    <WithTooltip tip="답글 취소"
+                                 trigger={<Button variant="ghost" size="icon-xs" aria-label="답글 취소"
+                                                  onClick={() => {
+                                                      usePreviewStore.setState({reply: NO_REPLY});
+                                                      textarea.current?.focus();
+                                                  }}/>}>
+                        <X/>
+                    </WithTooltip>
                 </div>
             )}
 
