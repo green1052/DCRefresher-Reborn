@@ -135,8 +135,7 @@ export const WriteComment = () => {
 
         setSending(true);
         sendingKeys.add(key);
-        const signal = st.signalId;
-        const {preData, post} = st;
+        const {preData, post, reply: sentReply} = st;
         // 끝나면(성공·실패·캡차 취소 모두) 정리한다.
         try {
             let code: string | undefined;
@@ -146,7 +145,7 @@ export const WriteComment = () => {
             }
 
             const user = {name: login ? "" : nick, pw: login ? undefined : password};
-            const outcome = await postComment(preData, post, user, {text, dccons, bigDccon, txtcon: txtcon ? txtconColors : undefined}, st.reply, code);
+            const outcome = await postComment(preData, post, user, {text, dccons, bigDccon, txtcon: txtcon ? txtconColors : undefined}, sentReply, code);
 
             if (outcome.ok) {
                 // 보내는 사이 더 쓴 글은 남긴다. 디시콘만 보냈으면 입력칸의 글은 보내지 않았으니 둔다.
@@ -154,12 +153,13 @@ export const WriteComment = () => {
                     if (textarea.current?.value === raw) textarea.current.value = "";
                     if (drafts.get(key) === raw) drafts.delete(key);
                 }
-                setDccon(NO_DCCON);
-                setTxtcon(false);
+                // 보내는 사이 새로 고른 디시콘·켠 글자콘·답글 대상은 다음 댓글 것이라 보낸 것만 비운다.
+                setDccon((current) => (current.list === dccons ? NO_DCCON : current));
+                if (txtcon) setTxtcon(false);
                 // 디시처럼 쓴 닉네임·비밀번호를 기억한다. 만든 비밀번호도 저장해야 나중에 자기 댓글을 지울 수 있다.
                 if (!login) saveNonmember(nick, password);
-                // 그새 다른 글로 넘어갔으면 답글 대상은 그 글 것이라 건드리지 않는다.
-                if (usePreviewStore.getState().signalId === signal) usePreviewStore.setState({reply: NO_REPLY});
+                // 답글 버튼은 누를 때마다 새 대상을 넣으므로, 그새 다른 글로 넘어갔거나 다른 댓글을 골랐으면 같지 않다.
+                usePreviewStore.setState((current) => (current.reply === sentReply ? {reply: NO_REPLY} : {}));
                 refreshIfOpen();
             } else if (outcome.captcha) {
                 useUiStore.getState().showToast(
