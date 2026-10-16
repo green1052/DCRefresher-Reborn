@@ -1,11 +1,11 @@
 // 유저 버블의 "차단" 처리. 차단 모듈이 꺼져 있어도 차단 목록(stores/blocks.ts)에는 넣으므로 모듈이 아닌 stores에 둔다.
-import {imageHash} from "@/core/block";
+import {imageHash, pairedMediaUrl} from "@/core/block";
 import {BlockedError} from "@/core/http/client";
 import {runningModuleSettings} from "@/core/module/registry";
 import {fetchDcconPackage} from "@/core/preview/request";
 import {TYPE_NAMES} from "@/core/storage/items";
 import type {BlockType} from "@/core/storage/types";
-import {useBlocksStore} from "@/stores/blocks";
+import {type BlockInputFields, useBlocksStore} from "@/stores/blocks";
 import {type SelectedUser, useUiStore} from "@/stores/ui";
 
 /** 패키지 전체 차단 방식. bundle: 정규식 한 항목으로 묶는다, each: 디시콘마다 한 항목 (따로 풀 수 있다). */
@@ -56,7 +56,7 @@ const blockDccon = async (selected: SelectedUser, dcconPackage?: DcconPackageMod
 };
 
 /**
- * 이미지 우클릭 메뉴의 "이 이미지 차단" (features/block/background.ts). 같은 파일이면 다른 글에 다시 올려도 가린다.
+ * 이미지·움짤 우클릭 메뉴의 "이 이미지 차단" (features/block/background.ts). 같은 파일이면 다른 글에 다시 올려도 가린다.
  * 비슷한 이미지 지문도 늘 넣어 둔다. 나중에 그 설정을 켜도 이미 넣은 항목이 비슷한 이미지를 막는다.
  */
 export const blockImage = async (url: string): Promise<void> => {
@@ -66,8 +66,21 @@ export const blockImage = async (url: string): Promise<void> => {
         useUiStore.getState().showToast("이미지를 읽지 못해 차단하지 못했습니다.", "error");
         return;
     }
+    // 움짤은 디시가 mp4와 원본 gif를 번갈아 보이므로 짝 파일도 같은 지문으로 넣는다 (core/block.ts의 pairedMediaUrl). 읽지 못하면 이것만 넣는다.
+    const paired = pairedMediaUrl(url);
+    const pairedHashes = paired ? await imageHash(paired, {retry: true}) : undefined;
     try {
-        await useBlocksStore.getState().addEntry("IMAGE", {content: hashes.file, isRegex: false, mode: blockMode("IMAGE"), similar: hashes.similar?.[0]});
+        const [first, ...rest] = hashes.similar ?? [];
+        const fields: Omit<BlockInputFields, "content"> = {
+            isRegex: false,
+            mode: blockMode("IMAGE"),
+            extra: paired ? "움짤" : undefined,
+            // 표본마다 원본의 지문만 넣는다. 좌우 반전은 판정할 때 대상 쪽에서 본다.
+            similar: first?.[0],
+            frames: rest.length > 0 ? rest.map(([fingerprint]) => fingerprint) : undefined
+        };
+        const files = pairedHashes ? [hashes.file, pairedHashes.file] : [hashes.file];
+        await useBlocksStore.getState().addEntries("IMAGE", files.map((file) => ({...fields, content: file})));
     } catch (e) {
         console.error("Image block failed:", e);
         useUiStore.getState().showToast("차단 목록에 저장하지 못했습니다.", "error");

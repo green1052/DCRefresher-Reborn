@@ -13,8 +13,10 @@ export interface BlockEntry {
     mode?: DetectMode;
     gallery?: string;
     extra?: string;
-    /** 이미지 항목(IMAGE)의 비슷한 이미지 지문 (utils/imageFingerprint.ts). 디코딩하지 못한 이미지는 없다. */
+    /** 이미지 항목(IMAGE)의 비슷한 이미지 지문 (utils/imageFingerprint.ts). 움짤은 첫 장면의 것이다. 디코딩하지 못한 이미지는 없다. */
     similar?: string;
+    /** 움짤 항목의 나머지 장면 지문. similar와 따로 두어, 이것을 모르는 이전 버전도 similar를 정지 이미지의 지문처럼 쓴다. */
+    frames?: string[];
 }
 
 export interface MemoEntry {

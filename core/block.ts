@@ -4,7 +4,8 @@ import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {markUsed} from "@/core/usage";
 import {useBlocksStore} from "@/stores/blocks";
 import {sha256} from "@/utils/hash";
-import {imageFingerprints, isSimilar, MAX_PIXELS} from "@/utils/imageFingerprint";
+import {imageFingerprints, isSimilarSet, MAX_PIXELS, type Sample} from "@/utils/imageFingerprint";
+import {isWholeMp4} from "@/utils/mp4";
 import {objectEntries} from "@/utils/typed";
 
 interface Compiled {
@@ -145,9 +146,11 @@ const readImageHashes = async (url: string, similar: boolean): Promise<ImageHash
     try {
         // 파이어폭스 콘텐츠 스크립트의 요청은 Referer를 붙이지 않아 디시가 403을 준다. 크롬은 원래 붙이고, 캐시 키에 들지 않아 캐시도 그대로 쓴다.
         const response = await fetch(url, {cache: "force-cache", referrer: location.href});
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const file = await response.blob();
-        return {file: await sha256(await file.arrayBuffer()), similar: similar ? (await imageFingerprints(file)) ?? null : undefined};
+        const bytes = await file.arrayBuffer();
+        // 크롬은 움짤이 구간 요청으로 받아 둔 캐시를 쓰면 206을 준다. 파일 전체를 담았을 때만 받는다 (Content-Range는 CORS로 읽지 못한다).
+        if (response.status !== 200 && !(response.status === 206 && isWholeMp4(new Uint8Array(bytes)))) throw new Error(`HTTP ${response.status}`);
+        return {file: await sha256(bytes), similar: similar ? (await imageFingerprints(file)) ?? null : undefined};
     } catch (e) {
         console.warn("Image hash failed:", url, e);
         // 지문만 못 구했으면 배경이 구한 파일 해시로 같은 파일은 막는다.
@@ -172,21 +175,38 @@ export const imageHash = async (url: string, {retry = false, similar = false}: {
     return hashes;
 };
 
+/**
+ * 움짤의 두 파일: 주소 → 짝 주소. 디시는 같은 움짤을 mp4(<video>)로 보이다가 그리지 못했거나 누르면 원본 gif(data-src)의 <img>로 바꾼다.
+ * 파일이 달라 한쪽 해시로는 다른 쪽을 못 막으므로, 차단할 때 짝도 같이 넣는다 (stores/blockRequest.ts의 blockImage). <video>를 볼 때 적어 둔다.
+ */
+const mediaPairs = new Map<string, string>();
+
+/** 같은 움짤의 다른 파일 주소. 이 페이지에서 그 <video>를 보지 못했으면 undefined다. */
+export const pairedMediaUrl = (url: string): string | undefined => mediaPairs.get(url);
+
+const rememberPair = (video: HTMLVideoElement): void => {
+    const gif = video.dataset.src ? URL.parse(video.dataset.src, location.href)?.href : undefined;
+    // mp4를 받다 오류가 나면 currentSrc가 비고, 디시가 곧바로 gif로 바꾼다. <source>의 주소는 처음부터 있다.
+    const mp4 = video.currentSrc || video.querySelector("source")?.src;
+    if (!gif || !mp4 || gif === mp4) return;
+    mediaPairs.set(mp4, gif);
+    mediaPairs.set(gif, mp4);
+};
+
 /** 차단 모듈 설정의 비슷한 이미지 기준 (dHash·pHash가 각각 다를 수 있는 비트 수). 끄면 undefined다. 페이지(차단 모듈)와 미리보기가 같이 쓴다. */
 export const similarImageThreshold = (settings: ModuleSettings["block"]): number | undefined =>
     settings.similarImages ? settings.similarThreshold : undefined;
 
 /**
- * 지문이 비슷한 이미지 항목에 걸리는지. 걸린 항목은 모두 쓰였다고 적는다. 지문이 없는 항목(지문이 생기기 전에 넣었거나 디코딩하지 못한 이미지)은 보지 않는다.
+ * 표본이 비슷한 이미지 항목에 걸리는지 (isSimilarSet). 걸린 항목은 모두 쓰였다고 적는다. 지문이 없는 항목(지문이 생기기 전에 넣었거나 디코딩하지 못한 이미지)은 보지 않는다.
  * 불일치·불포함(NOT_*) 항목은 허용 목록이라 비슷한 이미지로 넓히지 않는다.
  */
-const isSimilarBlocked = (fingerprints: [string, string], gallery: string | undefined, threshold: number): boolean => {
+const isSimilarBlocked = (samples: Sample[], gallery: string | undefined, threshold: number): boolean => {
     const {entries, defaults} = useBlocksStore.getState();
     let blocked = false;
     for (const entry of entries.IMAGE) {
         if (!entry.similar || (entry.gallery && entry.gallery !== gallery) || (entry.mode ?? defaults.IMAGE).startsWith("NOT_")) continue;
-        const reference = entry.similar;
-        if (!fingerprints.some((fingerprint) => isSimilar(reference, fingerprint, threshold))) continue;
+        if (!isSimilarSet(samples, [entry.similar, ...(entry.frames ?? [])], threshold)) continue;
         blocked = true;
         markUsed("block", entry.id);
     }
@@ -194,15 +214,34 @@ const isSimilarBlocked = (fingerprints: [string, string], gallery: string | unde
 };
 
 /**
- * 이미지가 차단 목록(IMAGE)에 든 파일인지. similar(기준 비트 수)를 주면 좌우 반전을 포함해 비슷한 이미지도 막는다.
- * 다 받은 본문 이미지만 본다. 받기 전에 읽으면 확장이 따로 받아 캐시를 쓰지 못한다. 지연 로딩·원본 보기로 주소가 바뀌면 load 때 다시 부른다.
+ * 움짤(<video>)을 다시 볼 이벤트. 더 받을 때(progress), 받기를 멈출 때(suspend), 반복 재생으로 처음으로 돌아갈 때(seeked).
+ * 파이어폭스는 다 받은 뒤 progress·suspend 없이 끝나기도 해 반복 재생 때 다시 본다.
  */
-export const isImageBlocked = async (image: HTMLImageElement, gallery?: string, similar?: number): Promise<boolean> => {
-    const url = image.currentSrc;
+export const VIDEO_CHECK_EVENTS = ["progress", "suspend", "canplaythrough", "seeked"];
+
+/**
+ * 다 받은 본문 이미지·움짤의 화소 수. 받기 전에 읽으면 확장이 따로 받아 캐시를 쓰지 못하므로 그때는 undefined다.
+ * 움짤(<video>)은 파일 전체가 버퍼에 들어온 뒤다. 일부만 받은 mp4를 읽으면 나머지를 다시 받는다.
+ */
+const loadedPixels = (media: HTMLImageElement | HTMLVideoElement): number | undefined => {
+    if (media instanceof HTMLImageElement) return media.complete && media.naturalWidth > 0 ? media.naturalWidth * media.naturalHeight : undefined;
+    const {buffered, duration} = media;
+    const whole = media.readyState === HTMLMediaElement.HAVE_ENOUGH_DATA && buffered.length === 1 && buffered.start(0) === 0 && buffered.end(0) >= duration - 0.05;
+    return whole ? media.videoWidth * media.videoHeight : undefined;
+};
+
+/**
+ * 이미지·움짤이 차단 목록(IMAGE)에 든 파일인지. similar(기준 비트 수)를 주면 좌우 반전을 포함해 비슷한 이미지·움짤도 막는다.
+ * 다 받은 것만 본다 (loadedPixels). 지연 로딩·원본 보기로 주소가 바뀌거나 움짤을 더 받으면 load·progress 때 다시 부른다.
+ */
+export const isImageBlocked = async (media: HTMLImageElement | HTMLVideoElement, gallery?: string, similar?: number): Promise<boolean> => {
+    const url = media.currentSrc;
+    if (media instanceof HTMLVideoElement) rememberPair(media);
     const entries = useBlocksStore.getState().entries.IMAGE;
-    if (!VIEW_IMAGE.test(url) || !image.complete || image.naturalWidth === 0 || entries.length === 0) return false;
+    const pixels = loadedPixels(media);
+    if (!VIEW_IMAGE.test(url) || pixels === undefined || entries.length === 0) return false;
     // 지문이 있는 항목이 없거나 너무 큰 이미지면 지문을 구하지 않는다. 디코딩이 해시보다 훨씬 무겁다.
-    const fingerprintable = image.naturalWidth * image.naturalHeight <= MAX_PIXELS && entries.some((entry) => entry.similar);
+    const fingerprintable = pixels <= MAX_PIXELS && entries.some((entry) => entry.similar);
     const threshold = fingerprintable ? similar : undefined;
     const hashes = await imageHash(url, {similar: threshold !== undefined});
     if (!hashes) return false;

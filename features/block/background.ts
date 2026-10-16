@@ -6,6 +6,7 @@ import {IMAGE_HOST_ORIGINS, IMAGE_URL_PATTERNS} from "@/core/pages";
 import {blockListKey} from "@/core/storage/items";
 import {sha256} from "@/utils/hash";
 import {imageFingerprints} from "@/utils/imageFingerprint";
+import {isWholeMp4} from "@/utils/mp4";
 import {isRecord} from "@/utils/record";
 
 import {BLOCK_SETTINGS} from "./settings";
@@ -43,18 +44,18 @@ const imageHashes = new Map<string, Promise<ImageHashes | undefined>>();
 let similarSetting = false;
 let similarEnabled = false;
 
-const hashFile = async (file: Blob): Promise<ImageHashes> => ({
-    file: await sha256(await file.arrayBuffer()),
+const hashFile = async (file: Blob, bytes: ArrayBuffer): Promise<ImageHashes> => ({
+    file: await sha256(bytes),
     similar: similarEnabled ? (await imageFingerprints(file)) ?? null : undefined
 });
 // 오래된 것부터 버린다. 버린 이미지를 같은 탭이 메모리 캐시로 다시 쓰면 탭이 한 번 더 받는다 (core/block.ts의 imageHash).
 const MAX_IMAGE_HASHES = 500;
 
 /**
- * 파이어폭스: 페이지가 받는 본문 이미지를 그대로 흘려보내며 해시를 구해 둔다. 디스크 캐시에서 온 응답도 지나간다.
+ * 파이어폭스: 페이지가 받는 본문 이미지·움짤(mp4, 요청 유형 media)을 그대로 흘려보내며 해시를 구해 둔다. 디스크 캐시에서 온 응답도 지나간다.
  * 같은 탭이 메모리 캐시를 다시 쓰면 요청이 없어 지나가지 않으므로 해시를 주소별로 남겨 두고 탭이 물어 간다 (refresher:imageHash).
  */
-const hashImageResponse = ({requestId, url}: Browser.webRequest.OnBeforeRequestDetails): undefined => {
+const hashImageResponse = ({requestId, url, type}: Browser.webRequest.OnBeforeRequestDetails): undefined => {
     const filter = browser.webRequest.filterResponseData(requestId);
     const chunks: ArrayBuffer[] = [];
     const {promise, resolve} = Promise.withResolvers<ImageHashes | undefined>();
@@ -70,10 +71,13 @@ const hashImageResponse = ({requestId, url}: Browser.webRequest.OnBeforeRequestD
     };
     filter.onstop = () => {
         filter.close();
-        // 캐시를 재검증해 304를 받으면 본문 없이 끝난다. 빈 데이터의 해시를 남기지 않고 앞서 구한 것을 쓴다 (없으면 탭이 직접 읽는다).
-        resolve(chunks.length > 0 ? hashFile(new Blob(chunks)) : previous);
+        // 캐시를 재검증해 304를 받으면 본문 없이 끝나고, 움짤은 구간 요청으로 파일 일부만 지나가기도 한다.
+        // 그런 것의 해시를 남기지 않고 앞서 구한 것을 쓴다 (없으면 탭이 직접 읽는다).
+        const file = new Blob(chunks);
+        resolve(file.arrayBuffer().then((bytes) =>
+            bytes.byteLength === 0 || (type === "media" && !isWholeMp4(new Uint8Array(bytes))) ? previous : hashFile(file, bytes)));
     };
-    filter.onerror = () => resolve(undefined);
+    filter.onerror = () => resolve(previous);
     return undefined;
 };
 
@@ -88,11 +92,11 @@ const syncImageFilter = async (): Promise<void> => {
     const on = filterEnabled && entries.length > 0;
     similarEnabled = similarSetting && entries.some((entry) => typeof entry.similar === "string");
     if (on === browser.webRequest.onBeforeRequest.hasListener(hashImageResponse)) return;
-    if (on) browser.webRequest.onBeforeRequest.addListener(hashImageResponse, {urls: IMAGE_URL_PATTERNS, types: ["image"]}, ["blocking"]);
+    if (on) browser.webRequest.onBeforeRequest.addListener(hashImageResponse, {urls: IMAGE_URL_PATTERNS, types: ["image", "media"]}, ["blocking"]);
     else browser.webRequest.onBeforeRequest.removeListener(hashImageResponse);
 };
 
-/** 우클릭한 이미지를 차단한다. 해시는 그 탭이 구한다 (stores/blockRequest.ts의 blockImage). */
+/** 우클릭한 이미지·움짤(<video>)을 차단한다. 해시는 그 탭이 구한다 (stores/blockRequest.ts의 blockImage). */
 export default defineBackgroundModule({
     id: "block",
     settings: BLOCK_SETTINGS,
@@ -127,6 +131,6 @@ export default defineBackgroundModule({
             await browser.declarativeNetRequest.updateSessionRules({removeRuleIds: [CORS_RULE.id], addRules: enabled ? [CORS_RULE] : []});
         }
 
-        if (enabled) browser.contextMenus.create({id: IMAGE_MENU, title: "이 이미지 차단", contexts: ["image"], targetUrlPatterns: IMAGE_URL_PATTERNS, documentUrlPatterns: BOARD_PATTERNS});
+        if (enabled) browser.contextMenus.create({id: IMAGE_MENU, title: "이 이미지 차단", contexts: ["image", "video"], targetUrlPatterns: IMAGE_URL_PATTERNS, documentUrlPatterns: BOARD_PATTERNS});
     }
 });

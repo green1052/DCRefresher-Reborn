@@ -63,7 +63,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                 // extra는 별명(우클릭 차단 닉네임, 디시콘 제목)이라 입력칸 없이 그대로 유지한다.
                 extra: initial?.extra,
                 // 이미지의 비슷한 이미지 지문은 그 파일 해시(content)의 것이다. 내용을 바꾸면 버린다.
-                similar: content.trim() === initial?.content ? initial.similar : undefined
+                ...(content.trim() === initial?.content ? {similar: initial.similar, frames: initial.frames} : {similar: undefined, frames: undefined})
             });
         } catch {
             setError(SAVE_FAILED);

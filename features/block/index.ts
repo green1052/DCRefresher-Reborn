@@ -1,4 +1,4 @@
-import {BLOCKED_TEXT, dcconCode, duplicateOf, groupDuplicates, HIDDEN_ROW_SELECTOR, isAnyBlocked, isBlocked, isImageBlocked, ROWS_HIDDEN_EVENT, similarImageThreshold} from "@/core/block";
+import {BLOCKED_TEXT, dcconCode, duplicateOf, groupDuplicates, HIDDEN_ROW_SELECTOR, isAnyBlocked, isBlocked, isImageBlocked, ROWS_HIDDEN_EVENT, similarImageThreshold, VIDEO_CHECK_EVENTS} from "@/core/block";
 import {FILTER_SKIP_ATTR} from "@/core/filtering";
 import {defineModule} from "@/core/module/define";
 import {documentUrl, isViewPage} from "@/core/http/urls";
@@ -110,13 +110,16 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
         else hide(element);
     };
 
-    // 본문 이미지 차단. 파일 해시로 보므로 다 받은 뒤에 본다. 지연 로딩·디시의 가린 이미지 보기로 주소가 바뀌면 load 때 다시 본다.
-    const watchedImages = new WeakSet<HTMLImageElement>();
+    // 본문 이미지·움짤(<video>) 차단. 파일 해시로 보므로 다 받은 뒤에 본다. 지연 로딩·디시의 가린 이미지 보기로 주소가 바뀌면 load 때,
+    // 움짤은 VIDEO_CHECK_EVENTS 때 다시 본다. 디시가 움짤을 gif <img>로 바꾸면 그 <img>는 필터가 따로 본다.
+    const watchedImages = new WeakSet<HTMLElement>();
     const checkImage = (element: HTMLElement): void => {
-        if (!(element instanceof HTMLImageElement)) return;
+        if (!(element instanceof HTMLImageElement || element instanceof HTMLVideoElement)) return;
         if (!watchedImages.has(element)) {
             watchedImages.add(element);
-            element.addEventListener("load", () => checkImage(element), {signal: ctx.signal});
+            for (const type of element instanceof HTMLImageElement ? ["load"] : VIDEO_CHECK_EVENTS) {
+                element.addEventListener(type, () => checkImage(element), {signal: ctx.signal});
+            }
         }
         void isImageBlocked(element, gallery, similarImageThreshold(ctx.settings)).then((blocked) => {
             if (blocked && !ctx.signal.aborted) hide(element);
@@ -177,7 +180,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
 
     // 선택자마다 판정. 새로 그려지는 요소는 필터가, 이미 그려진 요소는 recheck가 같은 표로 돈다.
     const checks: [selector: string, check: (element: HTMLElement) => void][] = [[".ub-writer", checkWriter], [".written_dccon", checkDccon]];
-    if (isViewPage) checks.push([".cmt_list", foldLater], [".write_div img", checkImage]);
+    if (isViewPage) checks.push([".cmt_list", foldLater], [".write_div :is(img, video)", checkImage]);
     for (const [selector, check] of checks) ctx.addFilter(selector, check);
     if (isViewPage) {
         whenDomReady(checkText, ctx.signal);

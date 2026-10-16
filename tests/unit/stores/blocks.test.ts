@@ -28,6 +28,17 @@ describe("normalizeBlockList", () => {
         expect(list.map((item) => item.id)).toEqual(["1"]);
     });
 
+    it("이미지 지문(similar·frames)은 32자 16진수만, frames는 8개까지 받는다", () => {
+        const print = "0".repeat(32);
+        const list = normalizeBlockList([
+            {id: "1", content: "x", isRegex: false, similar: print, frames: [print, print]},
+            {id: "2", content: "x", isRegex: false, similar: "XYZ"},
+            {id: "3", content: "x", isRegex: false, frames: [print, 1]},
+            {id: "4", content: "x", isRegex: false, frames: Array(9).fill(print)}
+        ]);
+        expect(list.map((item) => item.id)).toEqual(["1"]);
+    });
+
     it("id가 없거나 겹치면 새로 준다", () => {
         const list = normalizeBlockList([{id: "a", content: "1", isRegex: false}, {id: "a", content: "2", isRegex: false}, {content: "3", isRegex: false}]);
         expect(list[0]?.id).toBe("a");

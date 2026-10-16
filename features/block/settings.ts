@@ -5,7 +5,7 @@ const BLUR_GROUP: SettingGroup = {name: "흐리게 처리", desc: "차단된 내
 
 const SIMILAR_GROUP: SettingGroup = {
     name: "비슷한 이미지",
-    desc: "차단한 이미지와 비슷한 이미지(크기·화질을 바꾸거나 좌우로 뒤집은 것)도 가립니다. 이미지마다 계산이 더 듭니다."
+    desc: "차단한 이미지·움짤과 비슷한 것(크기·화질을 바꾸거나 좌우로 뒤집은 것, gif와 그걸 바꾼 움짤)도 가립니다. 이미지마다 계산이 더 듭니다."
 };
 
 const DUPLICATE_GROUP: SettingGroup = {name: "같은 댓글 접기", desc: "같은 내용의 댓글이 여러 번 달리면 첫 댓글만 남기고 접습니다. 미리보기에도 적용됩니다."};

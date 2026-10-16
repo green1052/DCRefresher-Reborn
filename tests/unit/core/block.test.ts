@@ -282,7 +282,7 @@ describe("이미지 차단", () => {
         vi.stubGlobal("crypto", webcrypto);
         fetchImage = vi.fn(async () => new Response("abc"));
         vi.stubGlobal("fetch", fetchImage);
-        vi.mocked(imageFingerprints).mockReset().mockResolvedValue([FINGERPRINT, MIRRORED]);
+        vi.mocked(imageFingerprints).mockReset().mockResolvedValue([[FINGERPRINT, MIRRORED]]);
         vi.mocked(markUsed).mockClear();
         vi.spyOn(console, "warn").mockImplementation(() => {});
         return () => vi.unstubAllGlobals();
@@ -295,7 +295,7 @@ describe("이미지 차단", () => {
             await imageHash(url);
             expect(fetchImage).toHaveBeenCalledTimes(1);
 
-            expect((await imageHash(url, {similar: true}))?.similar).toEqual([FINGERPRINT, MIRRORED]);
+            expect((await imageHash(url, {similar: true}))?.similar).toEqual([[FINGERPRINT, MIRRORED]]);
             await imageHash(url, {similar: true});
             expect(fetchImage).toHaveBeenCalledTimes(2);
         });
@@ -309,6 +309,16 @@ describe("이미지 차단", () => {
 
             expect(await imageHash(url, {retry: true})).toBeDefined();
             expect(fetchImage).toHaveBeenCalledTimes(2);
+        });
+
+        it("구간 요청의 206은 mp4 파일 전체를 담았을 때만 받는다", async () => {
+            // ftyp(16바이트) + mdat(12바이트)
+            const mp4 = Uint8Array.from([0, 0, 0, 16, 102, 116, 121, 112, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 109, 100, 97, 116, 1, 2, 3, 4]);
+            fetchImage.mockResolvedValueOnce(new Response(mp4, {status: 206}));
+            expect((await imageHash(imageUrl()))?.file).toBe(await sha256(mp4));
+
+            fetchImage.mockResolvedValueOnce(new Response(mp4.subarray(16), {status: 206}));
+            expect(await imageHash(imageUrl())).toBeUndefined();
         });
 
         it("다시 읽다 실패해도 앞서 구한 파일 해시를 지킨다", async () => {
@@ -357,6 +367,21 @@ describe("이미지 차단", () => {
 
             expect(await isImageBlocked(image(url), undefined, 12)).toBe(true);
             expect(usedIds()).toEqual(expect.arrayContaining([exact.id, near.id]));
+        });
+
+        it("움짤 항목은 정지 이미지라면 한 장면만, 움짤이라면 하나 빼고 모든 장면이 맞아야 막는다", async () => {
+            const scene = (n: number): string => n.toString(16).repeat(32);
+            setBlockLists({IMAGE: [entry("움짤", {similar: scene(1), frames: [scene(2), scene(3), scene(4)]})]});
+
+            // 정지 이미지: 한 장면만 같아도 막는다.
+            vi.mocked(imageFingerprints).mockResolvedValue([[scene(3), scene(9)]]);
+            expect(await isImageBlocked(image(imageUrl()), undefined, 4)).toBe(true);
+
+            // 움짤: 네 장면 중 셋이 같으면 막고(순서는 보지 않는다), 둘이면 막지 않는다.
+            vi.mocked(imageFingerprints).mockResolvedValue([[scene(4), scene(9)], [scene(9), scene(1)], [scene(2), scene(9)], [scene(9), scene(9)]]);
+            expect(await isImageBlocked(image(imageUrl()), undefined, 4)).toBe(true);
+            vi.mocked(imageFingerprints).mockResolvedValue([[scene(1), scene(9)], [scene(2), scene(9)], [scene(9), scene(9)], [scene(9), scene(9)]]);
+            expect(await isImageBlocked(image(imageUrl()), undefined, 4)).toBe(false);
         });
 
         it("지문 있는 항목이 없거나 너무 큰 이미지면 디코딩하지 않는다", async () => {

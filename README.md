@@ -78,7 +78,7 @@ Chrome 140, Firefox 144 이상에서 동작합니다.
 |---|---|
 | [미리보기](https://github.com/green1052/DCRefresher-Reborn/wiki/preview) | 목록에서 글과 댓글을 창으로 보고, 댓글 쓰기·추천·앞뒤 글 넘기기를 합니다 |
 | [글 목록 새로고침](https://github.com/green1052/DCRefresher-Reborn/wiki/refresh) | 목록을 자동으로 새로고침하고 새 글을 표시합니다 |
-| [콘텐츠 차단](https://github.com/green1052/DCRefresher-Reborn/wiki/block) | 닉네임, 아이디, IP, 제목, 내용, 댓글, 디시콘 등으로 글과 댓글을 숨기거나 흐리게 합니다. 본문 이미지를 우클릭해 **이 이미지 차단**을 고르면 같은 파일을 다시 올린 글에서도 그 이미지를 가립니다. **비슷한 이미지**를 켜면 크기·화질을 바꾸거나 좌우로 뒤집은 것도 가립니다 |
+| [콘텐츠 차단](https://github.com/green1052/DCRefresher-Reborn/wiki/block) | 닉네임, 아이디, IP, 제목, 내용, 댓글, 디시콘 등으로 글과 댓글을 숨기거나 흐리게 합니다. 본문 이미지·움짤을 우클릭해 **이 이미지 차단**을 고르면 같은 파일을 다시 올린 글에서도 그것을 가립니다. **비슷한 이미지**를 켜면 크기·화질을 바꾸거나 좌우로 뒤집은 것도 가립니다 |
 | [유저 정보](https://github.com/green1052/DCRefresher-Reborn/wiki/userinfo) | 작성자 옆에 아이디, IP 정보(통신사·국가·VPN), 메모, 글댓비·깡계·갱차 배지를 표시합니다 |
 | [레이아웃 수정](https://github.com/green1052/DCRefresher-Reborn/wiki/layout) | 좁은 화면용 컴팩트 모드와 페이지 요소 숨기기를 제공합니다 |
 | [폰트 교체](https://github.com/green1052/DCRefresher-Reborn/wiki/fonts) | 페이지와 미리보기의 폰트와 본문 글자 크기를 바꿉니다 |

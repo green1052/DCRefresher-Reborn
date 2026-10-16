@@ -38,12 +38,12 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("block 배경 (크롬)", () => {
-    it("켜면 글 목록·본문에만 이미지 메뉴를 걸고 CORS 규칙을 넣으며, 끄면 둘 다 뺀다", async () => {
+    it("켜면 글 목록·본문의 이미지·움짤에만 메뉴를 걸고 CORS 규칙을 넣으며, 끄면 둘 다 뺀다", async () => {
         const menus = fakeMenus();
         const updateSessionRules = vi.spyOn(fakeBrowser.declarativeNetRequest, "updateSessionRules").mockResolvedValue();
 
         await apply(true);
-        expect(menus.get("block:image")).toMatchObject({contexts: ["image"], documentUrlPatterns: expect.arrayContaining(["https://gall.dcinside.com/*board/view/*"])});
+        expect(menus.get("block:image")).toMatchObject({contexts: ["image", "video"], documentUrlPatterns: expect.arrayContaining(["https://gall.dcinside.com/*board/view/*"])});
         expect(updateSessionRules).toHaveBeenLastCalledWith({removeRuleIds: [1], addRules: [expect.objectContaining({id: 1})]});
 
         await apply(false);
@@ -85,9 +85,9 @@ describe("block 배경 (파이어폭스)", () => {
         let filter: { ondata?: (ev: { data: ArrayBuffer }) => void; onstop?: () => void; write: () => void; close: () => void };
         Object.assign(fakeBrowser.webRequest, {filterResponseData: () => (filter = {write: vi.fn(), close: vi.fn()})});
 
-        const respond = (url: string, chunks: string[]): void => {
-            for (const listener of listeners) listener({requestId: "1", url} as Browser.webRequest.OnBeforeRequestDetails);
-            for (const chunk of chunks) filter.ondata?.({data: new TextEncoder().encode(chunk).buffer});
+        const respond = (url: string, chunks: (string | Uint8Array)[], type = "image"): void => {
+            for (const listener of listeners) listener({requestId: "1", url, type} as Browser.webRequest.OnBeforeRequestDetails);
+            for (const chunk of chunks) filter.ondata?.({data: (typeof chunk === "string" ? new TextEncoder().encode(chunk) : chunk.slice()).buffer});
             filter.onstop?.();
         };
         return {listeners, respond};
@@ -130,6 +130,22 @@ describe("block 배경 (파이어폭스)", () => {
 
         // 304: 본문이 지나가지 않는다.
         respond(IMAGE, []);
+        expect(await askHash(IMAGE)).toEqual({file, similar: undefined});
+    });
+
+    it("움짤(media)은 mp4 파일 전체가 지나갔을 때만 해시하고, 구간 요청으로 일부만 오면 앞서 구한 해시를 남긴다", async () => {
+        await setImageList([{id: "a", content: "x", isRegex: false}]);
+        const {respond} = fakeWebRequest();
+        background.listen?.();
+        await apply(true);
+
+        // ftyp(16바이트) + mdat(12바이트)
+        const mp4 = Uint8Array.from([0, 0, 0, 16, 102, 116, 121, 112, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 109, 100, 97, 116, 1, 2, 3, 4]);
+        respond(IMAGE, [mp4.subarray(0, 20), mp4.subarray(20)], "media");
+        const file = await sha256(mp4);
+        expect(await askHash(IMAGE)).toEqual({file, similar: undefined});
+
+        respond(IMAGE, [mp4.subarray(16)], "media");
         expect(await askHash(IMAGE)).toEqual({file, similar: undefined});
     });
 });

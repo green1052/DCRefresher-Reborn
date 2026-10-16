@@ -315,7 +315,7 @@
     }
 
     /* 본문에 든 차단 디시콘·이미지 (Frame의 markBlockedDccons·markBlockedImages). 가린 내용 보기 동안은 아래 규칙으로 흐리게 보인다. */
-    &:not([data-block-revealed]) .refresher-preview-contents :is(.written_dccon, img)[data-blocked="hide"] {
+    &:not([data-block-revealed]) .refresher-preview-contents :is(.written_dccon, img, video)[data-blocked="hide"] {
         display: none;
     }
 
@@ -333,11 +333,11 @@
 }
 
 /* 다크 모드 본문 미디어는 다시 뒤집혀 있다 (.refresher-html). 본문 차단 디시콘·이미지는 흐림·풀기에서도 그 반전을 지킨다 — 아니면 흐림이 반전을 덮거나 반전이 흐림을 덮는다. */
-.dark .refresher-html :is(.written_dccon, img)[data-blocked="blur"] {
+.dark .refresher-html :is(.written_dccon, img, video)[data-blocked="blur"] {
     filter: invert(1) blur(var(--refresher-blur, 5px));
 }
 
-.dark :is(.refresher-frame[data-blur-reveal] .refresher-html :is(.written_dccon, img)[data-blocked="blur"]:is(:hover, :focus-visible), .refresher-frame[data-block-revealed] .refresher-html :is(.written_dccon, img)[data-blocked]) {
+.dark :is(.refresher-frame[data-blur-reveal] .refresher-html :is(.written_dccon, img, video)[data-blocked="blur"]:is(:hover, :focus-visible), .refresher-frame[data-block-revealed] .refresher-html :is(.written_dccon, img, video)[data-blocked]) {
     filter: invert(1);
 }
 
@@ -349,7 +349,7 @@
     scrollbar-color: rgb(from var(--border) calc(255 - r) calc(255 - g) calc(255 - b)) transparent;
 }
 
-.refresher-mini-contents :is(.written_dccon, img)[data-blocked] {
+.refresher-mini-contents :is(.written_dccon, img, video)[data-blocked] {
     display: none;
 }
 

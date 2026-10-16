@@ -1,6 +1,7 @@
 import {defineExtensionMessaging} from "@webext-core/messaging";
 
 import type {UsageData, UsageKind} from "@/core/usage";
+import type {Sample} from "@/utils/imageFingerprint";
 
 /**
  * 팝업 '현재 페이지'의 토글 하나. 이 페이지에서 도는 모듈의 pageToggles만 담긴다.
@@ -25,10 +26,13 @@ export interface PageState {
 /** 디시 comment.js의 dc_rc_pairs 이름. 글 댓글은 이 쌍의 v3 키로 토큰을 받고, 서버가 같은 쌍의 비밀키로 확인하게 rc_key로 보낸다. */
 export type CommentRcKey = "new" | "new3";
 
-/** 이미지 파일의 SHA-256과 비슷한 이미지 지문 (utils/imageFingerprint.ts의 원본·좌우 반전본). 지문은 구하지 않았으면 undefined, 디코딩하지 못했으면 null이다. */
+/**
+ * 이미지 파일의 SHA-256과 비슷한 이미지 표본 (utils/imageFingerprint.ts의 imageFingerprints: 정지 이미지는 하나, 움짤은 장면마다 하나).
+ * 표본은 구하지 않았으면 undefined, 디코딩하지 못했으면 null이다.
+ */
 export interface ImageHashes {
     file: string;
-    similar?: [string, string] | null;
+    similar?: Sample[] | null;
 }
 
 interface ProtocolMap {
