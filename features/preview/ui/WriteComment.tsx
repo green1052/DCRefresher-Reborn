@@ -319,8 +319,9 @@ export const WriteComment = () => {
 
             <p className="mt-2 text-xs text-muted-foreground">
                 {login ? (accountId ?? "회원 계정") : (
+                    // 닉네임을 지워도 버튼이 남아 다시 펼칠 수 있게 빈 닉네임은 할 일로 보인다.
                     <Button variant="link" size="xs" className="h-auto p-0 text-xs text-link" aria-expanded={showInputs} onClick={toggleInputs}>
-                        {nick}
+                        {nick || "닉네임 입력"}
                     </Button>
                 )}
                 (으)로 {mode} 작성 중
