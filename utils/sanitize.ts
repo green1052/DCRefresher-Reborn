@@ -78,10 +78,15 @@ const embedYoutube = (html: string): string =>
 // SVG <feImage>와 background 속성은 원격 이미지를 불러오는데 미디어 숨기기(태그·CSS)에 걸리지 않는다. 본문에 쓸 일도 없어 뺀다.
 // popover·command 속성은 본문 버튼으로 <dialog>나 팝오버를 최상위 층에 띄운다. 남긴 크기·배경색과 합치면 화면 전체를 덮는 가짜 창이 되어 뺀다.
 // data-slot은 확장 UI가 다이얼로그가 떠 있는지 볼 때 찾는 표시다 (utils/event.ts의 isTyping, Frame의 Esc). 본문이 달면 단축키가 막힌다.
+// data-blocked·data-*-revealed·data-blur-reveal·data-duplicate·data-low-activity는 확장이 가림 상태로 읽는 표시다
+// (core/block.ts의 isBlockedHidden, features/preview/overlay.css). 본문이 달면 차단한 이미지·디시콘의 가림을 스스로 푼다.
 // IN_PLACE: sanitizeHtml이 비활성 문서의 요소를 그 자리에서 정화한다.
 const FORBIDDEN = ["style", "form", "input", "textarea", "select", "feimage"];
 const BASE: Config = {
-    FORBID_ATTR: ["background", "popover", "popovertarget", "popovertargetaction", "commandfor", "command", "data-slot"],
+    FORBID_ATTR: [
+        "background", "popover", "popovertarget", "popovertargetaction", "commandfor", "command", "data-slot",
+        "data-blocked", "data-block-revealed", "data-comments-revealed", "data-blur-reveal", "data-duplicate", "data-low-activity"
+    ],
     FORBID_TAGS: FORBIDDEN,
     ADD_TAGS: ["iframe"],
     ADD_ATTR: ["allowfullscreen", "frameborder", "allow", "scrolling"],

@@ -116,6 +116,11 @@ describe("sanitizeHtml", () => {
         expect(div?.dataset.x).toBe("1");
     });
 
+    it("확장이 가림 상태로 읽는 표시는 빼고 디시의 관리자 가림(data-block)은 둔다", () => {
+        const div = parse("<div data-comments-revealed data-block-revealed data-blur-reveal data-blocked=\"blur\" data-block=\"1\"></div>").querySelector("div");
+        expect(div?.getAttributeNames()).toEqual(["data-block"]);
+    });
+
     it("<style>·폼 요소·popover·background 속성을 뺀다", () => {
         const root = parse("<style>*{}</style><form><input><textarea></textarea><select></select></form><button popover popovertarget=\"x\">b</button><table background=\"x.png\"></table>");
         expect(root.querySelector("style, form, input, textarea, select")).toBeNull();
