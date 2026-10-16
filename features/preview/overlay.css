@@ -319,8 +319,8 @@
         display: none;
     }
 
-    /* 가린 디시콘(디시콘 자체·가린 본문·가린 댓글 안)은 눌러도 정보 창이 열리지 않으므로 손가락 커서를 되돌린다 (DcconInfoPopup의 openDcconInfo). */
-    &:not([data-block-revealed]) :is(.written_dccon[data-blocked], [data-blocked] .written_dccon):not([data-comments-revealed] *) {
+    /* 가린 디시콘·이미지(그 자체·가린 본문·가린 댓글 안)는 눌러도 정보 창·크게 보기·원본 보기가 열리지 않으므로 손가락 커서를 되돌린다 (openDcconInfo, contentsClick.ts). */
+    &:not([data-block-revealed]) :is(:is(.written_dccon, img)[data-blocked], [data-blocked] :is(.written_dccon, img)):not([data-comments-revealed] *) {
         cursor: auto;
     }
 

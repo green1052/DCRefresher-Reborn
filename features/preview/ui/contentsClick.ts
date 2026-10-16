@@ -38,8 +38,10 @@ export const clickContents = (ev: MouseEvent<HTMLElement>, imageViewer: boolean)
     }
 
     // 크게 보기를 끄면 디시처럼 원본 보기를 새 탭으로 연다. 주소는 core/preview/parser.ts가 옮겨 둔 imgPop 주소이고 디시 주소만 연다.
+    // 차단으로 가린 이미지는 크게 보기처럼 열지 않는다 (isBlockedHidden).
     const image = target?.closest<HTMLImageElement>("img[data-pop]");
     if (image && !image.closest("a")) {
+        if (isBlockedHidden(image)) return;
         const url = dcinsideHref(image.dataset.pop);
         if (url) window.open(url, "_blank", "noopener");
         return;

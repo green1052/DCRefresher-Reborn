@@ -1,5 +1,5 @@
 import {render} from "preact";
-import {afterEach, describe, expect, it} from "vitest";
+import {afterEach, describe, expect, it, vi} from "vitest";
 
 import {clickContents, markPressable} from "@/features/preview/ui/contentsClick";
 import {usePreviewStore} from "@/features/preview/ui/previewStore";
@@ -58,5 +58,21 @@ describe("clickContents", () => {
         const viewer = usePreviewStore.getState().viewer;
         expect(viewer?.images.map(({src}) => src.split("/").pop())).toEqual(["loaded.jpg", "lazy.jpg", "after.jpg"]);
         expect(viewer?.index).toBe(1);
+    });
+
+    it.each([true, false])("차단으로 가린 이미지는 크게 보기도 원본 보기도 열지 않는다 (imageViewer %s)", (imageViewer) => {
+        Element.prototype.checkVisibility = () => true;
+        const open = vi.spyOn(window, "open").mockReturnValue(null);
+        const container = document.createElement("div");
+        document.body.append(container);
+        render(<div onClick={(ev) => clickContents(ev, imageViewer)}/>, container);
+        const root = container.querySelector("div")!;
+        root.innerHTML = `<img src="a.jpg" data-width="100" data-blocked="blur" data-pop="https://gall.dcinside.com/pop"><div data-blocked="blur"><img src="b.jpg" data-width="100" data-pop="https://gall.dcinside.com/pop"></div>`;
+        setLoadState(root);
+
+        for (const element of root.querySelectorAll("img")) element.click();
+
+        expect(open).not.toHaveBeenCalled();
+        expect(usePreviewStore.getState().viewer).toBeNull();
     });
 });
