@@ -83,6 +83,16 @@ describe("bindRows", () => {
         expect(open).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({id: "7"}), false);
     });
 
+    it("행 전체 인식과 키 반전이어도 관리자 체크박스 칸은 가로채지 않는다", () => {
+        el("tr").insertAdjacentHTML("afterbegin", `<td class="gall_chk"><input type="checkbox" class="article_chkbox"></td>`);
+        bind({expandRecognizeRange: true, reversePreviewKey: true});
+
+        const click = new MouseEvent("click", {button: 0, bubbles: true, cancelable: true});
+        el(".article_chkbox").dispatchEvent(click);
+        expect(click.defaultPrevented).toBe(false);
+        expect(open).not.toHaveBeenCalled();
+    });
+
     it("키 반전이면 좌클릭은 미리보기, 우클릭은 글(댓글 수는 댓글 위치)로 이동한다", () => {
         // jsdom은 해시만 바뀌는 이동만 하므로 글 주소에 해시를 붙여 location.href가 바뀌는지 본다.
         el("a.title").setAttribute("href", "/board/view/?id=test&no=7&page=1#title");

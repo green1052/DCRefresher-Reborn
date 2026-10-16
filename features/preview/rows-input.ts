@@ -66,8 +66,8 @@ export const bindRows = (ctx: Ctx, {open, prefetch, mini}: RowHandlers): void =>
         if (!commentsOnly) {
             if (element.classList.contains("ub-content") && !ctx.settings.expandRecognizeRange) return null;
 
-            // 작성자 칸 클릭은 유저 버블(차단·유저 정보 모듈) 몫이라 행 전체 인식이어도 열지 않는다.
-            if (target.closest(".ub-writer")) return null;
+            // 작성자 칸 클릭은 유저 버블(차단·유저 정보 모듈) 몫이고, 관리자 체크박스 칸은 글 고르기 몫이라 행 전체 인식이어도 열지 않는다.
+            if (target.closest(".ub-writer, td:has(.article_chkbox)")) return null;
         }
 
         const preData = buildPreData(element);
