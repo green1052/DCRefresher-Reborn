@@ -27,7 +27,7 @@ import {CountDown} from "./CountDown";
 import {ErrorBlock} from "./ErrorBlock";
 import {fitMovies} from "./fitMovies";
 import {watchGifVideos} from "./gifVideos";
-import {markBlockedDccons} from "./blockedDccons";
+import {markBlockedDccons, markBlockedImages} from "./blockedDccons";
 import {AdminPanel} from "./Popups";
 import {postTitle, usePreviewStore} from "./previewStore";
 import {useWheelGesture} from "./useWheelGesture";
@@ -100,9 +100,12 @@ const PostContents = () => {
 
     // 본문이 새로 들어오면 동영상 크기를 다시 맞춘다. hideText가 풀려도 동영상이 새로 들어온다.
     useEffect(() => (contentsBox.current ? fitMovies(contentsBox.current) : undefined), [html]);
-    // 본문에 든 차단 디시콘은 페이지 글 보기처럼 그 디시콘만 가린다. 차단 목록이나 설정이 바뀌면 다시 본다.
+    // 본문에 든 차단 디시콘·이미지는 페이지 글 보기처럼 그것만 가린다. 차단 목록이나 설정이 바뀌면 다시 본다.
     useEffect(() => {
-        if (contentsBox.current) markBlockedDccons(contentsBox.current, gallery, block ? (block.blur ? "blur" : "hide") : undefined);
+        if (!contentsBox.current) return;
+        const mode = block ? (block.blur ? "blur" : "hide") : undefined;
+        markBlockedDccons(contentsBox.current, gallery, mode);
+        return markBlockedImages(contentsBox.current, gallery, mode);
     }, [html, block, blockEntries, blockDefaults, gallery]);
     // 깨진 움짤·디시콘 mp4는 디시처럼 gif로 바꾼다.
     useEffect(() => (contentsBox.current ? watchGifVideos(contentsBox.current) : undefined), [html]);

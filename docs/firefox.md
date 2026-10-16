@@ -9,4 +9,5 @@ Chrome에서만 시험해서는 드러나지 않는 Firefox 문제를 모았습�
 - **브라우저 분기는 `import.meta.env.BROWSER === "firefox"`로 합니다.** `import.meta.env.FIREFOX`는 Vitest가 문자열(`"false"`)로 바꿔 넣어 단위 테스트에서 참이 됩니다.
 - **MV2라 배경은 서비스 워커가 아닌 배경 페이지로 돕니다.** 알람과 메뉴, 단축키는 두 브라우저에서 다 확인합니다.
 - **페이지의 `navigator.locks`에 콘텐츠 스크립트의 콜백을 넘기면 이유 없는 `Error`로 실패합니다.** 쓰기 직렬화(`core/storage/sync.ts`)는 파이어폭스 콘텐츠 스크립트에서 잠그지 않습니다.
-- **Firefox 전용 API**는 `wxt/browser` 타입(Chrome 기준)에 없습니다. 지금은 `browser.commands.openShortcutSettings()` 한 곳이라 `// @ts-expect-error`에 이유를 적어 두었습니다. 나중에 타입이 생기면 이 주석이 오류가 되어 지울 때를 알려 줍니다.
+- **Firefox 전용 API**는 `wxt/browser` 타입(Chrome 기준)에 없습니다. 한 줄로 끝나는 `browser.commands.openShortcutSettings()`는 `// @ts-expect-error`에 이유를 적어 두었습니다. 나중에 타입이 생기면 이 주석이 오류가 되어 지울 때를 알려 줍니다. 이벤트 처리기까지 타입이 필요한 `webRequest.filterResponseData`(이미지 차단)는 `features/block/stream-filter.d.ts`가 `@wxt-dev/browser/src/gen`을 보강해 쓰는 만큼만 적습니다. 타입이 생기면 이 파일을 지웁니다.
+- **콘텐츠 스크립트의 `fetch`는 페이지와 HTTP 캐시를 같이 쓰지 않습니다.** 페이지가 이미 받은 이미지도 다시 받습니다. 이미지 차단은 배경이 `filterResponseData`로 페이지의 응답을 흘려보내며 해시를 구해 두고 탭이 물어 갑니다(`features/block/background.ts`). 같은 탭이 메모리 캐시의 이미지를 다시 쓰면 요청이 없어 webRequest가 지나가지 않으므로 해시는 주소별로 남겨 둡니다.

@@ -20,6 +20,7 @@ import {
     rawKey
 } from "@/core/storage/items";
 import {friendlyMessage} from "@/utils/error";
+import {sha256} from "@/utils/hash";
 import {isRecord} from "@/utils/record";
 
 export type BackupSlot = "manual" | "auto";
@@ -95,9 +96,6 @@ const gzip = (text: string): Promise<Uint8Array<ArrayBuffer>> =>
 
 const gunzip = (bytes: Uint8Array<ArrayBuffer>): Promise<string> =>
     new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
-
-const sha256 = async (bytes: Uint8Array<ArrayBuffer>): Promise<string> =>
-    new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)).toHex();
 
 /** 형식 번호의 크기는 따지지 않는다. 더 높은 형식(새 버전이 올린 백업)도 백업이 있는 것으로 보고, 읽을 때만 막는다. */
 const isMeta = (value: unknown): value is BackupMeta => isRecord(value) && Number.isInteger(value.format) && Number.isInteger(value.chunks);

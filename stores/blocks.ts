@@ -63,7 +63,7 @@ export const normalizeBlockList = (value: unknown, known: BlockEntry[] = []): Bl
 };
 
 /** 유형마다 빈 차단 목록. 유형을 늘리면 여기서 타입 오류가 난다. */
-export const emptyEntries = (): Record<BlockType, BlockEntry[]> => ({COMMENT: [], DCCON: [], ID: [], IP: [], NICK: [], TAB: [], TEXT: [], TITLE: []});
+export const emptyEntries = (): Record<BlockType, BlockEntry[]> => ({COMMENT: [], DCCON: [], ID: [], IMAGE: [], IP: [], NICK: [], TAB: [], TEXT: [], TITLE: []});
 
 /** 같은 content+gallery는 한 항목이다. */
 export const blockKey = ({content, gallery}: BlockInputFields): string => JSON.stringify([content, gallery ?? ""]);

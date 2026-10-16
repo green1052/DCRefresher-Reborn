@@ -1,9 +1,11 @@
-import {BLOCKED_TEXT, dcconCode, duplicateOf, groupDuplicates, HIDDEN_ROW_SELECTOR, isAnyBlocked, isBlocked, ROWS_HIDDEN_EVENT} from "@/core/block";
+import {BLOCKED_TEXT, dcconCode, duplicateOf, groupDuplicates, HIDDEN_ROW_SELECTOR, isAnyBlocked, isBlocked, isImageBlocked, ROWS_HIDDEN_EVENT} from "@/core/block";
 import {FILTER_SKIP_ATTR} from "@/core/filtering";
 import {defineModule} from "@/core/module/define";
 import {documentUrl, isViewPage} from "@/core/http/urls";
+import {onMessage} from "@/core/messaging/protocol";
 import {WRITER_ROW_SELECTOR} from "@/core/list";
 import type {BlockType} from "@/core/storage/types";
+import {blockImage} from "@/stores/blockRequest";
 import {useBlocksStore} from "@/stores/blocks";
 import {openWriterBubble, useUiStore} from "@/stores/ui";
 import {whenDomReady} from "@/utils/dom";
@@ -108,6 +110,19 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
         else hide(element);
     };
 
+    // 본문 이미지 차단. 파일 해시로 보므로 다 받은 뒤에 본다. 지연 로딩·디시의 가린 이미지 보기로 주소가 바뀌면 load 때 다시 본다.
+    const watchedImages = new WeakSet<HTMLImageElement>();
+    const checkImage = (element: HTMLElement): void => {
+        if (!(element instanceof HTMLImageElement)) return;
+        if (!watchedImages.has(element)) {
+            watchedImages.add(element);
+            element.addEventListener("load", () => checkImage(element), {signal: ctx.signal});
+        }
+        void isImageBlocked(element, gallery).then((blocked) => {
+            if (blocked && !ctx.signal.aborted) hide(element);
+        });
+    };
+
     // 본문 차단: 블러면 흐리게, 아니면 숨기고 안내를 넣는다. 원문은 남겨 두어 차단을 풀거나 '차단 내용 보기'로 다시 보인다.
     // 본문이 다 읽힌 뒤 한 번만 본다. 작성자 필터에서 보면 아래 글 목록 행마다 본문을 다시 읽고,
     // .write_div 필터에서 보면 파싱 중인 본문 일부로 판정해 NOT_*·SAME 항목이 오탐한다.
@@ -162,7 +177,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
 
     // 선택자마다 판정. 새로 그려지는 요소는 필터가, 이미 그려진 요소는 recheck가 같은 표로 돈다.
     const checks: [selector: string, check: (element: HTMLElement) => void][] = [[".ub-writer", checkWriter], [".written_dccon", checkDccon]];
-    if (isViewPage) checks.push([".cmt_list", foldLater]);
+    if (isViewPage) checks.push([".cmt_list", foldLater], [".write_div img", checkImage]);
     for (const [selector, check] of checks) ctx.addFilter(selector, check);
     if (isViewPage) {
         whenDomReady(checkText, ctx.signal);
@@ -229,6 +244,7 @@ export default defineModule({
         publishRevealed();
         const recheck = setupFilters(ctx, gallery);
         setupSelection(ctx);
+        ctx.addCleanup(onMessage("refresher:blockImage", ({data: url}) => blockImage(url)));
         ctx.onSettingsChanged((keys) => {
             if (!keys.isDisjointFrom(BLUR_KEYS)) applyBlurStyle(ctx);
             if (!keys.isSubsetOf(BLUR_KEYS)) recheck();

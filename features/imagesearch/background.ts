@@ -1,6 +1,7 @@
 import {defineBackgroundModule} from "@/core/module/background";
+import {IMAGE_URL_PATTERNS} from "@/core/pages";
 
-import {IMAGE_SEARCH_ENGINES, IMAGE_SEARCH_ID, IMAGE_SEARCH_SETTINGS, IMAGE_URL_PATTERNS, imageSearchUrl} from "./engines";
+import {IMAGE_SEARCH_ENGINES, IMAGE_SEARCH_ID, IMAGE_SEARCH_SETTINGS, imageSearchUrl} from "./engines";
 
 const MENU_PREFIX = "imagesearch:";
 

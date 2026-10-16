@@ -13,7 +13,8 @@ export const TYPE_NAMES = {
     TEXT: "내용",
     COMMENT: "댓글",
     DCCON: "디시콘",
-    TAB: "말머리"
+    TAB: "말머리",
+    IMAGE: "이미지"
 };
 
 export const DETECT_MODE_NAMES = {
@@ -41,7 +42,8 @@ export const DEFAULT_DETECT_MODE: Record<BlockType, DetectMode> = {
     TEXT: "CONTAIN",
     COMMENT: "CONTAIN",
     DCCON: "SAME",
-    TAB: "SAME"
+    TAB: "SAME",
+    IMAGE: "SAME"
 };
 
 /**

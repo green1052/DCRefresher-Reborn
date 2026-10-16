@@ -1,7 +1,9 @@
+import {sendMessage} from "@/core/messaging/protocol";
 import type {ModuleSettings} from "@/core/module/types";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {markUsed} from "@/core/usage";
 import {useBlocksStore} from "@/stores/blocks";
+import {sha256} from "@/utils/hash";
 import {objectEntries} from "@/utils/typed";
 
 interface Compiled {
@@ -126,6 +128,54 @@ export const dcconCode = (element: HTMLElement): string | undefined => {
     const media = (element as HTMLImageElement).src ? element : (element.querySelector("img, video, source") ?? element);
     const src = media.getAttribute("src") || media.getAttribute("data-src");
     return src ? URL.parse(src, location.href)?.searchParams.get("no") || undefined : undefined;
+};
+
+/** 이미지 차단이 보는 디시 본문 이미지(viewimage.php). 디시콘(dccon.php)·외부 이미지는 보지 않는다. */
+const VIEW_IMAGE = /^https:\/\/[^/]+\.dcinside\.(?:com|co\.kr)\/viewimage\.php/;
+
+// 주소 → 파일 해시. 차단 목록이 바뀌어 다시 판정하거나 미리보기를 다시 열 때 또 읽지 않는다.
+// 읽지 못한 것(이미지 호스트 권한이 없는 등)도 남겨 둔다. 지우면 판정할 때마다 이미지를 다시 요청한다.
+const imageHashes = new Map<string, Promise<string | undefined>>();
+
+const readImageHash = async (url: string): Promise<string | undefined> => {
+    if (import.meta.env.BROWSER === "firefox") {
+        const hash = await sendMessage("refresher:imageHash", url).catch(() => undefined);
+        if (hash) return hash;
+    }
+    try {
+        // 파이어폭스 콘텐츠 스크립트의 요청은 Referer를 붙이지 않아 디시가 403을 준다. 크롬은 원래 붙이고, 캐시 키에 들지 않아 캐시도 그대로 쓴다.
+        const response = await fetch(url, {cache: "force-cache", referrer: location.href});
+        return response.ok ? await sha256(await response.arrayBuffer()) : undefined;
+    } catch (e) {
+        console.warn("Image hash failed:", url, e);
+        return undefined;
+    }
+};
+
+/**
+ * 이미지 파일의 SHA-256. 이미지 차단 항목의 내용이다. 읽지 못하면(이미지 호스트 권한이 없는 등) undefined다.
+ * 크롬은 페이지가 받아 둔 캐시에서 읽는다. 배경의 규칙이 이 요청에만 CORS 헤더를 붙인다 (features/block/background.ts).
+ * 파이어폭스는 콘텐츠 스크립트의 요청이 페이지의 캐시를 쓰지 않아, 배경이 페이지의 응답을 흘려보내며 구해 둔 해시를 받는다.
+ * 둘 다 캐시나 배경에 없으면 이미지를 한 번 더 받는다. retry면 앞서 읽지 못한 것도 다시 읽는다 (권한을 막 받은 뒤의 우클릭 차단).
+ */
+export const imageHash = (url: string, {retry = false}: { retry?: boolean } = {}): Promise<string | undefined> => {
+    let hash = imageHashes.get(url);
+    if (!hash || retry) {
+        hash = readImageHash(url);
+        imageHashes.set(url, hash);
+    }
+    return hash;
+};
+
+/**
+ * 이미지가 차단 목록(IMAGE)에 든 파일인지. 다 받은 본문 이미지만 본다. 받기 전에 읽으면 확장이 따로 받아 캐시를 쓰지 못한다.
+ * 지연 로딩·원본 보기로 주소가 바뀌면 load 때 다시 부른다.
+ */
+export const isImageBlocked = async (image: HTMLImageElement, gallery?: string): Promise<boolean> => {
+    const url = image.currentSrc;
+    if (!VIEW_IMAGE.test(url) || !image.complete || image.naturalWidth === 0 || useBlocksStore.getState().entries.IMAGE.length === 0) return false;
+    const hash = await imageHash(url);
+    return hash !== undefined && isBlocked("IMAGE", hash, gallery);
 };
 
 /**

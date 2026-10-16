@@ -1,4 +1,7 @@
-import {useId, useMemo, useState} from "react";
+import {useEffect, useId, useMemo, useState} from "react";
+
+import {Button} from "@/components/ui/button";
+import {IMAGE_HOST_ORIGINS} from "@/core/pages";
 
 import {pinDefaultMode} from "@/core/settings-transfer";
 import {BLOCK_TYPES, DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
@@ -22,6 +25,17 @@ export const dcconImage = (entry: BlockEntry): string => {
     return `https://image.dcinside.com/dccon.php?no=${code}`;
 };
 
+/**
+ * 이미지 차단이 쓰는 이미지 호스트 권한이 있는지와 그 권한을 묻는 함수. 우클릭 차단이 처음 물어보지만,
+ * 백업 복원·가져오기로 들어온 이미지 항목은 권한 없이는 가리지 못한다. 확인은 옵션을 열 때 한다.
+ */
+const useImageHostAccess = (): [granted: boolean | undefined, request: () => void] => {
+    const [granted, setGranted] = useState<boolean>();
+    useEffect(() => void browser.permissions.contains({origins: IMAGE_HOST_ORIGINS}).then(setGranted), []);
+    const request = (): void => void browser.permissions.request({origins: IMAGE_HOST_ORIGINS}).then(setGranted).catch(console.error);
+    return [granted, request];
+};
+
 /** 정보 칸 텍스트. 필드로 만든 플래그와 별명(extra)을 이어 붙인다. */
 const entryInfo = (entry: BlockEntry): string => [composeExtra(entry), entry.extra].filter(Boolean).join(" · ") || "—";
 
@@ -33,6 +47,7 @@ export function BlockTab() {
     const updateEntries = useBlocksStore((state) => state.updateEntries);
     const setDefault = useBlocksStore((state) => state.setDefault);
     const addEntries = useBlocksStore((state) => state.addEntries);
+    const [imageHostAccess, requestImageHostAccess] = useImageHostAccess();
 
     const ids = useMemo(() => BLOCK_TYPES.flatMap((type) => entries[type].map((entry) => entry.id)), [entries]);
     const used = useUsage("block", ids);
@@ -91,6 +106,14 @@ export function BlockTab() {
                         <p id={modeDescId} className="max-w-md text-sm text-muted-foreground">
                             모드가 '기본값'인 항목에 씁니다. {DETECT_MODE_DESCRIPTIONS[defaults[type]]}
                         </p>
+                        {type === "IMAGE" && imageHostAccess === false && (
+                            <div className="flex items-center gap-2">
+                                <p className="text-sm text-destructive">이미지 서버(dcinside.co.kr) 접근 권한이 없어 이미지를 가리지 못합니다.</p>
+                                <Button variant="secondary" size="sm" onClick={requestImageHostAccess}>
+                                    권한 허용
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 )}
                 items={(type) => entries[type]}
@@ -111,6 +134,9 @@ export function BlockTab() {
                         head={type === "DCCON" ? (
                             <img src={dcconImage(entry)} alt={entry.extra || entry.content} loading="lazy" decoding="async"
                                  className="block h-10"/>
+                        ) : type === "IMAGE" ? (
+                            // 파일 해시(64자)는 표를 넓히므로 앞부분만 보인다. 전체는 툴팁·수정 창에서 본다.
+                            <span className="block max-w-40 truncate font-mono" title={entry.content}>{entry.content}</span>
                         ) : (
                             <span className="font-medium">{entry.content}</span>
                         )}

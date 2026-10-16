@@ -2,7 +2,7 @@ import preact from "@preact/preset-vite";
 import tailwindcss from "@tailwindcss/vite";
 import {defineConfig} from "wxt";
 
-import {CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES} from "./core/pages";
+import {CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES, IMAGE_HOST_ORIGINS} from "./core/pages";
 
 export default defineConfig({
     modules: ["@wxt-dev/auto-icons"],
@@ -26,7 +26,7 @@ export default defineConfig({
     dev: {
         reloadCommand: "Alt+Shift+R"
     },
-    manifest: {
+    manifest: ({browser}) => ({
         name: "DCRefresher Reborn",
         // 코드가 쓰는 API 중 가장 늦게 들어온 것에 맞춘다 (빌드가 바꿔 주지 않는다).
         // Chrome 140: Uint8Array의 toBase64·fromBase64(백업·IP DB). Firefox 144: storage.local.getBytesInUse(정보 탭), getKeys(143).
@@ -40,8 +40,15 @@ export default defineConfig({
                 }
             }
         },
-        permissions: ["alarms", "contextMenus", "storage", "scripting", "unlimitedStorage"],
+        // 이미지 차단(features/block/background.ts)이 본문 이미지를 다시 받지 않고 읽는 데 쓴다. 크롬은 CORS 헤더를 붙이는 규칙,
+        // 파이어폭스는 페이지가 받는 응답을 흘려보내며 읽는 필터다. 둘 다 설치·업데이트 때 묻지 않는 권한이다.
+        permissions: ["alarms", "contextMenus", "storage", "scripting", "unlimitedStorage",
+                      ...(browser === "firefox" ? ["webRequest", "webRequestBlocking"] : ["declarativeNetRequestWithHostAccess"])],
         host_permissions: ["https://*.dcinside.com/*"],
+        // 본문 이미지 호스트. 이미지를 처음 차단할 때 묻는다 (core/pages.ts의 IMAGE_HOST_ORIGINS).
+        // MV2(파이어폭스)는 optional_host_permissions가 없어 WXT가 지우므로 optional_permissions에 넣는다.
+        optional_host_permissions: IMAGE_HOST_ORIGINS,
+        ...(browser === "firefox" && {optional_permissions: IMAGE_HOST_ORIGINS}),
         content_scripts: [
             {
                 matches: CONTENT_MATCHES,
@@ -50,5 +57,5 @@ export default defineConfig({
                 run_at: "document_start"
             }
         ]
-    }
+    })
 });

@@ -13,6 +13,9 @@ afterEach(() => void vi.useRealTimers());
 // fake-browser의 getKeys는 구현되지 않았다고 던진다. reset이 바꾸지 않는 객체라 한 번만 채운다.
 fakeBrowser.storage.local.getKeys = async () => Object.keys(await fakeBrowser.storage.local.get(null));
 
+// permissions.contains도 던진다 (옵션 차단 탭의 이미지 호스트 권한 확인). 받은 권한이 없는 것으로 둔다.
+fakeBrowser.permissions.contains = async () => false;
+
 // Cookie Store API (core/http/cookie). 쿠키가 하나도 없는 것으로 둔다.
 Object.assign(globalThis, {cookieStore: {get: async () => null}});
 

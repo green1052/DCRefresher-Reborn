@@ -3,7 +3,7 @@ import {useEffect, useRef} from "react";
 import {useRunningModuleSettings} from "@/core/module/useModuleSettings";
 import {useBlocksStore} from "@/stores/blocks";
 
-import {markBlockedDccons} from "./blockedDccons";
+import {markBlockedDccons, markBlockedImages} from "./blockedDccons";
 import {fitMovies} from "./fitMovies";
 import {watchGifVideos} from "./gifVideos";
 import {cn} from "cn";
@@ -25,12 +25,14 @@ export const Mini = () => {
     // 디시 동영상 iframe도 전체 미리보기처럼 크기를 맞춘다. 안 그러면 기본 300×150으로 잘린다.
     useEffect(() => (contents.current ? fitMovies(contents.current) : undefined), [mini?.contents]);
 
-    // 본문의 차단 디시콘을 가린다. 마우스를 올려 흐림을 걷을 수 없으니 흐리게 처리여도 숨긴다.
+    // 본문의 차단 디시콘·이미지를 가린다. 마우스를 올려 흐림을 걷을 수 없으니 흐리게 처리여도 숨긴다.
     const blocking = useRunningModuleSettings("block") !== undefined;
     const blockEntries = useBlocksStore((s) => s.entries);
     const blockDefaults = useBlocksStore((s) => s.defaults);
     useEffect(() => {
-        if (contents.current) markBlockedDccons(contents.current, mini?.gallery, blocking ? "hide" : undefined);
+        if (!contents.current) return;
+        markBlockedDccons(contents.current, mini?.gallery, blocking ? "hide" : undefined);
+        return markBlockedImages(contents.current, mini?.gallery, blocking ? "hide" : undefined);
     }, [mini?.contents, mini?.gallery, blocking, blockEntries, blockDefaults]);
 
     if (!mini) return null;

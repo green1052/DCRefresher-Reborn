@@ -186,7 +186,7 @@
         pointer-events: none;
     }
 
-    &:not(:has(> :is(img, video):not([data-block])))::before,
+    &:not(:has(> :is(img, video):not([data-block], [data-blocked="hide"])))::before,
     .refresher-preview-block-media &::before {
         display: none;
     }
@@ -314,8 +314,8 @@
         @apply refresher-blur-reveal;
     }
 
-    /* 본문에 든 차단 디시콘 (Frame의 markBlockedDccons). 가린 내용 보기 동안은 아래 규칙으로 흐리게 보인다. */
-    &:not([data-block-revealed]) .refresher-preview-contents .written_dccon[data-blocked="hide"] {
+    /* 본문에 든 차단 디시콘·이미지 (Frame의 markBlockedDccons·markBlockedImages). 가린 내용 보기 동안은 아래 규칙으로 흐리게 보인다. */
+    &:not([data-block-revealed]) .refresher-preview-contents :is(.written_dccon, img)[data-blocked="hide"] {
         display: none;
     }
 
@@ -332,24 +332,24 @@
     }
 }
 
-/* 다크 모드 본문 미디어는 다시 뒤집혀 있다 (.refresher-html). 본문 차단 디시콘은 흐림·풀기에서도 그 반전을 지킨다 — 아니면 흐림이 반전을 덮거나 반전이 흐림을 덮는다. */
-.dark .refresher-html .written_dccon[data-blocked="blur"] {
+/* 다크 모드 본문 미디어는 다시 뒤집혀 있다 (.refresher-html). 본문 차단 디시콘·이미지는 흐림·풀기에서도 그 반전을 지킨다 — 아니면 흐림이 반전을 덮거나 반전이 흐림을 덮는다. */
+.dark .refresher-html :is(.written_dccon, img)[data-blocked="blur"] {
     filter: invert(1) blur(var(--refresher-blur, 5px));
 }
 
-.dark :is(.refresher-frame[data-blur-reveal] .refresher-html .written_dccon[data-blocked="blur"]:is(:hover, :focus-visible), .refresher-frame[data-block-revealed] .refresher-html .written_dccon[data-blocked]) {
+.dark :is(.refresher-frame[data-blur-reveal] .refresher-html :is(.written_dccon, img)[data-blocked="blur"]:is(:hover, :focus-visible), .refresher-frame[data-block-revealed] .refresher-html :is(.written_dccon, img)[data-blocked]) {
     filter: invert(1);
 }
 
 /* ===== 미니 미리보기 ===== */
 
-/* 본문에 든 차단 디시콘 (Mini의 markBlockedDccons). */
+/* 본문에 든 차단 디시콘·이미지 (Mini의 markBlockedDccons·markBlockedImages). */
 /* 미니 미리보기의 스크롤바(Mini.tsx) — 다크 모드에서는 상자가 뒤집히므로(.refresher-html) 미리 뒤집는다. 내용이 더 있다는 유일한 표시다. */
 .dark .refresher-mini-contents {
     scrollbar-color: rgb(from var(--border) calc(255 - r) calc(255 - g) calc(255 - b)) transparent;
 }
 
-.refresher-mini-contents .written_dccon[data-blocked] {
+.refresher-mini-contents :is(.written_dccon, img)[data-blocked] {
     display: none;
 }
 
