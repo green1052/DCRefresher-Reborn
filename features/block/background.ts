@@ -35,8 +35,17 @@ const CORS_RULE: Browser.declarativeNetRequest.Rule = {
     }
 };
 
-/** 파이어폭스: 이미지 주소 → 페이지가 받은 파일의 해시 (받는 중이면 끝날 때 풀린다). 파일 해시(file)는 지문보다 먼저 풀린다. */
-const imageHashes = new Map<string, { file: Promise<string | undefined>; hashes: Promise<ImageHashes | undefined> }>();
+/**
+ * 파이어폭스: 이미지 주소 → 페이지가 받은 파일의 해시 (받는 중이면 끝날 때 풀린다). 파일 해시(file)는 지문보다 먼저 풀린다.
+ * done은 다 구한 결과다. 본문 이미지 주소의 파일은 바뀌지 않으므로 다시 받을 때 또 구하지 않는다.
+ */
+interface HashEntry {
+    file: Promise<string | undefined>;
+    hashes: Promise<ImageHashes | undefined>;
+    done?: ImageHashes;
+}
+
+const imageHashes = new Map<string, HashEntry>();
 /**
  * 파이어폭스: 비슷한 이미지 지문도 구할지. 디코딩이 해시보다 훨씬 무거워 그 설정이 켜져 있고 지문이 있는 항목이 있을 때만 구한다.
  * 페이지 쪽 캔버스는 지문 방지 설정이 켜지면 잡음이 섞이지만 배경은 섞이지 않는다.
@@ -57,19 +66,29 @@ const MAX_IMAGE_HASHES = 500;
  * 같은 탭이 메모리 캐시를 다시 쓰면 요청이 없어 지나가지 않으므로 해시를 주소별로 남겨 두고 탭이 물어 간다 (refresher:imageHash).
  */
 const hashImageResponse = ({requestId, url, type}: Browser.webRequest.OnBeforeRequestDetails): undefined => {
+    const previous = imageHashes.get(url);
+    imageHashes.delete(url);
+    // 필요한 것(지문은 similarEnabled일 때)을 다 구해 두었으면 응답을 엿보지 않고 오래된 순서만 바꾼다.
+    if (previous?.done && (!similarEnabled || previous.done.similar !== undefined)) {
+        imageHashes.set(url, previous);
+        return undefined;
+    }
+
     const filter = browser.webRequest.filterResponseData(requestId);
     const chunks: ArrayBuffer[] = [];
     const file = Promise.withResolvers<string | undefined>();
     const hashes = Promise.withResolvers<ImageHashes | undefined>();
-    const previous = imageHashes.get(url);
+    const entry: HashEntry = {file: file.promise, hashes: hashes.promise};
     const resolve = (done: Promise<ImageHashes | undefined>): void => {
         hashes.resolve(done);
         // 파일 해시를 먼저 알리지 못했으면(앞서 구한 것을 쓰는 등) 다 끝난 것으로 푼다. 먼저 푼 값이 남는다.
-        void done.then((result) => file.resolve(result?.file), () => file.resolve(undefined));
+        void done.then((result) => {
+            file.resolve(result?.file);
+            entry.done = result;
+        }, () => file.resolve(undefined));
     };
 
-    imageHashes.delete(url);
-    imageHashes.set(url, {file: file.promise, hashes: hashes.promise});
+    imageHashes.set(url, entry);
     if (imageHashes.size > MAX_IMAGE_HASHES) imageHashes.delete(imageHashes.keys().next().value ?? url);
 
     filter.ondata = (ev) => {

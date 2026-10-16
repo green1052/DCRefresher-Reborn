@@ -85,14 +85,15 @@ describe("block 배경 (파이어폭스)", () => {
         vi.spyOn(event, "hasListener").mockImplementation((listener) => listeners.has(listener));
 
         let filter: { ondata?: (ev: { data: ArrayBuffer }) => void; onstop?: () => void; write: () => void; close: () => void };
-        Object.assign(fakeBrowser.webRequest, {filterResponseData: () => (filter = {write: vi.fn(), close: vi.fn()})});
+        const filterResponseData = vi.fn(() => (filter = {write: vi.fn(), close: vi.fn()}));
+        Object.assign(fakeBrowser.webRequest, {filterResponseData});
 
         const respond = (url: string, chunks: (string | Uint8Array)[], type = "image"): void => {
             for (const listener of listeners) listener({requestId: "1", url, type} as Browser.webRequest.OnBeforeRequestDetails);
             for (const chunk of chunks) filter.ondata?.({data: (typeof chunk === "string" ? new TextEncoder().encode(chunk) : chunk.slice()).buffer});
             filter.onstop?.();
         };
-        return {listeners, respond};
+        return {listeners, respond, filterResponseData};
     };
 
     /** 탭이 묻는 refresher:imageHash의 처리기. */
@@ -120,22 +121,40 @@ describe("block 배경 (파이어폭스)", () => {
         expect(listeners.size).toBe(0);
     });
 
-    it("페이지가 받은 이미지의 해시를 구해 두고, 본문 없는 재검증 응답은 앞서 구한 해시를 남긴다", async () => {
+    it("페이지가 받은 이미지의 해시를 구해 두고, 다 구한 주소는 다시 받아도 엿보지 않는다", async () => {
         await setImageList([{id: "a", content: "x", isRegex: false}, null]);
+        const {respond, filterResponseData} = fakeWebRequest();
+        background.listen?.();
+        await apply(true);
+
+        const url = `${IMAGE}&t=again`;
+        respond(url, ["ab", "c"]);
+        const file = await sha256(new TextEncoder().encode("abc"));
+        expect(await askHash(url)).toEqual({file, similar: undefined});
+
+        respond(url, ["abc"]);
+        expect(filterResponseData).toHaveBeenCalledOnce();
+    });
+
+    it("지문이 새로 필요해진 주소의 본문 없는 재검증 응답은 앞서 구한 해시를 남긴다", async () => {
+        await setImageList([{id: "a", content: "x", isRegex: false}]);
         const {respond} = fakeWebRequest();
         background.listen?.();
         await apply(true);
 
-        respond(IMAGE, ["ab", "c"]);
+        const url = `${IMAGE}&t=304`;
+        respond(url, ["abc"]);
         const file = await sha256(new TextEncoder().encode("abc"));
-        expect(await askHash(IMAGE)).toEqual({file, similar: undefined});
+        expect(await askHash(url)).toEqual({file, similar: undefined});
 
-        // 304: 본문이 지나가지 않는다.
-        respond(IMAGE, []);
-        expect(await askHash(IMAGE)).toEqual({file, similar: undefined});
+        // 비슷한 이미지 설정을 켜 다시 엿보지만, 304라 본문이 지나가지 않는다.
+        await setImageList([{id: "a", content: "x", isRegex: false, similar: "0".repeat(32)}]);
+        await apply(true, true);
+        respond(url, []);
+        expect(await askHash(url)).toEqual({file, similar: undefined});
     });
 
-    it("움짤(media)은 mp4 파일 전체가 지나갔을 때만 해시하고, 구간 요청으로 일부만 오면 앞서 구한 해시를 남긴다", async () => {
+    it("움짤(media)은 mp4 파일 전체가 지나갔을 때만 해시하고, 구간 요청으로 일부만 오면 해시하지 않는다", async () => {
         await setImageList([{id: "a", content: "x", isRegex: false}]);
         const {respond} = fakeWebRequest();
         background.listen?.();
@@ -143,12 +162,12 @@ describe("block 배경 (파이어폭스)", () => {
 
         // ftyp(16바이트) + mdat(12바이트)
         const mp4 = Uint8Array.from([0, 0, 0, 16, 102, 116, 121, 112, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 109, 100, 97, 116, 1, 2, 3, 4]);
-        respond(IMAGE, [mp4.subarray(0, 20), mp4.subarray(20)], "media");
-        const file = await sha256(mp4);
-        expect(await askHash(IMAGE)).toEqual({file, similar: undefined});
+        const url = `${IMAGE}&t=mp4`;
+        respond(url, [mp4.subarray(16)], "media");
+        expect(await askHash(url)).toBeUndefined();
 
-        respond(IMAGE, [mp4.subarray(16)], "media");
-        expect(await askHash(IMAGE)).toEqual({file, similar: undefined});
+        respond(url, [mp4.subarray(0, 20), mp4.subarray(20)], "media");
+        expect(await askHash(url)).toEqual({file: await sha256(mp4), similar: undefined});
     });
 
     it("파일 해시만 물으면 지문을 기다리지 않고 답한다", async () => {
@@ -159,7 +178,7 @@ describe("block 배경 (파이어폭스)", () => {
         // 다른 탭의 지문 계산이 밀려 있어 끝나지 않는다.
         vi.mocked(imageFingerprints).mockReturnValue(new Promise(() => {}));
 
-        respond(IMAGE, ["abc"]);
-        expect(await askHash(IMAGE, false)).toEqual({file: await sha256(new TextEncoder().encode("abc"))});
+        respond(`${IMAGE}&t=file`, ["abc"]);
+        expect(await askHash(`${IMAGE}&t=file`, false)).toEqual({file: await sha256(new TextEncoder().encode("abc"))});
     });
 });
