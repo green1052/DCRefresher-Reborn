@@ -1,4 +1,5 @@
 import pLimit from "p-limit";
+import QuickLRU from "quick-lru";
 
 import {type ImageHashes, sendMessage} from "@/core/messaging/protocol";
 import type {ModuleSettings} from "@/core/module/types";
@@ -145,7 +146,8 @@ interface ImageRead {
 
 // 주소 → 읽은 것. 차단 목록이 바뀌어 다시 판정하거나 미리보기를 다시 열 때 또 읽지 않는다.
 // 읽지 못한 것(이미지 호스트 권한이 없는 등)도 남겨 둔다. 지우면 판정할 때마다 이미지를 다시 요청한다.
-const imageReads = new Map<string, ImageRead>();
+// 페이지를 오래 열어 두고 미리보기로 많이 봐도 끝없이 늘지 않게 오래된 것부터 버린다. quick-lru는 maxSize의 두 배 가까이 남긴다 (배경의 MAX_IMAGE_HASHES와 비슷하게).
+const imageReads = new QuickLRU<string, ImageRead>({maxSize: 250});
 
 /** 파이어폭스 배경에 그 주소의 해시를 묻는다. similar가 아니면 지문을 기다리지 않고 파일 해시만 받는다. */
 const askBackground = (url: string, similar: boolean): Promise<ImageHashes | undefined> =>
@@ -209,7 +211,8 @@ export const imageHash = async (url: string, options: { retry?: boolean; similar
  * 움짤의 두 파일: 주소 → 짝 주소. 디시는 같은 움짤을 mp4(<video>)로 보이다가 그리지 못했거나 누르면 원본 gif(data-src)의 <img>로 바꾼다.
  * 파일이 달라 한쪽 해시로는 다른 쪽을 못 막으므로, 차단할 때 짝도 같이 넣는다 (stores/blockRequest.ts의 blockImage). <video>를 볼 때 적어 둔다.
  */
-const mediaPairs = new Map<string, string>();
+// 판정할 때마다 다시 적으므로 보이는 움짤은 밀려나지 않는다. 밀려나면 우클릭 차단이 한 파일만 넣으니 넉넉히 둔다.
+const mediaPairs = new QuickLRU<string, string>({maxSize: 500});
 
 /** 같은 움짤의 다른 파일 주소. 이 페이지에서 그 <video>를 보지 못했으면 undefined다. */
 export const pairedMediaUrl = (url: string): string | undefined => mediaPairs.get(url);
