@@ -30,16 +30,20 @@ export default defineConfig({
         name: "DCRefresher Reborn",
         // 코드가 쓰는 API 중 가장 늦게 들어온 것에 맞춘다 (빌드가 바꿔 주지 않는다).
         // Chrome 140: Uint8Array의 toBase64·fromBase64(백업·IP DB). Firefox 144: storage.local.getBytesInUse(정보 탭), getKeys(143).
-        minimum_chrome_version: "140",
-        browser_specific_settings: {
-            gecko: {
-                id: "dcrefresher-reborn@green1052",
-                strict_min_version: "144.0",
-                data_collection_permissions: {
-                    required: ["none"]
+        // 다른 브라우저의 키는 알 수 없는 키라 manifest 경고로 남으므로 그 브라우저에만 넣는다.
+        ...(browser === "firefox"
+            ? {
+                browser_specific_settings: {
+                    gecko: {
+                        id: "dcrefresher-reborn@green1052",
+                        strict_min_version: "144.0",
+                        data_collection_permissions: {
+                            required: ["none"]
+                        }
+                    }
                 }
             }
-        },
+            : {minimum_chrome_version: "140"}),
         // 이미지 차단(features/block/background.ts)이 본문 이미지를 다시 받지 않고 읽는 데 쓴다. 크롬은 CORS 헤더를 붙이는 규칙,
         // 파이어폭스는 페이지가 받는 응답을 흘려보내며 읽는 필터다. 둘 다 설치·업데이트 때 묻지 않는 권한이다.
         permissions: ["alarms", "contextMenus", "storage", "scripting", "unlimitedStorage",
