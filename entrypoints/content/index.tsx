@@ -34,13 +34,14 @@ export default defineContentScript({
         cleanUpStaleInstance();
 
         // ===== 메시징 (배경·팝업→탭) =====
-        onMessage("refresher:executeShortcut", ({data: command}) => runShortcut(command));
+        // 스크립트가 다시 주입되면 이전 인스턴스가 남아 메시지를 계속 받는다. 멈춘 모듈의 빈 상태로 팝업에 먼저 답하지 않게 무효화될 때 푼다.
+        ctx.onInvalidated(onMessage("refresher:executeShortcut", ({data: command}) => runShortcut(command)));
 
-        onMessage("refresher:pageState", settledPageState);
-        onMessage("refresher:pageAction", ({data: action}) => {
+        ctx.onInvalidated(onMessage("refresher:pageState", settledPageState));
+        ctx.onInvalidated(onMessage("refresher:pageAction", ({data: action}) => {
             runPageToggle(action);
             return pageState();
-        });
+        }));
 
         // 확장을 끄거나 업데이트해도 이 스크립트는 남아 새로고침 폴링·저장소 호출을 하다 실패하므로 모듈을 멈춘다.
         // 부트스트랩의 await보다 먼저 등록한다. 저장소를 읽는 중에 무효화되면 그 호출이 실패하거나 끝나지 않아 await 뒤의 등록까지 가지 못한다.
