@@ -1,5 +1,7 @@
 import pLimit from "p-limit";
 
+import {isRecord} from "@/utils/record";
+
 /** 올리는 이미지를 바꾸는 방법. 모듈이 <html>의 data 속성에 JSON으로 두고, 페이지에 넣은 hookUploads가 이벤트마다 읽는다. */
 export interface ImageOptions {
     webp: boolean;
@@ -25,10 +27,16 @@ export const hookUploads = (): void => {
     if (scope[hooked]) return;
     scope[hooked] = true;
 
+    // 페이지 스크립트도 바꿀 수 있는 속성이라 모양을 확인한다. 동시 변환 수가 1 이상의 정수가 아니면 pLimit이 던져, 이미 막은 업로드가 사라진다.
     const readOptions = (): ImageOptions | null => {
         try {
             const raw = document.documentElement.dataset[UPLOAD_OPTIONS_KEY];
-            return raw ? (JSON.parse(raw) as ImageOptions) : null;
+            const parsed: unknown = raw ? JSON.parse(raw) : null;
+            if (!isRecord(parsed)) return null;
+            const {webp, quality, rename, concurrency} = parsed;
+            return typeof webp === "boolean" && typeof rename === "boolean" && typeof quality === "number" && Number.isFinite(quality)
+                && typeof concurrency === "number" && Number.isInteger(concurrency) && concurrency >= 1
+                ? {webp, quality, rename, concurrency} : null;
         } catch {
             return null;
         }
