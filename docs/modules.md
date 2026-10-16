@@ -9,7 +9,7 @@
 | 하려는 것 | 고치는 곳 |
 |---|---|
 | 새 모듈 | `features/<id>/meta.ts`, `index.ts` |
-| 설정 | `meta.ts`의 `settings`. 페이지 코드는 `ctx.settings`, 컴포넌트는 `useModuleSettings(id)`로 읽는다. 바뀔 때 할 일은 setup의 `ctx.onSettingsChanged` |
+| 설정 | `meta.ts`의 `settings`. 페이지 코드는 `ctx.settings`, 오버레이 컴포넌트는 `useContentModuleSettings(id)`로 읽는다(옵션·팝업과 같이 쓰는 컴포넌트는 `useModuleSettings(id)`). 바뀔 때 할 일은 setup의 `ctx.onSettingsChanged` |
 | 단축키 | `meta.ts`의 `commands`와 `index.ts`의 `shortcuts` |
 | 팝업 '현재 페이지' 토글 | `meta.ts`의 `toggles`와 `index.ts`의 `pageToggles` |
 | 디시 페이지 CSS | `features/<id>/page.css` |
@@ -63,7 +63,7 @@ export default defineModule({
 | `addCleanup(fn)` | signal을 받지 못하는 것(storage watch, zustand subscribe, 타이머)의 해제 함수를 등록한다 |
 | `onSettingsChanged(fn)` | 위 설명 참고. setup 안에서 등록한다 |
 
-컴포넌트(Preact)는 설정을 `useModuleSettings("모듈 id")`로 직접 읽습니다. 설정을 UI 스토어로 옮겨 적지 마세요. `useModuleSettings`는 꺼진 모듈의 설정도 주므로, 다른 모듈이 이 페이지에서 돌 때만 그 설정을 따르는 UI(미리보기의 차단·배지)는 `useRunningModuleSettings("모듈 id")`로 읽습니다. 모듈이 돌지 않으면 undefined입니다. 컴포넌트 밖에서는 `core/module/registry.ts`의 `runningModuleSettings(id)`를 씁니다.
+오버레이 컴포넌트(Preact)는 설정을 `useContentModuleSettings("모듈 id")`로 직접 읽습니다. 설정을 UI 스토어로 옮겨 적지 마세요. 설정 스토어는 콘텐츠 스크립트만 채우므로, 옵션·팝업과 같이 쓰는 컴포넌트는 `useModuleSettings`로 읽고 undefined일 때의 기본값을 정합니다(`components/dialogs.tsx`). 두 훅 모두 꺼진 모듈의 설정도 주므로, 다른 모듈이 이 페이지에서 돌 때만 그 설정을 따르는 UI(미리보기의 차단·배지)는 `useRunningModuleSettings("모듈 id")`로 읽습니다. 모듈이 돌지 않으면 undefined입니다. 컴포넌트 밖에서는 `core/module/registry.ts`의 `runningModuleSettings(id)`를 씁니다.
 
 `addFilter`의 `fn`은 같은 요소에 여러 번 불릴 수 있습니다. 넣은 요소가 이미 있는지 보고 건너뛰게 만드세요. 예로는 글 목록 새로고침의 버튼이 있습니다.
 
@@ -87,7 +87,7 @@ const apply = (ctx: Ctx): void => { … ctx.settings.bodyFontSize … }; // numb
 | type | 값 | 추가 필드 |
 |------|----|-----------|
 | `check` | boolean | |
-| `text` | string | `placeholder` |
+| `text` | string | `placeholder`, `maxLength`. 입력칸이 글자 수를 막고, 저장된 값·가져온 값도 그 길이로 자른다 |
 | `range` | number | `min`, `max`, `step`, `unit` |
 | `option` | 항목 키 | `items: {키: 이름}` |
 | `order` | 항목 키 배열 | `items`. 순서를 끌어서 바꾼다 |
@@ -127,7 +127,7 @@ getModuleApi("preview")?.archiveArticle() === true
 배경 스크립트에서 할 일(컨텍스트 메뉴 등)이 있으면 `features/<id>/background.ts`에서 `defineBackgroundModule`로 default 내보냅니다. `entrypoints/background/index.ts`가 glob으로 모아 실행합니다.
 
 - `listen()`: 배경이 뜰 때마다 동기로 실행됩니다. 서비스 워커를 깨울 이벤트 리스너는 여기서 겁니다. 던지면 오류만 남기고 그 모듈은 `apply`하지 않습니다. 메시지 이름은 배경 전체에서 한 번만 걸 수 있으며, 겹치면 단위 테스트(`tests/unit/entrypoints/background/messages.test.ts`)가 잡습니다.
-- `apply({enabled, settings})`: 모듈을 켜고 끄거나 설정이 바뀔 때, 설치·브라우저 시작 때(Firefox는 배경이 뜰 때마다) 실행됩니다. 맞출 상태 없이 리스너만 거는 모듈은 두지 않습니다(`features/write/background.ts`).
+- `apply({enabled, settings})`: 모듈을 켜고 끄거나 설정이 바뀔 때, 설치·브라우저 시작 때(Firefox는 배경이 뜰 때마다) 실행됩니다. 맞출 상태 없이 리스너만 거는 모듈은 `apply`를 두지 않습니다(`features/write/background.ts`).
 - 설치·업데이트 때 한 번만 할 일(옛 모듈 데이터 지우기 등)은 `listen()`에서 `browser.runtime.onInstalled`에 겁니다(`features/preview/background.ts`). `entrypoints/background/index.ts`에 모듈 코드를 넣지 않습니다.
 - 탭이 메시지로 요청한 일을 그 페이지(MAIN world)에서 할 때는 `hasTab`으로 탭에서 온 것인지 보고 `runInPage`로 실행합니다. 함수는 직렬화되어 import를 쓸 수 없으므로, 라이브러리가 필요하면 `entrypoints/<이름>.ts`에 `defineUnlistedScript`로 번들하고 `runFileInPage(sender, "/<이름>.js")`로 넣습니다(`entrypoints/upload-hook.ts`). unlisted script는 `web_accessible_resources`에 넣지 않아 디시 페이지가 불러올 수 없습니다.
 

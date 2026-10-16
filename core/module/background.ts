@@ -21,7 +21,7 @@ export interface BackgroundModule extends Pick<ModuleDefinition, "id" | "default
 
     /**
      * 켜기/끄기·설정 변경·설치·브라우저 시작 때 그 시점의 상태에 맞춘다. 모듈마다 앞의 호출이 끝난 뒤에 다음을 부른다.
-     * 맞출 상태가 없는(listen만 하는) 모듈은 두지 않는다.
+     * 맞출 상태가 없는(listen만 하는) 모듈은 apply를 두지 않는다.
      */
     apply?(state: { enabled: boolean; settings: Record<string, SettingValue> }): Promise<void> | void;
 }
