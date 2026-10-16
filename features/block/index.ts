@@ -1,4 +1,4 @@
-import {BLOCKED_TEXT, dcconCode, duplicateOf, groupDuplicates, HIDDEN_ROW_SELECTOR, isAnyBlocked, isBlocked, isImageBlocked, ROWS_HIDDEN_EVENT} from "@/core/block";
+import {BLOCKED_TEXT, dcconCode, duplicateOf, groupDuplicates, HIDDEN_ROW_SELECTOR, isAnyBlocked, isBlocked, isImageBlocked, ROWS_HIDDEN_EVENT, similarImageThreshold} from "@/core/block";
 import {FILTER_SKIP_ATTR} from "@/core/filtering";
 import {defineModule} from "@/core/module/define";
 import {documentUrl, isViewPage} from "@/core/http/urls";
@@ -118,7 +118,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
             watchedImages.add(element);
             element.addEventListener("load", () => checkImage(element), {signal: ctx.signal});
         }
-        void isImageBlocked(element, gallery).then((blocked) => {
+        void isImageBlocked(element, gallery, similarImageThreshold(ctx.settings)).then((blocked) => {
             if (blocked && !ctx.signal.aborted) hide(element);
         });
     };

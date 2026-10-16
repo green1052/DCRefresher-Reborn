@@ -13,6 +13,8 @@ export interface BlockEntry {
     mode?: DetectMode;
     gallery?: string;
     extra?: string;
+    /** 이미지 항목(IMAGE)의 비슷한 이미지 지문 (utils/imageFingerprint.ts). 디코딩하지 못한 이미지는 없다. */
+    similar?: string;
 }
 
 export interface MemoEntry {

@@ -3,6 +3,11 @@ import type {SettingGroup, SettingsSchema} from "@/core/module/types";
 
 const BLUR_GROUP: SettingGroup = {name: "흐리게 처리", desc: "차단된 내용을 숨기지 않고 흐리게 처리합니다."};
 
+const SIMILAR_GROUP: SettingGroup = {
+    name: "비슷한 이미지",
+    desc: "차단한 이미지와 비슷한 이미지(크기·화질을 바꾸거나 좌우로 뒤집은 것)도 가립니다. 이미지마다 계산이 더 듭니다."
+};
+
 const DUPLICATE_GROUP: SettingGroup = {name: "같은 댓글 접기", desc: "같은 내용의 댓글이 여러 번 달리면 첫 댓글만 남기고 접습니다. 미리보기에도 적용됩니다."};
 
 export const BLOCK_SETTINGS = {
@@ -36,6 +41,24 @@ export const BLOCK_SETTINGS = {
         max: 20,
         step: 1,
         unit: "px"
+    },
+    similarImages: {
+        type: "check",
+        group: SIMILAR_GROUP,
+        name: "사용",
+        desc: "차단한 이미지와 비슷한 이미지도 가립니다.",
+        default: false
+    },
+    similarThreshold: {
+        type: "range",
+        group: SIMILAR_GROUP,
+        name: "허용 차이",
+        desc: "두 지문(각 64비트)이 다를 수 있는 비트 수입니다. 클수록 더 많이 바뀐 이미지까지 가리지만, 다른 이미지를 잘못 가릴 수 있습니다.",
+        default: 12,
+        min: 4,
+        max: 16,
+        step: 1,
+        unit: "비트"
     },
     foldDuplicate: {
         type: "check",

@@ -1,9 +1,10 @@
-import {sendMessage} from "@/core/messaging/protocol";
+import {type ImageHashes, sendMessage} from "@/core/messaging/protocol";
 import type {ModuleSettings} from "@/core/module/types";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {markUsed} from "@/core/usage";
 import {useBlocksStore} from "@/stores/blocks";
 import {sha256} from "@/utils/hash";
+import {imageFingerprints, isSimilar, MAX_PIXELS} from "@/utils/imageFingerprint";
 import {objectEntries} from "@/utils/typed";
 
 interface Compiled {
@@ -133,49 +134,82 @@ export const dcconCode = (element: HTMLElement): string | undefined => {
 /** 이미지 차단이 보는 디시 본문 이미지(viewimage.php). 디시콘(dccon.php)·외부 이미지는 보지 않는다. */
 const VIEW_IMAGE = /^https:\/\/[^/]+\.dcinside\.(?:com|co\.kr)\/viewimage\.php/;
 
-// 주소 → 파일 해시. 차단 목록이 바뀌어 다시 판정하거나 미리보기를 다시 열 때 또 읽지 않는다.
+// 주소 → 해시. 차단 목록이 바뀌어 다시 판정하거나 미리보기를 다시 열 때 또 읽지 않는다.
 // 읽지 못한 것(이미지 호스트 권한이 없는 등)도 남겨 둔다. 지우면 판정할 때마다 이미지를 다시 요청한다.
-const imageHashes = new Map<string, Promise<string | undefined>>();
+const imageHashes = new Map<string, Promise<ImageHashes | undefined>>();
 
-const readImageHash = async (url: string): Promise<string | undefined> => {
-    if (import.meta.env.BROWSER === "firefox") {
-        const hash = await sendMessage("refresher:imageHash", url).catch(() => undefined);
-        if (hash) return hash;
-    }
+const readImageHashes = async (url: string, similar: boolean): Promise<ImageHashes | undefined> => {
+    // 파이어폭스 배경은 비슷한 이미지 설정이 켜져 있을 때만 지문을 구한다. 꺼진 채 우클릭 차단하면 지문은 여기서 이미지를 다시 받아 구한다.
+    const background = import.meta.env.BROWSER === "firefox" ? await sendMessage("refresher:imageHash", url).catch(() => undefined) : undefined;
+    if (background && (!similar || background.similar !== undefined)) return background;
     try {
         // 파이어폭스 콘텐츠 스크립트의 요청은 Referer를 붙이지 않아 디시가 403을 준다. 크롬은 원래 붙이고, 캐시 키에 들지 않아 캐시도 그대로 쓴다.
         const response = await fetch(url, {cache: "force-cache", referrer: location.href});
-        return response.ok ? await sha256(await response.arrayBuffer()) : undefined;
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const file = await response.blob();
+        return {file: await sha256(await file.arrayBuffer()), similar: similar ? (await imageFingerprints(file)) ?? null : undefined};
     } catch (e) {
         console.warn("Image hash failed:", url, e);
-        return undefined;
+        // 지문만 못 구했으면 배경이 구한 파일 해시로 같은 파일은 막는다.
+        return background && {...background, similar: null};
     }
 };
 
 /**
- * 이미지 파일의 SHA-256. 이미지 차단 항목의 내용이다. 읽지 못하면(이미지 호스트 권한이 없는 등) undefined다.
+ * 이미지 파일의 SHA-256과, similar면 비슷한 이미지 지문. 파일 해시는 이미지 차단 항목의 내용이다. 읽지 못하면(이미지 호스트 권한이 없는 등) undefined다.
  * 크롬은 페이지가 받아 둔 캐시에서 읽는다. 배경의 규칙이 이 요청에만 CORS 헤더를 붙인다 (features/block/background.ts).
  * 파이어폭스는 콘텐츠 스크립트의 요청이 페이지의 캐시를 쓰지 않아, 배경이 페이지의 응답을 흘려보내며 구해 둔 해시를 받는다.
  * 둘 다 캐시나 배경에 없으면 이미지를 한 번 더 받는다. retry면 앞서 읽지 못한 것도 다시 읽는다 (권한을 막 받은 뒤의 우클릭 차단).
  */
-export const imageHash = (url: string, {retry = false}: { retry?: boolean } = {}): Promise<string | undefined> => {
-    let hash = imageHashes.get(url);
-    if (!hash || retry) {
-        hash = readImageHash(url);
-        imageHashes.set(url, hash);
+export const imageHash = async (url: string, {retry = false, similar = false}: { retry?: boolean; similar?: boolean } = {}): Promise<ImageHashes | undefined> => {
+    const cached = retry ? undefined : imageHashes.get(url);
+    const previous = await cached;
+    // 지문 없이 읽어 둔 것은 지문이 필요해지면 다시 읽는다 (비슷한 이미지 설정을 켰을 때). 읽지 못한 것은 다시 읽지 않는다.
+    if (cached && (!previous || !similar || previous.similar !== undefined)) return previous;
+    // 다시 읽다 실패하면 앞서 구한 파일 해시를 지킨다.
+    const hashes = readImageHashes(url, similar).then((next) => next ?? previous);
+    imageHashes.set(url, hashes);
+    return hashes;
+};
+
+/** 차단 모듈 설정의 비슷한 이미지 기준 (dHash·pHash가 각각 다를 수 있는 비트 수). 끄면 undefined다. 페이지(차단 모듈)와 미리보기가 같이 쓴다. */
+export const similarImageThreshold = (settings: ModuleSettings["block"]): number | undefined =>
+    settings.similarImages ? settings.similarThreshold : undefined;
+
+/**
+ * 지문이 비슷한 이미지 항목에 걸리는지. 걸린 항목은 모두 쓰였다고 적는다. 지문이 없는 항목(지문이 생기기 전에 넣었거나 디코딩하지 못한 이미지)은 보지 않는다.
+ * 불일치·불포함(NOT_*) 항목은 허용 목록이라 비슷한 이미지로 넓히지 않는다.
+ */
+const isSimilarBlocked = (fingerprints: [string, string], gallery: string | undefined, threshold: number): boolean => {
+    const {entries, defaults} = useBlocksStore.getState();
+    let blocked = false;
+    for (const entry of entries.IMAGE) {
+        if (!entry.similar || (entry.gallery && entry.gallery !== gallery) || (entry.mode ?? defaults.IMAGE).startsWith("NOT_")) continue;
+        const reference = entry.similar;
+        if (!fingerprints.some((fingerprint) => isSimilar(reference, fingerprint, threshold))) continue;
+        blocked = true;
+        markUsed("block", entry.id);
     }
-    return hash;
+    return blocked;
 };
 
 /**
- * 이미지가 차단 목록(IMAGE)에 든 파일인지. 다 받은 본문 이미지만 본다. 받기 전에 읽으면 확장이 따로 받아 캐시를 쓰지 못한다.
- * 지연 로딩·원본 보기로 주소가 바뀌면 load 때 다시 부른다.
+ * 이미지가 차단 목록(IMAGE)에 든 파일인지. similar(기준 비트 수)를 주면 좌우 반전을 포함해 비슷한 이미지도 막는다.
+ * 다 받은 본문 이미지만 본다. 받기 전에 읽으면 확장이 따로 받아 캐시를 쓰지 못한다. 지연 로딩·원본 보기로 주소가 바뀌면 load 때 다시 부른다.
  */
-export const isImageBlocked = async (image: HTMLImageElement, gallery?: string): Promise<boolean> => {
+export const isImageBlocked = async (image: HTMLImageElement, gallery?: string, similar?: number): Promise<boolean> => {
     const url = image.currentSrc;
-    if (!VIEW_IMAGE.test(url) || !image.complete || image.naturalWidth === 0 || useBlocksStore.getState().entries.IMAGE.length === 0) return false;
-    const hash = await imageHash(url);
-    return hash !== undefined && isBlocked("IMAGE", hash, gallery);
+    const entries = useBlocksStore.getState().entries.IMAGE;
+    if (!VIEW_IMAGE.test(url) || !image.complete || image.naturalWidth === 0 || entries.length === 0) return false;
+    // 지문이 있는 항목이 없거나 너무 큰 이미지면 지문을 구하지 않는다. 디코딩이 해시보다 훨씬 무겁다.
+    const fingerprintable = image.naturalWidth * image.naturalHeight <= MAX_PIXELS && entries.some((entry) => entry.similar);
+    const threshold = fingerprintable ? similar : undefined;
+    const hashes = await imageHash(url, {similar: threshold !== undefined});
+    if (!hashes) return false;
+    // isBlocked가 NOT_* 항목(허용 목록)까지 판정한다. 같은 파일이어도 비슷한 이미지 항목을 마저 봐서 걸린 항목을 모두 쓰였다고 적는다.
+    const exact = isBlocked("IMAGE", hashes.file, gallery);
+    const near = threshold !== undefined && !!hashes.similar && isSimilarBlocked(hashes.similar, gallery, threshold);
+    return exact || near;
 };
 
 /**

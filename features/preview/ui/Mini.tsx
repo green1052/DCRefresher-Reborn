@@ -1,5 +1,6 @@
 import {useEffect, useRef} from "react";
 
+import {similarImageThreshold} from "@/core/block";
 import {useRunningModuleSettings} from "@/core/module/useModuleSettings";
 import {useBlocksStore} from "@/stores/blocks";
 
@@ -26,14 +27,15 @@ export const Mini = () => {
     useEffect(() => (contents.current ? fitMovies(contents.current) : undefined), [mini?.contents]);
 
     // 본문의 차단 디시콘·이미지를 가린다. 마우스를 올려 흐림을 걷을 수 없으니 흐리게 처리여도 숨긴다.
-    const blocking = useRunningModuleSettings("block") !== undefined;
+    const block = useRunningModuleSettings("block");
     const blockEntries = useBlocksStore((s) => s.entries);
     const blockDefaults = useBlocksStore((s) => s.defaults);
     useEffect(() => {
         if (!contents.current) return;
-        markBlockedDccons(contents.current, mini?.gallery, blocking ? "hide" : undefined);
-        return markBlockedImages(contents.current, mini?.gallery, blocking ? "hide" : undefined);
-    }, [mini?.contents, mini?.gallery, blocking, blockEntries, blockDefaults]);
+        const mode = block ? "hide" : undefined;
+        markBlockedDccons(contents.current, mini?.gallery, mode);
+        return markBlockedImages(contents.current, mini?.gallery, mode, block ? similarImageThreshold(block) : undefined);
+    }, [mini?.contents, mini?.gallery, block, blockEntries, blockDefaults]);
 
     if (!mini) return null;
 

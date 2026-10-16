@@ -9,7 +9,7 @@ import {Separator} from "@/components/ui/separator";
 import {Spinner} from "@/components/ui/spinner";
 import {WithTooltip} from "@/components/WithTooltip";
 import {focusedElement} from "@/components/useReturnFocus";
-import {BLOCKED_TEXT} from "@/core/block";
+import {BLOCKED_TEXT, similarImageThreshold} from "@/core/block";
 import {useContentModuleSettings, useRunningModuleSettings} from "@/core/module/useModuleSettings";
 import {postKey as keyOfPost} from "@/core/preview/cache";
 import {useBlocksStore} from "@/stores/blocks";
@@ -105,7 +105,7 @@ const PostContents = () => {
         if (!contentsBox.current) return;
         const mode = block ? (block.blur ? "blur" : "hide") : undefined;
         markBlockedDccons(contentsBox.current, gallery, mode);
-        return markBlockedImages(contentsBox.current, gallery, mode);
+        return markBlockedImages(contentsBox.current, gallery, mode, block ? similarImageThreshold(block) : undefined);
     }, [html, block, blockEntries, blockDefaults, gallery]);
     // 깨진 움짤·디시콘 mp4는 디시처럼 gif로 바꾼다.
     useEffect(() => (contentsBox.current ? watchGifVideos(contentsBox.current) : undefined), [html]);

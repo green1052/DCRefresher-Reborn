@@ -31,6 +31,7 @@ const isBlockEntry = (value: unknown): value is Omit<BlockEntry, "id"> & { id?: 
     typeof value.isRegex === "boolean" &&
     (value.gallery === undefined || typeof value.gallery === "string") &&
     (value.extra === undefined || typeof value.extra === "string") &&
+    (value.similar === undefined || (typeof value.similar === "string" && /^[0-9a-f]{32}$/.test(value.similar))) &&
     (value.mode === undefined || arrayIncludes(DETECT_MODES, value.mode));
 
 /** 항목의 플래그 표시 ([정규식] [갤러리: X] [모드명] 순). extra(별명)와 따로 필드에서 만든다. */

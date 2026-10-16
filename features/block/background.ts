@@ -1,11 +1,12 @@
 import {storage} from "wxt/utils/storage";
 
-import {onMessage, sendMessage} from "@/core/messaging/protocol";
+import {type ImageHashes, onMessage, sendMessage} from "@/core/messaging/protocol";
 import {defineBackgroundModule} from "@/core/module/background";
 import {IMAGE_HOST_ORIGINS, IMAGE_URL_PATTERNS} from "@/core/pages";
 import {blockListKey} from "@/core/storage/items";
 import type {BlockEntry} from "@/core/storage/types";
 import {sha256} from "@/utils/hash";
+import {imageFingerprints} from "@/utils/imageFingerprint";
 
 import {BLOCK_SETTINGS} from "./settings";
 
@@ -34,7 +35,18 @@ const CORS_RULE: Browser.declarativeNetRequest.Rule = {
 };
 
 /** 파이어폭스: 이미지 주소 → 페이지가 받은 파일의 해시 (받는 중이면 끝날 때 풀린다). */
-const imageHashes = new Map<string, Promise<string | undefined>>();
+const imageHashes = new Map<string, Promise<ImageHashes | undefined>>();
+/**
+ * 파이어폭스: 비슷한 이미지 지문도 구할지. 디코딩이 해시보다 훨씬 무거워 그 설정이 켜져 있고 지문이 있는 항목이 있을 때만 구한다.
+ * 페이지 쪽 캔버스는 지문 방지 설정이 켜지면 잡음이 섞이지만 배경은 섞이지 않는다.
+ */
+let similarSetting = false;
+let similarEnabled = false;
+
+const hashFile = async (file: Blob): Promise<ImageHashes> => ({
+    file: await sha256(await file.arrayBuffer()),
+    similar: similarEnabled ? (await imageFingerprints(file)) ?? null : undefined
+});
 // 오래된 것부터 버린다. 버린 이미지를 같은 탭이 메모리 캐시로 다시 쓰면 탭이 한 번 더 받는다 (core/block.ts의 imageHash).
 const MAX_IMAGE_HASHES = 500;
 
@@ -45,7 +57,7 @@ const MAX_IMAGE_HASHES = 500;
 const hashImageResponse = ({requestId, url}: Browser.webRequest.OnBeforeRequestDetails): undefined => {
     const filter = browser.webRequest.filterResponseData(requestId);
     const chunks: ArrayBuffer[] = [];
-    const {promise, resolve} = Promise.withResolvers<string | undefined>();
+    const {promise, resolve} = Promise.withResolvers<ImageHashes | undefined>();
 
     imageHashes.delete(url);
     imageHashes.set(url, promise);
@@ -57,7 +69,7 @@ const hashImageResponse = ({requestId, url}: Browser.webRequest.OnBeforeRequestD
     };
     filter.onstop = () => {
         filter.close();
-        resolve(new Blob(chunks).arrayBuffer().then(sha256));
+        resolve(hashFile(new Blob(chunks)));
     };
     filter.onerror = () => resolve(undefined);
     return undefined;
@@ -70,6 +82,7 @@ const IMAGE_LIST_KEY = blockListKey("IMAGE");
 const syncImageFilter = async (): Promise<void> => {
     const entries = await storage.getItem<BlockEntry[]>(IMAGE_LIST_KEY, {fallback: []});
     const on = filterEnabled && entries.length > 0;
+    similarEnabled = similarSetting && entries.some((entry) => entry.similar);
     if (on === browser.webRequest.onBeforeRequest.hasListener(hashImageResponse)) return;
     if (on) browser.webRequest.onBeforeRequest.addListener(hashImageResponse, {urls: IMAGE_URL_PATTERNS, types: ["image"]}, ["blocking"]);
     else browser.webRequest.onBeforeRequest.removeListener(hashImageResponse);
@@ -98,12 +111,13 @@ export default defineBackgroundModule({
         }
     },
 
-    async apply({enabled}) {
+    async apply({enabled, settings}) {
         // removeAll은 다른 모듈의 메뉴까지 지운다.
         await browser.contextMenus.remove(IMAGE_MENU).catch(() => {});
 
         if (import.meta.env.BROWSER === "firefox") {
             filterEnabled = enabled;
+            similarSetting = settings.similarImages === true;
             await syncImageFilter();
         } else {
             await browser.declarativeNetRequest.updateSessionRules({removeRuleIds: [CORS_RULE.id], addRules: enabled ? [CORS_RULE] : []});

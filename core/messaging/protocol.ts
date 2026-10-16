@@ -25,6 +25,12 @@ export interface PageState {
 /** 디시 comment.js의 dc_rc_pairs 이름. 글 댓글은 이 쌍의 v3 키로 토큰을 받고, 서버가 같은 쌍의 비밀키로 확인하게 rc_key로 보낸다. */
 export type CommentRcKey = "new" | "new3";
 
+/** 이미지 파일의 SHA-256과 비슷한 이미지 지문 (utils/imageFingerprint.ts의 원본·좌우 반전본). 지문은 구하지 않았으면 undefined, 디코딩하지 못했으면 null이다. */
+export interface ImageHashes {
+    file: string;
+    similar?: [string, string] | null;
+}
+
 interface ProtocolMap {
     /** 배경 → 탭: 단축키 실행 (commands). */
     "refresher:executeShortcut"(data: string): void;
@@ -57,10 +63,11 @@ interface ProtocolMap {
     "refresher:blockImage"(url: string): void;
 
     /**
-     * 탭 → 배경 (파이어폭스): 페이지가 받은 이미지의 SHA-256. 배경이 페이지의 응답을 흘려보내며 구해 둔다 (features/block/background.ts).
+     * 탭 → 배경 (파이어폭스): 페이지가 받은 이미지의 해시. 배경이 페이지의 응답을 흘려보내며 구해 둔다 (features/block/background.ts).
+     * 비슷한 이미지 지문은 그 설정이 켜져 있을 때만 구한다.
      * 파이어폭스는 콘텐츠 스크립트의 요청이 페이지의 캐시를 쓰지 않아 직접 받으면 이미지를 한 번 더 받는다. 구해 둔 것이 없으면 undefined다.
      */
-    "refresher:imageHash"(url: string): string | undefined;
+    "refresher:imageHash"(url: string): ImageHashes | undefined;
 
     /** 옵션 → 배경: IP·밴 DB "지금 갱신". 같은 버전이어도 다시 받는다. 배경 한 곳에서 받아야 진행 중인 갱신과 겹쳐 두 번 받지 않는다. */
     "refresher:updateDatabase"(): void;
