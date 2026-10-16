@@ -3,6 +3,7 @@
  * 두 해시가 모두 기준 안이어야 비슷하다고 본다 (isSimilar). 하나만 보면 서로 다른 이미지가 가깝게 나오는 일이 잦다.
  * 브라우저가 줄이면 크롬과 파이어폭스의 화소가 달라지므로 원본 크기로 디코딩해 직접 면적 평균으로 줄인다. 그러면 두 브라우저의 지문이 같다.
  */
+import pLimit from "p-limit";
 
 /** 이보다 큰 이미지는 보지 않는다. 화소를 한 번에 읽어(화소당 4바이트) 메모리가 크게 든다. */
 export const MAX_PIXELS = 25_000_000;
@@ -136,17 +137,13 @@ const fingerprint = async (file: Blob): Promise<[string, string] | undefined> =>
 };
 
 // 한 번에 하나씩 구한다. 그림이 많은 글에서 모든 이미지를 한꺼번에 디코딩하면 메모리가 이미지 수만큼 든다.
-let queue: Promise<unknown> = Promise.resolve();
+const serial = pLimit(1);
 
 /**
  * 이미지 파일의 지문과 좌우 반전본의 지문. 판정은 둘 다 보고, 차단 항목에는 앞의 것을 넣는다.
  * 반투명한 곳은 흰 바탕에 합성한다. 그대로 두면 브라우저마다 값이 다르다. 디코딩하지 못하거나 너무 크면 undefined다.
  */
-export const imageFingerprints = (file: Blob): Promise<[string, string] | undefined> => {
-    const result = queue.then(() => fingerprint(file));
-    queue = result;
-    return result;
-};
+export const imageFingerprints = (file: Blob): Promise<[string, string] | undefined> => serial(() => fingerprint(file));
 
 const popcount = (value: number): number => {
     let n = value >>> 0;
