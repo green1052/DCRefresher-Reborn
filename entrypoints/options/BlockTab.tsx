@@ -27,11 +27,20 @@ export const dcconImage = (entry: BlockEntry): string => {
 
 /**
  * 이미지 차단이 쓰는 이미지 호스트 권한이 있는지와 그 권한을 묻는 함수. 우클릭 차단이 처음 물어보지만,
- * 백업 복원·가져오기로 들어온 이미지 항목은 권한 없이는 가리지 못한다. 확인은 옵션을 열 때 한다.
+ * 백업 복원·가져오기로 들어온 이미지 항목은 권한 없이는 가리지 못한다. 옵션을 열 때와, 옵션을 연 채 우클릭 차단·브라우저 설정에서 권한이 바뀔 때 확인한다.
  */
 const useImageHostAccess = (): [granted: boolean | undefined, request: () => void] => {
     const [granted, setGranted] = useState<boolean>();
-    useEffect(() => void browser.permissions.contains({origins: IMAGE_HOST_ORIGINS}).then(setGranted), []);
+    useEffect(() => {
+        const check = (): void => void browser.permissions.contains({origins: IMAGE_HOST_ORIGINS}).then(setGranted).catch(console.error);
+        check();
+        browser.permissions.onAdded.addListener(check);
+        browser.permissions.onRemoved.addListener(check);
+        return () => {
+            browser.permissions.onAdded.removeListener(check);
+            browser.permissions.onRemoved.removeListener(check);
+        };
+    }, []);
     const request = (): void => void browser.permissions.request({origins: IMAGE_HOST_ORIGINS}).then(setGranted).catch(console.error);
     return [granted, request];
 };

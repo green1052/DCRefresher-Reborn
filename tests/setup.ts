@@ -15,6 +15,8 @@ fakeBrowser.storage.local.getKeys = async () => Object.keys(await fakeBrowser.st
 
 // permissions.contains도 던진다 (옵션 차단 탭의 이미지 호스트 권한 확인). 받은 권한이 없는 것으로 둔다.
 fakeBrowser.permissions.contains = async () => false;
+// 권한 변경 이벤트도 걸면 던진다. 바뀌지 않는 것으로 둔다.
+for (const event of [fakeBrowser.permissions.onAdded, fakeBrowser.permissions.onRemoved]) Object.assign(event, {addListener: () => undefined, removeListener: () => undefined});
 
 // Cookie Store API (core/http/cookie). 쿠키가 하나도 없는 것으로 둔다.
 Object.assign(globalThis, {cookieStore: {get: async () => null}});
