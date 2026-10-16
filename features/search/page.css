@@ -5,5 +5,5 @@
     margin-top: 8px;
     text-align: center;
     font-size: 12px;
-    color: #888;
+    color: color-mix(in srgb, currentColor 70%, transparent);
 }
