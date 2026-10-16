@@ -1,6 +1,6 @@
 import {Dialog} from "@base-ui/react/dialog";
 import {Archive, ArrowUp, CircleAlert, Eye, MessageSquare, RotateCw} from "lucide-react";
-import {type CSSProperties, Fragment, useEffect, useLayoutEffect, useRef, useState} from "react";
+import {Fragment, useEffect, useLayoutEffect, useRef, useState} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
 import {Alert, AlertDescription} from "@/components/ui/alert";
@@ -297,7 +297,7 @@ export const Frame = () => {
                     data-admin={adminVisible || undefined}
                     data-blur-reveal={block?.blurReveal || undefined}
                     data-block-revealed={revealed || undefined}
-                    style={{"--refresher-frame-width": `${frameWidth}px`} as CSSProperties}
+                    style={{"--refresher-frame-width": `${frameWidth}px`}}
                 >
                     {/* 글마다 새로 마운트한다. 안 그러면 캐시 hit일 때 한 번에 렌더돼 쓰던 댓글이 다음 글로 넘어간다. */}
                     <Fragment key={postKey}>

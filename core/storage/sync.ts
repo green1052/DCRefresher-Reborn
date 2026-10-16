@@ -3,6 +3,7 @@ import {storage, type StorageItemKey} from "wxt/utils/storage";
 import {onBfcacheRestore} from "@/utils/dom";
 import {saveOrReload} from "@/utils/error";
 import {once} from "@/utils/once";
+import {objectKeys} from "@/utils/typed";
 
 /**
  * storage.watch를 signal이 끝날 때 푼다. 파이어폭스에서 스크립트가 다시 주입되면 죽은 인스턴스가 남아 감시 콜백을 계속 받으므로
@@ -87,7 +88,7 @@ export const typedListSync = <T extends string, V>(options: {
     const {types, keyOf, normalize, get, set, failure, extra = {}, lock} = options;
     const typeOf = new Map<StorageItemKey, T>(types.map((type) => [keyOf(type), type]));
 
-    const sync = storageSync([...typeOf.keys(), ...Object.keys(extra) as StorageItemKey[]], (key, value) => {
+    const sync = storageSync([...typeOf.keys(), ...objectKeys(extra)], (key, value) => {
         const type = typeOf.get(key);
         if (type === undefined) {
             extra[key]?.(value);

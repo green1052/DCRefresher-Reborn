@@ -33,7 +33,7 @@ const syncCounts = (target: Element, source: Element): void => {
  * 옮겨 넣으면 옛 목록이 비어 남긴 행이 하나라도 있는 동안 새로고침마다 목록을 통째로 갈아끼운다.
  */
 const keepDeletedRows = (oldRows: HTMLTableRowElement[], newKeys: Set<string>, newList: HTMLElement, newPostCount: number, first: Element | null): void => {
-    const newRows = new Map(Array.from(newList.children, (row) => [rowKey(row as HTMLElement), row]));
+    const newRows = new Map(Array.from(newList.querySelectorAll<HTMLTableRowElement>(":scope > tr"), (row) => [rowKey(row), row]));
     // 받은 행 수. 한 페이지가 안 차는 갤러리는 목록이 길어지므로, 옛 행 수가 아니라 남긴 행 수만큼만 뺀다.
     const received = newList.children.length;
 

@@ -49,13 +49,13 @@ export const DcconRain = () => {
     }, []);
     // 위치·크기·지연·회전은 처음 한 번만 정한다. 렌더마다 정하면 부모(App)가 다시 그릴 때 떨어지던 이미지가 튄다.
     const [drops] = useState(() =>
-        Array.from({length: COUNT}, () => ({
+        Array.from({length: COUNT}, (): CSSProperties => ({
             left: `${Math.random() * 95}%`,
             width: `${60 + Math.random() * 50}px`,
             animationDelay: `${Math.random() * MAX_DELAY}s`,
             animationDuration: `${DURATION}s`,
             "--spin": `${(Math.random() - 0.5) * 720}deg`
-        }) as CSSProperties)
+        }))
     );
 
     return (

@@ -75,8 +75,8 @@ export const writeSettings = async (data: Record<string, unknown>, mode: "replac
         try {
             await browser.storage.local.remove(touched.filter((key) => !(key in previous)));
             await browser.storage.local.set(Object.fromEntries(touched.filter((key) => key in previous).map((key) => [key, previous[key]])));
-        } catch (rollback) {
-            console.error("설정 되돌리기 실패:", rollback);
+        } catch (e) {
+            console.error("설정 되돌리기 실패:", e);
         }
         throw e;
     }
