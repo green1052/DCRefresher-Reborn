@@ -1,5 +1,6 @@
 import {documentUrl, pagePostNo, postSearchUrl} from "@/core/http/urls";
 import {sendMessage} from "@/core/messaging/protocol";
+import {NUMBERED_SOURCE} from "@/core/preview/parser";
 import {useUiStore} from "@/stores/ui";
 
 const ORIGIN_CLASS = "refresherImageOrigin";
@@ -30,7 +31,12 @@ const showImageOrigin = (head: Element): void => {
 
     const media = document.querySelectorAll<HTMLImageElement | HTMLVideoElement>(".write_div :is(img:not(.written_dccon, .og-img), video)");
     // 늦게 불러오는 이미지는 data-original, GIF를 바꾼 영상은 data-src에 주소가 있다.
-    for (const [index, element] of media.entries()) check(uploadedGallery(element.dataset.original ?? element.dataset.src ?? element.src), `${index + 1}번`);
+    // 번호는 디시처럼 첨부 이미지·동영상만 센다. 외부 이미지까지 세면 디시·미리보기가 단 번호와 어긋난다.
+    let number = 0;
+    for (const element of media) {
+        const source = element.dataset.original ?? element.dataset.src ?? element.src;
+        if (NUMBERED_SOURCE.test(source)) check(uploadedGallery(source), `${++number}번`);
+    }
     for (const [index, item] of document.querySelectorAll(".appending_file li").entries()) {
         check(DOWNLOADED_NAME.exec(item.textContent?.trim() ?? "")?.[1], `첨부 ${index + 1}번`);
     }

@@ -114,7 +114,8 @@ describe("이미지 출처", () => {
     };
 
     it("다른 갤러리에서 올린 이미지와 첨부 파일을 번호와 함께 알린다", async () => {
-        mountView(image("2fbcc323e7d334aa51b1d3a2") + image("39b8c332") + image("2fbcc323e7d334aa51b1d3a2"));
+        // 외부 이미지는 디시처럼 번호를 세지 않는다.
+        mountView("<img src=\"https://pbs.twimg.com/media/a.jpg\">" + image("2fbcc323e7d334aa51b1d3a2") + image("39b8c332") + image("2fbcc323e7d334aa51b1d3a2"));
         document.body.insertAdjacentHTML("beforeend", "<ul class=\"appending_file\"><li>baseball_new-20240101-123456-000.jpg</li></ul>");
         await start({imageOrigin: true});
         await tick();

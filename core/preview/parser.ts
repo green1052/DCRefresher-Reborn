@@ -16,8 +16,8 @@ const restoreImageSources = (dom: Document): void => {
     }
 };
 
-/** 디시가 순서 번호를 다는 본문 미디어 (첨부 이미지·동영상). */
-const NUMBERED_SOURCE = /dcimg\d\.dcinside\.(com|co\.kr)\/viewimage\.php/;
+/** 디시가 순서 번호를 다는 본문 미디어 (첨부 이미지·동영상). 다른 갤러리 이미지 알림의 번호도 같은 것만 센다 (features/manage/view.ts). */
+export const NUMBERED_SOURCE = /dcimg\d\.dcinside\.(com|co\.kr)\/viewimage\.php/;
 
 /**
  * 첨부 이미지·동영상에 디시처럼 순서 번호를 단다 (3개 이상일 때만). 번호는 감싼 span의 data-num을 CSS가 띄운다 (features/preview/overlay.css).
