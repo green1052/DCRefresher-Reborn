@@ -4,9 +4,9 @@ import {type ImageHashes, onMessage, sendMessage} from "@/core/messaging/protoco
 import {defineBackgroundModule} from "@/core/module/background";
 import {IMAGE_HOST_ORIGINS, IMAGE_URL_PATTERNS} from "@/core/pages";
 import {blockListKey} from "@/core/storage/items";
-import type {BlockEntry} from "@/core/storage/types";
 import {sha256} from "@/utils/hash";
 import {imageFingerprints} from "@/utils/imageFingerprint";
+import {isRecord} from "@/utils/record";
 
 import {BLOCK_SETTINGS} from "./settings";
 
@@ -82,9 +82,11 @@ let filterEnabled = false;
 const IMAGE_LIST_KEY = blockListKey("IMAGE");
 
 const syncImageFilter = async (): Promise<void> => {
-    const entries = await storage.getItem<BlockEntry[]>(IMAGE_LIST_KEY, {fallback: []});
+    // stores/blocks는 배경에 Preact를 딸려 보내므로 불러오지 않는다. 검사 없이 BlockEntry[]로 읽으면 깨진 항목 하나에 필터를 맞추지 못한다.
+    const stored = await storage.getItem<unknown>(IMAGE_LIST_KEY);
+    const entries = Array.isArray(stored) ? stored.filter(isRecord) : [];
     const on = filterEnabled && entries.length > 0;
-    similarEnabled = similarSetting && entries.some((entry) => entry.similar);
+    similarEnabled = similarSetting && entries.some((entry) => typeof entry.similar === "string");
     if (on === browser.webRequest.onBeforeRequest.hasListener(hashImageResponse)) return;
     if (on) browser.webRequest.onBeforeRequest.addListener(hashImageResponse, {urls: IMAGE_URL_PATTERNS, types: ["image"]}, ["blocking"]);
     else browser.webRequest.onBeforeRequest.removeListener(hashImageResponse);
