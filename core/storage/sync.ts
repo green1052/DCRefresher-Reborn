@@ -29,11 +29,8 @@ export const watchStorage = <T>(key: StorageItemKey, callback: (next: T | null, 
  *   signal(콘텐츠 스크립트 컨텍스트의 것)이 끝나면 감시를 푼다.
  */
 export const storageSync = <K extends StorageItemKey>(keys: readonly K[], apply: (key: K, value: unknown) => void) => {
-    // getItems는 받은 키로 값을 돌려주지만 순서는 약속이 아니므로 키로 짝짓는다.
-    const read = async (): Promise<Map<K, unknown>> => {
-        const items = await storage.getItems([...keys]);
-        return new Map(items.map(({key, value}) => [key as K, value]));
-    };
+    // getItems는 받은 키로 값을 돌려준다. 순서에 기대지 않고 키로 짝짓는다.
+    const read = async (): Promise<Map<StorageItemKey, unknown>> => new Map((await storage.getItems([...keys])).map(({key, value}) => [key, value]));
 
     const load = async (): Promise<void> => {
         const items = await read();
