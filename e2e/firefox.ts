@@ -1,5 +1,7 @@
 import net from "node:net";
 
+import {isRecord} from "../utils/record";
+
 /**
  * 플레이라이트의 파이어폭스는 실행 인자로 확장을 올리지 못한다. web-ext처럼 원격 디버깅 서버(-start-debugger-server)에 붙어
  * 압축을 푼 확장을 임시 부가 기능으로 설치하고, 같은 연결로 배경 페이지에서 식을 계산한다 (Remote Debugging Protocol).
@@ -48,6 +50,13 @@ interface Packet {
 
     [key: string]: unknown;
 }
+
+/** 디버깅 서버가 보낸 패킷인지. 모양이 다른 것은 받지 않는다. */
+const isPacket = (value: unknown): value is Packet =>
+    isRecord(value) && typeof value.from === "string"
+    && (value.type === undefined || typeof value.type === "string")
+    && (value.error === undefined || typeof value.error === "string")
+    && (value.message === undefined || typeof value.message === "string");
 
 /** 응답 하나를 기다리는 시간(ms). 테스트 시간 제한보다 짧아 어디서 멈췄는지 알린다. */
 const PACKET_TIMEOUT = 20_000;
@@ -98,9 +107,10 @@ class RdpClient {
             const length = Number(this.buffer.subarray(0, colon).toString());
             const end = colon + 1 + length;
             if (this.buffer.length < end) return;
-            const packet = JSON.parse(this.buffer.subarray(colon + 1, end).toString()) as Packet;
+            const packet: unknown = JSON.parse(this.buffer.subarray(colon + 1, end).toString());
             this.buffer = this.buffer.subarray(end);
-            this.dispatch(packet);
+            if (isPacket(packet)) this.dispatch(packet);
+            else console.warn("Unknown RDP packet:", packet);
         }
     }
 
@@ -189,20 +199,21 @@ export const installTemporaryAddon = async (port: number, addonPath: string): Pr
         const {addonsActor} = await client.request("root", "getRoot");
         if (typeof addonsActor !== "string") throw new Error("디버깅 서버에 addonsActor가 없습니다.");
         // 응답의 addon은 {id, actor: false}다. actor는 부가 기능 목록에서 찾는다.
-        const {addon} = await client.request(addonsActor, "installTemporaryAddon", {addonPath, openDevTools: false}) as Packet & { addon?: { id?: string } };
-        const {addons} = await client.request("root", "listAddons") as Packet & { addons?: { id: string; actor: string }[] };
-        const descriptor = addons?.find(({id}) => id === addon?.id)?.actor;
-        if (!descriptor) throw new Error("설치한 부가 기능을 찾지 못했습니다.");
+        const {addon} = await client.request(addonsActor, "installTemporaryAddon", {addonPath, openDevTools: false});
+        const {addons} = await client.request("root", "listAddons");
+        const id = isRecord(addon) ? addon.id : undefined;
+        const descriptor = Array.isArray(addons) ? addons.filter(isRecord).find((item) => typeof id === "string" && item.id === id)?.actor : undefined;
+        if (typeof descriptor !== "string") throw new Error("설치한 부가 기능을 찾지 못했습니다.");
 
         // 부가 기능의 문서(target)는 watcher가 알린다. 배경 페이지 말고 대체 문서(resource://)도 오므로 확장 주소인 것을 기다린다.
         const {actor: watcher} = await client.request(descriptor, "getWatcher");
         if (typeof watcher !== "string") throw new Error("부가 기능의 watcher가 없습니다.");
         const background = await client.requestEvent(watcher, "watchTargets", {targetType: "frame"}, "target-available-form", (packet) => {
-            const target = packet.target as { url?: string } | undefined;
-            return Boolean(target?.url?.startsWith("moz-extension://"));
+            const {target} = packet;
+            return isRecord(target) && typeof target.url === "string" && target.url.startsWith("moz-extension://");
         });
-        const consoleActor = (background.target as { consoleActor?: string }).consoleActor;
-        if (!consoleActor) throw new Error("배경 페이지의 consoleActor가 없습니다.");
+        const consoleActor = isRecord(background.target) ? background.target.consoleActor : undefined;
+        if (typeof consoleActor !== "string") throw new Error("배경 페이지의 consoleActor가 없습니다.");
 
         // 결과(evaluationResult)는 resultID로만 짝지을 수 있어, 요청을 하나씩 보내 섞이지 않게 한다.
         let queue: Promise<unknown> = Promise.resolve();
@@ -211,10 +222,10 @@ export const installTemporaryAddon = async (port: number, addonPath: string): Pr
             // 서버는 거부된 Promise의 이유를 주지 않으므로(topLevelAwaitRejected) 식 안에서 잡는다.
             const text = `(async () => { try { return JSON.stringify({value: await (${expression})}); } catch (e) { return JSON.stringify({error: String(e)}); } })()`;
             // mapped.await: 식이 낸 Promise를 서버가 기다려 그 값을 준다.
-            const {exceptionMessage, result: grip} = await client.requestEvent(consoleActor, "evaluateJSAsync", {text, mapped: {await: true}}, "evaluationResult", (packet, reply) => reply.resultID !== undefined && packet.resultID === reply.resultID) as Packet & { exceptionMessage?: unknown; result?: string | { type?: string; actor?: string; length?: number } };
+            const {exceptionMessage, result: grip} = await client.requestEvent(consoleActor, "evaluateJSAsync", {text, mapped: {await: true}}, "evaluationResult", (packet, reply) => reply.resultID !== undefined && packet.resultID === reply.resultID);
             // 긴 문자열(1만 자 넘음)은 값 대신 longString grip으로 온다.
             const json = typeof grip === "string" ? grip
-                : grip?.type === "longString" && grip.actor ? String((await client.request(grip.actor, "substring", {start: 0, end: grip.length})).substring)
+                : isRecord(grip) && grip.type === "longString" && typeof grip.actor === "string" ? String((await client.request(grip.actor, "substring", {start: 0, end: grip.length})).substring)
                     : undefined;
             if (json === undefined) throw new Error(`배경 페이지에서 계산하지 못했습니다: ${JSON.stringify(exceptionMessage ?? grip)}`);
             const {value, error} = JSON.parse(json) as { value: T; error?: string };
