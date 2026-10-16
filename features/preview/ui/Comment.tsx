@@ -18,7 +18,7 @@ import {markPressable, pressContents} from "./contentsClick";
 import {openDcconInfo} from "./DcconInfoPopup";
 import {fitTxtcon} from "./fitTxtcon";
 import {watchGifVideos} from "./gifVideos";
-import {NO_REPLY, usePreviewStore} from "./previewStore";
+import {NO_REPLY, refreshCommentsOf, usePreviewStore} from "./previewStore";
 import {TimeStamp} from "./TimeStamp";
 import {UserCard} from "./UserCard";
 
@@ -103,7 +103,7 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
         const request = isAdmin ? adminDeleteComments(st.preData, [comment.no]) : deleteOwnComment(st.preData, st.post, comment.no, password);
         const deleted = await notifyManage(request, "댓글을 삭제했습니다.", "댓글을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.");
         setDeleting(false);
-        if (deleted) void st.requestRefresh();
+        if (deleted) refreshCommentsOf(st.preData);
     };
 
     // 디시콘(img/video)과 글자콘. 답글이면 앞에 멘션이 붙어 오므로 ^로 고정하지 않고 찾는다.

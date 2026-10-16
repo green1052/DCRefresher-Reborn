@@ -1,6 +1,7 @@
 import {create} from "zustand";
 
 import {needOverlayWhen} from "@/components/overlay/demands";
+import {postKey, setEntry} from "@/core/preview/cache";
 import type {ProcessedComment} from "@/core/preview/comments";
 import type {BlockOptions} from "@/core/preview/request";
 import type {GalleryPreData, PostInfo} from "@/core/preview/types";
@@ -251,6 +252,16 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
 export const previewGallery = (): string | undefined => {
     const {visible, preData} = usePreviewStore.getState();
     return visible ? preData?.gallery : undefined;
+};
+
+/**
+ * 댓글을 올리거나 지운 글의 댓글 목록을 새로 받는다. 이 글이 열려 있을 때만 받는다. 보내는 사이 다른 글에 갔다 돌아왔으면 새 창의 목록도 바뀌기 전에 받은 것이다.
+ * 다른 글에 가 있으면 캐시의 목록을 낡은 것으로 표시해 둔다. 두면 10초 안에 돌아올 때 방금 받은 목록으로 쳐서(COMMENTS_REUSE) 다시 받지 않는다.
+ */
+export const refreshCommentsOf = (preData: GalleryPreData): void => {
+    setEntry(preData, {commentsAt: 0});
+    const current = usePreviewStore.getState();
+    if (current.preData && postKey(current.preData) === postKey(preData)) void current.requestRefresh();
 };
 
 // 미리보기 UI 중 하나라도 떠 있으면 오버레이를 띄운다 (components/overlay/demands). 새 미리보기 UI를 추가하면 여기에 넣는다.

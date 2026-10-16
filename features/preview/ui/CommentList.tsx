@@ -14,7 +14,7 @@ import {useUiStore} from "@/stores/ui";
 import {isGalleryManager} from "@/utils/user";
 
 import {Comment} from "./Comment";
-import {NO_FRESH, usePreviewStore} from "./previewStore";
+import {NO_FRESH, refreshCommentsOf, usePreviewStore} from "./previewStore";
 
 /**
  * 스레드 첫 댓글로 그릴 댓글. 10쪽 제한으로 부모를 받지 못한 답글도 넣는다. 빠뜨리면 머리의 스레드·총 댓글 수와 어긋난다.
@@ -123,10 +123,9 @@ const SelectionTools = ({shownSelectable, foldable}: { shownSelectable: Processe
         if (!st.preData) return;
         const signal = st.signalId;
         if (!await notifyManage(adminDeleteComments(st.preData, picked), "댓글을 삭제했습니다.", "댓글을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.")) return;
-        // 그새 다른 글로 넘어갔으면 그 글의 고른 댓글과 댓글 목록은 건드리지 않는다.
-        if (usePreviewStore.getState().signalId !== signal) return;
-        usePreviewStore.setState({selectedComments: NO_FRESH});
-        void st.requestRefresh();
+        refreshCommentsOf(st.preData);
+        // 그새 다른 글로 넘어갔으면 그 글의 고른 댓글은 건드리지 않는다.
+        if (usePreviewStore.getState().signalId === signal) usePreviewStore.setState({selectedComments: NO_FRESH});
     };
 
     return (

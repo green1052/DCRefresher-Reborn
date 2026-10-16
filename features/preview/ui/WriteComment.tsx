@@ -9,7 +9,7 @@ import {Textarea} from "@/components/ui/textarea";
 import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
 import {WithTooltip} from "@/components/WithTooltip";
 import {captchaImage, normalizeTxtcon, TXTCON_BACKGROUNDS, TXTCON_COLORS} from "@/core/preview/request";
-import {postKey, setEntry} from "@/core/preview/cache";
+import {postKey} from "@/core/preview/cache";
 import type {DcinsideDccon} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 import {isTimeoutError} from "@/utils/error";
@@ -18,7 +18,7 @@ import {loggedInUserId} from "@/utils/user";
 import {postComment} from "../comment-submit";
 import {saveNonmember, savedNonmember} from "../nonmember";
 import {DcconPopup} from "./DcconPopup";
-import {NO_REPLY, usePreviewStore} from "./previewStore";
+import {NO_REPLY, refreshCommentsOf, usePreviewStore} from "./previewStore";
 
 /** 비회원 댓글 비밀번호 (영문 소문자·숫자 8자). */
 const randomPassword = (): string => Array.from(crypto.getRandomValues(new Uint8Array(8)), (byte) => (byte % 36).toString(36)).join("");
@@ -124,15 +124,6 @@ export const WriteComment = () => {
             return;
         }
 
-        // 댓글 목록은 이 글이 열려 있으면 새로 받는다. 보내는 사이 다른 글에 갔다 돌아왔으면 새 창의 목록은 댓글이 올라가기 전에 받은 것이다.
-        // 다른 글에 가 있으면 캐시의 목록을 낡은 것으로 표시해 둔다. 두면 10초 안에 돌아올 때 방금 받은 목록으로 쳐서(COMMENTS_REUSE) 다시 받지 않아,
-        // 올라간 댓글이 안 보여 한 번 더 보내게 된다.
-        const refreshIfOpen = (): void => {
-            setEntry(preData, {commentsAt: 0});
-            const current = usePreviewStore.getState();
-            if (current.preData && postKey(current.preData) === key) void current.requestRefresh();
-        };
-
         setSending(true);
         sendingKeys.add(key);
         const {preData, post, reply: sentReply} = st;
@@ -160,7 +151,7 @@ export const WriteComment = () => {
                 if (!login) saveNonmember(nick, password);
                 // 답글 버튼은 누를 때마다 새 대상을 넣으므로, 그새 다른 글로 넘어갔거나 다른 댓글을 골랐으면 같지 않다.
                 usePreviewStore.setState((current) => (current.reply === sentReply ? {reply: NO_REPLY} : {}));
-                refreshIfOpen();
+                refreshCommentsOf(preData);
             } else if (outcome.captcha) {
                 useUiStore.getState().showToast(
                     "자동입력 방지 확인이 필요합니다. 원문에서 작성해 주세요.",
@@ -174,7 +165,7 @@ export const WriteComment = () => {
         } catch (e) {
             console.error("Comment submit failed:", e);
             // 시간 초과 등으로 끊겨도 서버는 댓글을 올렸을 수 있다. 목록을 새로 받아 올라간 댓글이 보이게 해 다시 보내지 않게 한다. 입력한 글은 둔다.
-            refreshIfOpen();
+            refreshCommentsOf(preData);
             const timeout = isTimeoutError(e);
             useUiStore.getState().showToast(
                 timeout ? "응답이 없어 작성 여부를 확인하지 못했습니다. 댓글 목록을 확인해 주세요." : "댓글을 작성하지 못했습니다. 잠시 후 다시 시도해 주세요.",
