@@ -1,3 +1,5 @@
+import pLimit from "p-limit";
+
 import {type ImageHashes, sendMessage} from "@/core/messaging/protocol";
 import type {ModuleSettings} from "@/core/module/types";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
@@ -149,6 +151,10 @@ const imageReads = new Map<string, ImageRead>();
 const askBackground = (url: string, similar: boolean): Promise<ImageHashes | undefined> =>
     sendMessage("refresher:imageHash", {url, similar}).catch(() => undefined);
 
+// 처음 차단하거나 비슷한 이미지 설정을 켜면 열린 탭들이 받아 둔 이미지를 한꺼번에 다시 판정한다.
+// 파이어폭스는 배경에 해시가 없으면 다시 받으므로, 요청이 몰려 디시의 요청 제한에 걸리지 않게 몇 개씩만 받는다.
+const fetchLimit = pLimit(4);
+
 /** onFile은 파일 해시를 구하자마자 부른다. */
 const readImageHashes = async (url: string, similar: boolean, onFile: (file: string) => void): Promise<ImageHashes | undefined> => {
     // 파이어폭스 배경은 비슷한 이미지 설정이 켜져 있고 지문이 있는 항목이 있을 때만 지문을 구한다. 그렇지 않을 때 우클릭 차단하면 지문은 여기서 이미지를 다시 받아 구한다.
@@ -158,9 +164,11 @@ const readImageHashes = async (url: string, similar: boolean, onFile: (file: str
     if (background && (!similar || background.similar !== undefined)) return background;
     try {
         // 파이어폭스 콘텐츠 스크립트의 요청은 Referer를 붙이지 않아 디시가 403을 준다. 크롬은 원래 붙이고, 캐시 키에 들지 않아 캐시도 그대로 쓴다.
-        const response = await fetch(url, {cache: "force-cache", referrer: location.href});
-        const file = await response.blob();
-        const bytes = await file.arrayBuffer();
+        const {response, file, bytes} = await fetchLimit(async () => {
+            const response = await fetch(url, {cache: "force-cache", referrer: location.href});
+            const file = await response.blob();
+            return {response, file, bytes: await file.arrayBuffer()};
+        });
         // 크롬은 움짤이 구간 요청으로 받아 둔 캐시를 쓰면 206을 준다. 파일 전체를 담았을 때만 받는다 (Content-Range는 CORS로 읽지 못한다).
         if (response.status !== 200 && !(response.status === 206 && isWholeMp4(new Uint8Array(bytes)))) throw new Error(`HTTP ${response.status}`);
         const hash = await sha256(bytes);
