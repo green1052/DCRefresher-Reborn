@@ -101,8 +101,24 @@ export const fingerprintsOf = (rgba: Uint8ClampedArray, width: number, height: n
     return [dHash(small) + pHash(large), dHash(mirror(small, 9)) + pHash(mirror(large, 32))];
 };
 
+/**
+ * 디코딩하지 않고 화소 수만 읽는다. 문서에 붙이지 않은 <img>는 그리지 않아 디코딩하지 않는다.
+ * 파이어폭스 콘텐츠 스크립트가 만든 blob 주소는 페이지 문서가 읽지 못해 실패한다. 그때는 0을 줘 디코딩 뒤의 검사에 맡긴다.
+ */
+const pixelsOf = (file: Blob): Promise<number> => {
+    const image = new Image();
+    const src = URL.createObjectURL(file);
+    return new Promise<number>((resolve) => {
+        image.onload = () => resolve(image.naturalWidth * image.naturalHeight);
+        image.onerror = () => resolve(0);
+        image.src = src;
+    }).finally(() => URL.revokeObjectURL(src));
+};
+
 const fingerprint = async (file: Blob): Promise<[string, string] | undefined> => {
     try {
+        // 원본 크기로 디코딩하는 것 자체가 메모리를 크게 쓴다. 파일은 작아도 화소가 아주 많은 이미지가 있어 디코딩 전에 본다.
+        if ((await pixelsOf(file)) > MAX_PIXELS) return undefined;
         const bitmap = await createImageBitmap(file, {colorSpaceConversion: "none", premultiplyAlpha: "none", imageOrientation: "from-image"});
         const {width, height} = bitmap;
         // 캔버스에 옮기면 비트맵은 바로 놓는다. 큰 이미지에서 화소가 세 벌 남지 않게 한다.
