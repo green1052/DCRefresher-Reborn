@@ -8,7 +8,7 @@ import {Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabe
 import {Input} from "@/components/ui/input";
 import {DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
-import {type BlockInputFields, useBlocksStore} from "@/stores/blocks";
+import {blockKey, type BlockInputFields, useBlocksStore} from "@/stores/blocks";
 import {messageOf, SAVE_FAILED} from "@/utils/error";
 
 import {RefresherSelect} from "./RefresherSelect";
@@ -52,6 +52,13 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                 setError(`정규식이 올바르지 않습니다. ${messageOf(e)}`);
                 return;
             }
+        }
+
+        // 같은 값·갤러리 항목은 저장소에서 하나로 합쳐져 별명·지문을 잃은 채 덮이므로 막는다. 고치려면 목록에서 수정한다.
+        const key = blockKey({content: content.trim(), isRegex, gallery: gallery.trim() || undefined});
+        if (useBlocksStore.getState().entries[type].some((entry) => entry.id !== initial?.id && blockKey(entry) === key)) {
+            setError("이미 같은 차단 항목이 있습니다.");
+            return;
         }
 
         try {
