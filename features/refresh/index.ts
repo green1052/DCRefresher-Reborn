@@ -2,11 +2,10 @@ import {BlockedError, http} from "@/core/http/client";
 import {documentUrl, isViewPage, listUrl, mergeParamURL, queryString} from "@/core/http/urls";
 import {LIST_SELECTOR, notifyListReplaced, PAGING_SELECTOR} from "@/core/list";
 import {defineModule} from "@/core/module/define";
-import {whenDomReady} from "@/utils/dom";
 import {getModuleApi} from "@/core/module/registry";
 import {ownPreviewEntry} from "@/core/preview/history";
 import {useUiStore} from "@/stores/ui";
-import {smoothScroll} from "@/utils/dom";
+import {smoothScroll, whenDomReady} from "@/utils/dom";
 
 import {isWholeFirstPage, replaceList, syncPaging} from "./list";
 import {LIST_TABLE} from "./markup";
