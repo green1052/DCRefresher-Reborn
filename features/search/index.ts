@@ -67,7 +67,9 @@ export default defineModule({
             const fillCheckbox = checkboxFiller(list, commentSearch);
 
             const max = ctx.settings.maxSearches;
+            // 화면 낭독기가 진행을 읽게 상태 영역으로 알린다.
             const status = Object.assign(document.createElement("p"), {className: "refresherSearchStatus"});
+            status.setAttribute("role", "status");
             paging.after(status);
             let added = 0;
 
