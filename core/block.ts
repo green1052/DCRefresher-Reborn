@@ -162,10 +162,10 @@ const readImageHashes = async (url: string, similar: boolean): Promise<ImageHash
  * 둘 다 캐시나 배경에 없으면 이미지를 한 번 더 받는다. retry면 앞서 읽지 못한 것도 다시 읽는다 (권한을 막 받은 뒤의 우클릭 차단).
  */
 export const imageHash = async (url: string, {retry = false, similar = false}: { retry?: boolean; similar?: boolean } = {}): Promise<ImageHashes | undefined> => {
-    const cached = retry ? undefined : imageHashes.get(url);
+    const cached = imageHashes.get(url);
     const previous = await cached;
-    // 지문 없이 읽어 둔 것은 지문이 필요해지면 다시 읽는다 (비슷한 이미지 설정을 켰을 때). 읽지 못한 것은 다시 읽지 않는다.
-    if (cached && (!previous || !similar || previous.similar !== undefined)) return previous;
+    // 지문 없이 읽어 둔 것은 지문이 필요해지면 다시 읽는다 (비슷한 이미지 설정을 켰을 때). 읽지 못한 것은 retry일 때만 다시 읽는다.
+    if (cached && (previous ? !similar || previous.similar !== undefined : !retry)) return previous;
     // 다시 읽다 실패하면 앞서 구한 파일 해시를 지킨다.
     const hashes = readImageHashes(url, similar).then((next) => next ?? previous);
     imageHashes.set(url, hashes);

@@ -1,14 +1,20 @@
+import {webcrypto} from "node:crypto";
+
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
-import {blockingEntries, dcconCode, groupDuplicates, isAnyBlocked, isBlocked, isBlockedHidden} from "@/core/block";
+import {blockingEntries, dcconCode, groupDuplicates, imageHash, isAnyBlocked, isBlocked, isBlockedHidden, isImageBlocked} from "@/core/block";
 import {DETECT_MODES} from "@/core/storage/items";
 import type {BlockEntry} from "@/core/storage/types";
 import {markUsed} from "@/core/usage";
 import {useBlocksStore} from "@/stores/blocks";
+import {sha256} from "@/utils/hash";
+import {imageFingerprints} from "@/utils/imageFingerprint";
 
 import {setBlockLists} from "../../helpers";
 
 vi.mock("@/core/usage", () => ({markUsed: vi.fn()}));
+// jsdom은 이미지를 디코딩하지 못해 지문은 테스트가 정한다.
+vi.mock("@/utils/imageFingerprint", async (original) => ({...await original<typeof import("@/utils/imageFingerprint")>(), imageFingerprints: vi.fn()}));
 
 let nextId = 0;
 const entry = (content: string, fields: Partial<BlockEntry> = {}): BlockEntry => ({id: `e${nextId++}`, content, isRegex: false, ...fields});
@@ -250,5 +256,116 @@ describe("groupDuplicates", () => {
         expect(groupDuplicates(items, ({text}) => text, {count: 3, minLength: 3}).size).toBe(0);
         expect(groupDuplicates(items, ({text}) => text, {count: 3, minLength: 2}).size).toBe(3);
         expect(groupDuplicates(items, ({text}) => text, {count: 2, minLength: 2}).size).toBe(5);
+    });
+});
+
+describe("이미지 차단", () => {
+    // 해시는 주소별로 모듈에 남으므로 테스트마다 다른 주소를 쓴다.
+    let seq = 0;
+    const imageUrl = (): string => `https://dcimg8.dcinside.co.kr/viewimage.php?id=x&no=${seq++}`;
+    const FINGERPRINT = "0".repeat(32);
+    const MIRRORED = "f".repeat(32);
+    // dHash·pHash가 각각 4비트 다르다.
+    const NEAR = `${"0".repeat(15)}f${"0".repeat(15)}f`;
+
+    const image = (url: string, size = 100): HTMLImageElement => {
+        const element = document.createElement("img");
+        for (const [key, value] of Object.entries({currentSrc: url, complete: true, naturalWidth: size, naturalHeight: size})) {
+            Object.defineProperty(element, key, {value});
+        }
+        return element;
+    };
+
+    let fetchImage: ReturnType<typeof vi.fn>;
+    beforeEach(() => {
+        // 파일 해시에 WebCrypto(crypto.subtle)가 필요한데 jsdom의 crypto에는 없다.
+        vi.stubGlobal("crypto", webcrypto);
+        fetchImage = vi.fn(async () => new Response("abc"));
+        vi.stubGlobal("fetch", fetchImage);
+        vi.mocked(imageFingerprints).mockReset().mockResolvedValue([FINGERPRINT, MIRRORED]);
+        vi.mocked(markUsed).mockClear();
+        vi.spyOn(console, "warn").mockImplementation(() => {});
+        return () => vi.unstubAllGlobals();
+    });
+
+    describe("imageHash", () => {
+        it("주소마다 한 번만 읽고, 지문이 필요해지면 그때 한 번 더 읽는다", async () => {
+            const url = imageUrl();
+            expect(await imageHash(url)).toEqual({file: await sha256(new TextEncoder().encode("abc")), similar: undefined});
+            await imageHash(url);
+            expect(fetchImage).toHaveBeenCalledTimes(1);
+
+            expect((await imageHash(url, {similar: true}))?.similar).toEqual([FINGERPRINT, MIRRORED]);
+            await imageHash(url, {similar: true});
+            expect(fetchImage).toHaveBeenCalledTimes(2);
+        });
+
+        it("읽지 못한 주소는 retry일 때만 다시 읽는다", async () => {
+            const url = imageUrl();
+            fetchImage.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+            expect(await imageHash(url)).toBeUndefined();
+            expect(await imageHash(url)).toBeUndefined();
+            expect(fetchImage).toHaveBeenCalledTimes(1);
+
+            expect(await imageHash(url, {retry: true})).toBeDefined();
+            expect(fetchImage).toHaveBeenCalledTimes(2);
+        });
+
+        it("다시 읽다 실패해도 앞서 구한 파일 해시를 지킨다", async () => {
+            const url = imageUrl();
+            const first = await imageHash(url);
+            fetchImage.mockRejectedValue(new TypeError("Failed to fetch"));
+
+            expect(await imageHash(url, {retry: true, similar: true})).toEqual(first);
+            expect(await imageHash(url)).toEqual(first);
+        });
+    });
+
+    describe("isImageBlocked", () => {
+        it("같은 파일이면 막는다", async () => {
+            const url = imageUrl();
+            setBlockLists({IMAGE: [entry((await imageHash(url))!.file)]});
+            expect(await isImageBlocked(image(url))).toBe(true);
+        });
+
+        it("기준을 주면 지문이 비슷한 이미지와 좌우 반전본도 막는다", async () => {
+            setBlockLists({IMAGE: [entry("다른 파일", {similar: NEAR})]});
+            expect(await isImageBlocked(image(imageUrl()))).toBe(false);
+            expect(await isImageBlocked(image(imageUrl()), undefined, 3)).toBe(false);
+            expect(await isImageBlocked(image(imageUrl()), undefined, 4)).toBe(true);
+
+            setBlockLists({IMAGE: [entry("다른 파일", {similar: MIRRORED})]});
+            expect(await isImageBlocked(image(imageUrl()), undefined, 4)).toBe(true);
+        });
+
+        it("허용 목록(NOT_*) 항목과 다른 갤러리 항목은 지문으로 막지 않는다", async () => {
+            setBlockLists({IMAGE: [entry("다른 파일", {similar: FINGERPRINT, gallery: "a"})]});
+            expect(await isImageBlocked(image(imageUrl()), "b", 12)).toBe(false);
+            expect(await isImageBlocked(image(imageUrl()), "a", 12)).toBe(true);
+
+            const url = imageUrl();
+            setBlockLists({IMAGE: [entry((await imageHash(url))!.file, {similar: FINGERPRINT, mode: "NOT_SAME"})]});
+            // 같은 파일이라 허용 목록에 맞는다. 지문으로 넓혀 막지 않는다.
+            expect(await isImageBlocked(image(url), undefined, 12)).toBe(false);
+        });
+
+        it("같은 파일로 막혀도 지문으로 걸린 항목까지 쓰였다고 적는다", async () => {
+            const url = imageUrl();
+            const exact = entry((await imageHash(url))!.file);
+            const near = entry("다른 파일", {similar: NEAR});
+            setBlockLists({IMAGE: [exact, near]});
+
+            expect(await isImageBlocked(image(url), undefined, 12)).toBe(true);
+            expect(usedIds()).toEqual(expect.arrayContaining([exact.id, near.id]));
+        });
+
+        it("지문 있는 항목이 없거나 너무 큰 이미지면 디코딩하지 않는다", async () => {
+            setBlockLists({IMAGE: [entry("다른 파일")]});
+            await isImageBlocked(image(imageUrl()), undefined, 12);
+
+            setBlockLists({IMAGE: [entry("다른 파일", {similar: FINGERPRINT})]});
+            expect(await isImageBlocked(image(imageUrl(), 10_000), undefined, 12)).toBe(false);
+            expect(imageFingerprints).not.toHaveBeenCalled();
+        });
     });
 });
