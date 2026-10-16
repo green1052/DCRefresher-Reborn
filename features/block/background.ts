@@ -58,6 +58,7 @@ const hashImageResponse = ({requestId, url}: Browser.webRequest.OnBeforeRequestD
     const filter = browser.webRequest.filterResponseData(requestId);
     const chunks: ArrayBuffer[] = [];
     const {promise, resolve} = Promise.withResolvers<ImageHashes | undefined>();
+    const previous = imageHashes.get(url);
 
     imageHashes.delete(url);
     imageHashes.set(url, promise);
@@ -69,7 +70,8 @@ const hashImageResponse = ({requestId, url}: Browser.webRequest.OnBeforeRequestD
     };
     filter.onstop = () => {
         filter.close();
-        resolve(hashFile(new Blob(chunks)));
+        // 캐시를 재검증해 304를 받으면 본문 없이 끝난다. 빈 데이터의 해시를 남기지 않고 앞서 구한 것을 쓴다 (없으면 탭이 직접 읽는다).
+        resolve(chunks.length > 0 ? hashFile(new Blob(chunks)) : previous);
     };
     filter.onerror = () => resolve(undefined);
     return undefined;
