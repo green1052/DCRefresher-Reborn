@@ -8,11 +8,13 @@ import {settingsOf} from "@/core/module/settings";
 import {IMAGE_HOST_ORIGINS} from "@/core/pages";
 import background from "@/features/block/background";
 import {sha256} from "@/utils/hash";
+import {imageFingerprints} from "@/utils/imageFingerprint";
 
 vi.mock("@/core/messaging/protocol", () => ({onMessage: vi.fn(), sendMessage: vi.fn(async () => undefined)}));
+vi.mock("@/utils/imageFingerprint", () => ({imageFingerprints: vi.fn()}));
 
 const IMAGE = "https://dcimg8.dcinside.co.kr/viewimage.php?id=x&no=1";
-const apply = (enabled: boolean) => background.apply?.({enabled, settings: settingsOf(background, {})});
+const apply = (enabled: boolean, similarImages = false) => background.apply?.({enabled, settings: settingsOf(background, {similarImages})});
 const setImageList = (list: unknown[]) => storage.setItem("local:refresher:block:IMAGE", list);
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -94,9 +96,9 @@ describe("block 배경 (파이어폭스)", () => {
     };
 
     /** 탭이 묻는 refresher:imageHash의 처리기. */
-    const askHash = (url: string) => {
+    const askHash = (url: string, similar = true) => {
         const handler = vi.mocked(onMessage).mock.calls.find(([type]) => type === "refresher:imageHash")?.[1];
-        return handler?.({data: url} as never);
+        return handler?.({data: {url, similar}} as never);
     };
 
     beforeEach(() => {
@@ -147,5 +149,17 @@ describe("block 배경 (파이어폭스)", () => {
 
         respond(IMAGE, [mp4.subarray(16)], "media");
         expect(await askHash(IMAGE)).toEqual({file, similar: undefined});
+    });
+
+    it("파일 해시만 물으면 지문을 기다리지 않고 답한다", async () => {
+        await setImageList([{id: "a", content: "x", isRegex: false, similar: "0".repeat(32)}]);
+        const {respond} = fakeWebRequest();
+        background.listen?.();
+        await apply(true, true);
+        // 다른 탭의 지문 계산이 밀려 있어 끝나지 않는다.
+        vi.mocked(imageFingerprints).mockReturnValue(new Promise(() => {}));
+
+        respond(IMAGE, ["abc"]);
+        expect(await askHash(IMAGE, false)).toEqual({file: await sha256(new TextEncoder().encode("abc"))});
     });
 });

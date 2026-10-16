@@ -366,7 +366,18 @@ describe("이미지 차단", () => {
             setBlockLists({IMAGE: [exact, near]});
 
             expect(await isImageBlocked(image(url), undefined, 12)).toBe(true);
-            expect(usedIds()).toEqual(expect.arrayContaining([exact.id, near.id]));
+            // 같은 파일이면 지문을 기다리지 않고 답하므로 지문 판정은 뒤이어 적힌다.
+            await vi.waitFor(() => expect(usedIds()).toEqual(expect.arrayContaining([exact.id, near.id])));
+        });
+
+        it("같은 파일은 지문을 다 구하기 전에 막는다", async () => {
+            const url = imageUrl();
+            const file = await sha256(new TextEncoder().encode("abc"));
+            setBlockLists({IMAGE: [entry(file), entry("다른 파일", {similar: NEAR})]});
+            // 앞선 이미지들의 지문 계산이 밀려 있어 끝나지 않는다.
+            vi.mocked(imageFingerprints).mockReturnValue(new Promise(() => {}));
+
+            expect(await isImageBlocked(image(url), undefined, 12)).toBe(true);
         });
 
         it("움짤 항목은 정지 이미지라면 한 장면만, 움짤이라면 하나 빼고 모든 장면이 맞아야 막는다", async () => {

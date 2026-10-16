@@ -135,13 +135,26 @@ export const dcconCode = (element: HTMLElement): string | undefined => {
 /** 이미지 차단이 보는 디시 본문 이미지(viewimage.php). 디시콘(dccon.php)·외부 이미지는 보지 않는다. */
 const VIEW_IMAGE = /^https:\/\/[^/]+\.dcinside\.(?:com|co\.kr)\/viewimage\.php/;
 
-// 주소 → 해시. 차단 목록이 바뀌어 다시 판정하거나 미리보기를 다시 열 때 또 읽지 않는다.
-// 읽지 못한 것(이미지 호스트 권한이 없는 등)도 남겨 둔다. 지우면 판정할 때마다 이미지를 다시 요청한다.
-const imageHashes = new Map<string, Promise<ImageHashes | undefined>>();
+/** 한 주소를 읽은 것. 파일 해시(file)는 지문(hashes.similar)보다 먼저 나와, 같은 파일은 지문을 기다리지 않고 막는다 (isImageBlocked). */
+interface ImageRead {
+    file: Promise<string | undefined>;
+    hashes: Promise<ImageHashes | undefined>;
+}
 
-const readImageHashes = async (url: string, similar: boolean): Promise<ImageHashes | undefined> => {
+// 주소 → 읽은 것. 차단 목록이 바뀌어 다시 판정하거나 미리보기를 다시 열 때 또 읽지 않는다.
+// 읽지 못한 것(이미지 호스트 권한이 없는 등)도 남겨 둔다. 지우면 판정할 때마다 이미지를 다시 요청한다.
+const imageReads = new Map<string, ImageRead>();
+
+/** 파이어폭스 배경에 그 주소의 해시를 묻는다. similar가 아니면 지문을 기다리지 않고 파일 해시만 받는다. */
+const askBackground = (url: string, similar: boolean): Promise<ImageHashes | undefined> =>
+    sendMessage("refresher:imageHash", {url, similar}).catch(() => undefined);
+
+/** onFile은 파일 해시를 구하자마자 부른다. */
+const readImageHashes = async (url: string, similar: boolean, onFile: (file: string) => void): Promise<ImageHashes | undefined> => {
     // 파이어폭스 배경은 비슷한 이미지 설정이 켜져 있고 지문이 있는 항목이 있을 때만 지문을 구한다. 그렇지 않을 때 우클릭 차단하면 지문은 여기서 이미지를 다시 받아 구한다.
-    const background = import.meta.env.BROWSER === "firefox" ? await sendMessage("refresher:imageHash", url).catch(() => undefined) : undefined;
+    const known = import.meta.env.BROWSER === "firefox" ? await askBackground(url, false) : undefined;
+    if (known) onFile(known.file);
+    const background = known && similar ? (await askBackground(url, true)) ?? known : known;
     if (background && (!similar || background.similar !== undefined)) return background;
     try {
         // 파이어폭스 콘텐츠 스크립트의 요청은 Referer를 붙이지 않아 디시가 403을 준다. 크롬은 원래 붙이고, 캐시 키에 들지 않아 캐시도 그대로 쓴다.
@@ -150,12 +163,29 @@ const readImageHashes = async (url: string, similar: boolean): Promise<ImageHash
         const bytes = await file.arrayBuffer();
         // 크롬은 움짤이 구간 요청으로 받아 둔 캐시를 쓰면 206을 준다. 파일 전체를 담았을 때만 받는다 (Content-Range는 CORS로 읽지 못한다).
         if (response.status !== 200 && !(response.status === 206 && isWholeMp4(new Uint8Array(bytes)))) throw new Error(`HTTP ${response.status}`);
-        return {file: await sha256(bytes), similar: similar ? (await imageFingerprints(file)) ?? null : undefined};
+        const hash = await sha256(bytes);
+        onFile(hash);
+        return {file: hash, similar: similar ? (await imageFingerprints(file)) ?? null : undefined};
     } catch (e) {
         console.warn("Image hash failed:", url, e);
         // 지문만 못 구했으면 배경이 구한 파일 해시로 같은 파일은 막는다.
         return background && {...background, similar: null};
     }
+};
+
+const readImage = async (url: string, {retry = false, similar = false}: { retry?: boolean; similar?: boolean }): Promise<ImageRead> => {
+    const cached = imageReads.get(url);
+    const previous = await cached?.hashes;
+    // 지문 없이 읽어 둔 것은 지문이 필요해지면 다시 읽는다 (비슷한 이미지 설정을 켰을 때). 읽지 못한 것은 retry일 때만 다시 읽는다.
+    if (cached && (previous ? !similar || previous.similar !== undefined : !retry)) return cached;
+    const file = Promise.withResolvers<string | undefined>();
+    // 다시 읽다 실패하면 앞서 구한 파일 해시를 지킨다.
+    const hashes = readImageHashes(url, similar, file.resolve).then((next) => next ?? previous);
+    // 파일 해시를 먼저 알리지 못했으면(읽지 못한 등) 다 끝난 것으로 푼다. 먼저 푼 값이 남는다.
+    void hashes.then((done) => file.resolve(done?.file));
+    const read = {file: file.promise, hashes};
+    imageReads.set(url, read);
+    return read;
 };
 
 /**
@@ -164,16 +194,8 @@ const readImageHashes = async (url: string, similar: boolean): Promise<ImageHash
  * 파이어폭스는 콘텐츠 스크립트의 요청이 페이지의 캐시를 쓰지 않아, 배경이 페이지의 응답을 흘려보내며 구해 둔 해시를 받는다.
  * 둘 다 캐시나 배경에 없으면 이미지를 한 번 더 받는다. retry면 앞서 읽지 못한 것도 다시 읽는다 (권한을 막 받은 뒤의 우클릭 차단).
  */
-export const imageHash = async (url: string, {retry = false, similar = false}: { retry?: boolean; similar?: boolean } = {}): Promise<ImageHashes | undefined> => {
-    const cached = imageHashes.get(url);
-    const previous = await cached;
-    // 지문 없이 읽어 둔 것은 지문이 필요해지면 다시 읽는다 (비슷한 이미지 설정을 켰을 때). 읽지 못한 것은 retry일 때만 다시 읽는다.
-    if (cached && (previous ? !similar || previous.similar !== undefined : !retry)) return previous;
-    // 다시 읽다 실패하면 앞서 구한 파일 해시를 지킨다.
-    const hashes = readImageHashes(url, similar).then((next) => next ?? previous);
-    imageHashes.set(url, hashes);
-    return hashes;
-};
+export const imageHash = async (url: string, options: { retry?: boolean; similar?: boolean } = {}): Promise<ImageHashes | undefined> =>
+    (await readImage(url, options)).hashes;
 
 /**
  * 움짤의 두 파일: 주소 → 짝 주소. 디시는 같은 움짤을 mp4(<video>)로 보이다가 그리지 못했거나 누르면 원본 gif(data-src)의 <img>로 바꾼다.
@@ -243,11 +265,15 @@ export const isImageBlocked = async (media: HTMLImageElement | HTMLVideoElement,
     // 지문이 있는 항목이 없거나 너무 큰 이미지면 지문을 구하지 않는다. 디코딩이 해시보다 훨씬 무겁다.
     const fingerprintable = pixels <= MAX_PIXELS && entries.some((entry) => entry.similar);
     const threshold = fingerprintable ? similar : undefined;
-    const hashes = await imageHash(url, {similar: threshold !== undefined});
-    if (!hashes) return false;
-    // isBlocked가 NOT_* 항목(허용 목록)까지 판정한다. 같은 파일이어도 비슷한 이미지 항목을 마저 봐서 걸린 항목을 모두 쓰였다고 적는다.
-    const exact = isBlocked("IMAGE", hashes.file, gallery);
-    const near = threshold !== undefined && !!hashes.similar && isSimilarBlocked(hashes.similar, gallery, threshold);
+    const read = await readImage(url, {similar: threshold !== undefined});
+    // 지문은 한 번에 하나씩 구해 앞선 이미지·움짤이 많으면 늦으므로, 같은 파일은 파일 해시가 나오자마자 막는다.
+    const file = await read.file;
+    if (!file) return false;
+    // isBlocked가 NOT_* 항목(허용 목록)까지 판정한다.
+    const exact = isBlocked("IMAGE", file, gallery);
+    if (threshold === undefined) return exact;
+    // 같은 파일이어도 비슷한 이미지 항목을 마저 봐서 걸린 항목을 모두 쓰였다고 적는다.
+    const near = read.hashes.then((hashes) => !!hashes?.similar && isSimilarBlocked(hashes.similar, gallery, threshold));
     return exact || near;
 };
 

@@ -35,8 +35,8 @@ const CORS_RULE: Browser.declarativeNetRequest.Rule = {
     }
 };
 
-/** 파이어폭스: 이미지 주소 → 페이지가 받은 파일의 해시 (받는 중이면 끝날 때 풀린다). */
-const imageHashes = new Map<string, Promise<ImageHashes | undefined>>();
+/** 파이어폭스: 이미지 주소 → 페이지가 받은 파일의 해시 (받는 중이면 끝날 때 풀린다). 파일 해시(file)는 지문보다 먼저 풀린다. */
+const imageHashes = new Map<string, { file: Promise<string | undefined>; hashes: Promise<ImageHashes | undefined> }>();
 /**
  * 파이어폭스: 비슷한 이미지 지문도 구할지. 디코딩이 해시보다 훨씬 무거워 그 설정이 켜져 있고 지문이 있는 항목이 있을 때만 구한다.
  * 페이지 쪽 캔버스는 지문 방지 설정이 켜지면 잡음이 섞이지만 배경은 섞이지 않는다.
@@ -44,10 +44,11 @@ const imageHashes = new Map<string, Promise<ImageHashes | undefined>>();
 let similarSetting = false;
 let similarEnabled = false;
 
-const hashFile = async (file: Blob, bytes: ArrayBuffer): Promise<ImageHashes> => ({
-    file: await sha256(bytes),
-    similar: similarEnabled ? (await imageFingerprints(file)) ?? null : undefined
-});
+const hashFile = async (file: Blob, bytes: ArrayBuffer, onFile: (hash: string) => void): Promise<ImageHashes> => {
+    const hash = await sha256(bytes);
+    onFile(hash);
+    return {file: hash, similar: similarEnabled ? (await imageFingerprints(file)) ?? null : undefined};
+};
 // 오래된 것부터 버린다. 버린 이미지를 같은 탭이 메모리 캐시로 다시 쓰면 탭이 한 번 더 받는다 (core/block.ts의 imageHash).
 const MAX_IMAGE_HASHES = 500;
 
@@ -58,11 +59,17 @@ const MAX_IMAGE_HASHES = 500;
 const hashImageResponse = ({requestId, url, type}: Browser.webRequest.OnBeforeRequestDetails): undefined => {
     const filter = browser.webRequest.filterResponseData(requestId);
     const chunks: ArrayBuffer[] = [];
-    const {promise, resolve} = Promise.withResolvers<ImageHashes | undefined>();
+    const file = Promise.withResolvers<string | undefined>();
+    const hashes = Promise.withResolvers<ImageHashes | undefined>();
     const previous = imageHashes.get(url);
+    const resolve = (done: Promise<ImageHashes | undefined>): void => {
+        hashes.resolve(done);
+        // 파일 해시를 먼저 알리지 못했으면(앞서 구한 것을 쓰는 등) 다 끝난 것으로 푼다. 먼저 푼 값이 남는다.
+        void done.then((result) => file.resolve(result?.file), () => file.resolve(undefined));
+    };
 
     imageHashes.delete(url);
-    imageHashes.set(url, promise);
+    imageHashes.set(url, {file: file.promise, hashes: hashes.promise});
     if (imageHashes.size > MAX_IMAGE_HASHES) imageHashes.delete(imageHashes.keys().next().value ?? url);
 
     filter.ondata = (ev) => {
@@ -73,11 +80,11 @@ const hashImageResponse = ({requestId, url, type}: Browser.webRequest.OnBeforeRe
         filter.close();
         // 캐시를 재검증해 304를 받으면 본문 없이 끝나고, 움짤은 구간 요청으로 파일 일부만 지나가기도 한다.
         // 그런 것의 해시를 남기지 않고 앞서 구한 것을 쓴다 (없으면 탭이 직접 읽는다).
-        const file = new Blob(chunks);
-        resolve(file.arrayBuffer().then((bytes) =>
-            bytes.byteLength === 0 || (type === "media" && !isWholeMp4(new Uint8Array(bytes))) ? previous : hashFile(file, bytes)));
+        const blob = new Blob(chunks);
+        resolve(blob.arrayBuffer().then((bytes) =>
+            bytes.byteLength === 0 || (type === "media" && !isWholeMp4(new Uint8Array(bytes))) ? previous?.hashes : hashFile(blob, bytes, file.resolve)));
     };
-    filter.onerror = () => resolve(previous);
+    filter.onerror = () => resolve(Promise.resolve(previous?.hashes));
     return undefined;
 };
 
@@ -114,7 +121,10 @@ export default defineBackgroundModule({
         });
 
         if (import.meta.env.BROWSER === "firefox") {
-            onMessage("refresher:imageHash", ({data: url}) => imageHashes.get(url));
+            onMessage("refresher:imageHash", ({data: {url, similar}}) => {
+                const known = imageHashes.get(url);
+                return similar ? known?.hashes : known?.file.then((file) => (file ? {file} : undefined));
+            });
             storage.watch(IMAGE_LIST_KEY, () => void syncImageFilter().catch(console.error));
         }
     },
