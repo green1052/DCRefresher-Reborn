@@ -178,7 +178,8 @@ const Bubble = ({bubble, selected, onBlockPackage}: BubbleProps) => {
             {/* 우클릭한 자리에 띄운다. 트리거 대신 그 점을 기준으로 놓는다. */}
             <PopoverContent ref={popup} side="bottom" align="start" sideOffset={4} className="w-auto min-w-[200px] max-w-[320px] gap-2 p-2"
                             anchor={{getBoundingClientRect: () => DOMRect.fromRect({x: bubble.x, y: bubble.y, width: 0, height: 0})}}
-                            initialFocus={focus.keyboard} finalFocus={focus.finalFocus}>
+                            initialFocus={focus.keyboard} finalFocus={focus.finalFocus}
+                            aria-label={selected.dccon ? "디시콘 메뉴" : `${selected.nick || identity || "사용자"} 메뉴`}>
                 {/* 여기서 여는 창(메모·패키지 차단)은 연 요소로 포커스를 먼저 옮겨 둔다. 그래야 그 창이 닫힐 때 사라진 버블 대신 그리로 돌아간다. */}
                 {selected.dccon ? (
                     <div className="flex gap-2">
