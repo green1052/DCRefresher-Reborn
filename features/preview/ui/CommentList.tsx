@@ -116,13 +116,18 @@ const SelectionTools = ({shownSelectable, foldable}: { shownSelectable: Processe
     const all = picked.length > 0 && picked.length === selectable.length;
     const id = useId();
     const [confirming, setConfirming] = useState(false);
+    // 요청 중에는 삭제를 막는다. 다시 누르면 같은 삭제가 또 나가 성공 알림 뒤에 실패 알림이 뜬다 (Comment.tsx와 같음).
+    const [deleting, setDeleting] = useState(false);
 
     const remove = async (): Promise<void> => {
         setConfirming(false);
         const st = usePreviewStore.getState();
         if (!st.preData) return;
         const signal = st.signalId;
-        if (!await notifyManage(adminDeleteComments(st.preData, picked), "댓글을 삭제했습니다.", "댓글을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.")) return;
+        setDeleting(true);
+        const deleted = await notifyManage(adminDeleteComments(st.preData, picked), "댓글을 삭제했습니다.", "댓글을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+        setDeleting(false);
+        if (!deleted) return;
         refreshCommentsOf(st.preData);
         // 그새 다른 글로 넘어갔으면 그 글의 고른 댓글은 건드리지 않는다.
         if (usePreviewStore.getState().signalId === signal) usePreviewStore.setState({selectedComments: NO_FRESH});
@@ -137,7 +142,7 @@ const SelectionTools = ({shownSelectable, foldable}: { shownSelectable: Processe
             </Field>
             {picked.length > 0 && <span className="text-xs text-muted-foreground">{picked.length}개 선택</span>}
             <div className="ml-auto flex gap-1">
-                <Button size="xs" variant="destructive" disabled={picked.length === 0} onClick={() => setConfirming(true)}>
+                <Button size="xs" variant="destructive" disabled={picked.length === 0 || deleting} onClick={() => setConfirming(true)}>
                     <Trash2 data-icon="inline-start"/>삭제
                 </Button>
                 {/* 창을 여는 순간 고른 것을 지금 보이는 댓글로 좁힌다. 차단 창은 selectedComments를 그대로 보낸다. */}
