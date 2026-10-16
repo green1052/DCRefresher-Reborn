@@ -22,13 +22,16 @@ afterEach(() => {
 });
 
 describe("Ctrl+클릭 삭제", () => {
-    /** manager: 관리 권한이 있는 목록(디시는 관리자에게만 체크박스 칸 머리를 둔다). */
+    /**
+     * manager: 관리 권한이 있는 목록(디시는 관리자에게만 체크박스 칸 머리를 둔다).
+     * 제목 링크에 href를 두지 않는다. 막지 않은 클릭에 jsdom이 문서 이동을 시도하며 경고를 찍는다. 글 번호는 행의 data-no에서 읽는다.
+     */
     const mountList = (manager: boolean): void => {
         document.body.innerHTML =
             "<table class=\"gall_list\">" +
             (manager ? "<thead><tr><th class=\"chkbox_th\"></th></tr></thead>" : "") +
             "<tbody><tr class=\"ub-content\" data-no=\"7\"><td><input type=\"checkbox\" class=\"article_chkbox\"></td>" +
-            "<td class=\"gall_tit\"><a href=\"/board/view/?id=test&no=7\">제목</a><a class=\"reply_numbox\">[3]</a></td></tr></tbody></table>";
+            "<td class=\"gall_tit\"><a>제목</a><a class=\"reply_numbox\">[3]</a></td></tr></tbody></table>";
     };
     const row = (): HTMLElement => document.querySelector(".ub-content")!;
     const ctrlClick = (target: Element): boolean => target.dispatchEvent(new MouseEvent("click", {bubbles: true, cancelable: true, ctrlKey: true}));
