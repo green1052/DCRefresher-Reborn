@@ -55,9 +55,8 @@ export default defineModule({
     },
 
     revoke() {
+        // 폭 감시는 모듈을 멈출 때 ctx.signal로 이미 풀렸다 (watchWidth).
         document.querySelector(`style#${HIDE_STYLE_ID}`)?.remove();
-        widthWatch?.abort();
-        widthQuery = null;
 
         document.documentElement.classList.remove("refresherCompact", PUSH_CLASS);
     }
