@@ -27,7 +27,7 @@ export const imageSearchUrl = (engine: string, src: string): string | null => {
     return prefix + encodeURIComponent(url.toString());
 };
 
-const ENGINE_GROUP: SettingGroup = {name: "검색 엔진", desc: "이미지 우클릭 메뉴에 넣을 검색 엔진입니다. 둘 이상이면 확장 이름 아래로 묶입니다."};
+const ENGINE_GROUP: SettingGroup = {name: "검색 엔진", desc: "이미지 우클릭 메뉴에 넣을 검색 엔진입니다. 콘텐츠 차단의 '이 이미지 차단'까지 메뉴가 둘 이상이면 확장 이름 아래로 묶입니다."};
 
 /** 엔진마다 켜기/끄기. background.ts가 이 값으로 메뉴를 만든다. */
 export const IMAGE_SEARCH_SETTINGS: Record<string, SettingSchema> = Object.fromEntries(

@@ -5,7 +5,7 @@ import {IMAGE_SEARCH_ENGINES, IMAGE_SEARCH_ID, IMAGE_SEARCH_SETTINGS, imageSearc
 
 const MENU_PREFIX = "imagesearch:";
 
-/** 켠 엔진마다 이미지 우클릭 메뉴를 하나씩 만든다. 둘 이상이면 브라우저가 확장 이름 아래로 묶는다. */
+/** 켠 엔진마다 이미지 우클릭 메뉴를 하나씩 만든다. 이 확장의 메뉴가 둘 이상이면(block의 "이 이미지 차단" 포함) 브라우저가 확장 이름 아래로 묶는다. */
 export default defineBackgroundModule({
     id: IMAGE_SEARCH_ID,
     settings: IMAGE_SEARCH_SETTINGS,
