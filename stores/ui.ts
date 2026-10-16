@@ -2,6 +2,7 @@ import {create} from "zustand";
 
 import {needOverlayWhen} from "@/components/overlay/demands";
 import type {GallogActivity, RatioInfo} from "@/core/gallog";
+import {documentUrl} from "@/core/http/urls";
 import type {ModuleSettings} from "@/core/module/types";
 import type {MemoType} from "@/core/storage/types";
 import {eventTarget} from "@/utils/event";
@@ -22,12 +23,22 @@ export interface SelectedUser {
     ip?: string;
     /** 우클릭한 디시콘 코드 (dccon.php?no= 값). */
     dccon?: string;
+    /** 버블·메모 창이 갤러리 한정 차단·메모에 쓰는 갤러리. 없으면 이 문서의 갤러리다 (selectedGallery). 미리보기 글에서 연 버블은 그 글의 갤러리를 넘긴다. */
+    gallery?: string;
 }
 
 export interface MemoTargetState {
     targets: Partial<Record<MemoType, string>>;
     initialType: MemoType;
+    /** 버블에서 넘어온 갤러리 (SelectedUser.gallery). */
+    gallery?: string;
 }
+
+/**
+ * 버블·메모 창의 갤러리: 연 쪽이 넘긴 것, 없으면 이 문서의 갤러리다.
+ * 지금 주소는 '주소창에 게시글 주소 표시'를 켰을 때만 미리보기 글 주소로 바뀌므로 쓰지 않는다.
+ */
+export const selectedGallery = (gallery: string | undefined): string | null => gallery ?? documentUrl.searchParams.get("id");
 
 /** 깡계인지: 글댓합이 기준(alarm) 이하다. 기준이 0이면 끈 것이다. 페이지(userinfo)와 미리보기가 같은 판정을 쓴다. */
 export const isLowActivity = (ratio: GallogActivity, alarm: number): boolean => alarm > 0 && ratio.article + ratio.comment <= alarm;
@@ -96,7 +107,7 @@ export const useUiStore = create<UiState>((set, get) => ({
         if (selected.uid) targets.UID = selected.uid;
         if (selected.ip) targets.IP = selected.ip;
 
-        set({bubble: null, memo: {targets, initialType: selected.uid ? "UID" : selected.ip ? "IP" : "NICK"}});
+        set({bubble: null, memo: {targets, initialType: selected.uid ? "UID" : selected.ip ? "IP" : "NICK", gallery: selected.gallery}});
     },
 
     closeMemo: () => set({memo: null})

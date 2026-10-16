@@ -10,7 +10,7 @@ import {isFresh, isLowActivity, useUiStore} from "@/stores/ui";
 import {useGallogActivity} from "@/components/overlay/gallogActivity";
 import {cn} from "cn";
 
-import {usePreviewStore} from "./previewStore";
+import {previewGallery, usePreviewStore} from "./previewStore";
 
 /**
  * 작성자 표시. 우클릭하거나 닉네임을 누르면(키보드 포함) 유저 버블을 연다.
@@ -48,7 +48,7 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
     // 이 사람의 버블이 열려 있는지 (닉네임 버튼의 aria-expanded). 열렸는지만 구독해 버블을 여닫을 때 다른 작성자는 다시 그리지 않는다.
     const expanded = useUiStore(({bubble, selected}) =>
         bubble !== null && selected?.nick === user.nick && selected?.uid === user.id && selected?.ip === user.ip);
-    const openBubble = (x: number, y: number): void => useUiStore.getState().openBubble({nick: user.nick, uid: user.id, ip: user.ip}, x, y);
+    const openBubble = (x: number, y: number): void => useUiStore.getState().openBubble({nick: user.nick, uid: user.id, ip: user.ip, gallery: previewGallery()}, x, y);
 
     const openMenu = (ev: MouseEvent): void => {
         // 목록과 같이 Shift+우클릭은 브라우저 기본 메뉴로 남긴다.

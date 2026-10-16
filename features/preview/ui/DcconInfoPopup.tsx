@@ -14,7 +14,7 @@ import type {DcinsideDcconPackage} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 
 import {clearDcconListCache} from "./DcconPopup";
-import {usePreviewStore} from "./previewStore";
+import {previewGallery, usePreviewStore} from "./previewStore";
 
 /**
  * 디시콘 코드별 패키지 정보. 같은 디시콘을 다시 눌러도 받지 않는다 (디시콘 목록 캐시처럼 10분).
@@ -47,7 +47,7 @@ const openBlockBubble = (ev: MouseEvent<HTMLElement>): void => {
     if (!code) return;
 
     ev.preventDefault();
-    useUiStore.getState().openBubble({dccon: code}, ev.clientX, ev.clientY);
+    useUiStore.getState().openBubble({dccon: code, gallery: previewGallery()}, ev.clientX, ev.clientY);
 };
 
 /** 제작·태그 줄 앞의 작은 딱지 (디시 정보창의 tbox). */

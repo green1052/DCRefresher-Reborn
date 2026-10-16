@@ -1,7 +1,6 @@
 import {create} from "zustand";
 
 import {needOverlayWhen} from "@/components/overlay/demands";
-import {documentUrl} from "@/core/http/urls";
 import type {ProcessedComment} from "@/core/preview/comments";
 import type {BlockOptions} from "@/core/preview/request";
 import type {GalleryPreData, PostInfo} from "@/core/preview/types";
@@ -247,11 +246,12 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
 }));
 
 /**
- * 유저 버블·메모 창이 갤러리 한정 차단·메모에 쓰는 갤러리. 미리보기는 열려 있는 동안 페이지를 덮으므로 그때 연 버블은 미리보기 글의 것이라 그 글의 갤러리다.
- * 아니면 이 문서의 갤러리다. 지금 주소는 '주소창에 게시글 주소 표시'를 켰을 때만 글 주소로 바뀌므로 쓰지 않는다.
+ * 미리보기에서 연 유저 버블·메모 창이 갤러리 한정 차단·메모에 쓰는 갤러리 (SelectedUser.gallery). 미리보기가 떠 있지 않으면 undefined라 이 문서의 갤러리를 쓴다.
  */
-export const useViewedGallery = (): string | null =>
-    usePreviewStore((s) => (s.visible ? s.preData?.gallery : undefined)) ?? documentUrl.searchParams.get("id");
+export const previewGallery = (): string | undefined => {
+    const {visible, preData} = usePreviewStore.getState();
+    return visible ? preData?.gallery : undefined;
+};
 
 // 미리보기 UI 중 하나라도 떠 있으면 오버레이를 띄운다 (components/overlay/demands). 새 미리보기 UI를 추가하면 여기에 넣는다.
 needOverlayWhen(usePreviewStore, (state) =>
