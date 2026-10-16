@@ -139,7 +139,7 @@ const VIEW_IMAGE = /^https:\/\/[^/]+\.dcinside\.(?:com|co\.kr)\/viewimage\.php/;
 const imageHashes = new Map<string, Promise<ImageHashes | undefined>>();
 
 const readImageHashes = async (url: string, similar: boolean): Promise<ImageHashes | undefined> => {
-    // 파이어폭스 배경은 비슷한 이미지 설정이 켜져 있을 때만 지문을 구한다. 꺼진 채 우클릭 차단하면 지문은 여기서 이미지를 다시 받아 구한다.
+    // 파이어폭스 배경은 비슷한 이미지 설정이 켜져 있고 지문이 있는 항목이 있을 때만 지문을 구한다. 그렇지 않을 때 우클릭 차단하면 지문은 여기서 이미지를 다시 받아 구한다.
     const background = import.meta.env.BROWSER === "firefox" ? await sendMessage("refresher:imageHash", url).catch(() => undefined) : undefined;
     if (background && (!similar || background.similar !== undefined)) return background;
     try {
