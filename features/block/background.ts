@@ -53,8 +53,9 @@ const imageHashes = new Map<string, HashEntry>();
 let similarSetting = false;
 let similarEnabled = false;
 
-const hashFile = async (file: Blob, bytes: ArrayBuffer, onFile: (hash: string) => void): Promise<ImageHashes> => {
-    const hash = await sha256(bytes);
+// 지문을 기다리는 동안 받은 바이트를 쥐지 않게 해시는 Promise로 받는다 (매개변수는 함수가 끝날 때까지 남는다).
+const hashFile = async (file: Blob, hashing: Promise<string>, onFile: (hash: string) => void): Promise<ImageHashes> => {
+    const hash = await hashing;
     onFile(hash);
     return {file: hash, similar: similarEnabled ? (await imageFingerprints(file)) ?? null : undefined};
 };
@@ -100,8 +101,10 @@ const hashImageResponse = ({requestId, url, type}: Browser.webRequest.OnBeforeRe
         // 캐시를 재검증해 304를 받으면 본문 없이 끝나고, 움짤은 구간 요청으로 파일 일부만 지나가기도 한다.
         // 그런 것의 해시를 남기지 않고 앞서 구한 것을 쓴다 (없으면 탭이 직접 읽는다).
         const blob = new Blob(chunks);
+        // Blob이 사본을 가진다. done.then 콜백이 이 범위를 지문이 끝날 때까지 붙잡으므로 조각은 바로 놓는다.
+        chunks.length = 0;
         resolve(blob.arrayBuffer().then((bytes) =>
-            bytes.byteLength === 0 || (type === "media" && !isWholeMp4(new Uint8Array(bytes))) ? previous?.hashes : hashFile(blob, bytes, file.resolve)));
+            bytes.byteLength === 0 || (type === "media" && !isWholeMp4(new Uint8Array(bytes))) ? previous?.hashes : hashFile(blob, sha256(bytes), file.resolve)));
     };
     filter.onerror = () => resolve(Promise.resolve(previous?.hashes));
     return undefined;
