@@ -179,9 +179,12 @@ export const readCloudBackup = async (slot: BackupSlot): Promise<CloudBackup | n
         throw new Error("백업 조각이 빠져 있습니다. 다른 기기에서 동기화가 아직 끝나지 않았을 수 있습니다.");
     }
 
-    const bytes = Uint8Array.fromBase64(chunks.join(""));
-    // 새 메타만 먼저 동기화되고 조각은 아직 이전 백업이어도 여기서 어긋난다.
-    if ((await sha256(bytes)) !== meta.hash) throw new Error("백업 데이터가 맞지 않습니다. 다른 기기에서 동기화가 아직 끝나지 않았을 수 있습니다.");
+    let bytes: Uint8Array<ArrayBuffer> | undefined;
+    try {
+        bytes = Uint8Array.fromBase64(chunks.join(""));
+    } catch {}
+    // 새 메타만 먼저 동기화되고 조각은 아직 이전 백업이어도 여기서 어긋난다. 조각 수가 늘었으면 옛 마지막 조각의 '='가 가운데 끼어 디코딩부터 실패한다.
+    if (!bytes || (await sha256(bytes)) !== meta.hash) throw new Error("백업 데이터가 맞지 않습니다. 다른 기기에서 동기화가 아직 끝나지 않았을 수 있습니다.");
 
     const data: unknown = JSON.parse(await gunzip(bytes));
     if (!isRecord(data)) throw new Error("백업 데이터가 손상되었습니다.");

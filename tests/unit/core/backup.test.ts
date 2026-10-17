@@ -116,6 +116,15 @@ describe("runBackup / readCloudBackup", () => {
         await expect(readCloudBackup("manual")).rejects.toThrow("백업 데이터가 맞지 않습니다");
     });
 
+    it("조각이 섞여 가운데에 '='가 끼어도 같은 안내로 던진다", async () => {
+        await browser.storage.local.set({"refresher:modules": {a: true}});
+        await runBackup("manual");
+        await patchManualMeta({chunks: 2});
+        await browser.storage.sync.set({"backup:0": "QQ==", "backup:1": "QUJD"});
+        // vmThreads에서는 SyntaxError가 다른 realm에서 오므로 메시지로 본다.
+        await expect(readCloudBackup("manual")).rejects.toThrow("백업 데이터가 맞지 않습니다");
+    });
+
     it("더 높은 형식의 백업은 있다고 알리고 읽지 않는다", async () => {
         await browser.storage.local.set({"refresher:modules": {a: true}});
         await runBackup("manual");
