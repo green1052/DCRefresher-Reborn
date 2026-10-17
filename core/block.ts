@@ -242,16 +242,24 @@ export const similarImageThreshold = (settings: ModuleSettings["block"]): number
  * 표본이 비슷한 이미지 항목에 걸리는지 (isSimilarSet). 걸린 항목은 모두 쓰였다고 적는다. 지문이 없는 항목(지문이 생기기 전에 넣었거나 디코딩하지 못한 이미지)은 보지 않는다.
  * 불일치·불포함(NOT_*) 항목은 허용 목록이라 비슷한 이미지로 넓히지 않는다.
  */
+// 표본(imageReads가 주소마다 같은 배열을 준다) → 지난 판정. 움짤은 반복 재생할 때마다(크롬은 seeked·canplaythrough 둘 다) 다시 보므로
+// 목록(스토어는 바뀌면 새 배열을 만든다)·기본 모드·갤러리·기준이 그대로면 다시 훑지 않고, 걸린 항목만 다시 쓰였다고 적는다.
+const similarHits = new WeakMap<Sample[], { entries: BlockEntry[]; mode: DetectMode; gallery: string | undefined; threshold: number; hits: BlockEntry[] }>();
+
 const isSimilarBlocked = (samples: Sample[], gallery: string | undefined, threshold: number): boolean => {
     const {entries, defaults} = useBlocksStore.getState();
-    let blocked = false;
-    for (const entry of entries.IMAGE) {
-        if (!entry.similar || (entry.gallery && entry.gallery !== gallery) || (entry.mode ?? defaults.IMAGE).startsWith("NOT_")) continue;
-        if (!isSimilarSet(samples, [entry.similar, ...(entry.frames ?? [])], threshold)) continue;
-        blocked = true;
-        markUsed("block", entry.id);
+    let last = similarHits.get(samples);
+    if (last?.entries !== entries.IMAGE || last.mode !== defaults.IMAGE || last.gallery !== gallery || last.threshold !== threshold) {
+        const hits: BlockEntry[] = [];
+        for (const entry of entries.IMAGE) {
+            if (!entry.similar || (entry.gallery && entry.gallery !== gallery) || (entry.mode ?? defaults.IMAGE).startsWith("NOT_")) continue;
+            if (isSimilarSet(samples, [entry.similar, ...(entry.frames ?? [])], threshold)) hits.push(entry);
+        }
+        last = {entries: entries.IMAGE, mode: defaults.IMAGE, gallery, threshold, hits};
+        similarHits.set(samples, last);
     }
-    return blocked;
+    for (const entry of last.hits) markUsed("block", entry.id);
+    return last.hits.length > 0;
 };
 
 /**

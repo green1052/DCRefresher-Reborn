@@ -9,13 +9,17 @@ import type {BlockEntry} from "@/core/storage/types";
 import {markUsed} from "@/core/usage";
 import {useBlocksStore} from "@/stores/blocks";
 import {sha256} from "@/utils/hash";
-import {imageFingerprints} from "@/utils/imageFingerprint";
+import {imageFingerprints, isSimilarSet} from "@/utils/imageFingerprint";
 
 import {setBlockLists} from "../../helpers";
 
 vi.mock("@/core/usage", () => ({markUsed: vi.fn()}));
 // jsdom은 이미지를 디코딩하지 못해 지문은 테스트가 정한다.
-vi.mock("@/utils/imageFingerprint", async (original) => ({...await original<typeof import("@/utils/imageFingerprint")>(), imageFingerprints: vi.fn()}));
+// isSimilarSet은 실제 함수를 감싸 몇 번 훑는지 센다.
+vi.mock("@/utils/imageFingerprint", async (original) => {
+    const actual = await original<typeof import("@/utils/imageFingerprint")>();
+    return {...actual, imageFingerprints: vi.fn(), isSimilarSet: vi.fn(actual.isSimilarSet)};
+});
 
 let nextId = 0;
 const entry = (content: string, fields: Partial<BlockEntry> = {}): BlockEntry => ({id: `e${nextId++}`, content, isRegex: false, ...fields});
@@ -415,6 +419,24 @@ describe("이미지 차단", () => {
             expect(await isImageBlocked(image(imageUrl()), undefined, 4)).toBe(true);
             vi.mocked(imageFingerprints).mockResolvedValue([[scene(1), scene(9)], [scene(2), scene(9)], [scene(9), scene(9)], [scene(9), scene(9)]]);
             expect(await isImageBlocked(image(imageUrl()), undefined, 4)).toBe(false);
+        });
+
+        it("같은 표본은 목록이 그대로면 다시 훑지 않고 걸린 항목만 다시 쓰였다고 적는다", async () => {
+            const url = imageUrl();
+            const near = entry("다른 파일", {similar: NEAR});
+            setBlockLists({IMAGE: [near, entry("먼 파일", {similar: "5".repeat(32)})]});
+            vi.mocked(isSimilarSet).mockClear();
+
+            // 반복 재생하는 움짤처럼 같은 주소를 거듭 본다.
+            expect(await isImageBlocked(image(url), undefined, 4)).toBe(true);
+            expect(await isImageBlocked(image(url), undefined, 4)).toBe(true);
+            expect(isSimilarSet).toHaveBeenCalledTimes(2);
+            expect(usedIds().filter((id) => id === near.id)).toHaveLength(2);
+
+            // 목록이 바뀌면 다시 훑는다.
+            setBlockLists({IMAGE: [entry("다른 파일", {similar: "5".repeat(32)})]});
+            expect(await isImageBlocked(image(url), undefined, 4)).toBe(false);
+            expect(isSimilarSet).toHaveBeenCalledTimes(3);
         });
 
         it("지문 있는 항목이 없거나 너무 큰 이미지면 디코딩하지 않는다", async () => {
