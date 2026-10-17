@@ -13,11 +13,11 @@ import {usePreviewStore} from "./previewStore";
 const isBroken = (image: HTMLImageElement): boolean => image.complete && image.naturalWidth === 0;
 
 /**
- * 크게 볼 수 있는 본문 이미지. 디시콘·가린 이미지(관리자 가림·blockImage)·깨진 이미지는 뺀다.
+ * 크게 볼 수 있는 본문 이미지. 디시콘·가린 이미지(관리자 가림·blockImage)·깨진 이미지와 링크로 감싼 이미지(링크 미리보기 카드 썸네일 등, 누르면 링크로 연다)는 뺀다.
  * 차단으로 가린 본문 안의 이미지는 '가린 내용 보기' 중이거나 흐림이 풀려 있을 때(blurReveal)만 연다. openDcconInfo와 같은 기준(isBlockedHidden).
  */
 const isViewable = (image: HTMLImageElement): boolean =>
-    !isBroken(image) && !image.closest(".written_dccon, [data-block]") && !isBlockedHidden(image) && image.checkVisibility();
+    !isBroken(image) && !image.closest("a, .written_dccon, [data-block]") && !isBlockedHidden(image) && image.checkVisibility();
 
 /**
  * 미리보기 본문(HTML 문자열로 그린 디시 본문)을 눌렀을 때. 본문 요소가 컴포넌트가 그린 요소가 아니라서 감싼 상자의 클릭에서 찾는다.
@@ -29,7 +29,7 @@ export const clickContents = (ev: MouseEvent<HTMLElement>, imageViewer: boolean)
 
     // 이미지를 누르면 크게 본다 (링크로 감싼 이미지는 링크로 연다).
     const clicked = target?.closest("img");
-    if (clicked && imageViewer && !clicked.closest("a") && isViewable(clicked)) {
+    if (clicked && imageViewer && isViewable(clicked)) {
         const images = [...ev.currentTarget.querySelectorAll("img")].filter(isViewable);
         usePreviewStore.setState({
             viewer: {images: images.map((image) => ({src: image.currentSrc || image.src, alt: image.alt, pop: image.dataset.pop})), index: images.indexOf(clicked)}

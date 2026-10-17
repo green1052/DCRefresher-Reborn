@@ -60,6 +60,22 @@ describe("clickContents", () => {
         expect(viewer?.index).toBe(1);
     });
 
+    it("링크로 감싼 이미지(링크 미리보기 카드 썸네일)는 크게 보기 목록과 순번에서 뺀다", () => {
+        Element.prototype.checkVisibility = () => true;
+        const container = document.createElement("div");
+        document.body.append(container);
+        render(<div onClick={(ev) => clickContents(ev, true)}/>, container);
+        const root = container.querySelector("div")!;
+        root.innerHTML = `${image("1.jpg", true, 100)}<a class="og-wrap" href="https://example.com"><div class="og-img">${image("card.jpg", true, 100)}</div></a>${image("2.jpg", true, 100)}${image("3.jpg", true, 100)}`;
+        setLoadState(root);
+
+        root.querySelectorAll("img")[2]!.click();
+
+        const viewer = usePreviewStore.getState().viewer;
+        expect(viewer?.images.map(({src}) => src.split("/").pop())).toEqual(["1.jpg", "2.jpg", "3.jpg"]);
+        expect(viewer?.index).toBe(1);
+    });
+
     it.each([true, false])("차단으로 가린 이미지는 크게 보기도 원본 보기도 열지 않는다 (imageViewer %s)", (imageViewer) => {
         Element.prototype.checkVisibility = () => true;
         const open = vi.spyOn(window, "open").mockReturnValue(null);
