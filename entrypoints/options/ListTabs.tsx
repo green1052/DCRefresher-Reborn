@@ -152,7 +152,7 @@ export const ListTabs = <T extends string, I>({
     onAdd: (type: T) => void;
     /** 목록 위 왼쪽에 둘 도구(차단 탭의 기본 차단 모드). */
     toolbar: (type: T) => ReactNode;
-    /** 저장된 순서(오래된 것부터) 그대로 준다. 표시할 때 뒤집는다. */
+    /** 오래된 것부터 준다. 표시할 때 뒤집는다. */
     items: (type: T) => readonly I[];
     /** 검색 대상 글자 (내용/유저/메모/갤러리 등). */
     searchText: (item: I) => (string | undefined)[];
@@ -191,7 +191,7 @@ export const ListTabs = <T extends string, I>({
         // 기록이 아직 없으면(옵션이 맞추기 전) 오래된 것으로 보지 않는다.
         return !cutoff || (usedAt(type, item) ?? Date.now()) < cutoff;
     };
-    // 새 항목은 배열/객체 끝에 붙으므로 뒤집어 최신순으로 보여 준다(저장 순서는 그대로).
+    // items가 오래된 것부터 주므로 뒤집어 최신순으로 보여 준다(저장 순서는 그대로).
     // 종류마다 한 번만 걸러 탭 배지와 표가 같이 쓴다. total은 거르기 전 개수다.
     const shown = new Map(types.map((type) => {
         const all = items(type);

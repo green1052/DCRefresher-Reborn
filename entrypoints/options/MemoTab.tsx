@@ -10,7 +10,7 @@ import {Field, FieldError, FieldGroup, FieldLabel} from "@/components/ui/field";
 import {Input} from "@/components/ui/input";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
 import {memoUsageKey} from "@/core/usage";
-import type {MemoType} from "@/core/storage/types";
+import type {MemoEntry, MemoType} from "@/core/storage/types";
 import {normalizeMemoMap, ownMemo, randomColor, useMemosStore} from "@/stores/memos";
 import {SAVE_FAILED} from "@/utils/error";
 
@@ -152,12 +152,17 @@ const MemoFormDialog = ({
     );
 };
 
+// 크롬 저장소는 객체 키를 정렬해 돌려주므로 키 순서는 추가 순서가 아니다. 추가 시각으로 세운다.
+// 정렬은 안정적이라 시각이 없는 옛 메모는 오래된 쪽에 저장소 순서대로 남는다.
+const byAdded = (map: Record<string, MemoEntry>): [string, MemoEntry][] => Object.entries(map).sort(([, a], [, b]) => (a.added ?? 0) - (b.added ?? 0));
+
 export function MemoTab() {
     const memos = useMemosStore((state) => state.memos);
     const setMemo = useMemosStore((state) => state.setMemo);
     const updateMemos = useMemosStore((state) => state.updateMemos);
     const ids = useMemo(() => MEMO_TYPES.flatMap((type) => Object.keys(memos[type]).map((user) => memoUsageKey(type, user))), [memos]);
     const used = useUsage("memo", ids);
+    const sorted = useMemo(() => ({UID: byAdded(memos.UID), NICK: byAdded(memos.NICK), IP: byAdded(memos.IP)}), [memos]);
 
     const [form, setForm] = useState<MemoFormState | null>(null);
     const [appImport, setAppImport] = useState(false);
@@ -175,10 +180,11 @@ export function MemoTab() {
                 // 새 메모의 색은 밖에서 한 번 정한다. updateMemos의 change는 스토어와 저장소 값에 두 번 불려, 안에서 고르면 두 색이 달라
                 // 저장소 값이 돌아올 때 화면의 색이 한 번 바뀐다.
                 const colors = new Map(Object.keys(parsed[type]).map((target) => [target, randomColor()]));
+                const added = Date.now();
                 await updateMemos(type, (current) => {
                     const merged = {...current};
                     for (const [target, memo] of Object.entries(parsed[type])) {
-                        merged[target] = {...(ownMemo(merged, target) ?? {color: colors.get(target) ?? randomColor()}), text: memo};
+                        merged[target] = {...(ownMemo(merged, target) ?? {color: colors.get(target) ?? randomColor(), added}), text: memo};
                     }
                     return merged;
                 });
@@ -242,8 +248,7 @@ export function MemoTab() {
                         </Button>
                     </div>
                 )}
-                // 객체 키 순서가 곧 추가 순서다. 숫자로만 된 키는 JS가 앞으로 정렬하는 예외가 있다.
-                items={(type) => Object.entries(memos[type])}
+                items={(type) => sorted[type]}
                 searchText={([user, entry]) => [user, entry.text, entry.gallery]}
                 galleryOf={([, entry]) => entry.gallery}
                 usedAt={(type, [user]) => used[memoUsageKey(type, user)]}

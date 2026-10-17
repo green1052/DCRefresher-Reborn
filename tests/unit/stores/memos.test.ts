@@ -1,4 +1,5 @@
-import {beforeEach, describe, expect, it} from "vitest";
+import {beforeEach, describe, expect, it, vi} from "vitest";
+import {fakeBrowser} from "wxt/testing/fake-browser";
 
 import type {MemoEntry} from "@/core/storage/types";
 import {findMemo, normalizeMemoMap, ownMemo, useMemosStore} from "@/stores/memos";
@@ -29,6 +30,27 @@ describe("findMemo", () => {
     });
 });
 
+describe("setMemo", () => {
+    it("새 메모에 추가 시각을 넣고, 고칠 때는 처음 시각을 지킨다", async () => {
+        fakeBrowser.reset();
+        const {setMemo} = useMemosStore.getState();
+        vi.spyOn(Date, "now").mockReturnValue(100);
+        await setMemo("UID", "u", memo("처음"));
+        vi.spyOn(Date, "now").mockReturnValue(200);
+        await setMemo("UID", "u", memo("고침"));
+        expect(useMemosStore.getState().memos.UID.u).toEqual({...memo("고침"), added: 100});
+        vi.restoreAllMocks();
+    });
+
+    it("시각 없는 옛 메모를 고쳐도 시각을 넣지 않는다", async () => {
+        fakeBrowser.reset();
+        useMemosStore.setState({memos: {UID: {old: memo("옛")}, NICK: {}, IP: {}}});
+        await fakeBrowser.storage.local.set({"refresher:memo:UID": {old: memo("옛")}});
+        await useMemosStore.getState().setMemo("UID", "old", memo("고침"));
+        expect(useMemosStore.getState().memos.UID.old).toEqual(memo("고침"));
+    });
+});
+
 describe("normalizeMemoMap", () => {
     it("모양이 틀린 항목을 뺀다", () => {
         expect(normalizeMemoMap({
@@ -36,6 +58,7 @@ describe("normalizeMemoMap", () => {
             noColor: {text: "x"},
             badText: {text: 1, color: "#000000"},
             badGallery: {text: "x", color: "#000000", gallery: 1},
+            badAdded: {text: "x", color: "#000000", added: "1"},
             text: "x"
         })).toEqual({ok: memo("ok", "g")});
     });

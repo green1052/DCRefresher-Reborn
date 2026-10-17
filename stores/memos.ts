@@ -17,7 +17,8 @@ interface MemosState {
 }
 
 const isMemoEntry = (value: unknown): value is MemoEntry =>
-    isRecord(value) && typeof value.text === "string" && typeof value.color === "string" && (value.gallery === undefined || typeof value.gallery === "string");
+    isRecord(value) && typeof value.text === "string" && typeof value.color === "string" && (value.gallery === undefined || typeof value.gallery === "string")
+    && (value.added === undefined || typeof value.added === "number");
 
 /**
  * 새 메모의 기본 색. 색상만 무작위로 고르고 채도(60%)·명도(50%)는 고정한다. 아무 RGB나 고르면 흰색·검은색에 가까운 색이 나와 한쪽 테마에서 안 보인다.
@@ -46,7 +47,13 @@ export const useMemosStore = create<MemosState>(() => ({
     updateMemos: (type, change): Promise<void> => lists.update(type, change),
 
     setMemo: async (type, user, entry) => {
-        await lists.update(type, (current) => ({...current, [user]: entry}));
+        // 추가 시각은 밖에서 한 번 구한다 (change는 두 번 불린다). 고칠 때는 처음 시각을 지키고, 시각 없는 옛 메모는 그대로 둔다.
+        const now = Date.now();
+        await lists.update(type, (current) => {
+            const existing = ownMemo(current, user);
+            const added = existing ? existing.added : now;
+            return {...current, [user]: added === undefined ? entry : {...entry, added}};
+        });
     },
 
     removeMemo: async (type, user) => {

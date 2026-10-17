@@ -24,6 +24,8 @@ export interface MemoEntry {
     color: string;
     /** 이 갤러리에서만 보이는 메모 (없으면 모든 갤러리). */
     gallery?: string;
+    /** 추가한 시각(ms). 옵션의 메모 목록을 추가한 순서로 세운다. 옛 메모에는 없다. */
+    added?: number;
 }
 
 /** IP/밴 DB의 버전과 마지막으로 서버를 확인한 시각. 갱신할 때가 됐는지는 큰 ip·ban 대신 이것만 읽어 판단한다. */

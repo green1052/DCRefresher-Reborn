@@ -40,6 +40,14 @@ describe("메모 탭의 색 점", () => {
     });
 });
 
+describe("메모 목록 순서", () => {
+    it("저장소 키 순서가 아니라 추가 시각 순서로 준다 (시각 없는 옛 메모가 먼저)", async () => {
+        useMemosStore.setState({memos: {UID: {a: {text: "늦게", color: "#000", added: 2}, z: {text: "먼저", color: "#000", added: 1}, old: {text: "옛", color: "#000"}}, NICK: {}, IP: {}}});
+        await act(() => render(<MemoTab/>, root));
+        expect([...root.querySelectorAll(".font-medium")].map((el) => el.textContent)).toEqual(["old", "z", "a"]);
+    });
+});
+
 describe("메모 가져오기", () => {
     const importMemos = async (parsed: Record<string, unknown>): Promise<{ count: number; updateMemos: ReturnType<typeof vi.fn> }> => {
         const updateMemos = vi.fn(async () => undefined);
