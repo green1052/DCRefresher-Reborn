@@ -76,24 +76,36 @@ describe("block 배경 (크롬)", () => {
 });
 
 describe("block 배경 (파이어폭스)", () => {
-    /** webRequest.onBeforeRequest와 filterResponseData를 흉내 낸다. respond(url, chunks)는 페이지가 받는 응답 하나를 흘려보낸다. */
+    /**
+     * webRequest.onBeforeRequest·onErrorOccurred와 filterResponseData를 흉내 낸다. respond(url, chunks)는 페이지가 받는 응답 하나를 흘려보낸다.
+     * 그 요청에 필터를 걸었을 때만 본문이 지나가고, failed면 받은 만큼으로 stop이 온 뒤 오류가 온다.
+     */
     const fakeWebRequest = () => {
         const listeners = new Set<(details: Browser.webRequest.OnBeforeRequestDetails) => unknown>();
         const event = fakeBrowser.webRequest.onBeforeRequest;
         vi.spyOn(event, "addListener").mockImplementation((listener) => void listeners.add(listener));
         vi.spyOn(event, "removeListener").mockImplementation((listener) => void listeners.delete(listener));
         vi.spyOn(event, "hasListener").mockImplementation((listener) => listeners.has(listener));
+        const errorListeners = new Set<(details: Browser.webRequest.OnErrorOccurredDetails) => void>();
+        vi.spyOn(fakeBrowser.webRequest.onErrorOccurred, "addListener").mockImplementation((listener) => void errorListeners.add(listener));
+        vi.spyOn(fakeBrowser.webRequest.onErrorOccurred, "removeListener").mockImplementation((listener) => void errorListeners.delete(listener));
 
         let filter: { ondata?: (ev: { data: ArrayBuffer }) => void; onstop?: () => void; write: () => void; close: () => void };
         const filterResponseData = vi.fn(() => (filter = {write: vi.fn(), close: vi.fn()}));
         Object.assign(fakeBrowser.webRequest, {filterResponseData});
 
-        const respond = (url: string, chunks: (string | Uint8Array)[], type = "image"): void => {
-            for (const listener of listeners) listener({requestId: "1", url, type} as Browser.webRequest.OnBeforeRequestDetails);
-            for (const chunk of chunks) filter.ondata?.({data: (typeof chunk === "string" ? new TextEncoder().encode(chunk) : chunk.slice()).buffer});
-            filter.onstop?.();
+        let requests = 0;
+        const respond = (url: string, chunks: (string | Uint8Array)[], type = "image", failed = false): void => {
+            const requestId = String(++requests);
+            const filters = filterResponseData.mock.calls.length;
+            for (const listener of listeners) listener({requestId, url, type} as Browser.webRequest.OnBeforeRequestDetails);
+            if (filterResponseData.mock.calls.length > filters) {
+                for (const chunk of chunks) filter.ondata?.({data: (typeof chunk === "string" ? new TextEncoder().encode(chunk) : chunk.slice()).buffer});
+                filter.onstop?.();
+            }
+            if (failed) for (const listener of errorListeners) listener({requestId, url, type, error: "NS_BINDING_ABORTED"} as Browser.webRequest.OnErrorOccurredDetails);
         };
-        return {listeners, respond, filterResponseData};
+        return {listeners, errorListeners, respond, filterResponseData};
     };
 
     /** 탭이 묻는 refresher:imageHash의 처리기. */
@@ -108,7 +120,7 @@ describe("block 배경 (파이어폭스)", () => {
     });
 
     it("차단한 이미지가 있을 때만 응답을 엿보고, 목록이 바뀌면 다시 맞춘다", async () => {
-        const {listeners} = fakeWebRequest();
+        const {listeners, errorListeners} = fakeWebRequest();
         background.listen?.();
 
         await apply(true);
@@ -116,9 +128,11 @@ describe("block 배경 (파이어폭스)", () => {
 
         await setImageList([{id: "a", content: "x", isRegex: false}]);
         await vi.waitFor(() => expect(listeners.size).toBe(1));
+        expect(errorListeners.size).toBe(1);
 
         await apply(false);
         expect(listeners.size).toBe(0);
+        expect(errorListeners.size).toBe(0);
     });
 
     it("페이지가 받은 이미지의 해시를 구해 두고, 다 구한 주소는 다시 받아도 엿보지 않는다", async () => {
@@ -134,6 +148,22 @@ describe("block 배경 (파이어폭스)", () => {
 
         respond(url, ["abc"]);
         expect(filterResponseData).toHaveBeenCalledOnce();
+    });
+
+    it("중간에 끊긴 요청이 남긴 해시는 지우고, 다음 요청을 다시 엿봐 온전한 파일로 구한다", async () => {
+        await setImageList([{id: "a", content: "x", isRegex: false}]);
+        const {respond, filterResponseData} = fakeWebRequest();
+        background.listen?.();
+        await apply(true);
+
+        const url = `${IMAGE}&t=aborted`;
+        respond(url, ["ab"], "image", true);
+        await flush();
+        expect(await askHash(url)).toBeUndefined();
+
+        respond(url, ["ab", "c"]);
+        expect(filterResponseData).toHaveBeenCalledTimes(2);
+        expect(await askHash(url)).toEqual({file: await sha256(new TextEncoder().encode("abc")), similar: undefined});
     });
 
     it("지문이 새로 필요해진 주소의 본문 없는 재검증 응답은 앞서 구한 해시를 남긴다", async () => {

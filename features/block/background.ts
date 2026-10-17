@@ -40,6 +40,8 @@ const CORS_RULE: Browser.declarativeNetRequest.Rule = {
  * done은 다 구한 결과다. 본문 이미지 주소의 파일은 바뀌지 않으므로 다시 받을 때 또 구하지 않는다.
  */
 interface HashEntry {
+    /** 이 항목을 만든 요청. 그 요청이 실패하면 항목을 지운다 (dropFailed). */
+    requestId: string;
     file: Promise<string | undefined>;
     hashes: Promise<ImageHashes | undefined>;
     done?: ImageHashes;
@@ -79,7 +81,7 @@ const hashImageResponse = ({requestId, url, type}: Browser.webRequest.OnBeforeRe
     const chunks: ArrayBuffer[] = [];
     const file = Promise.withResolvers<string | undefined>();
     const hashes = Promise.withResolvers<ImageHashes | undefined>();
-    const entry: HashEntry = {file: file.promise, hashes: hashes.promise};
+    const entry: HashEntry = {requestId, file: file.promise, hashes: hashes.promise};
     const resolve = (done: Promise<ImageHashes | undefined>): void => {
         hashes.resolve(done);
         // 파일 해시를 먼저 알리지 못했으면(앞서 구한 것을 쓰는 등) 다 끝난 것으로 푼다. 먼저 푼 값이 남는다.
@@ -110,6 +112,14 @@ const hashImageResponse = ({requestId, url, type}: Browser.webRequest.OnBeforeRe
     return undefined;
 };
 
+/**
+ * 파이어폭스: 중간에 끊긴 요청도 받은 만큼으로 stop이 와 잘린 파일의 해시가 남는다. 그 요청이 만든 항목이면 지워 다음 요청이 다시 구하게 한다.
+ * 같은 주소에 늦게 온 다른 요청의 항목은 남긴다.
+ */
+const dropFailed = ({requestId, url}: Browser.webRequest.OnErrorOccurredDetails): void => {
+    if (imageHashes.get(url)?.requestId === requestId) imageHashes.delete(url);
+};
+
 /** 파이어폭스: 모듈이 켜져 있고 차단한 이미지가 있을 때만 응답을 엿본다. 없으면 페이지가 해시를 묻지 않는다 (core/block.ts의 isImageBlocked). */
 let filterEnabled = false;
 const IMAGE_LIST_KEY = blockListKey("IMAGE");
@@ -121,8 +131,14 @@ const syncImageFilter = async (): Promise<void> => {
     const on = filterEnabled && entries.length > 0;
     similarEnabled = similarSetting && entries.some((entry) => typeof entry.similar === "string");
     if (on === browser.webRequest.onBeforeRequest.hasListener(hashImageResponse)) return;
-    if (on) browser.webRequest.onBeforeRequest.addListener(hashImageResponse, {urls: IMAGE_URL_PATTERNS, types: ["image", "media"]}, ["blocking"]);
-    else browser.webRequest.onBeforeRequest.removeListener(hashImageResponse);
+    const filter: Browser.webRequest.RequestFilter = {urls: IMAGE_URL_PATTERNS, types: ["image", "media"]};
+    if (on) {
+        browser.webRequest.onBeforeRequest.addListener(hashImageResponse, filter, ["blocking"]);
+        browser.webRequest.onErrorOccurred.addListener(dropFailed, filter);
+    } else {
+        browser.webRequest.onBeforeRequest.removeListener(hashImageResponse);
+        browser.webRequest.onErrorOccurred.removeListener(dropFailed);
+    }
 };
 
 /** 우클릭한 이미지·움짤(<video>)을 차단한다. 해시는 그 탭이 구한다 (stores/blockRequest.ts의 blockImage). */
