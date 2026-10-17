@@ -86,6 +86,22 @@ export default defineModule({
 
         applyDoNotColorVisited(ctx);
 
+        // 목록을 갈아끼우면 안 되는 때. 응답을 기다리는 동안 생길 수 있어 응답을 받은 뒤에도 본다.
+        const holdList = (customURL?: string, force?: boolean): boolean => {
+            // 목록을 갈아끼우면 커서·키보드 포커스 아래 행이 바뀐다. 설정을 켜면 그 위에 있는 동안 자동 새로고침을 건너뛴다.
+            // 포커스는 :focus-visible만 본다. 글 제목을 마우스로 누르면 링크에 포커스가 남아, :focus로 보면 목록을 떠나도 계속 멈춘다.
+            // 숨은 탭은 보지 않는다. 목록 위에서 탭을 옮기면 :hover가 남아 숨은 탭 새로고침이 끝내 돌지 않는다.
+            if (!force) {
+                const list = ctx.settings.pauseOnHover && !document.hidden ? document.querySelector(LIST_SELECTOR) : null;
+                if (list && (list.matches(":hover") || list.querySelector(":focus-visible"))) return true;
+            }
+
+            // 관리자가 체크박스로 글을 고르는 중이거나 목록 행에 디시 유저 메뉴(작성자 좌클릭)가 열려 있으면 목록을 갈아끼우지 않는다.
+            // 댓글의 체크박스·유저 메뉴는 목록과 상관없다. 문서 전체에서 찾으면 댓글 작성자 메뉴를 연 채로 두는 동안 새로고침이 멈춘다.
+            // 사용자가 직접 한 이동(페이지 전환/뒤로 가기)은 막으면 주소와 목록이 어긋나므로 거르지 않는다.
+            return !customURL && document.querySelector(".gall_list:not([id]) :is(.article_chkbox:checked, .user_data.add)") !== null;
+        };
+
         // ===== load =====
         const load = async (customURL?: string, force?: boolean): Promise<boolean> => {
             // 이번 호출이 막혀도 다음 새로고침부터 새 주소를 받도록 먼저 바꿔 둔다.
@@ -113,20 +129,9 @@ export default defineModule({
                 // 새 글은 1페이지에만 들어온다. 뒤 페이지는 갈아끼워 봐야 행이 밀려 읽던 글이 다음 페이지로 사라질 뿐이다.
                 const page = new URL(originalLocation).searchParams.get("page");
                 if (page && page !== "1") return false;
-
-                // 목록을 갈아끼우면 커서·키보드 포커스 아래 행이 바뀐다. 설정을 켜면 그 위에 있는 동안 건너뛴다.
-                // 포커스는 :focus-visible만 본다. 글 제목을 마우스로 누르면 링크에 포커스가 남아, :focus로 보면 목록을 떠나도 계속 멈춘다.
-                // 숨은 탭은 보지 않는다. 목록 위에서 탭을 옮기면 :hover가 남아 숨은 탭 새로고침이 끝내 돌지 않는다.
-                const list = ctx.settings.pauseOnHover && !document.hidden ? document.querySelector(LIST_SELECTOR) : null;
-                if (list && (list.matches(":hover") || list.querySelector(":focus-visible"))) return false;
             }
 
-            // 관리자가 체크박스로 글을 고르는 중이거나 목록 행에 디시 유저 메뉴(작성자 좌클릭)가 열려 있으면 목록을 갈아끼우지 않는다.
-            // 댓글의 체크박스·유저 메뉴는 목록과 상관없다. 문서 전체에서 찾으면 댓글 작성자 메뉴를 연 채로 두는 동안 새로고침이 멈춘다.
-            // 사용자가 직접 한 이동(페이지 전환/뒤로 가기)은 막으면 주소와 목록이 어긋나므로 거르지 않는다.
-            if (!customURL && document.querySelector(".gall_list:not([id]) :is(.article_chkbox:checked, .user_data.add)")) {
-                return false;
-            }
+            if (holdList(customURL, force)) return false;
 
             loading = true;
             // 기다리는 동안 뒤로 가기·페이지 이동으로 originalLocation이 바뀔 수 있어 요청한 주소를 고정한다.
@@ -169,6 +174,8 @@ export default defineModule({
                     unseen.count([]);
                     return true;
                 }
+                // 응답을 기다리는 동안 커서를 올리거나 체크했으면 받은 목록을 버린다. lastListHtml을 두어야 다음 주기에 이 목록이 들어간다.
+                if (holdList(customURL, force)) return false;
 
                 // 자동 새로고침은 목록 표만 파싱한다 (문서 전체의 1/3). 페이징 박스는 사용자가 한 로드(강제·이동)에서만 맞춘다.
                 // 검색 결과(검색 이어 보기가 페이징을 보고 다시 이어 붙인다)와 지난 요청이 실패한 뒤(사용자의 페이지 이동이 실패해

@@ -188,6 +188,52 @@ describe("자동 새로고침", () => {
         expect(get).toHaveBeenCalledTimes(1);
     });
 
+    // 응답을 2초 늦게 준다. 큰 갤러리는 목록 응답에 2~3초가 걸린다.
+    const respondLate = (nos: string[]): void => {
+        get.mockImplementation(() => new Promise((resolve) => {
+            setTimeout(() => resolve(new Response(`<html><body>${page(nos)}</body></html>`)), 2000);
+        }));
+    };
+
+    it("응답을 기다리는 동안 커서가 목록에 올라오면 받은 목록을 버리고, 떠나면 다음 주기에 갈아끼운다", async () => {
+        vi.useFakeTimers();
+        respondLate(["3", "2", "1"]);
+        let hovered = false;
+        const list = document.querySelector(LIST_SELECTOR)!;
+        const matches = list.matches.bind(list);
+        vi.spyOn(list, "matches").mockImplementation((selectors) => (selectors === ":hover" ? hovered : matches(selectors)));
+        await start({pauseOnHover: true});
+        await vi.advanceTimersByTimeAsync(5500);
+        expect(get).toHaveBeenCalledTimes(1);
+
+        hovered = true;
+        await vi.advanceTimersByTimeAsync(2000);
+        expect(listed()).toEqual(["2", "1"]);
+
+        hovered = false;
+        await vi.advanceTimersByTimeAsync(7500);
+        expect(get).toHaveBeenCalledTimes(2);
+        expect(listed()).toEqual(["3", "2", "1"]);
+    });
+
+    it("응답을 기다리는 동안 관리자가 글을 고르면 체크를 지우지 않고, 풀면 다음 주기에 갈아끼운다", async () => {
+        vi.useFakeTimers();
+        respondLate(["3", "2", "1"]);
+        await start();
+        await vi.advanceTimersByTimeAsync(5500);
+        expect(get).toHaveBeenCalledTimes(1);
+
+        document.querySelector("tbody > tr")!.insertAdjacentHTML("afterbegin", "<td><input type=\"checkbox\" class=\"article_chkbox\" checked></td>");
+        const checkbox = document.querySelector<HTMLInputElement>(".article_chkbox")!;
+        await vi.advanceTimersByTimeAsync(2000);
+        expect(listed()).toEqual(["2", "1"]);
+        expect(checkbox.isConnected).toBe(true);
+
+        checkbox.checked = false;
+        await vi.advanceTimersByTimeAsync(7500);
+        expect(listed()).toEqual(["3", "2", "1"]);
+    });
+
     it("뒤 페이지는 받지 않는다", async () => {
         vi.useFakeTimers();
         history.replaceState(null, "", "/board/lists/?id=test&page=2");
