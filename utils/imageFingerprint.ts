@@ -130,13 +130,15 @@ const SAMPLE_TIMES = [0, 0.505, 1.505, 3.005];
 /** 밝기가 거의 고른 장면(검은 화면·흰 화면). 어느 움짤의 앞뒤에나 있어 표본으로 쓰지 않는다. */
 const isFlat = ([small]: Grids): boolean => Math.max(...small) - Math.min(...small) < 8;
 
-/** 흰 바탕에 그려 RGBA로 읽은 그리드. 반투명한 곳은 그대로 두면 브라우저마다 값이 다르다. */
-const drawnGrids = (source: CanvasImageSource, width: number, height: number): Grids | undefined => {
+/** 흰 바탕에 그려 RGBA로 읽은 그리드. 반투명한 곳은 그대로 두면 브라우저마다 값이 다르다. 그린 source는 바로 닫는다. 그리기 전에 돌아오면 닫지 않으니 부른 쪽도 닫는다. */
+const drawnGrids = (source: ImageBitmap | VideoFrame, width: number, height: number): Grids | undefined => {
     const context = width * height <= MAX_PIXELS ? new OffscreenCanvas(width, height).getContext("2d", {willReadFrequently: true}) : null;
     if (!context) return undefined;
     context.fillStyle = "#fff";
     context.fillRect(0, 0, width, height);
     context.drawImage(source, 0, 0);
+    // 캔버스에 옮기면 바로 놓는다. 큰 이미지에서 화소가 세 벌 남지 않게 한다 (크롬. 파이어폭스는 닫아도 나중에 놓는다).
+    source.close();
     return lumaGrids(width, height, rgbaRows(context.getImageData(0, 0, width, height).data, width));
 };
 
@@ -283,7 +285,6 @@ const fingerprint = async (file: Blob): Promise<Sample[] | undefined> => {
         if (animation) return animatedSamples(animation);
 
         const bitmap = await createImageBitmap(file, {colorSpaceConversion: "none", premultiplyAlpha: "none", imageOrientation: "from-image"});
-        // 캔버스에 옮기면 비트맵은 바로 놓는다. 큰 이미지에서 화소가 세 벌 남지 않게 한다.
         const grids = drawnGrids(bitmap, bitmap.width, bitmap.height);
         bitmap.close();
         return grids && [sampleOf(grids)];
