@@ -128,7 +128,6 @@ export default defineModule({
         ctx.addFilter(LIST_SELECTOR, (list) => {
             if (document.readyState !== "loading") void fill(list);
         });
-        ctx.addCleanup(() => running?.abort());
     },
 
     revoke() {
