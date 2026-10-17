@@ -230,6 +230,25 @@ test.describe("옵션 - 차단 탭", () => {
         await expect.poll(() => storage.get("refresher:usage")).toEqual({block: {b: expect.any(Number), c: expect.any(Number)}, memo: {}});
     });
 
+    test("거르기 중에 추가하면 거르기를 풀어 새 항목이 보인다", async ({page, extensionId, storage}) => {
+        await storage.set({
+            "refresher:block:NICK": [{id: "a", content: "오래된닉", isRegex: false, gallery: "g1"}],
+            "refresher:usage": {block: {a: Date.now() - 100 * 24 * 60 * 60 * 1000}, memo: {}}
+        });
+        const {table, dialog} = await openOptions(page, extensionId, "block");
+        await page.getByRole("combobox", {name: "갤러리", exact: true}).click();
+        await page.getByRole("option", {name: "g1"}).click();
+        await page.getByRole("combobox", {name: "마지막 사용", exact: true}).click();
+        await page.getByRole("option", {name: "90일 넘게 안 쓰임"}).click();
+
+        await page.getByRole("button", {name: "추가", exact: true}).click();
+        await dialog.getByPlaceholder("닉네임 값을 입력해 주세요").fill("새닉");
+        await dialog.getByRole("button", {name: "추가", exact: true}).click();
+
+        await expect(table.getByText("새닉", {exact: true})).toBeVisible();
+        await expect(table.getByText("오래된닉", {exact: true})).toBeVisible();
+    });
+
     test("긴 목록은 200줄씩 그리고 더 보기로 펼치며, 검색은 그리지 않은 줄까지 찾는다", async ({page, extensionId, storage}) => {
         await storage.set({"refresher:block:NICK": Array.from({length: 450}, (_, i) => ({id: `n${i}`, content: `닉${i}번`, isRegex: false}))});
         const {table} = await openOptions(page, extensionId, "block");

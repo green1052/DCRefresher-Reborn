@@ -329,8 +329,10 @@ export const ListTabs = <T extends string, I>({
                                             <Trash2/>
                                         </WithTooltip>
                                         <WithTooltip tip="추가" trigger={<Button size="icon" aria-label="추가" onClick={() => {
-                                            // 검색어에 안 맞는 새 항목이 바로 숨어 추가가 안 된 것처럼 보이지 않게 검색어를 비운다.
+                                            // 걸러진 조건에 안 맞는 새 항목이 바로 숨어 추가가 안 된 것처럼 보이지 않게 검색어와 거르기를 모두 푼다.
                                             setQuery("");
+                                            setGallery("all");
+                                            setUnusedDays("0");
                                             setLimit(PAGE);
                                             onAdd(type);
                                         }}/>}>
