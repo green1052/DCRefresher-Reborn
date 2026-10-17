@@ -1,5 +1,8 @@
+import {MatchPattern} from "wxt/utils/match-patterns";
+
 import {onMessage, sendMessage} from "@/core/messaging/protocol";
 import {type BackgroundModule, startBackgroundModules} from "@/core/module/background";
+import {CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES} from "@/core/pages";
 import {dbStorage} from "@/core/storage/items";
 import {recordUsage, syncUsage} from "@/core/usage";
 import {friendlyMessage} from "@/utils/error";
@@ -12,6 +15,12 @@ import {listenPageMessages} from "./page";
 /** 모듈별 배경 코드(features/<id>/background.ts). 필요한 모듈만 이 파일을 둔다. */
 const backgroundModules = Object.values(import.meta.glob<{ default: BackgroundModule }>("../../features/*/background.ts", {eager: true}))
     .map((module) => module.default);
+
+/** 콘텐츠 스크립트가 도는 주소인지. manifest와 같은 core/pages.ts 상수를 쓴다 (MatchPattern이 content.js에 딸려 가지 않게 여기 둔다). */
+const CONTENT = CONTENT_MATCHES.map((pattern) => new MatchPattern(pattern));
+const EXCLUDED = CONTENT_EXCLUDE_MATCHES.map((pattern) => new MatchPattern(pattern));
+const hasContentScript = (url: string): boolean =>
+    CONTENT.some((pattern) => pattern.includes(url)) && !EXCLUDED.some((pattern) => pattern.includes(url));
 
 /**
  * 배경 스크립트. 서비스 워커(크롬)는 언제든 멈췄다 다시 뜨므로 리스너는 모두 여기서 동기로 걸고, 상태는 저장소에 둔다.
@@ -31,8 +40,11 @@ export default defineBackground(() => {
     // ===== Commands: 단축키 → 활성 탭에만 전송 =====
     // 단축키 기능은 '이번 페이지' 단위라 모든 탭에 보내면 탭마다 토글·토스트·목록 요청이 한꺼번에 일어난다.
     browser.commands.onCommand.addListener(async (command, tab) => {
-        // 활성 탭이 디시가 아니면 받는 쪽이 없어 실패한다.
-        if (tab?.id) await sendMessage("refresher:executeShortcut", command, {tabId: tab.id}).catch(() => {});
+        // tabs 권한이 없어 url은 호스트 권한이 있는 탭에서만 보인다. @webext-core/messaging은 탭으로 보낼 때 lastError를 읽지 않아,
+        // 받는 쪽이 없는 탭에 보내면 거절을 잡아도 크롬이 "Unchecked runtime.lastError"를 남기므로 먼저 거른다.
+        // 설치·업데이트 전에 열린 디시 탭은 미리 알 수 없어 거절만 삼킨다.
+        if (!tab?.id || !tab.url || !hasContentScript(tab.url)) return;
+        await sendMessage("refresher:executeShortcut", command, {tabId: tab.id}).catch(() => {});
     });
 
     listenPageMessages();
