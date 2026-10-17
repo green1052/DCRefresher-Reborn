@@ -21,6 +21,7 @@ import {
     vote
 } from "@/core/preview/request";
 import {D_ALPHABET} from "@/core/preview/dcinside-js";
+import {submitTxtcon} from "@/core/preview/txtcon";
 import type {DcinsideComment, PostInfo} from "@/core/preview/types";
 
 import {preData} from "../../../helpers";
@@ -313,5 +314,23 @@ describe("submitComment", () => {
             expect(await submit(form(value))).toEqual({result: "false", message: "댓글 폼을 읽지 못했습니다. 원문에서 작성해 주세요."});
         }
         expect(fetchMock).not.toHaveBeenCalled();
+    });
+});
+
+describe("submitTxtcon", () => {
+    it("글 댓글과 같은 대상에 글자콘 값을 보내고, 회원이면 name·password를 빼고 보낸다", async () => {
+        const sent = serve(fetchMock, () => "ok");
+        const info = post({commentId: "cid", commentNo: "9", commentForm: {fields: [], serviceCode: "", checks: {check_6: "c6", check_7: "c7", check_8: ""}, gallNickName: "갤닉"}});
+        const options = {text: "안녕", colors: {bg: "333333", txt: "ffffff"}, commentNo: "10", replyNo: "11", grecaptchaToken: "tok"};
+        await submitTxtcon(preData({gallery: "a", id: "3"}), info, {...options, user: {name: "ㅇㅇ", pw: "pw"}});
+        await submitTxtcon(preData({gallery: "a", id: "3"}), info, {...options, user: {name: ""}});
+
+        expect(sent[0]?.url).toBe(urls.txtcon_submit);
+        const keys = ["id", "no", "txtcon_text", "txtcon_bg", "txtcon_color", "c_no", "reply_no", "name", "password", "check_6", "check_7", "check_8", "gall_nick_name", "use_gall_nick", "g-recaptcha-token"];
+        expect(Object.fromEntries(keys.map((key) => [key, sent[0]?.body.get(key)]))).toEqual({
+            id: "cid", no: "9", txtcon_text: "안녕", txtcon_bg: "333333", txtcon_color: "ffffff", c_no: "10", reply_no: "11", name: "ㅇㅇ", password: "pw",
+            check_6: "c6", check_7: "c7", check_8: "", gall_nick_name: "갤닉", use_gall_nick: "N", "g-recaptcha-token": "tok"
+        });
+        expect([sent[1]?.body.has("name"), sent[1]?.body.has("password")]).toEqual([false, false]);
     });
 });
