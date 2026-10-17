@@ -154,7 +154,15 @@ export default defineBackgroundModule({
             const target = {tabId: tab.id, frameId: info.frameId};
             // 권한 요청은 사용자 동작 안에서만 된다. 기다리기 전에 바로 부른다. 이미 있으면 묻지 않고 true다.
             browser.permissions.request({origins: IMAGE_HOST_ORIGINS})
-                .then((granted) => (granted ? sendMessage("refresher:blockImage", url, target) : undefined))
+                .then((granted) => (granted ? sendMessage("refresher:blockImage", url, target).catch((e: unknown) => {
+                    console.error(e);
+                    // 받는 쪽이 없다: 설치·업데이트 전에 열린 탭(크롬은 콘텐츠 스크립트를 다시 넣지 않는다)이나 차단 모듈이 뜨지 않은 탭. blockImage는 자기 오류를 토스트로 알린다.
+                    return browser.scripting.executeScript({
+                        target: {tabId: target.tabId, frameIds: [target.frameId ?? 0]},
+                        func: (text: string) => alert(text),
+                        args: ["이 페이지에서는 지금 이미지를 차단할 수 없습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요."]
+                    });
+                }) : undefined))
                 .catch(console.error);
         });
 

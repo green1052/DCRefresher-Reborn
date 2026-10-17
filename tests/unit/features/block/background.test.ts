@@ -73,6 +73,19 @@ describe("block 배경 (크롬)", () => {
         await flush();
         expect(sendMessage).toHaveBeenCalledWith("refresher:blockImage", IMAGE, {tabId: 7, frameId: 3});
     });
+
+    it("탭에 받는 쪽이 없으면 그 프레임에 새로고침 안내를 띄운다", async () => {
+        let onClicked: Parameters<typeof fakeBrowser.contextMenus.onClicked.addListener>[0] | undefined;
+        vi.spyOn(fakeBrowser.contextMenus.onClicked, "addListener").mockImplementation((listener) => void (onClicked = listener));
+        fakeBrowser.permissions.request = vi.fn(async () => true);
+        const executeScript = vi.spyOn(fakeBrowser.scripting, "executeScript").mockResolvedValue(undefined);
+        vi.spyOn(console, "error").mockImplementation(() => undefined);
+        vi.mocked(sendMessage).mockRejectedValueOnce(new Error("No response"));
+        background.listen?.();
+
+        onClicked?.({menuItemId: "block:image", srcUrl: IMAGE, frameId: 3, editable: false, pageUrl: ""}, {id: 7} as Browser.tabs.Tab);
+        await vi.waitFor(() => expect(executeScript).toHaveBeenCalledWith(expect.objectContaining({target: {tabId: 7, frameIds: [3]}})));
+    });
 });
 
 describe("block 배경 (파이어폭스)", () => {

@@ -34,7 +34,7 @@
 
 `features/block`의 이미지 차단은 본문 이미지(`viewimage.php`) 파일의 SHA-256을 차단 목록(`IMAGE`)에 넣고 비교합니다(`core/block.ts`의 `imageHash`·`isImageBlocked`).
 
-- 배경은 이미지 우클릭 메뉴 "이 이미지 차단"을 글 목록·본문 페이지에만 겁니다(`features/block/background.ts`). 누르면 본문 이미지 호스트 권한(`core/pages.ts`의 `IMAGE_HOST_ORIGINS`, manifest의 선택 권한)을 묻고, 탭에 `refresher:blockImage`를 보냅니다. 권한 요청은 사용자 동작 안에서만 되므로 메뉴 클릭 처리기에서 기다리지 않고 바로 부릅니다.
+- 배경은 이미지 우클릭 메뉴 "이 이미지 차단"을 글 목록·본문 페이지에만 겁니다(`features/block/background.ts`). 누르면 본문 이미지 호스트 권한(`core/pages.ts`의 `IMAGE_HOST_ORIGINS`, manifest의 선택 권한)을 묻고, 탭에 `refresher:blockImage`를 보냅니다. 권한 요청은 사용자 동작 안에서만 되므로 메뉴 클릭 처리기에서 기다리지 않고 바로 부릅니다. 탭에 받는 쪽이 없으면(설치·업데이트 전에 열린 탭 등) 그 프레임에 새로고침 안내를 띄웁니다.
 - 크롬은 콘텐츠 스크립트의 이미지 요청(xmlhttprequest)에만 CORS 헤더를 붙이는 세션 규칙(declarativeNetRequest)을 겁니다. 탭은 `cache: "force-cache"`로 요청해 페이지가 받아 둔 캐시에서 읽습니다. 파이어폭스는 콘텐츠 스크립트가 페이지 캐시를 쓰지 않으므로, 배경이 페이지의 응답을 흘려보내며 구해 둔 해시를 물어 갑니다(`refresher:imageHash`, [Firefox](firefox.md)).
 - 다 받은(`complete`) 이미지만 봅니다. 받기 전에 읽으면 확장이 따로 받게 되어 캐시를 쓰지 못합니다. 주소별 결과는 탭에 남겨 두므로 다시 판정할 때 이미지를 또 받지 않습니다.
 - 비슷한 이미지(설정의 "비슷한 이미지")는 dHash·pHash 지문으로 비교합니다(`utils/imageFingerprint.ts`). 원본 크기로 디코딩해 JS로 줄이므로 두 브라우저의 지문이 같습니다. 우클릭 차단은 설정과 상관없이 항목에 원본 지문을 늘 같이 넣어 둡니다. 판정할 때는 대상 이미지의 원본과 좌우 반전본 지문을 둘 다 견줍니다.
