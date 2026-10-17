@@ -88,19 +88,30 @@ export function DataTab() {
 
     const backupCloud = () => run(() => runBackup("manual").then(() => "데이터를 클라우드에 백업했습니다."), "클라우드에 백업하지 못했습니다.");
 
+    // 빈 설정을 쓰기 전에 자동 백업을 끈다. 켜 두면 1분 뒤 빈 설정이 클라우드 자동 백업을 덮는다.
+    const pauseAutoForEmpty = async (data: Record<string, unknown>): Promise<boolean> => {
+        if (Object.keys(data).length > 0 || !(await backupStorage.auto.getValue())) return false;
+        await backupStorage.auto.setValue(false);
+        return true;
+    };
+
     // writeSettings가 남긴 직전 상태로 돌린다. 이것도 writeSettings로 쓰므로 한 번 더 하면 되돌리기 전으로 돌아온다.
     // at: 알림의 되돌리기가 맡은 작업의 시각. 그 뒤에 다른 작업이 칸을 덮었으면 엉뚱한 작업을 되돌리지 않는다.
-    const revert = (at?: number) =>
+    // auto: 그 작업(초기화)이 끈 자동 백업을 다시 켠다. 쓰기가 실패하면 빈 상태가 올라가지 않게 쓴 뒤에 켠다.
+    // 탭의 되돌리기는 켜지 않는다. 한참 뒤에 확인 없이 켜면 그사이 다른 기기가 올린 자동 백업을 덮는다.
+    const revert = (at?: number, auto = false) =>
         run(async () => {
             const before = await backupStorage.undo.getValue();
             if (!before) return "되돌릴 데이터가 없습니다.";
             if (at !== undefined && before.createdAt !== at) return "그 뒤에 다른 작업이 있어 이 알림으로는 되돌릴 수 없습니다.";
+            const off = await pauseAutoForEmpty(before.data);
             await writeSettings(before.data, "replace");
-            return `${formatTime(before.createdAt)} 직전 상태로 되돌렸습니다.`;
+            if (auto) await backupStorage.auto.setValue(true);
+            return `${formatTime(before.createdAt)} 직전 상태로 되돌렸습니다.${auto ? " 자동 백업도 다시 켰습니다." : off ? " 클라우드 백업을 지키려고 자동 백업을 껐습니다." : ""}`;
         }, "되돌리지 못했습니다.");
 
     // 직전 상태를 남기지 못했으면(at 없음) 되돌리기 버튼을 달지 않는다.
-    const undoable = (message: string, at: number | undefined): Done => (at === undefined ? message : {message, undo: () => void revert(at)});
+    const undoable = (message: string, at: number | undefined, auto = false): Done => (at === undefined ? message : {message, undo: () => void revert(at, auto)});
 
     const recoverCloud = (slot: BackupSlot, mode: RestoreMode) =>
         run(async () => {
@@ -159,12 +170,9 @@ export function DataTab() {
 
     const clearData = () =>
         run(async () => {
-            // 자동 백업이 켜져 있으면 1분 뒤 빈 설정이 클라우드 백업을 덮어쓰므로 먼저 끈다.
-            const wasAuto = await backupStorage.auto.getValue();
-            if (wasAuto) await backupStorage.auto.setValue(false);
-
+            const wasAuto = await pauseAutoForEmpty({});
             const at = await writeSettings({}, "replace");
-            return undoable(`데이터를 초기화했습니다.${wasAuto ? " 클라우드 백업을 지키려고 자동 백업을 껐습니다." : ""}`, at);
+            return undoable(`데이터를 초기화했습니다.${wasAuto ? " 클라우드 백업을 지키려고 자동 백업을 껐습니다." : ""}`, at, wasAuto);
         }, "초기화하지 못했습니다.");
 
     // 떠 있는 확인 창의 문구와 할 일.

@@ -378,13 +378,25 @@ test.describe("옵션 - 데이터 탭 백업·초기화", () => {
         await expect(alert).toBeHidden();
     });
 
-    test("자동 백업이 켜진 채 초기화하면 자동 백업을 먼저 끄고 데이터를 지운다", async ({page, extensionId, storage}) => {
+    test("자동 백업이 켜진 채 초기화하면 자동 백업을 먼저 끄고 데이터를 지우며, 알림의 되돌리기는 다시 켜고 탭의 되돌리기는 다시 끈다", async ({page, extensionId, storage}) => {
         await storage.set({"refresher:backup:auto": true, "refresher:block:NICK": [{id: "a", content: "지울닉", isRegex: false}]});
-        const {alert, toasts} = await openOptions(page, extensionId, "data");
+        const {alert, toasts, card} = await openOptions(page, extensionId, "data");
         await page.getByRole("button", {name: "데이터 초기화", exact: true}).click();
         await alert.getByRole("button", {name: "초기화", exact: true}).click();
         await expect(toasts).toContainText("자동 백업을 껐습니다.");
         // 켜 둔 채 지우면 빈 설정이 클라우드의 자동 백업을 덮어쓴다.
+        expect(await storage.get("refresher:backup:auto")).toBe(false);
+        expect(await storage.get("refresher:block:NICK")).toBeUndefined();
+
+        // 알림의 되돌리기는 초기화가 끈 자동 백업도 다시 켠다.
+        await toasts.getByRole("button", {name: "되돌리기", exact: true}).click();
+        await expect(toasts).toContainText("자동 백업도 다시 켰습니다.");
+        expect(await storage.get("refresher:backup:auto")).toBe(true);
+        expect(await storage.get("refresher:block:NICK")).toEqual([{id: "a", content: "지울닉", isRegex: false}]);
+
+        // 탭의 되돌리기로 빈 상태에 돌아가면 빈 설정이 클라우드를 덮지 않게 다시 끈다.
+        await card("되돌리기").getByRole("button", {name: "되돌리기", exact: true}).click();
+        await expect(toasts).toContainText("되돌렸습니다. 클라우드 백업을 지키려고 자동 백업을 껐습니다.");
         expect(await storage.get("refresher:backup:auto")).toBe(false);
         expect(await storage.get("refresher:block:NICK")).toBeUndefined();
     });
