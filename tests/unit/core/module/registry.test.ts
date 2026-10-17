@@ -95,6 +95,13 @@ describe("loadAll", () => {
         expect(setup).not.toHaveBeenCalled();
     });
 
+    it("on/off·설정을 못 읽으면 아무 모듈도 켜지 않는다", async () => {
+        vi.spyOn(fakeBrowser.storage.local, "get").mockRejectedValueOnce(new Error("invalidated"));
+        const setup = vi.fn();
+        await expect(load([testModule({id: "a", setup})])).rejects.toThrow("invalidated");
+        expect(setup).not.toHaveBeenCalled();
+    });
+
     it("읽는 사이 바뀐 설정을 놓치지 않는다", async () => {
         await setSettings("a", {size: 3});
         const get = fakeBrowser.storage.local.get.bind(fakeBrowser.storage.local);

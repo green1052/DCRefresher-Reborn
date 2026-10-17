@@ -261,6 +261,8 @@ export const loadAll = async (defs: AnyModule[], signal: AbortSignal, ready?: Pr
     }
     const all = readAll(defs);
     const enables = Promise.all([all, ready]).then(([value]) => value.enables);
+    // 읽기가 실패하면 아래 await all에서 던져 기다리는 쪽이 없고, ready가 먼저 실패해도 register가 기다리기 전이다. 거절은 await all·await enables가 받는다.
+    enables.catch(() => {});
 
     const {settings} = await all;
     const results = await Promise.allSettled(defs.map((def) => register(def, early.has(def.id) ? early.get(def.id) : settings.get(def.id), enables)));
