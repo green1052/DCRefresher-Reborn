@@ -7,7 +7,7 @@ import {defineModule} from "@/core/module/define";
 import {type GallogActivity, getGallogActivity, onGallogActivity, type RatioInfo} from "@/core/gallog";
 import {ROWS_HIDDEN_EVENT} from "@/core/block";
 import {FILTER_SKIP_ATTR} from "@/core/filtering";
-import {documentUrl} from "@/core/http/urls";
+import {pageGallery} from "@/core/http/urls";
 import {WRITER_ROW_SELECTOR} from "@/core/list";
 import {batchedSave} from "@/core/storage/batched";
 import {moduleDataKey, moduleDataStorage} from "@/core/storage/items";
@@ -30,8 +30,6 @@ const colorsOf = (ctx: Ctx): BadgeColors =>
 /** 설정에서 만든 배지 색·표시 조건. 작성자 칸마다(목록 새로고침마다 수십 개) 다시 만들지 않고 설정이 바뀔 때(readBadgeSettings) 한 번 만든다. */
 let colors: BadgeColors = {};
 let view: BadgeView = DEFAULT_BADGE_VIEW;
-/** 이 문서의 갤러리 id. 미리보기가 pushState로 주소를 바꿔도 같은 갤러리다. */
-let gallery: string | null = null;
 
 let ratios: Record<string, RatioInfo> = {};
 
@@ -119,7 +117,7 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
         if (key === "UID") appendIdentity();
 
         if (key === "MEMO") {
-            const memo = findMemo({uid, ip, nick}, gallery);
+            const memo = findMemo({uid, ip, nick}, pageGallery);
             if (memo) badges.push(buildBadgeSpan(`[${memo.text}]`, memo.color || undefined, memo.text));
         }
 
@@ -159,7 +157,6 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
 const readBadgeSettings = (ctx: Ctx): void => {
     colors = colorsOf(ctx);
     view = badgeViewOf(ctx.settings);
-    gallery = documentUrl.searchParams.get("id");
 };
 
 /** 미리보기도 같은 글댓비를 쓰도록 ui 스토어에 올린다. 지난 값은 미리보기·버블이 읽을 때 isFresh로 걸러 새로 조회한다. */
@@ -336,7 +333,6 @@ export default defineModule({
         // 파이어폭스 재주입으로 새 인스턴스가 setup될 때 옛 인스턴스의 값을 이어받지 않게 비운다.
         colors = {};
         view = DEFAULT_BADGE_VIEW;
-        gallery = null;
         ratios = {};
         failedRatios.clear();
 

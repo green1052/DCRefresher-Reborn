@@ -1,5 +1,5 @@
 import {defineModule} from "@/core/module/define";
-import {documentUrl, rowPostNo} from "@/core/http/urls";
+import {documentUrl, pageGallery, rowPostNo} from "@/core/http/urls";
 import {LIST_ROW_SELECTOR, WRITER_ROW_SELECTOR} from "@/core/list";
 import {deletePost} from "@/core/preview/request";
 import {whenDomReady} from "@/utils/dom";
@@ -131,7 +131,7 @@ export default defineModule({
                     deleting.add(postId);
 
                     // #gallery_id 입력칸은 없는 페이지가 있어 주소의 id를 갤러리로 쓴다.
-                    const gallery = documentUrl.searchParams.get("id") ?? "";
+                    const gallery = pageGallery ?? "";
                     void notifyManage(
                         deletePost({gallery, id: postId, link: documentUrl.href}),
                         "게시글을 삭제했습니다.",

@@ -89,6 +89,7 @@ export const mergeParamURL = (origin: string, from: string): string => {
 export const postSearchUrl = (query: string): string =>
     `https://search.dcinside.com/post/sort/latest/q/${Array.from(new TextEncoder().encode(query), (byte) => `.${byte.toString(16).padStart(2, "0").toUpperCase()}`).join("")}`;
 
+/** 지금 주소의 쿼리 값. 이 문서의 갤러리 id는 pageGallery를 쓴다. */
 export const queryString = (name: string): string | null => new URLSearchParams(location.search).get(name);
 
 /**
@@ -100,6 +101,8 @@ export const documentUrl = URL.parse(performance.getEntriesByType("navigation")[
 export const isViewPage = VIEW_PAGE.test(documentUrl.pathname);
 /** 글 보기 페이지가 보여 주는 글 번호. */
 export const pagePostNo = isViewPage ? documentUrl.searchParams.get("no") : null;
+/** 이 문서의 갤러리 id. 미리보기가 주소를 다른 갤러리 글로 바꿔도 그대로다. */
+export const pageGallery = documentUrl.searchParams.get("id");
 
 /** 목록 행의 글 번호. 글 보기 아래 목록의 행에는 data-no가 없어 같은 갤러리로 가는 제목 링크의 no를 쓴다. */
 export const rowPostNo = (row: HTMLElement): string | undefined => {
@@ -107,5 +110,5 @@ export const rowPostNo = (row: HTMLElement): string | undefined => {
 
     const href = row.querySelector(".gall_tit > a")?.getAttribute("href");
     const params = href ? URL.parse(href, location.href)?.searchParams : undefined;
-    return (params?.get("id") === documentUrl.searchParams.get("id") && params?.get("no")) || undefined;
+    return (params?.get("id") === pageGallery && params?.get("no")) || undefined;
 };

@@ -1,5 +1,5 @@
 import {BlockedError, http} from "@/core/http/client";
-import {documentUrl, isViewPage, listUrl, mergeParamURL, queryString} from "@/core/http/urls";
+import {isViewPage, listUrl, mergeParamURL, pageGallery, queryString} from "@/core/http/urls";
 import {LIST_SELECTOR, notifyListReplaced, PAGING_SELECTOR} from "@/core/list";
 import {defineModule} from "@/core/module/define";
 import {getModuleApi} from "@/core/module/registry";
@@ -56,7 +56,7 @@ export default defineModule({
         let lastListHtml = "";
         // 이 탭을 보지 않는 동안 들어온 새 글 수 (탭 제목에 붙인다).
         const unseen = createUnseenCounter(ctx);
-        const gallery = documentUrl.searchParams.get("id") ?? "";
+        const gallery = pageGallery ?? "";
 
         let button: HTMLButtonElement | null = null;
         const label = (): string => (paused ? "자동 새로고침: 꺼짐" : "자동 새로고침: 켜짐");

@@ -1,7 +1,7 @@
 import {BLOCKED_TEXT, dcconCode, duplicateOf, groupDuplicates, HIDDEN_ROW_SELECTOR, isAnyBlocked, isBlocked, isImageBlocked, ROWS_HIDDEN_EVENT, similarImageThreshold, VIDEO_CHECK_EVENTS} from "@/core/block";
 import {FILTER_SKIP_ATTR} from "@/core/filtering";
 import {defineModule} from "@/core/module/define";
-import {documentUrl, isViewPage} from "@/core/http/urls";
+import {isViewPage, pageGallery} from "@/core/http/urls";
 import {onMessage} from "@/core/messaging/protocol";
 import {WRITER_ROW_SELECTOR} from "@/core/list";
 import type {BlockType} from "@/core/storage/types";
@@ -237,7 +237,7 @@ export default defineModule({
     ...meta,
 
     setup(ctx) {
-        const gallery = documentUrl.searchParams.get("id") ?? undefined;
+        const gallery = pageGallery ?? undefined;
 
         applyBlurStyle(ctx);
         publishRevealed();
