@@ -26,7 +26,7 @@ export const setTitleCount = (count: number): void => {
 };
 
 /** '여기까지 읽음' 구분선을 그을 행. 탭을 떠날 때 맨 위에 있던 글이다. */
-export const READ_MARK_CLASS = "refresherReadMark";
+const READ_MARK_CLASS = "refresherReadMark";
 
 /** 목록 맨 위의 보이는 글(공지·설문·AD 빼고) 번호. */
 const topPostNo = (): string | undefined => {

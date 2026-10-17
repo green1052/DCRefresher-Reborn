@@ -10,7 +10,7 @@ import {smoothScroll, whenDomReady} from "@/utils/dom";
 import {isWholeFirstPage, replaceList, syncPaging} from "./list";
 import {LIST_TABLE} from "./markup";
 import meta, {type Ctx, PAUSE_TOGGLE} from "./meta";
-import {createUnseenCounter, READ_MARK_CLASS, setTitleCount} from "./title";
+import {createUnseenCounter} from "./title";
 
 const MINIMUM_REFRESH_INTERVAL = 2000;
 /** 목록 요청이 연달아 실패할 때 자동 새로고침 주기를 늘리는 상한. */
@@ -363,9 +363,8 @@ export default defineModule({
     }],
 
     revoke() {
+        // 탭 제목의 새 글 수와 '여기까지 읽음' 선은 모듈을 멈출 때 title.ts의 정리 함수(clear)가 이미 뗐다.
         document.documentElement.classList.remove("refresherDoNotColorVisited");
-        setTitleCount(0);
-        for (const row of document.querySelectorAll(`.${READ_MARK_CLASS}`)) row.classList.remove(READ_MARK_CLASS);
         // 남겨 둔 삭제된 글 행은 서버 목록에 없는 행이라 뺀다. 모듈을 끄면 목록을 다시 받는 쪽이 없어 새로고침할 때까지 남는다.
         for (const row of document.querySelectorAll(".refresherDeleted")) row.remove();
         for (const row of document.querySelectorAll<HTMLElement>(".refresherNewPost")) {
