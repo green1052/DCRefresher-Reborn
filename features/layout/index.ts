@@ -4,7 +4,7 @@ import {writeStyle} from "@/utils/dom";
 
 import meta, {type Ctx, HIDE_KEYS, HIDE_OPTIONS} from "./meta";
 
-const COMPACT_KEYS = new Set(["forceCompact", "useCompactModeOnView"]);
+const COMPACT_KEYS = new Set<keyof Ctx["settings"]>(["forceCompact", "useCompactModeOnView"]);
 const PUSH_CLASS = "refresherPushToRight";
 const HIDE_STYLE_ID = "refresher-layout-hide";
 
