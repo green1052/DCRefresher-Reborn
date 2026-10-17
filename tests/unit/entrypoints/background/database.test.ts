@@ -1,12 +1,25 @@
 // @vitest-environment node
-import {describe, expect, it, vi} from "vitest";
+import {afterEach, describe, expect, it, vi} from "vitest";
+import {fakeBrowser} from "wxt/testing/fake-browser";
 
 import {updateDatabase} from "@/core/database";
+import {IP_FORMAT} from "@/core/ipdb";
 import {startDatabaseUpdates} from "@/entrypoints/background/database";
 
 import {tick} from "../../../helpers";
 
 vi.mock("@/core/database", () => ({updateDatabase: vi.fn()}));
+
+afterEach(() => vi.unstubAllEnvs());
+
+const ALARM = "refresher:dbCheck";
+const settle = async () => {
+    for (let index = 0; index < 5; index++) await tick();
+};
+const ring = async () => {
+    await fakeBrowser.alarms.onAlarm.trigger({name: ALARM, scheduledTime: Date.now(), persistAcrossSessions: false});
+    await settle();
+};
 
 /** 부를 때마다 끝내지 않은 갱신을 하나 만든다. 끝내는 함수는 부른 순서대로 쌓인다. */
 const deferUpdates = () => {
@@ -68,5 +81,29 @@ describe("startDatabaseUpdates", () => {
         void update();
         await tick();
         expect(updateDatabase).toHaveBeenCalledTimes(2);
+    });
+
+    it("배포 빌드는 알람을 걸고, 워커가 다시 떠도 다시 만들지 않는다", async () => {
+        vi.stubEnv("PROD", true);
+        startDatabaseUpdates();
+        await settle();
+        expect(await fakeBrowser.alarms.get(ALARM)).toBeDefined();
+
+        const create = vi.spyOn(fakeBrowser.alarms, "create");
+        startDatabaseUpdates();
+        await settle();
+        expect(create).not.toHaveBeenCalled();
+    });
+
+    it("방금 받았으면 받지 않고, 저장 형식이 옛것이면 바로 받는다", async () => {
+        startDatabaseUpdates();
+
+        await fakeBrowser.storage.local.set({"refresher:db:meta": {version: "1", lastUpdate: Date.now(), format: IP_FORMAT}});
+        await ring();
+        expect(updateDatabase).not.toHaveBeenCalled();
+
+        await fakeBrowser.storage.local.set({"refresher:db:meta": {version: "1", lastUpdate: Date.now(), format: IP_FORMAT - 1}});
+        await ring();
+        expect(updateDatabase).toHaveBeenCalledTimes(1);
     });
 });
