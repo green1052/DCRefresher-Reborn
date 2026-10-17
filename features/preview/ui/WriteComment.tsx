@@ -252,7 +252,7 @@ export const WriteComment = () => {
                     aria-label={`${mode} 입력`}
                     placeholder={
                         dccons.length > 0 ? "디시콘이 선택되었습니다."
-                            : txtcon ? "글자콘 입력... (최대 20자, 4줄, 줄당 5자로 나뉨)"
+                            : txtcon ? "글자콘 입력... (최대 20자, 4줄, 줄당 5자로 나뉨, Shift+Enter 줄바꿈)"
                                 : "댓글 입력... (Shift+Enter 줄바꿈)"
                     }
                     className="min-h-16 flex-1 resize-y"
