@@ -5,7 +5,7 @@ import {smoothScroll} from "@/utils/dom";
 import {isTyping} from "@/utils/event";
 
 import type {Ctx} from "./meta";
-import {isBlurHidden, type ListRow, listRows, rowPostKey} from "./rows";
+import {buildPreData, isBlurHidden, type ListRow, listRows} from "./rows";
 import {usePreviewStore} from "./ui/previewStore";
 
 const SELECTED_CLASS = "refresherSelected";
@@ -65,7 +65,9 @@ export const bindListKeys = (ctx: Ctx, open: (preData: GalleryPreData) => void):
     window.addEventListener("keydown", onKey, {signal: ctx.signal});
 
     ctx.addFilter(LIST_ROW_SELECTOR, (row) => {
-        if (selected && rowPostKey(row) === selected) row.classList.add(SELECTED_CLASS);
+        if (!selected) return;
+        const pre = buildPreData(row);
+        if (pre && postKey(pre) === selected) row.classList.add(SELECTED_CLASS);
     });
 
     // 미리보기에서 PageUp/Down으로 넘긴 뒤 닫으면 마지막으로 본 글을 고른다. 키보드로 고르던 중일 때만.
