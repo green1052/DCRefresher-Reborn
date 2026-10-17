@@ -1,4 +1,5 @@
 import QuickLRU from "quick-lru";
+import {storage, type WxtStorageItem} from "wxt/utils/storage";
 
 import {badgeViewOf, type BadgeView, DEFAULT_BADGE_VIEW, showsUid} from "@/core/badges";
 import {banReasonsOf, initDatabase, ipInfoOf, onDatabaseChange, passesIpFilter} from "@/core/database";
@@ -212,8 +213,9 @@ export default defineModule({
         const {signal} = ctx;
 
         // 글댓비 캐시. 다른 탭의 쓰기도 watch로 받는다. moduleDataStorage 키라 백업·내보내기에서 빠진다.
-        // setup에서 만든다: defineItem은 만드는 순간 값을 읽으므로, 모듈 scope에 두면 features를 불러오는 모든 페이지·팝업·옵션이 이 캐시를 읽는다.
-        const ratioStorage = moduleDataStorage<RatioData>("userinfo", {});
+        // 읽기·감시는 키로 하고, 항목은 처음 저장할 때 만든다: defineItem은 만드는 순간 값을 읽으므로, 미리 만들면 같은 캐시를 두 번 읽는다.
+        const ratioKey = moduleDataKey("userinfo");
+        let ratioStorage: WxtStorageItem<RatioData, {}> | undefined;
 
         // 작성자 우클릭으로 유저 버블(메모·차단·갤로그)을 연다. 메모는 이 모듈의 기능이라 차단 모듈이 꺼져 있어도 열려야 한다.
         document.addEventListener("contextmenu", openWriterBubble, {capture: true, signal});
@@ -237,16 +239,16 @@ export default defineModule({
         // 읽는 동안 온 값은 모아 두었다가 읽은 값 대신 쓴다.
         let loading = true;
         let early: RatioData | null | undefined;
-        watchStorage<RatioData>(moduleDataKey("userinfo"), (next) => {
+        watchStorage<RatioData>(ratioKey, (next) => {
             if (loading) early = next;
             else applyStored(next);
         }, signal);
         // bfcache에 있는 동안 받은 저장은 감시로 오지 않는다. 돌아올 때 다시 읽는다.
-        onBfcacheRestore(async () => applyStored(await ratioStorage.getValue()), signal);
+        onBfcacheRestore(async () => applyStored(await storage.getItem<RatioData>(ratioKey)), signal);
 
         // IP/밴 DB는 모듈 설정을 읽은 뒤 여기서 처음 읽는다 (이 모듈이 꺼져 있으면 버블의 subscribeDatabase가 읽는다).
         // 읽기가 끝난 뒤 필터를 걸어야 첫 배지부터 IP 정보가 붙는다.
-        const [stored] = await Promise.all([ratioStorage.getValue(), needsDatabase() ? initDatabase() : null]);
+        const [stored] = await Promise.all([storage.getItem<RatioData>(ratioKey), needsDatabase() ? initDatabase() : null]);
         if (signal.aborted) return;
         loading = false;
         ratios = (early === undefined ? stored : early)?.ratio ?? {};
@@ -257,7 +259,7 @@ export default defineModule({
         const saver = batchedSave(ctx, RATIO_SAVE_DELAY, async () => {
             const batch = {...unsaved};
             if (Object.keys(batch).length === 0) return;
-            await ratioStorage.setValue({ratio: ratios});
+            await (ratioStorage ??= moduleDataStorage<RatioData>("userinfo", {})).setValue({ratio: ratios});
             unsaved = Object.fromEntries(Object.entries(unsaved).filter(([uid, info]) => batch[uid] !== info));
         });
 

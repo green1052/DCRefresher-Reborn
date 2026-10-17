@@ -204,6 +204,17 @@ describe("ipInfoOf", () => {
         await vi.waitFor(() => expect(databaseVersion()).toBe(before + 1));
     });
 
+    it("ip·meta는 한 번씩만 읽는다", async () => {
+        // 콘텐츠 쪽은 meta를 읽기만 하므로 항목을 만들지 않는다 (만들면 defineItem이 한 번 더 읽는다).
+        await browser.storage.local.set({[META]: {version: "v1", lastUpdate: 1, format: IP_FORMAT}, [IP]: ipJson([])});
+        const get = vi.spyOn(browser.storage.local, "get");
+        const {initDatabase} = await load();
+        await initDatabase();
+        await tick();
+        const reads = (key: string): number => get.mock.calls.filter(([keys]) => [keys].flat().includes(key)).length;
+        expect([reads(IP), reads(META)]).toEqual([1, 1]);
+    });
+
     it("구독하면 DB를 읽기 시작한다", async () => {
         await browser.storage.local.set({[IP]: ipJson([["1.2", [{org: "KT", vpn: false}]]])});
         const {subscribeDatabase, ipInfoOf} = await load();

@@ -92,11 +92,11 @@ export const moduleSettingsStorage = (id: string): WxtStorageItem<Record<string,
 /** 모듈 설정 키면 그 모듈 id, 아니면 undefined (local: 없이). */
 export const settingsKeyModule = (key: string): string | undefined => /^refresher:module:(.+):settings$/.exec(key)?.[1];
 
-/** 모듈 캐시(글댓비 등). 백업·내보내기에는 넣지 않는다 (core/backup.ts의 isBackupTarget). 만드는 순간 값을 읽으므로 쓰는 모듈의 setup에서 만든다. */
+/** 모듈 캐시(글댓비 등) 항목 (쓰기용). 백업·내보내기에는 넣지 않는다 (core/backup.ts의 isBackupTarget). 만드는 순간 값을 읽으므로 처음 쓸 때 만들고, 읽기·감시는 moduleDataKey로 한다. */
 export const moduleDataStorage = <T>(id: string, fallback: T): WxtStorageItem<T, {}> =>
     storage.defineItem<T>(moduleDataKey(id), {fallback});
 
-/** 모듈 캐시 키. 감시만 할 때는 항목 대신 이 키를 쓴다 (core/storage/sync.ts의 watchStorage). */
+/** 모듈 캐시 키. 읽기·감시는 항목 대신 이 키로 한다 (storage.getItem, core/storage/sync.ts의 watchStorage). */
 export const moduleDataKey = (id: string): `local:refresher:module:${string}:data` => `local:refresher:module:${id}:data`;
 
 /** 모듈 설정·캐시 키(local: 없이)의 모듈 id. 둘 다 아니면 undefined. */
@@ -107,8 +107,10 @@ export const isBlockListKey = (key: string): boolean => /^refresher:block:[A-Z]+
 
 /**
  * IP/밴 DB는 필요한 것만 읽도록 세 키로 나눈다: 갱신 확인은 meta, 페이지는 ip, 밴은 쓸 때만 ban (ip·ban은 각각 수백 KB).
+ * meta를 읽기만 하는 콘텐츠 스크립트(core/database.ts의 initDatabase)는 항목 대신 DB_META_KEY로 읽는다.
  */
-const dbMeta = lazyItem<DatabaseMeta>("local:refresher:db:meta", {version: "", lastUpdate: 0});
+export const DB_META_KEY = "local:refresher:db:meta";
+const dbMeta = lazyItem<DatabaseMeta>(DB_META_KEY, {version: "", lastUpdate: 0});
 export const dbStorage = {
     get meta() {
         return dbMeta();

@@ -205,6 +205,16 @@ describe("글댓비·깡계", () => {
         expect(useUiStore.getState().ratios?.cache.member?.article).toBe(10);
     });
 
+    it("저장된 글댓비는 한 번만 읽는다", async () => {
+        // 항목을 미리 만들면 defineItem이 만들 때 한 번 더 읽는다.
+        await saveRatio({member: {article: 10, comment: 20, date: Date.now()}});
+        const get = vi.spyOn(fakeBrowser.storage.local, "get");
+        mountRows([{no: "1", uid: "member"}]);
+        await start({checkRatio: true});
+        await tick();
+        expect(get.mock.calls.filter(([keys]) => [keys].flat().includes(RATIO_KEY))).toHaveLength(1);
+    });
+
     it("글댓비 표시를 끄면 붙이지 않는다", async () => {
         await saveRatio({member: {article: 10, comment: 20, date: Date.now()}});
         mountRows([{no: "1", uid: "member"}]);

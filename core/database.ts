@@ -4,7 +4,7 @@ import {createIpLookup, type IpCandidate, IP_FORMAT, parseIpData} from "@/core/i
 import {storage} from "wxt/utils/storage";
 import {createStore} from "zustand/vanilla";
 
-import {DB_KEYS, dbStorage, writeDatabase} from "@/core/storage/items";
+import {DB_KEYS, DB_META_KEY, dbStorage, writeDatabase} from "@/core/storage/items";
 import {watchStorage} from "@/core/storage/sync";
 import type {BanList, DatabaseMeta} from "@/core/storage/types";
 import {onBfcacheRestore} from "@/utils/dom";
@@ -80,8 +80,8 @@ let bansRequested = false;
 let banVersion = 0;
 /** 지금 읽어 둔 DB의 버전·형식 (모르면 빈 문자열). bfcache 복원 때 같으면 수백 KB를 다시 풀지 않는다. */
 let loadedStamp = "";
-const stampOf = ({version, format}: DatabaseMeta): string => `${version}
-${format ?? ""}`;
+const stampOf = (meta: DatabaseMeta | null): string => `${meta?.version ?? ""}
+${meta?.format ?? ""}`;
 
 // DB를 읽을 때마다 올리는 번호 (0이면 아직 안 읽음). 렌더 중에 조회하는 곳은 useSyncExternalStore로 이것을 구독한다.
 // 이 파일은 배경도 불러오므로 훅은 쓰는 쪽에 두고, 번호는 훅 바인딩이 없는 zustand/vanilla 스토어에 둔다 (Preact가 배경 번들에 딸려 가지 않게).
@@ -154,7 +154,7 @@ export const initDatabase = once(async () => {
         loadedStamp = "";
         loadIp(next ?? "");
     }, signal);
-    const [ip, meta] = await Promise.all([storage.getItem<string>(DB_KEYS.ip, {fallback: ""}), dbStorage.meta.getValue()]).catch((e: unknown) => {
+    const [ip, meta] = await Promise.all([storage.getItem<string>(DB_KEYS.ip, {fallback: ""}), storage.getItem<DatabaseMeta>(DB_META_KEY)]).catch((e: unknown) => {
         attempt.abort();
         throw e;
     });
@@ -170,7 +170,7 @@ export const initDatabase = once(async () => {
     }, signal);
     // bfcache에 있는 동안 받은 DB 갱신은 watch로 오지 않는다. 버전이 그대로면(대부분) 작은 meta만 읽고 끝낸다.
     onBfcacheRestore(async () => {
-        const stamp = stampOf(await dbStorage.meta.getValue());
+        const stamp = stampOf(await storage.getItem<DatabaseMeta>(DB_META_KEY));
         if (stamp === loadedStamp) return;
         const [ip, ban] = await Promise.all([storage.getItem<string>(DB_KEYS.ip, {fallback: ""}), bansRequested ? storage.getItem<string>(DB_KEYS.ban, {fallback: ""}) : null]);
         loadedStamp = stamp;
