@@ -64,6 +64,10 @@ interface PostState {
     blockPopup: false | "post" | "comments";
     /** 관리자가 체크한 댓글 번호. 디시 댓글 목록의 체크박스처럼 골라 한 번에 지우거나 차단한다. */
     selectedComments: ReadonlySet<string>;
+    /** 댓글 삭제 확인 창(비밀번호 삭제는 비밀번호 창)을 띄운 댓글. 창은 CommentList가 한 번만 그린다 (Comment.tsx의 CommentDeletePrompt). */
+    deletePrompt: { no: string; kind: "confirm" | "password" } | null;
+    /** 삭제 요청 중인 댓글 번호. 그동안 그 댓글의 X를 막는다. */
+    deletingComments: ReadonlySet<string>;
     /** 본문 이미지 크게 보기. 글을 넘기거나 닫으면 닫힌다. */
     viewer: { images: ViewerImage[]; index: number } | null;
 }
@@ -172,6 +176,8 @@ const freshPost = (): PostState => ({
     adminVisible: false,
     blockPopup: false,
     selectedComments: NO_FRESH,
+    deletePrompt: null,
+    deletingComments: NO_FRESH,
     viewer: null
 });
 

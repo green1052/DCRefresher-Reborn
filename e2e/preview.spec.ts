@@ -680,6 +680,26 @@ test.describe("댓글 쓰기·지우기", () => {
             id: "test", no: "3", re_no: "11", mode: "del", re_password: "pw1234"
         });
     });
+
+    test("비밀번호 창을 연 사이 자동 새로고침으로 답글이 둘로 늘어도 창과 입력한 비밀번호가 남는다", async ({listPage, site, storage}) => {
+        await storage.setModuleSettings("preview", {autoRefreshComment: true, commentRefreshInterval: 3000});
+        await listPage.page.reload();
+        await listPage.refreshButton.waitFor();
+        await listPage.openPreview();
+        await listPage.comments.nth(1).getByRole("button", {name: "ㅇㅇ 댓글 삭제", exact: true}).click();
+        const password = listPage.dialog.getByRole("textbox", {name: "댓글 비밀번호", exact: true});
+        await password.fill("pw1234");
+
+        // 답글이 하나에서 둘로 늘면 Thread가 첫 답글을 Collapsible 안으로 옮겨 새로 마운트한다.
+        site.comments.push(fakeComment(12, {c_no: "10", depth: 1, ip: "3.4", memo: "답글 둘"}));
+        await expect(listPage.comments).toHaveCount(3, {timeout: 10_000});
+        await expect(password).toHaveValue("pw1234");
+        await listPage.dialog.getByRole("button", {name: "삭제", exact: true}).click();
+
+        await expect(listPage.toast).toContainText("댓글을 삭제했습니다.");
+        const {path, body} = site.submitted[0]!;
+        expect([path, body.get("re_no"), body.get("re_password")]).toEqual(["/board/comment/comment_delete_submit", "11", "pw1234"]);
+    });
 });
 
 test.describe("미니 미리보기", () => {

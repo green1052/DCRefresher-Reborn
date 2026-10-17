@@ -87,24 +87,9 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
     const canDelete =
         !isDeleted && (comment.del_btn === "Y" || comment.my_cmt === "Y" || isAdmin || (!comment.user_id && Boolean(comment.ip)));
 
-    // 비밀번호 없이 지워지는 삭제(관리자·회원 본인)는 X 한 번에 되돌릴 수 없으니 확인한다 (디시 comment.js와 같음).
-    // 비밀번호 삭제는 비밀번호 창이 확인을 겸한다.
-    const [asking, setAsking] = useState<"confirm" | "password" | null>(null);
     // 요청 중에는 X를 막는다. 다시 누르면 같은 삭제가 또 나가 성공 알림 뒤에 실패 알림이 뜬다.
-    const [deleting, setDeleting] = useState(false);
-
-    const remove = async (password: string): Promise<void> => {
-        setAsking(null);
-        const st = usePreviewStore.getState();
-        if (!st.preData || !st.post) return;
-
-        setDeleting(true);
-        // 비밀번호가 틀려도 HTTP 200('false||메시지')이 오므로 결과를 확인해 알려야 한다.
-        const request = isAdmin ? adminDeleteComments(st.preData, [comment.no]) : deleteOwnComment(st.preData, st.post, comment.no, password);
-        const deleted = await notifyManage(request, "댓글을 삭제했습니다.", "댓글을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.");
-        setDeleting(false);
-        if (deleted) refreshCommentsOf(st.preData);
-    };
+    // 이 댓글이 요청 중인지만 구독한다 (selected와 같은 까닭).
+    const deleting = usePreviewStore((s) => s.deletingComments.has(comment.no));
 
     // 디시콘(img/video)과 글자콘. 답글이면 앞에 멘션이 붙어 오므로 ^로 고정하지 않고 찾는다.
     const isDccon = /<(img|video) class=|<div class="coment_dccon_txt/.test(comment.memo);
@@ -171,7 +156,7 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
                     )}
                     {canDelete && (
                         <Button size="icon-xs" variant="ghost" aria-label={`${who} 댓글 삭제`} disabled={deleting}
-                                onClick={() => setAsking(isAdmin || comment.user_id ? "confirm" : "password")}>
+                                onClick={() => usePreviewStore.setState({deletePrompt: {no: comment.no, kind: isAdmin || comment.user_id ? "confirm" : "password"}})}>
                             <X/>
                         </Button>
                     )}
@@ -194,14 +179,56 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
                  onClick={isDccon ? openDcconInfo : undefined}
                  onKeyDown={isDccon ? pressContents : undefined}
                  dangerouslySetInnerHTML={{__html: html}}/>
-
-            {asking === "confirm" && (
-                <ConfirmDialog title="댓글을 삭제할까요?" confirmLabel="삭제" danger onConfirm={() => void remove("")} onClose={() => setAsking(null)}/>
-            )}
-            {asking === "password" && <PasswordDialog onSubmit={(password) => void remove(password)} onClose={() => setAsking(null)}/>}
         </div>
     );
 });
+
+const setDeleting = (no: string, deleting: boolean): void =>
+    usePreviewStore.setState((s) => {
+        const next = new Set(s.deletingComments);
+        if (deleting) next.add(no);
+        else next.delete(no);
+        return {deletingComments: next};
+    });
+
+const removeComment = async (no: string, isAdmin: boolean, password: string): Promise<void> => {
+    usePreviewStore.setState({deletePrompt: null});
+    const st = usePreviewStore.getState();
+    if (!st.preData || !st.post) return;
+    const signal = st.signalId;
+
+    setDeleting(no, true);
+    // 비밀번호가 틀려도 HTTP 200('false||메시지')이 오므로 결과를 확인해 알려야 한다.
+    const request = isAdmin ? adminDeleteComments(st.preData, [no]) : deleteOwnComment(st.preData, st.post, no, password);
+    const deleted = await notifyManage(request, "댓글을 삭제했습니다.", "댓글을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+    // 그새 다른 글로 넘어갔으면 그 글의 상태는 건드리지 않는다 (글을 열면 freshPost가 비운다).
+    if (usePreviewStore.getState().signalId === signal) setDeleting(no, false);
+    if (deleted) refreshCommentsOf(st.preData);
+};
+
+/**
+ * 댓글 X가 띄운 삭제 확인 창(deletePrompt). CommentList가 한 번만 그린다.
+ * 댓글 안에 그리면 답글 수가 1개와 2개 사이를 오갈 때(Thread가 답글을 Collapsible 안팎으로 옮긴다) 그 답글이 새로 마운트되어
+ * 창이 말없이 닫히고 입력하던 비밀번호도 사라진다.
+ * 비밀번호 없이 지워지는 삭제(관리자·회원 본인)는 X 한 번에 되돌릴 수 없으니 확인한다 (디시 comment.js와 같음). 비밀번호 삭제는 비밀번호 창이 확인을 겸한다.
+ */
+export const CommentDeletePrompt = ({comments, isAdmin}: { comments: ProcessedComment[]; isAdmin: boolean }) => {
+    const prompt = usePreviewStore((s) => s.deletePrompt);
+    const target = prompt ? comments.find((comment) => comment.no === prompt.no && comment.is_delete !== "1") : undefined;
+    // 새로고침으로 대상이 사라졌거나 이미 지워졌으면 창을 닫는다. 두면 같은 번호가 다시 보일 때 창이 저절로 뜬다.
+    const gone = prompt !== null && !target;
+    useEffect(() => {
+        if (gone) usePreviewStore.setState({deletePrompt: null});
+    }, [gone]);
+    if (!prompt || !target) return null;
+
+    const close = (): void => usePreviewStore.setState({deletePrompt: null});
+    return prompt.kind === "confirm" ? (
+        <ConfirmDialog title="댓글을 삭제할까요?" confirmLabel="삭제" danger onConfirm={() => void removeComment(target.no, isAdmin, "")} onClose={close}/>
+    ) : (
+        <PasswordDialog onSubmit={(password) => void removeComment(target.no, isAdmin, password)} onClose={close}/>
+    );
+};
 
 /**
  * 유동 댓글을 지울 비밀번호를 묻는다. 미리보기에서 쓴 댓글은 저장해 둔 비밀번호를 썼으므로 비워 두면 그것을 쓴다.

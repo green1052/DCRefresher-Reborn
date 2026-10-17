@@ -13,7 +13,7 @@ import {notifyManage} from "@/stores/notify";
 import {useUiStore} from "@/stores/ui";
 import {isGalleryManager} from "@/utils/user";
 
-import {Comment} from "./Comment";
+import {Comment, CommentDeletePrompt} from "./Comment";
 import {NO_FRESH, refreshCommentsOf, usePreviewStore} from "./previewStore";
 
 /**
@@ -197,6 +197,8 @@ export const CommentList = ({comments}: { comments: ProcessedComment[] }) => {
 
                 return <Thread key={parent.no} parent={parent} replies={replies} isAdmin={isAdmin}/>;
             })}
+            {/* SelectionTools의 확인 창처럼 미리보기 창 안에 그린다. 댓글마다 그리지 않는 까닭은 CommentDeletePrompt에 있다. */}
+            <CommentDeletePrompt comments={comments} isAdmin={isAdmin}/>
         </div>
     );
 };
