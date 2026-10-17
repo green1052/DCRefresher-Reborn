@@ -3,20 +3,12 @@ import {beforeEach, describe, expect, it} from "vitest";
 import type {ModuleSettings} from "@/core/module/types";
 import {getEntry} from "@/core/preview/cache";
 import {prepareComments, type ProcessedComment, processComments, sameComments} from "@/core/preview/comments";
-import type {DcinsideComment} from "@/core/preview/types";
-import type {BlockEntry} from "@/core/storage/types";
 import type {Ratios} from "@/stores/ui";
 
-import {preData, setBlockLists} from "../../../helpers";
-
-const comment = (no: number, fields: Partial<DcinsideComment> = {}): DcinsideComment => ({
-    no: String(no), c_no: "0", depth: 0, user_id: "", name: "ㅇㅇ", ip: "", memo: `댓글 ${no}`, is_delete: "0", date_time: "", ...fields
-});
+import {blockEntry as entry, dcComment as comment, preData, setBlockLists} from "../../../helpers";
 
 let seq = 0;
 const nextPost = () => preData({id: String(++seq)});
-
-const entry = (content: string, fields: Partial<BlockEntry> = {}): BlockEntry => ({id: content, content, isRegex: false, ...fields});
 
 const block = (fields: Partial<ModuleSettings["block"]> = {}): ModuleSettings["block"] => ({
     replyRemove: false, blur: false, blurReveal: false, blurStrength: 5, similarImages: false, similarThreshold: 12, foldDuplicate: false, duplicateCount: 3, duplicateMinLength: 5, ...fields
@@ -101,7 +93,7 @@ describe("processComments", () => {
     });
 
     it("null로 온 메모는 빈 문자열로 바꾼다", () => {
-        expect(processComments([comment(1, {memo: null})], preData(), undefined)[0]?.memo).toBe("");
+        expect(processComments([{...comment(1), memo: null}], preData(), undefined)[0]?.memo).toBe("");
     });
 
     it("남는 </div> 뒤의 내용도 남긴다", () => {

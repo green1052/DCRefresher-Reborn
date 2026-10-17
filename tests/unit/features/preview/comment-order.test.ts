@@ -1,10 +1,11 @@
 // @vitest-environment-options {"url": "https://gall.dcinside.com/board/lists/?id=test"}
 import {afterEach, beforeEach, expect, it, vi} from "vitest";
 
-import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
+import type {CommentListResponse, GalleryPreData, PostInfo} from "@/core/preview/types";
 import preview from "@/features/preview/index";
 import {usePreviewStore} from "@/features/preview/ui/previewStore";
 
+import {dcComment, preData as makePreData} from "../../../helpers";
 import {type Running, runModule} from "../module";
 
 // 본문은 바로 주고, 댓글 요청은 테스트가 reply를 부를 때 응답한다 (끊어도 응답한다: 이미 받은 응답이 늦게 처리되는 경우).
@@ -17,13 +18,11 @@ vi.mock("@/core/preview/request", async (importOriginal) => ({
     fetchPost: async (): Promise<PostInfo> => ({contents: "본문", commentCount: 1, commentForm: {fields: [], serviceCode: "", checks: {}}}),
     fetchComments: (preData: GalleryPreData): Promise<CommentListResponse> =>
         new Promise((resolve) => {
-            net.comments.push({id: preData.id, reply: (nos) => resolve({list: nos.map(comment), allowReply: true})});
+            net.comments.push({id: preData.id, reply: (nos) => resolve({list: nos.map((no) => dcComment(Number(no))), allowReply: true})});
         })
 }));
 
-const comment = (no: string): DcinsideComment => ({no, c_no: no, depth: 0, user_id: "", name: "ㅇㅇ", ip: "1.2", memo: `댓글 ${no}`, is_delete: "0", date_time: "10.15 12:00:00"});
-
-const preData = (id: string): GalleryPreData => ({gallery: "test", id, link: `/board/view/?id=test&no=${id}`, notice: false, recommend: false, type: "icon_txt", commentCount: 1});
+const preData = (id: string) => makePreData({id, link: `/board/view/?id=test&no=${id}`, commentCount: 1});
 
 /** n번째 댓글 요청이 나갈 때까지 기다린다. */
 const nthRequest = async (n: number) => {

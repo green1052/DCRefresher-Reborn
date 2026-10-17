@@ -24,14 +24,12 @@ import {D_ALPHABET} from "@/core/preview/dcinside-js";
 import {submitTxtcon} from "@/core/preview/txtcon";
 import type {DcinsideComment, DcinsideDcconDetailList, PostInfo} from "@/core/preview/types";
 
-import {preData} from "../../../helpers";
+import {dcComment as comment, preData} from "../../../helpers";
 import {serve} from "./net";
 
 afterEach(() => void vi.unstubAllGlobals());
 
 const signal = () => new AbortController().signal;
-
-const comment = (no: number): DcinsideComment => ({no: String(no), c_no: "0", depth: 0, user_id: "", name: "ㅇㅇ", ip: "", memo: "", is_delete: "0", date_time: ""});
 
 const pagination = (last: number) => Array.from({length: last}, (_, index) => `<a href="javascript:viewComments(${index + 1}, 'D')">${index + 1}</a>`).join("");
 

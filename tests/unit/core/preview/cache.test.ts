@@ -3,11 +3,7 @@ import {describe, expect, it, vi} from "vitest";
 import {getEntry, postKey, restoreArchive, setEntry} from "@/core/preview/cache";
 import type {DcinsideComment} from "@/core/preview/types";
 
-import {preData} from "../../../helpers";
-
-const comment = (no: number, fields: Partial<DcinsideComment> = {}): DcinsideComment => ({
-    no: String(no), c_no: "0", depth: 0, user_id: "", name: "ㅇㅇ", ip: "", memo: `댓글 ${no}`, is_delete: "0", date_time: "", ...fields
-});
+import {dcComment as comment, preData} from "../../../helpers";
 
 // 캐시는 모듈 전역이라 테스트마다 다른 글을 쓴다.
 let seq = 0;

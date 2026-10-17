@@ -3,9 +3,8 @@ import {describe, expect, it} from "vitest";
 import type {ProcessedComment} from "@/core/preview/comments";
 import {summaryOf, threadParents} from "@/features/preview/ui/CommentList";
 
-const comment = (no: number, fields: Partial<ProcessedComment> = {}): ProcessedComment => ({
-    no: String(no), c_no: "0", depth: 0, user_id: "", name: "ㅇㅇ", ip: "", memo: `댓글 ${no}`, is_delete: "0", date_time: "", ...fields
-});
+import {dcComment as comment} from "../../../../helpers";
+
 
 // 번호(등록)순 목록: 1의 답글 2, 3, 부모를 받지 못한 답글 5 (부모 4는 10쪽 밖), 6.
 const comments = [

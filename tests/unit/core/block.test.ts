@@ -11,7 +11,7 @@ import {useBlocksStore} from "@/stores/blocks";
 import {sha256} from "@/utils/hash";
 import {imageFingerprints, isSimilarSet} from "@/utils/imageFingerprint";
 
-import {setBlockLists} from "../../helpers";
+import {blockEntry, setBlockLists} from "../../helpers";
 
 vi.mock("@/core/usage", () => ({markUsed: vi.fn()}));
 // jsdom은 이미지를 디코딩하지 못해 지문은 테스트가 정한다.
@@ -22,7 +22,8 @@ vi.mock("@/utils/imageFingerprint", async (original) => {
 });
 
 let nextId = 0;
-const entry = (content: string, fields: Partial<BlockEntry> = {}): BlockEntry => ({id: `e${nextId++}`, content, isRegex: false, ...fields});
+// 색인 비교 테스트에 내용이 같은 항목이 있어 id는 순번으로 붙인다.
+const entry = (content: string, fields: Partial<BlockEntry> = {}): BlockEntry => blockEntry(content, {id: `e${nextId++}`, ...fields});
 
 const usedIds = (): string[] => vi.mocked(markUsed).mock.calls.map(([, id]) => id);
 

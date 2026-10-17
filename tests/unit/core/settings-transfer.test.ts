@@ -5,7 +5,7 @@ import {mergeBackup, parseImport, pinDefaultMode, writeSettings} from "@/core/se
 import {backupStorage, DEFAULT_DETECT_MODE} from "@/core/storage/items";
 import type {BlockEntry} from "@/core/storage/types";
 
-import {stored} from "../../helpers";
+import {blockEntry as entry, stored} from "../../helpers";
 
 const NICK = "refresher:block:NICK";
 const TITLE = "refresher:block:TITLE";
@@ -14,8 +14,6 @@ const MODULES = "refresher:modules";
 const SETTINGS = "refresher:module:preview:settings";
 /** 없는 모듈(없어졌거나 다른 버전의 모듈)의 설정. */
 const UNKNOWN_SETTINGS = "refresher:module:zzz:settings";
-
-const entry = (content: string, fields: Partial<BlockEntry> = {}): BlockEntry => ({id: content, content, isRegex: false, ...fields});
 
 /** 되돌리기 칸(writeSettings가 남기는 직전 상태)을 뺀 storage.local. */
 const UNDO = "refresher:backup:undo";

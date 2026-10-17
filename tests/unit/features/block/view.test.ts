@@ -4,17 +4,14 @@ import {webcrypto} from "node:crypto";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {imageHash} from "@/core/block";
-import type {BlockEntry} from "@/core/storage/types";
 import block from "@/features/block/index";
 import {imageFingerprints} from "@/utils/imageFingerprint";
 
-import {setBlockLists, tick} from "../../../helpers";
+import {blockEntry as entry, setBlockLists, tick} from "../../../helpers";
 import {type Running, runModule} from "../module";
 
 // jsdom은 이미지를 디코딩하지 못해 지문은 테스트가 정한다.
 vi.mock("@/utils/imageFingerprint", async (original) => ({...await original<typeof import("@/utils/imageFingerprint")>(), imageFingerprints: vi.fn()}));
-
-const entry = (content: string, fields: Partial<BlockEntry> = {}): BlockEntry => ({id: content, content, isRegex: false, ...fields});
 
 const comment = (text: string): string =>
     `<li class="ub-content"><span class="ub-writer" data-nick="ㅇㅇ" data-uid="" data-ip="1.2"></span><p class="usertxt">${text}</p></li>`;

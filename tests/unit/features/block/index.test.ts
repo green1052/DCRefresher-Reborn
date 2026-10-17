@@ -1,11 +1,10 @@
 // @vitest-environment-options {"url": "https://gall.dcinside.com/board/lists/?id=test"}
 import {afterEach, beforeEach, describe, expect, it, onTestFinished} from "vitest";
 
-import type {BlockEntry, DetectMode} from "@/core/storage/types";
 import block from "@/features/block/index";
 import {useUiStore} from "@/stores/ui";
 
-import {setBlockLists, tick} from "../../../helpers";
+import {blockEntry as entry, setBlockLists, tick} from "../../../helpers";
 import {type Running, runModule} from "../module";
 
 interface RowFields {
@@ -20,9 +19,6 @@ const row = ({no, nick = "ㅇㅇ", uid = "", title = `글 ${no}`, subject = "일
     `<tr class="ub-content" data-no="${no}"><td class="gall_subject">${subject}</td>` +
     `<td class="gall_tit"><a href="/board/view/?id=test&no=${no}">${title}</a></td>` +
     `<td class="gall_writer ub-writer" data-nick="${nick}" data-uid="${uid}" data-ip="1.2"></td></tr>`;
-
-const entry = (content: string, fields: { mode?: DetectMode; gallery?: string; isRegex?: boolean } = {}): BlockEntry =>
-    ({id: `${content}-${fields.gallery ?? ""}`, content, isRegex: false, ...fields});
 
 const rowOf = (no: string): HTMLElement => document.querySelector<HTMLElement>(`tr[data-no="${no}"]`)!;
 

@@ -4,11 +4,9 @@ import {fakeBrowser} from "wxt/testing/fake-browser";
 import {DEFAULT_DETECT_MODE} from "@/core/storage/items";
 import {blockKey, composeExtra, initBlocksStore, normalizeBlockList, normalizeDefaults, useBlocksStore} from "@/stores/blocks";
 
-import {setBlockLists, stored} from "../../helpers";
+import {blockEntry as entry, setBlockLists, stored} from "../../helpers";
 
 beforeEach(() => setBlockLists());
-
-const entry = (content: string, fields: Partial<{ id: string; gallery: string; isRegex: boolean }> = {}) => ({id: content, content, isRegex: false, ...fields});
 
 describe("normalizeBlockList", () => {
     it("배열이 아니면 빈 목록", () => {
