@@ -126,6 +126,63 @@ test.describe("옵션 - 차단 탭", () => {
         await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([{id: expect.any(String), content: "차단닉", isRegex: false}]);
     });
 
+    test("틀린 정규식과 64자가 아닌 이미지 해시는 저장하지 않고 알리며, 이미지 해시는 소문자로 저장한다", async ({page, extensionId, storage}) => {
+        const {dialog} = await openOptions(page, extensionId, "block");
+        const alert = dialog.getByRole("alert");
+
+        await page.getByRole("button", {name: "추가", exact: true}).click();
+        await dialog.getByPlaceholder("닉네임 값을 입력해 주세요").fill("(");
+        await dialog.getByRole("checkbox", {name: "정규식", exact: true}).click();
+        await dialog.getByRole("button", {name: "추가", exact: true}).click();
+        await expect(alert).toContainText("정규식이 올바르지 않습니다");
+        await page.keyboard.press("Escape");
+        await expect(dialog).toHaveCount(0);
+
+        await page.getByRole("tab", {name: /^이미지/}).click();
+        await page.getByRole("button", {name: "추가", exact: true}).click();
+        const input = dialog.getByPlaceholder("이미지 값을 입력해 주세요");
+        await input.fill("A".repeat(63));
+        await dialog.getByRole("button", {name: "추가", exact: true}).click();
+        await expect(alert).toContainText("16진수 64자");
+        // 파일 해시는 소문자 16진수라 대문자로 넣어도 소문자로 저장한다.
+        await input.fill("A".repeat(64));
+        await dialog.getByRole("button", {name: "추가", exact: true}).click();
+        await expect.poll(() => storage.get("refresher:block:IMAGE")).toEqual([{id: expect.any(String), content: "a".repeat(64), isRegex: false}]);
+        expect(await storage.get("refresher:block:NICK")).toBeUndefined();
+    });
+
+    test("같은 값·갤러리 항목은 추가하지 않고, 자기 항목은 값 그대로 수정하며, 이미지 값을 바꿔야 비슷한 이미지 지문을 버린다", async ({page, extensionId, storage}) => {
+        const nick = {id: "a", content: "있는닉", isRegex: false, gallery: "g1"};
+        const image = {id: "i", content: "a".repeat(64), isRegex: false, similar: "0".repeat(32), frames: ["1".repeat(32)]};
+        await storage.set({"refresher:block:NICK": [nick], "refresher:block:IMAGE": [image]});
+        const {dialog, table} = await openOptions(page, extensionId, "block");
+
+        await page.getByRole("button", {name: "추가", exact: true}).click();
+        await dialog.getByPlaceholder("닉네임 값을 입력해 주세요").fill("있는닉");
+        await dialog.getByPlaceholder("갤러리 ID").fill("g1");
+        await dialog.getByRole("button", {name: "추가", exact: true}).click();
+        await expect(dialog.getByRole("alert")).toHaveText("이미 같은 차단 항목이 있습니다.");
+        await page.keyboard.press("Escape");
+        await expect(dialog).toHaveCount(0);
+
+        await table.getByText("있는닉", {exact: true}).click();
+        await dialog.getByRole("combobox", {name: "차단 모드", exact: true}).click();
+        await page.getByRole("option", {name: "포함", exact: true}).click();
+        await dialog.getByRole("button", {name: "수정", exact: true}).click();
+        await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([{...nick, mode: "CONTAIN"}]);
+
+        await page.getByRole("tab", {name: /^이미지/}).click();
+        await table.getByText(image.content, {exact: true}).click();
+        await dialog.getByRole("button", {name: "수정", exact: true}).click();
+        await expect(dialog).toHaveCount(0);
+        expect(await storage.get("refresher:block:IMAGE")).toEqual([image]);
+
+        await table.getByText(image.content, {exact: true}).click();
+        await dialog.getByPlaceholder("이미지 값을 입력해 주세요").fill("b".repeat(64));
+        await dialog.getByRole("button", {name: "수정", exact: true}).click();
+        await expect.poll(() => storage.get("refresher:block:IMAGE")).toEqual([{id: "i", content: "b".repeat(64), isRegex: false}]);
+    });
+
     test("줄의 휴지통은 항목 이름을 달고, 확인해야 그 항목만 지운다", async ({page, extensionId, storage}) => {
         await storage.set({"refresher:block:NICK": [{id: "a", content: "남길닉", isRegex: false}, {id: "b", content: "지울닉", isRegex: false}]});
         const {table, alert, dialog} = await openOptions(page, extensionId, "block");
@@ -340,6 +397,26 @@ test.describe("옵션 - 메모·데이터 탭", () => {
         await expect(dialog).toHaveCount(0);
         await expect(table.getByText("옵션 메모")).toBeVisible();
         await expect.poll(() => storage.get("refresher:memo:UID")).toMatchObject({user9: {text: "옵션 메모"}});
+    });
+
+    test("같은 대상의 메모는 추가하지 않고, 앞뒤 공백이 있는 대상의 메모는 그 키 그대로 고친다", async ({page, extensionId, storage}) => {
+        const spaced = {text: "옛 메모", color: "#ff0000"};
+        const other = {text: "다른 메모", color: "#00ff00"};
+        await storage.set({"refresher:memo:UID": {" u ": spaced, v: other}});
+        const {dialog, table} = await openOptions(page, extensionId, "memo");
+
+        await page.getByRole("button", {name: "추가", exact: true}).click();
+        await dialog.getByPlaceholder("아이디, 닉네임 또는 IP").fill(" v ");
+        await dialog.getByPlaceholder("메모를 입력해 주세요 (160자 제한)").fill("덮을 메모");
+        await dialog.getByRole("button", {name: "추가", exact: true}).click();
+        await expect(dialog.getByRole("alert")).toHaveText("이미 메모가 있습니다.");
+        await page.keyboard.press("Escape");
+        await expect(dialog).toHaveCount(0);
+
+        await table.getByText("u", {exact: true}).click();
+        await dialog.getByPlaceholder("메모를 입력해 주세요 (160자 제한)").fill("새 메모");
+        await dialog.getByRole("button", {name: "수정", exact: true}).click();
+        await expect.poll(() => storage.get("refresher:memo:UID")).toEqual({" u ": {...spaced, text: "새 메모"}, v: other});
     });
 
     test("메모 전체 삭제도 알림의 되돌리기로 되살린다", async ({page, extensionId, storage}) => {
