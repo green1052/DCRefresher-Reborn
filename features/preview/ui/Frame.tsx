@@ -294,7 +294,6 @@ export const Frame = () => {
                                   adminVisible
                                       ? "w-[min(var(--refresher-frame-width,1200px),90vw,max(480px,calc(100vw_-_2_*_(150px_+_12px))))]"
                                       : "w-[min(var(--refresher-frame-width,1200px),90vw)]")}
-                    data-admin={adminVisible || undefined}
                     data-blur-reveal={block?.blurReveal || undefined}
                     data-block-revealed={revealed || undefined}
                     style={{"--refresher-frame-width": `${frameWidth}px`}}
