@@ -274,8 +274,9 @@ export default defineModule({
             }
 
             // 실패로 주기가 늘어난 동안은 바로 받지 않는다. 탭을 오갈 때마다 요청하면 늘린 주기가 소용없다.
-            if (failures === 0) void load();
-            armNext();
+            // 다음 주기는 응답을 받은 뒤 잡는다. 곧바로 보낸 요청이 실패해도 늘린 주기로 다시 받는다.
+            if (failures === 0) void load().finally(armNext);
+            else armNext();
         };
 
         // 뒤로/앞으로 가기: 인페이지 전환으로 쌓인 주소의 목록으로 되돌린다.
@@ -287,8 +288,7 @@ export default defineModule({
             if (listUrl(location.href) === listUrl(originalLocation)) return;
 
             window.clearTimeout(timer);
-            void load(location.href, true);
-            armNext();
+            void load(location.href, true).finally(armNext);
         };
 
         const {signal} = ctx;
@@ -316,7 +316,7 @@ export default defineModule({
             if (newUrl !== location.href) history.pushState(null, document.title, newUrl);
 
             scrollAfter = newUrl;
-            void load(newUrl, true);
+            void load(newUrl, true).finally(armNext);
         };
 
         document.addEventListener("click", onPagingClick, {signal});

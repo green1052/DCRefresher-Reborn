@@ -291,6 +291,26 @@ describe("자동 새로고침", () => {
         expect(toasts()).toEqual([]);
     });
 
+    it("탭으로 돌아와 곧바로 보낸 요청이 실패하면 다음 요청은 10.5초 뒤에 보낸다", async () => {
+        vi.useFakeTimers();
+        vi.spyOn(console, "error").mockImplementation(() => {});
+        get.mockRejectedValue(new TypeError("Failed to fetch"));
+        // jsdom에는 없는 API. 탭을 떠날 때 맨 위 글을 적느라 부른다.
+        Element.prototype.checkVisibility = () => true;
+        const hidden = vi.spyOn(document, "hidden", "get").mockReturnValue(true);
+        await start();
+        document.dispatchEvent(new Event("visibilitychange"));
+        hidden.mockReturnValue(false);
+        document.dispatchEvent(new Event("visibilitychange"));
+        await vi.advanceTimersByTimeAsync(0);
+        expect(get).toHaveBeenCalledTimes(1);
+        // 기본 주기(5.5초)가 아니라 두 배로 늘린 10초 + 0.5초 뒤다.
+        await vi.advanceTimersByTimeAsync(10_499);
+        expect(get).toHaveBeenCalledTimes(1);
+        await vi.advanceTimersByTimeAsync(1);
+        expect(get).toHaveBeenCalledTimes(2);
+    });
+
     it("응답이 멈추면 30초에 끊고 실패로 쳐서 다음 주기에 다시 받는다", async () => {
         vi.useFakeTimers();
         vi.spyOn(console, "error").mockImplementation(() => {});
