@@ -8,3 +8,12 @@
 .gall_list .refresherSelected > td:first-child {
     box-shadow: inset 3px 0 0 #3b4890;
 }
+
+/* 디시 야간 모드: #3b4890은 어두운 배경에서 3:1을 넘지 못한다(검정 위에서도 2.5:1). 스텔스 버튼과 같은 야간 색을 쓴다. */
+html:has(#css-darkmode) .gall_list .refresherSelected > td {
+    background: rgb(143 163 255 / 14%) !important;
+
+    &:first-child {
+        box-shadow: inset 3px 0 0 #8fa3ff;
+    }
+}
