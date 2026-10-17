@@ -382,7 +382,7 @@ export const Frame = () => {
                             )) : comments.length === 0 ? (
                                 <p className="py-8 text-center text-muted-foreground">댓글이 없습니다.</p>
                             ) : (
-                                <CommentList/>
+                                <CommentList comments={comments}/>
                             )}
                         </div>
                     )}

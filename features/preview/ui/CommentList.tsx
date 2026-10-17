@@ -161,8 +161,7 @@ const SelectionTools = ({shownSelectable, foldable}: { shownSelectable: Processe
 };
 
 /** 스레드별 댓글과 접을 수 있는 답글. */
-export const CommentList = () => {
-    const comments = usePreviewStore((s) => s.comments)!;
+export const CommentList = ({comments}: { comments: ProcessedComment[] }) => {
     const pageRevealed = useUiStore((s) => s.blockRevealed);
     const postRevealed = usePreviewStore((s) => s.commentsRevealed);
     const revealed = pageRevealed || postRevealed;
