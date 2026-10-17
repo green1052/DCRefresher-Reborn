@@ -25,7 +25,7 @@ jobs:
             -   uses: oven-sh/setup-bun@v2
 
             -   name: Install Dependencies
-                run: bun ci
+                run: bun ci --ignore-scripts
 
             -   name: Keep hand-managed files
                 id: keep
