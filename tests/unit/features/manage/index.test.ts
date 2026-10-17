@@ -132,8 +132,8 @@ describe("이미지 출처", () => {
 
 describe("같은 제목 찾기", () => {
     /** 디시 글 머리: 작성자 칸 안에 닉네임·날짜(.fl)와 조회·추천 수(.fr)가 있다. */
-    const mountView = (): void => {
-        document.body.innerHTML = "<div class=\"gallview_head\"><h3><span class=\"title_subject\">같은 제목</span></h3>" +
+    const mountView = (title = "같은 제목"): void => {
+        document.body.innerHTML = `<div class="gallview_head"><h3><span class="title_subject">${title}</span></h3>` +
             "<div class=\"gall_writer\"><div class=\"fl\"><span class=\"nickname\">닉</span></div><div class=\"fr\"><span class=\"gall_count\">조회 1</span></div></div></div>";
     };
     const result = (title: string, id: string, no: string, gallery: string): string =>
@@ -151,5 +151,17 @@ describe("같은 제목 찾기", () => {
         button!.click();
         await vi.waitFor(() => expect(useUiStore.getState().toasts.map((toast) => toast.content)).toEqual(["제목이 같은 글 2개: 갤A, 갤C"]));
         expect(searchPosts).toHaveBeenCalledWith("같은 제목");
+    });
+
+    it("제목 칸 안 <script> 글자는 검색어에 넣지 않는다", async () => {
+        useUiStore.setState({toasts: []});
+        searchPosts.mockResolvedValue(`<ul class="sch_result_list">${result("같은 제목", "a", "1", "갤A")}</ul>`);
+        mountView("같은 제목<script>document.write(\"광고\")</script>");
+        await start({titleSearch: true});
+        await tick();
+
+        document.querySelector<HTMLButtonElement>(".gall_writer .fr > button")!.click();
+        await vi.waitFor(() => expect(useUiStore.getState().toasts.map((toast) => toast.content)).toEqual(["제목이 같은 글 1개: 갤A"]));
+        expect(searchPosts).toHaveBeenLastCalledWith("같은 제목");
     });
 });

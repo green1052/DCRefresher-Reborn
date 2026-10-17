@@ -4,6 +4,10 @@ export const whenDomReady = (run: () => void, signal?: AbortSignal): void => {
     else run();
 };
 
+/** 요소 글자 — 디시가 제목 칸 등에 넣은 <script>는 실행된 뒤에도 남아 textContent에 소스가 붙으므로, 바로 아래 <script> 글자는 뺀다. */
+export const textWithoutScripts = (element: Element | null | undefined): string =>
+    element ? Array.from(element.childNodes, (node) => (node.nodeName === "SCRIPT" ? "" : node.textContent)).join("").trim() : "";
+
 /** bfcache에서 돌아온 탭은 그사이의 저장소 변경을 받지 못했다. 돌아올 때 run으로 다시 읽는다. 컨텍스트가 무효화되면 저장소를 부를 수 없으므로 signal로 리스너를 뗀다. */
 export const onBfcacheRestore = (run: () => Promise<void>, signal?: AbortSignal): void => {
     window.addEventListener("pageshow", (ev) => {

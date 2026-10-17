@@ -2,6 +2,7 @@ import {documentUrl, pagePostNo, postSearchUrl} from "@/core/http/urls";
 import {sendMessage} from "@/core/messaging/protocol";
 import {NUMBERED_SOURCE} from "@/core/preview/parser";
 import {useUiStore} from "@/stores/ui";
+import {textWithoutScripts} from "@/utils/dom";
 
 const ORIGIN_CLASS = "refresherImageOrigin";
 const SEARCH_CLASS = "refresherTitleSearch";
@@ -71,7 +72,7 @@ const searchSameTitle = async (button: HTMLButtonElement, title: string): Promis
 };
 
 const addTitleSearch = (head: Element): void => {
-    const title = head.querySelector(".title_subject")?.textContent?.trim();
+    const title = textWithoutScripts(head.querySelector(".title_subject"));
     const counts = head.querySelector(".gall_writer .fr");
     if (!title || !counts) return;
 
