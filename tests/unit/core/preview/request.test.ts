@@ -292,7 +292,9 @@ describe("댓글 관리", () => {
             ["false||정상적인 접근이 아닙니다.", {success: false, message: "정상적인 접근이 아닙니다."}],
             ["false||nomember||로그인이 필요합니다.", {success: false, message: "로그인이 필요합니다."}],
             // 세션이 끊기면 로그인 페이지 HTML이 온다.
-            ["<!DOCTYPE html><html><body>로그인</body></html>", {success: false, message: undefined}]
+            ["<!DOCTYPE html><html><body>로그인</body></html>", {success: false, message: undefined}],
+            // 인라인 스크립트의 ||를 칸 구분으로 잘라 조각을 안내 문구로 쓰면 안 된다.
+            ["<!DOCTYPE html><html><head><script>window.dataLayer = window.dataLayer || [];</script></head><body>로그인</body></html>", {success: false, message: undefined}]
         ];
         for (const [reply, result] of cases) {
             serve(fetchMock, () => reply);

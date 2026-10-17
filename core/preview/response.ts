@@ -14,7 +14,10 @@ export interface SubmitResult {
 }
 
 export const submitResult = (response: string): SubmitResult => {
-    const [result, message, detail] = response.trim().split("||");
+    const text = response.trim();
+    // 로그인이 풀렸거나 오류 페이지면 HTML이 온다. 인라인 스크립트의 ||로 나누면 조각이 안내 문구가 된다.
+    if (text.startsWith("<")) return {result: text};
+    const [result, message, detail] = text.split("||");
 
     return {result: result ?? "", message, detail};
 };
