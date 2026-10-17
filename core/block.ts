@@ -209,7 +209,7 @@ const readImage = async (url: string, {retry = false, similar = false}: { retry?
 
 /**
  * 이미지 파일의 SHA-256과, similar면 비슷한 이미지 지문. 파일 해시는 이미지 차단 항목의 내용이다. 읽지 못하면(이미지 호스트 권한이 없는 등) undefined다.
- * 크롬은 페이지가 받아 둔 캐시에서 읽는다. 배경의 규칙이 이 요청에만 CORS 헤더를 붙인다 (features/block/background.ts).
+ * 크롬은 페이지가 받아 둔 캐시에서 읽는다. 배경의 규칙이 이 요청(같은 문서의 다른 fetch·XHR도)에 CORS 헤더를 붙인다 (features/block/background.ts).
  * 파이어폭스는 콘텐츠 스크립트의 요청이 페이지의 캐시를 쓰지 않아, 배경이 페이지의 응답을 흘려보내며 구해 둔 해시를 받는다.
  * 둘 다 캐시나 배경에 없으면 이미지를 한 번 더 받는다. retry면 앞서 읽지 못한 것도 다시 읽는다 (권한을 막 받은 뒤의 우클릭 차단).
  */

@@ -17,9 +17,10 @@ const IMAGE_MENU = "block:image";
 const BOARD_PATTERNS = ["https://gall.dcinside.com/*board/view/*", "https://gall.dcinside.com/*board/lists/*"];
 
 /**
- * 크롬: 디시 탭의 콘텐츠 스크립트가 본문 이미지를 읽을 수 있게 그 요청(xmlhttprequest)의 응답에만 CORS 헤더를 붙인다.
+ * 크롬: 콘텐츠 스크립트가 본문 이미지를 읽을 수 있게, gall.dcinside.com 문서가 디시 이미지 주소(viewimage.php)로 보내는 fetch·XHR의 응답에 CORS 헤더를 붙인다.
+ * declarativeNetRequest는 콘텐츠 스크립트 요청과 페이지 스크립트 요청을 가르지 못해 페이지 스크립트도 이 헤더를 받는다(쿠키 없이 받는 공개 이미지다).
  * 페이지의 <img> 요청은 건드리지 않는다. 콘텐츠 스크립트의 요청은 페이지와 같은 캐시를 써서 이미지를 다시 받지 않는다 (core/block.ts의 imageHash).
- * 이미지 호스트 권한이 없으면 크롬이 규칙을 건너뛴다.
+ * 이미지 호스트 권한이 없으면(선택 권한이 필요한 *.dcinside.co.kr 이미지) 크롬이 규칙을 건너뛴다.
  */
 const CORS_RULE: Browser.declarativeNetRequest.Rule = {
     id: 1,
