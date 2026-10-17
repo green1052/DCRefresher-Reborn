@@ -81,6 +81,11 @@ test.describe("실제 디시", () => {
         const refreshed = await page.waitForResponse((response) => response.url().includes(LIST_PATH.replace(/\/$/, "")) && response.request().resourceType() !== "document", {timeout: 30_000});
         expect(refreshed.ok()).toBe(true);
         await expect(page.locator(POSTS).first()).toBeVisible();
+
+        // 갈아끼운 행에 디시 자체 차단·메모 배지를 다시 거는 디시 함수(entrypoints/background/page.ts). 없으면 오류 없이 건너뛴다.
+        // 식을 문자열로 넘긴다. UserMemo가 없을 때 ReferenceError가 나지 않게 window.를 붙인다.
+        expect.soft(await page.evaluate("typeof chk_user_block"), "디시 자체 차단 다시 걸기: chk_user_block이 없다").toBe("function");
+        expect.soft(await page.evaluate("typeof window.UserMemo?.renderWriterMemoBadges"), "메모 배지 다시 걸기: UserMemo.renderWriterMemoBadges가 없다").toBe("function");
     });
 
     test("제목을 우클릭하면 본문과 댓글 머리를 그리고, 닫으면 목록 주소로 돌아간다", async ({page}) => {
@@ -219,7 +224,10 @@ test.describe("실제 디시", () => {
         const title = (await post.textContent())?.trim() ?? "";
         expect(href, "목록에 글 주소가 있다").toBeTruthy();
 
-        await check(new URL(href ?? "", LIST_URL).href, VIEW_MARKUP);
+        const viewHtml = await check(new URL(href ?? "", LIST_URL).href, VIEW_MARKUP);
+        // 디시 자체 차단을 다시 걸 때 인라인 스크립트에서 읽는 값이다. 미니 갤러리 글 페이지는 'mi$id'를 넘긴다.
+        // 정규식은 entrypoints/background/page.ts(직렬화돼 import할 수 없다)에서 옮겼다. 그쪽을 바꾸면 여기도 바꾼다.
+        expect.soft(viewHtml, "디시 자체 차단 다시 걸기: 글 페이지에 chk_user_block('…') 호출이 없다").toMatch(/chk_user_block\('[^']*'\)/);
 
         const search = new URL(LIST_URL);
         search.searchParams.set("s_type", "search_subject");
