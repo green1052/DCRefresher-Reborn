@@ -16,6 +16,9 @@ let listeners: AbortController | undefined;
 /** hookUploads를 넣어 달라고 이미 했다. 넣은 스크립트는 페이지에 남으므로 다시 보내 배경을 깨울 필요가 없다. */
 let hookRequested = false;
 
+/** 수정 페이지에서 고쳤다는 표시. 파이어폭스는 업데이트하면 이 스크립트를 정리 없이 없애고 다시 주입하므로 새 인스턴스가 이어받게 <html>에 둔다. */
+const EDITED_KEY = "refresherEdited";
+
 /**
  * 페이지에 넣는 hookUploads가 읽을 설정을 둔다. 켜진 설정이 있으면 배경에 hookUploads를 넣어 달라고 한다 (페이지마다 한 번만 걸린다).
  * 둘 다 꺼져 있으면 지워 파일을 건드리지 않게 한다.
@@ -53,7 +56,11 @@ export default defineModule({
         // 디시 취소 레이어에서 이미 나가겠다고 확인했다.
         let leaving = false;
         // 수정 페이지는 원래 글이 채워져 있으므로 고친 뒤에만 막는다.
-        let edited = !location.pathname.includes("/board/modify");
+        let edited = !location.pathname.includes("/board/modify") || EDITED_KEY in document.documentElement.dataset;
+        const markEdited = (): void => {
+            edited = true;
+            document.documentElement.dataset[EDITED_KEY] = "";
+        };
 
         const onClick = (ev: MouseEvent): void => {
             if (!(ev.target instanceof Element)) return;
@@ -63,7 +70,7 @@ export default defineModule({
 
         const onInput = (): void => {
             submitting = false;
-            edited = true;
+            if (!edited) markEdited();
         };
 
         const onBeforeUnload = (ev: BeforeUnloadEvent): void => {
@@ -91,7 +98,7 @@ export default defineModule({
         // 속성(hover·class) 변화는 보지 않는다. 같은 요소를 다시 observe해도 옵션만 바뀌므로 건드릴 때마다 부른다.
         if (edited) return;
         const observer = new MutationObserver(() => {
-            edited = true;
+            markEdited();
             observer.disconnect();
         });
         const watch = (): void => {
@@ -106,5 +113,6 @@ export default defineModule({
     revoke() {
         listeners?.abort();
         delete document.documentElement.dataset[UPLOAD_OPTIONS_KEY];
+        delete document.documentElement.dataset[EDITED_KEY];
     }
 });

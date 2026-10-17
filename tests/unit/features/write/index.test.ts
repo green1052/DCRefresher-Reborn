@@ -181,4 +181,22 @@ describe("수정 페이지", () => {
         await tick();
         expect(blocksExit()).toBe(true);
     });
+
+    it("다시 주입된 인스턴스는 앞 인스턴스가 남긴 표시로 처음부터 막고, 모듈을 끄면 표시를 지운다", async () => {
+        document.documentElement.dataset.refresherEdited = "";
+        const {stop} = await start();
+        expect(blocksExit()).toBe(true);
+        stop();
+        running = undefined;
+        expect(document.documentElement.dataset.refresherEdited).toBeUndefined();
+    });
+
+    it("고친 뒤 모듈을 끄면 표시를 지운다", async () => {
+        const {stop} = await start();
+        type(subject());
+        expect(document.documentElement.dataset.refresherEdited).toBe("");
+        stop();
+        running = undefined;
+        expect(document.documentElement.dataset.refresherEdited).toBeUndefined();
+    });
 });
