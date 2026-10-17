@@ -24,9 +24,9 @@ import {UserCard} from "./UserCard";
 
 // 닉콘(a.writer_nikcon img)의 src. 댓글마다 DOMParser를 돌리지 않게 정규식으로 읽는다.
 // 디시는 작은따옴표를 쓰지만 따옴표 없는 값도 받는다.
-const extractIcon = (html: string | undefined): string | undefined => html?.match(/writer_nikcon[^>]*>\s*<img\b[^>]*?\ssrc=["']?([^"'\s>]+)/)?.[1];
+export const extractIcon = (html: string | undefined): string | undefined => html?.match(/writer_nikcon[^>]*>\s*<img\b[^>]*?\ssrc=["']?([^"'\s>]+)/)?.[1];
 
-const extractIp = (html: string | undefined): string | undefined => html?.match(/class=["']?ip["']?[^>]*>\s*\(([^)]+)\)/)?.[1];
+export const extractIp = (html: string | undefined): string | undefined => html?.match(/class=["']?ip["']?[^>]*>\s*\(([^)]+)\)/)?.[1];
 
 /**
  * 유튜브식 답글 트리. 부모 이름 아래에서 내려온 선이 답글마다 ㄴ자로 꺾여 들어간다 (x좌표: 부모 본문 시작 32px + 12px = 답글 안에서 12px).
