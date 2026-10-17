@@ -22,7 +22,7 @@ import {
 } from "@/core/preview/request";
 import {D_ALPHABET} from "@/core/preview/dcinside-js";
 import {submitTxtcon} from "@/core/preview/txtcon";
-import type {DcinsideComment, PostInfo} from "@/core/preview/types";
+import type {DcinsideComment, DcinsideDcconDetailList, PostInfo} from "@/core/preview/types";
 
 import {preData} from "../../../helpers";
 import {serve} from "./net";
@@ -229,6 +229,31 @@ describe("디시콘", () => {
         expect(await fetchDcconList(signal())).toBe("shop");
         serve(fetchMock, () => "not_login");
         expect(await fetchDcconList(signal())).toBe("not_login");
+    });
+
+    const pack = (page: number): DcinsideDcconDetailList => ({package_idx: String(page), title: `콘${page}`, main_img_url: "", detail: []});
+
+    /** 쪽마다 그 쪽 번호의 패키지 하나를 준다. 요청한 쪽 번호를 모은다. */
+    const servePages = (maxPage: number | string, reply = (page: number): string => JSON.stringify({target: "icon", max_page: maxPage, list: [pack(page)]})) => {
+        const sent = serve(fetchMock, ({body}) => reply(Number(body.get("page"))));
+        return () => sent.map(({body}) => Number(body.get("page"))).toSorted((a, b) => a - b);
+    };
+
+    it("문자열 max_page까지 모든 쪽을 받아 쪽 순서대로 잇는다", async () => {
+        const pages = servePages("2");
+        expect(await fetchDcconList(signal())).toEqual([pack(0), pack(1), pack(2)]);
+        expect(pages()).toEqual([0, 1, 2]);
+    });
+
+    it("20쪽까지만 받는다", async () => {
+        const pages = servePages(30);
+        expect(await fetchDcconList(signal())).toHaveLength(20);
+        expect(pages()).toEqual(Array.from({length: 20}, (_, index) => index));
+    });
+
+    it("뒤쪽이 비로그인이면 그 쪽만 뺀다", async () => {
+        servePages(2, (page) => (page === 1 ? "not_login" : JSON.stringify({target: "icon", max_page: 2, list: [pack(page)]})));
+        expect(await fetchDcconList(signal())).toEqual([pack(0), pack(2)]);
     });
 });
 
