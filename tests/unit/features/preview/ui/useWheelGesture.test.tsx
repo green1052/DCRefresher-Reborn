@@ -5,8 +5,8 @@ import {afterEach, expect, it, vi} from "vitest";
 import {useWheelGesture} from "@/features/preview/ui/useWheelGesture";
 
 /** 스크롤 칸 하나에 훅을 단다. 지금 안내 방향을 data-hint에 적는다. jsdom은 크기가 0이라 칸은 늘 끝에 닿아 있다. */
-const Box = ({goToAdjacent, canGo}: { goToAdjacent: (dir: number) => void; canGo: (dir: number) => boolean }) => {
-    const {onWheel, hint} = useWheelGesture("post", goToAdjacent, canGo, true);
+const Box = ({goToAdjacent, canGo, openKey = "1"}: { goToAdjacent: (dir: number) => void; canGo: (dir: number) => boolean; openKey?: string }) => {
+    const {onWheel, hint} = useWheelGesture(openKey, goToAdjacent, canGo, true);
     return <div onWheel={onWheel} data-hint={hint.dir}/>;
 };
 
@@ -43,4 +43,19 @@ it("그 방향에 넘어갈 글이 없으면(목록 처음·끝) 안내하지 �
     wheel(box, -1, 2000);
     expect(box.getAttribute("data-hint")).toBe("0");
     expect(goToAdjacent).not.toHaveBeenCalled();
+});
+
+it("닫았다 다시 열면(키가 바뀌면) 앞서 끝에 닿아 둔 상태로 넘기지 않는다", () => {
+    const goToAdjacent = vi.fn();
+    act(() => render(<Box goToAdjacent={goToAdjacent} canGo={() => true}/>, document.body));
+    const box = document.body.firstElementChild!;
+    wheel(box, -1, 1000);
+
+    act(() => render(<Box goToAdjacent={goToAdjacent} canGo={() => true} openKey="2"/>, document.body));
+    wheel(box, -1, 2000);
+    expect(goToAdjacent).not.toHaveBeenCalled();
+    expect(box.getAttribute("data-hint")).toBe("-1");
+
+    wheel(box, -1, 3000);
+    expect(goToAdjacent).toHaveBeenCalledWith(-1);
 });

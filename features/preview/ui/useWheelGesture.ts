@@ -9,7 +9,7 @@ const canScroll = (el: Element, dir: number): boolean => (dir > 0 ? el.scrollTop
 /**
  * 스크롤 끝에서 새로 한 번 더 굴리면 이전/다음 글로 넘어간다 (Frame의 스크롤 칸). 끝에 닿은 그 동작으로 넘기면
  * 트랙패드 관성에 글이 연달아 넘어간다. 끝에 닿으면 v5처럼 안내를 띄우고, 넘기거나 닫았다 열면 지운다
- * (hint.key가 지금 글일 때만 보인다). canGo가 그 방향에 넘어갈 글이 없다고 하면(목록 처음·끝) 끝에 닿아도 안내하지 않는다.
+ * (hint.key가 지금 연 창(signalId)일 때만 보인다). canGo가 그 방향에 넘어갈 글이 없다고 하면(목록 처음·끝) 끝에 닿아도 안내하지 않는다.
  * enabled(scrollToSkip)가 꺼져 있으면 아무것도 하지 않는다.
  */
 export const useWheelGesture = (key: string, goToAdjacent: (dir: number) => void, canGo: (dir: number) => boolean, enabled: boolean) => {
@@ -18,7 +18,7 @@ export const useWheelGesture = (key: string, goToAdjacent: (dir: number) => void
 
     const skipOnWheel = (dir: number, timeStamp: number, atEdge: boolean): void => {
         const state = wheel.current;
-        // 앞 글에서 끝에 닿아 둔 상태는 버린다.
+        // 앞서 연 창(다른 글이거나, 닫았다 다시 연 같은 글)에서 끝에 닿아 둔 상태는 버린다.
         if (state.key !== key) {
             state.key = key;
             state.armed = 0;

@@ -210,8 +210,10 @@ export const Frame = () => {
         return () => window.removeEventListener("keydown", onKey);
     }, [visible]);
 
-    const {onWheel, hint} = useWheelGesture(postKey, goToAdjacent, hasAdjacent, scrollToSkip);
-    const hintDir = visible && !fading && hint.key === postKey ? hint.dir : 0;
+    // 끝에 닿은 상태와 안내는 연 창마다 새로 건다. 글 주소로 걸면 닫았다 같은 글을 다시 열 때 앞서 띄운 안내가 그대로 남는다.
+    const signalId = usePreviewStore((s) => s.signalId);
+    const {onWheel, hint} = useWheelGesture(String(signalId), goToAdjacent, hasAdjacent, scrollToSkip);
+    const hintDir = visible && !fading && hint.key === String(signalId) ? hint.dir : 0;
 
     if (!visible && !fading) return null;
 
