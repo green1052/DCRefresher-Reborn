@@ -142,6 +142,8 @@ const VIEW_IMAGE = /^https:\/\/[^/]+\.dcinside\.(?:com|co\.kr)\/viewimage\.php/;
 interface ImageRead {
     file: Promise<string | undefined>;
     hashes: Promise<ImageHashes | undefined>;
+    /** 지문까지 구하는 읽기인지. */
+    similar: boolean;
 }
 
 // 주소 → 읽은 것. 차단 목록이 바뀌어 다시 판정하거나 미리보기를 다시 열 때 또 읽지 않는다.
@@ -185,6 +187,8 @@ const readImageHashes = async (url: string, similar: boolean, onFile: (file: str
 
 const readImage = async (url: string, {retry = false, similar = false}: { retry?: boolean; similar?: boolean }): Promise<ImageRead> => {
     const cached = imageReads.get(url);
+    // 지문이 끝나기를 기다리지 않고 돌려준다. 같은 파일은 파일 해시가 나오자마자 막는다 (isImageBlocked).
+    if (cached && !retry && (cached.similar || !similar)) return cached;
     const previous = await cached?.hashes;
     // 지문 없이 읽어 둔 것은 지문이 필요해지면 다시 읽는다 (비슷한 이미지 설정을 켰을 때). 읽지 못한 것은 retry일 때만 다시 읽는다.
     if (cached && (previous ? !similar || previous.similar !== undefined : !retry)) return cached;
@@ -193,7 +197,7 @@ const readImage = async (url: string, {retry = false, similar = false}: { retry?
     const hashes = readImageHashes(url, similar, file.resolve).then((next) => next ?? previous);
     // 파일 해시를 먼저 알리지 못했으면(읽지 못한 등) 다 끝난 것으로 푼다. 먼저 푼 값이 남는다.
     void hashes.then((done) => file.resolve(done?.file));
-    const read = {file: file.promise, hashes};
+    const read = {file: file.promise, hashes, similar};
     imageReads.set(url, read);
     return read;
 };

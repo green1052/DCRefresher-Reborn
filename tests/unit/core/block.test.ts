@@ -378,6 +378,8 @@ describe("이미지 차단", () => {
             vi.mocked(imageFingerprints).mockReturnValue(new Promise(() => {}));
 
             expect(await isImageBlocked(image(url), undefined, 12)).toBe(true);
+            // 차단 목록이 바뀌어 다시 판정해도(recheck·미리보기를 다시 열 때) 밀린 지문을 기다리지 않는다.
+            expect(await isImageBlocked(image(url), undefined, 12)).toBe(true);
         });
 
         it("움짤 항목은 정지 이미지라면 한 장면만, 움짤이라면 하나 빼고 모든 장면이 맞아야 막는다", async () => {
