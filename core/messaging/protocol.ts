@@ -60,8 +60,8 @@ interface ProtocolMap {
     /** 탭 → 배경: 쓰인 차단 항목·메모 (core/usage.ts). 여러 탭이 동시에 써도 기록을 잃지 않게 배경이 차례로 저장한다. */
     "refresher:markUsed"(batch: UsageData): void;
 
-    /** 옵션 → 배경: 사용 기록을 지금 목록에 맞추고 그 종류의 기록을 돌려준다 (core/usage.ts의 syncUsage). */
-    "refresher:syncUsage"(data: { kind: UsageKind; ids: string[] }): Record<string, number>;
+    /** 옵션 → 배경: 사용 기록을 지금 목록에 맞추고 그 종류의 기록을 돌려준다. prune이면 목록에 없는 기록도 버린다 (core/usage.ts의 syncUsage). */
+    "refresher:syncUsage"(data: { kind: UsageKind; ids: string[]; prune: boolean }): Record<string, number>;
 
     /** 배경 → 탭: 이미지 우클릭 메뉴의 "이 이미지 차단". 인자는 이미지 주소다. 탭이 파일 해시를 구해 차단 목록에 넣는다 (stores/blockRequest.ts). */
     "refresher:blockImage"(url: string): void;

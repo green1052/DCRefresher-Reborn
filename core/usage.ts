@@ -77,16 +77,18 @@ export const recordUsage = (batch: UsageData): Promise<void> =>
     });
 
 /**
- * 옵션 페이지의 지금 목록에 맞춘다. 기록이 없는 항목(기록을 시작하기 전부터 있었거나 다른 기기·다른 탭에서 새로 온 것)은 지금 쓰인 것으로 두고,
- * 지운 항목의 기록은 버린다. 바뀐 것이 없으면 쓰지 않는다.
+ * 옵션 페이지의 지금 목록에 맞춘다. 기록이 없는 항목(기록을 시작하기 전부터 있었거나 다른 기기·다른 탭에서 새로 온 것)은 지금 쓰인 것으로 둔다.
+ * 지운 항목의 기록은 prune일 때(페이지를 열고 처음 맞출 때)만 버린다. 그 뒤에 지운 것은 되돌리기로 같은 id가 돌아올 수 있어 남긴다.
+ * 바뀐 것이 없으면 쓰지 않는다.
  */
-export const syncUsage = (kind: UsageKind, ids: readonly string[]): Promise<Record<string, number>> =>
+export const syncUsage = (kind: UsageKind, ids: readonly string[], prune: boolean): Promise<Record<string, number>> =>
     writes(async () => {
         const usage = await readUsage();
         const now = Date.now();
         const times = usage[kind];
-        const next = Object.fromEntries(ids.map((id) => [id, Object.hasOwn(times, id) ? times[id]! : now]));
-        const changed = ids.some((id) => !Object.hasOwn(times, id)) || Object.keys(times).some((id) => !Object.hasOwn(next, id));
+        const listed = Object.fromEntries(ids.map((id) => [id, Object.hasOwn(times, id) ? times[id]! : now]));
+        const next = prune ? listed : {...times, ...listed};
+        const changed = ids.some((id) => !Object.hasOwn(times, id)) || (prune && Object.keys(times).some((id) => !Object.hasOwn(listed, id)));
 
         if (changed) await storage.setItem(USAGE_KEY, {...usage, [kind]: next});
         return next;

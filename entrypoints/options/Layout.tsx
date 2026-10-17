@@ -40,7 +40,14 @@ export const formatBytes = (bytes: number): string =>
     bytes < 1024 ? `${bytes}B` : bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)}KB` : `${(bytes / 1024 / 1024).toFixed(2)}MB`;
 
 /**
+ * 페이지를 열고 지운 항목의 기록을 이미 정리한 종류. 탭을 옮기면 탭이 다시 마운트되지만 삭제 알림의 되돌리기는 20초 남으므로
+ * 마운트가 아니라 페이지에 한 번만 정리한다.
+ */
+const pruned = new Set<UsageKind>();
+
+/**
  * 차단 항목·메모가 이 기기에서 마지막으로 쓰인 시각 (core/usage). 목록이 바뀌면 기록을 목록에 맞추고, 콘텐츠 스크립트가 적으면 따라간다.
+ * 지운 항목의 기록은 페이지를 열 때 정리하고, 그 뒤에 지운 것은 되돌리기로 되살릴 수 있게 남긴다.
  * ids는 목록이 바뀔 때만 새로 만들어야 한다 (렌더마다 새 배열이면 매번 저장소를 읽는다).
  */
 export const useUsage = (kind: UsageKind, ids: readonly string[]): Record<string, number> => {
@@ -50,9 +57,10 @@ export const useUsage = (kind: UsageKind, ids: readonly string[]): Record<string
         // 기록이 바뀌지 않았으면 저장소 이벤트가 오지 않으므로 응답으로 채운다. 응답을 기다리는 동안 watch가 먼저 오면
         // (배경이 저장소에 쓰고 같은 값을 돌려준다) 그 새 값을 응답이 덮지 않게 버린다.
         let stale = false;
-        sendMessage("refresher:syncUsage", {kind, ids: [...ids]}).then((next) => {
+        sendMessage("refresher:syncUsage", {kind, ids: [...ids], prune: !pruned.has(kind)}).then((next) => {
             if (!stale) setTimes(next);
         }, console.error);
+        pruned.add(kind);
         const unwatch = storage.watch<Record<UsageKind, Record<string, number>>>(USAGE_KEY, (next) => {
             stale = true;
             if (next) setTimes(next[kind] ?? {});

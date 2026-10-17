@@ -65,7 +65,7 @@ scripts/                IP DB 빌드 스크립트
 - 백업 대상은 `core/backup.ts`의 `BACKUP_KEYS`(모듈 on/off와 설정, 차단 목록과 기본 차단 모드, 메모)입니다. 새 키를 백업·내보내기에 넣으려면 여기에 추가합니다. 모듈 설정은 지금 있는 모듈 것만 넣고 가져올 때도 그것만 씁니다. 복원·초기화는 없어진 모듈이 남긴 설정도 지웁니다. 배경이 `meta.ts`(lucide 아이콘·Preact)를 불러오지 않도록 모듈 id는 `modules/module-types.ts`가 만드는 `.wxt/module-ids.ts`에서 읽습니다. `storage.sync` 한도는 `storage.sync.QUOTA_BYTES`·`QUOTA_BYTES_PER_ITEM`에서 읽습니다. 파이어폭스에는 이 상수가 없어 크롬과 같은 값(102,400·8,192바이트)을 대신 씁니다(`core/backup.ts`의 `CLOUD_QUOTA`).
 - 차단 항목의 `mode`가 비어 있으면 그 기기의 기본 차단 모드를 따릅니다. 그래서 차단 목록을 다른 기기로 옮기는 곳은 내보낸 쪽의 기본 모드가 다르면 그 모드를 항목에 적어 둡니다. 새로 옮기는 경로를 만들 때도 같은 규칙을 따릅니다.
 - 설정을 없애거나 이름을 바꿀 때 옛 값을 옮기는 코드는 두지 않습니다. 옵션·팝업을 열면 `stores/modules.ts`의 `pruneStaleSettings`가 스키마에 없는 설정을 지워서 이름을 바꾼 설정은 기본값으로 돌아갑니다.
-- 차단·메모의 마지막 사용 시각(`refresher:usage`, `core/usage.ts`)은 여러 탭이 함께 고치는 값이라 쓰기는 배경이 메시지를 받아 차례로 합니다. 기기마다 다른 값이라 백업하지 않습니다.
+- 차단·메모의 마지막 사용 시각(`refresher:usage`, `core/usage.ts`)은 여러 탭이 함께 고치는 값이라 쓰기는 배경이 메시지를 받아 차례로 합니다. 기기마다 다른 값이라 백업하지 않습니다. 옵션 페이지는 목록이 바뀔 때마다 기록을 목록에 맞추지만, 지운 항목의 기록은 페이지를 열고 처음 맞출 때만 버립니다. 그 뒤에 지운 항목은 삭제 알림의 되돌리기로 같은 id가 돌아오므로 원래 시각을 지키려고 남깁니다.
 - 클라우드 복원·합치기, JSON 가져오기, 초기화가 저장소에 쓰는 규칙은 `core/settings-transfer.ts`에 모여 있습니다. 쓰기를 마치면 직전 값을 `backupStorage.undo`(`refresher:backup:undo`, 백업 대상 아님)에 남겨 데이터 탭의 되돌리기가 씁니다. `storage.local`을 직접 다루는 곳은 키 이름을 문자열로 적지 말고 `rawKey(MODULES_KEY)`처럼 `items.ts`의 키에서 만듭니다.
 
 ## HTTP

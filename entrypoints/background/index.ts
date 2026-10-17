@@ -51,7 +51,7 @@ export default defineBackground(() => {
 
     // ===== 차단·메모 사용 기록 (core/usage). 탭·옵션이 따로 쓰면 서로 덮으므로 여기서 차례로 쓴다 =====
     onMessage("refresher:markUsed", ({data}) => recordUsage(data));
-    onMessage("refresher:syncUsage", ({data: {kind, ids}}) => syncUsage(kind, ids));
+    onMessage("refresher:syncUsage", ({data: {kind, ids, prune}}) => syncUsage(kind, ids, prune));
 
     const updateDatabase = startDatabaseUpdates();
     // 옵션의 "지금 갱신". ky 오류는 메시지로 건너가면 종류(상태 코드 등)를 잃으므로 여기서 안내 문구로 바꿔 던진다.

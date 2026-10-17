@@ -148,9 +148,11 @@ test.describe("옵션 - 차단 탭", () => {
         await expect(page.getByRole("tabpanel")).toBeFocused();
     });
 
-    test("삭제 알림의 되돌리기는 지운 항목을 id 그대로 원래 자리에 되살린다", async ({page, extensionId, storage}) => {
+    test("삭제 알림의 되돌리기는 지운 항목을 id 그대로 원래 자리에 되살리고 사용 기록도 지킨다", async ({page, extensionId, storage}) => {
         const list = [{id: "a", content: "가닉", isRegex: false}, {id: "b", content: "나닉", isRegex: false}, {id: "c", content: "다닉", isRegex: false}];
-        await storage.set({"refresher:block:NICK": list});
+        const old = Date.now() - 200 * 24 * 60 * 60 * 1000;
+        const usage = {block: {a: old, b: old, c: old}, memo: {}};
+        await storage.set({"refresher:block:NICK": list, "refresher:usage": usage});
         const {table, alert, toasts} = await openOptions(page, extensionId, "block");
 
         await table.getByRole("button", {name: "나닉 삭제", exact: true}).click();
@@ -161,6 +163,9 @@ test.describe("옵션 - 차단 탭", () => {
         await toasts.getByRole("button", {name: "되돌리기", exact: true}).click();
         await expect.poll(() => storage.get("refresher:block:NICK")).toEqual(list);
         await expect(table.getByText("나닉", {exact: true})).toBeVisible();
+        // 되살린 항목의 마지막 사용이 '오늘'로 바뀌지 않는다.
+        await expect(table.getByText("200일 전")).toHaveCount(3);
+        expect(await storage.get("refresher:usage")).toEqual(usage);
     });
 
     test("지운 뒤 같은 차단을 다시 넣었으면 되돌리기가 그것을 겹쳐 넣지 않는다", async ({page, extensionId, storage}) => {
@@ -189,7 +194,7 @@ test.describe("옵션 - 차단 탭", () => {
         await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([]);
     });
 
-    test("갤러리·마지막 사용으로 걸러 보이는 항목만 지우고, 지운 항목의 사용 기록도 정리한다", async ({page, extensionId, storage}) => {
+    test("갤러리·마지막 사용으로 걸러 보이는 항목만 지우고, 페이지를 다시 열 때 지운 항목의 사용 기록을 정리한다", async ({page, extensionId, storage}) => {
         const day = 24 * 60 * 60 * 1000;
         await storage.set({
             "refresher:block:NICK": [
@@ -218,7 +223,10 @@ test.describe("옵션 - 차단 탭", () => {
         await expect.poll(() => storage.get("refresher:block:NICK")).toMatchObject([{id: "b"}, {id: "c"}]);
         // 보이는 항목이 없어 삭제 버튼이 막히므로 포커스는 그 버튼이 아니라 탭 패널로 돌아간다.
         await expect(page.getByRole("tabpanel")).toBeFocused();
-        // 지운 항목의 사용 기록도 정리한다.
+        // 지운 항목의 사용 기록은 되돌리기로 쓸 수 있게 남겼다가 페이지를 다시 열 때 정리한다.
+        expect(await storage.get("refresher:usage")).toMatchObject({block: {a: expect.any(Number)}});
+        await page.reload();
+        await expect(table.getByText("공통닉")).toBeVisible();
         await expect.poll(() => storage.get("refresher:usage")).toEqual({block: {b: expect.any(Number), c: expect.any(Number)}, memo: {}});
     });
 
