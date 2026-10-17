@@ -91,4 +91,39 @@ describe("clickContents", () => {
         expect(open).not.toHaveBeenCalled();
         expect(usePreviewStore.getState().viewer).toBeNull();
     });
+
+    // 글쓴이가 본문에 직접 단 data-pop은 정화를 거쳐도 남으므로 디시 주소만 연다.
+    const pops = [
+        ["https://image.dcinside.com/viewimagePop.php?no=1", "https://image.dcinside.com/viewimagePop.php?no=1"],
+        ["javascript:alert(1)", undefined],
+        ["https://evil.example/", undefined]
+    ] as const;
+
+    it.each(pops)("크게 보기를 끄면 data-pop이 디시 주소일 때만 새 탭으로 연다 (%s)", (pop, expected) => {
+        const open = vi.spyOn(window, "open").mockReturnValue(null);
+        const container = document.createElement("div");
+        document.body.append(container);
+        render(<div onClick={(ev) => clickContents(ev, false)}/>, container);
+        const root = container.querySelector("div")!;
+        root.innerHTML = `<img src="a.jpg" data-pop="${pop}">`;
+
+        root.querySelector("img")!.click();
+
+        if (expected) expect(open).toHaveBeenCalledWith(expected, "_blank", "noopener");
+        else expect(open).not.toHaveBeenCalled();
+    });
+
+    it.each(pops)("크게 보기 목록에는 디시 원본 보기 주소만 남긴다 (%s)", (pop, expected) => {
+        Element.prototype.checkVisibility = () => true;
+        const container = document.createElement("div");
+        document.body.append(container);
+        render(<div onClick={(ev) => clickContents(ev, true)}/>, container);
+        const root = container.querySelector("div")!;
+        root.innerHTML = `<img src="a.jpg" data-width="100" data-pop="${pop}">`;
+        setLoadState(root);
+
+        root.querySelector("img")!.click();
+
+        expect(usePreviewStore.getState().viewer?.images[0]?.pop).toBe(expected);
+    });
 });

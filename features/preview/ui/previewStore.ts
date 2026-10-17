@@ -23,7 +23,7 @@ export const MANAGE_LABELS = {notice: ["공지로 등록", "공지를 해제"], 
 
 type Reply = { commentNo: string | null; replyNo: string | null };
 
-/** 크게 보기(ImageViewer)의 이미지. pop은 디시 원본 보기 주소 (core/preview/parser.ts가 옮겨 둔 data-pop). */
+/** 크게 보기(ImageViewer)의 이미지. pop은 dcinsideHref로 거른 디시 원본 보기 주소 (core/preview/parser.ts가 옮겨 둔 data-pop). */
 export interface ViewerImage {
     src: string;
     alt: string;

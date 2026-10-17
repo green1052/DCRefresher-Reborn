@@ -32,7 +32,7 @@ export const clickContents = (ev: MouseEvent<HTMLElement>, imageViewer: boolean)
     if (clicked && imageViewer && isViewable(clicked)) {
         const images = [...ev.currentTarget.querySelectorAll("img")].filter(isViewable);
         usePreviewStore.setState({
-            viewer: {images: images.map((image) => ({src: image.currentSrc || image.src, alt: image.alt, pop: image.dataset.pop})), index: images.indexOf(clicked)}
+            viewer: {images: images.map((image) => ({src: image.currentSrc || image.src, alt: image.alt, pop: dcinsideHref(image.dataset.pop)})), index: images.indexOf(clicked)}
         });
         return;
     }
