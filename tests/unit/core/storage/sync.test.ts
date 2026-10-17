@@ -197,6 +197,18 @@ describe("typedListSync", () => {
         expect(await stored("list:X")).toEqual(["a", "b"]);
     });
 
+    it("파이어폭스 콘텐츠 스크립트는 잠그지 않고도 탭 안의 update를 차례로 쓴다", async () => {
+        vi.stubEnv("BROWSER", "firefox");
+        const request = vi.spyOn(navigator.locks, "request");
+        const {sync} = create();
+
+        await Promise.all([sync.update("X", (current) => [...current, "a"]), sync.update("X", (current) => [...current, "b"])]);
+
+        expect(request).not.toHaveBeenCalled();
+        expect(await stored("list:X")).toEqual(["a", "b"]);
+        vi.unstubAllEnvs();
+    });
+
     it("update가 실패하면 되돌리고 던진다", async () => {
         vi.spyOn(console, "error").mockImplementation(() => {});
         const {sync, lists} = create();
