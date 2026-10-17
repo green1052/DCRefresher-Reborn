@@ -2,6 +2,7 @@ import {afterEach, describe, expect, it, vi} from "vitest";
 import {fakeBrowser} from "wxt/testing/fake-browser";
 
 import {storageSync, typedListSync, watchStorage} from "@/core/storage/sync";
+import {isRecord} from "@/utils/record";
 
 import {stored, tick} from "../../../helpers";
 
@@ -207,6 +208,33 @@ describe("typedListSync", () => {
         expect(request).not.toHaveBeenCalled();
         expect(await stored("list:X")).toEqual(["a", "b"]);
         vi.unstubAllEnvs();
+    });
+
+    it("크롬처럼 키를 정렬해 돌려줘도 이 탭이 쓴 값이 돌아올 때 스토어를 다시 바꾸지 않는다", async () => {
+        type Entry = {text: string; color: string};
+        let lists: Record<"X", Entry[]> = {X: []};
+        const set = vi.fn((next: typeof lists) => void (lists = next));
+        const sync = typedListSync({
+            types: ["X"] as const,
+            keyOf: () => "local:list:X",
+            normalize: (value) => (Array.isArray(value) ? value : []),
+            get: () => lists,
+            set,
+            failure: "failed"
+        });
+        await sync.start(contextSignal());
+        // 크롬 흉내: 객체의 키를 정렬해 저장한다.
+        const sortKeys = (value: unknown): unknown =>
+            Array.isArray(value) ? value.map(sortKeys) : isRecord(value) ? Object.fromEntries(Object.keys(value).sort().map((key) => [key, sortKeys(value[key])])) : value;
+        const original = fakeBrowser.storage.local.set.bind(fakeBrowser.storage.local);
+        vi.spyOn(fakeBrowser.storage.local, "set").mockImplementation((items) => original(Object.fromEntries(Object.entries(items).map(([key, value]) => [key, sortKeys(value)]))));
+        set.mockClear();
+
+        await sync.update("X", (current) => [...current, {text: "a", color: "red"}]);
+        await tick();
+
+        expect(JSON.stringify(await stored("list:X"))).toBe('[{"color":"red","text":"a"}]');
+        expect(set).toHaveBeenCalledTimes(1);
     });
 
     it("update가 실패하면 되돌리고 던진다", async () => {

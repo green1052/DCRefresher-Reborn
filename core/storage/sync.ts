@@ -4,6 +4,7 @@ import {storage, type StorageItemKey} from "wxt/utils/storage";
 import {onBfcacheRestore} from "@/utils/dom";
 import {saveOrReload} from "@/utils/error";
 import {once} from "@/utils/once";
+import {isRecord} from "@/utils/record";
 import {objectKeys} from "@/utils/typed";
 
 /**
@@ -60,6 +61,10 @@ export const storageSync = <K extends StorageItemKey>(keys: readonly K[], apply:
     return {load, start};
 };
 
+/** 객체 키를 정렬해 직렬화한다. 크롬 저장소는 키를 정렬해 돌려주므로, 그대로 비교하면 이 탭이 쓴 값이 돌아올 때 다른 값이 된다. */
+const canonical = (value: unknown): string =>
+    JSON.stringify(value, (_key, item: unknown) => (isRecord(item) ? Object.fromEntries(Object.keys(item).sort().map((key) => [key, item[key]])) : item));
+
 /**
  * 유형마다 키 하나에 저장하는 목록(차단 목록·메모)을 스토어와 양방향으로 맞춘다.
  * - update: 스토어에 먼저 반영하고 저장한다. 실패하면 저장소 값으로 되돌리고 던진다 (saveOrReload).
@@ -94,7 +99,7 @@ export const typedListSync = <T extends string, V>(options: {
         }
         const next = normalize(value);
         const lists = get();
-        if (JSON.stringify(lists[type]) !== JSON.stringify(next)) set({...lists, [type]: next});
+        if (canonical(lists[type]) !== canonical(next)) set({...lists, [type]: next});
     });
 
     // 쓰기를 한 줄로 세운다. update는 잠금 안에서 저장소를 다시 읽어 다른 창이 쓴 값을 덮지 않고 합친다.

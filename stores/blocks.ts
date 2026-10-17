@@ -65,7 +65,6 @@ export const normalizeBlockList = (value: unknown, known: BlockEntry[] = []): Bl
         const id = given !== undefined && !ids.has(given) ? given : crypto.randomUUID();
         ids.add(id);
         // 예전 항목(v5, 이전 다이얼로그)은 플래그 문자열을 extra에 넣었다. 표시할 때 필드에서 만드니 버린다.
-        // 키를 지우지 않고 undefined로 덮어 키 순서를 지킨다. 저장한 값과 JSON이 달라지면 이 탭의 쓰기가 watch로 돌아올 때마다 구독자가 다시 돈다.
         return entry.extra && entry.extra === composeExtra(entry) ? {...entry, id, extra: undefined} : {...entry, id};
     });
 };
