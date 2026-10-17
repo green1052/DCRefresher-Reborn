@@ -8,6 +8,7 @@
 - 오버레이는 그릴 것이 처음 생길 때 띄웁니다. UI를 그리는 스토어가 그 조건을 `needOverlayWhen(store, (state) => …)`로 등록합니다(`components/overlay/demands.ts`). 새 오버레이 UI는 자기 스토어의 조건에 상태를 더하면 됩니다(미리보기 UI는 `previewStore.ts`, 토스트·버블·메모는 `stores/ui.ts` 끝).
 - 디시 페이지 자체를 바꾸는 CSS는 기능 폴더의 `page.css`에 둡니다. `modules/feature-styles.ts`가 모아 `.wxt/page-styles.css`를 만들고 `entrypoints/page.content.css`(manifest로 따로 주입)가 불러옵니다. 여러 모듈이 같이 쓰는 가림 규칙(차단·깡계)만 `assets/styles/content.css`에 있습니다. dev 중에 `page.css`를 새로 만들었으면 dev를 다시 띄웁니다.
 - 콘텐츠 스크립트에서 import한 CSS는 페이지가 아니라 오버레이(shadow)에 들어갑니다(`cssInjectionMode: "ui"`). 오버레이 안의 CSS는 `assets/styles/overlay.css`와 기능 폴더의 `overlay.css`입니다.
+- 오버레이의 Tailwind는 `overlay.css`가 `tailwind.css`를 불러와 만듭니다. 이때 옵션·팝업 폴더와 옵션·팝업만 쓰는 부품(`@source not` 목록)은 스캔하지 않아 오버레이 CSS가 작아집니다. 오버레이에서 그 부품을 쓰게 되면 목록에서 뺍니다. 빼지 않으면 `tests/unit/assets/styles/overlay.test.ts`가 실패합니다.
 - 페이지·오버레이는 서로 다른 문서라 같은 규칙(차단 흐림, 스텔스 디시콘 가림)을 `assets/styles/shared.css`의 Tailwind 유틸리티(`@utility`)로 맞춥니다. 쓰는 CSS가 `@reference`로 가져와 `@apply`합니다. 부모 선택자 목록에 중첩하면 `:is()`로 감싸져 명시도가 달라집니다. 명시도가 중요한 곳은 규칙을 나눠 씁니다.
 - 우리가 그리는 UI는 Tailwind 클래스로 꾸밉니다. CSS 파일에 남는 것은 디시 HTML(미리보기 본문·댓글의 `.refresher-html`, 디시 페이지)처럼 클래스를 달 수 없는 곳의 규칙뿐입니다. Tailwind는 소스에 적힌 클래스 이름만 만들므로 클래스 이름을 이어 붙여 만들지 않습니다.
 - 오버레이에는 Tailwind 리셋(preflight)이 들어갑니다. 디시 본문·댓글 HTML(`.refresher-html`)만은 `tailwind.css`가 `all: revert-layer`로 리셋을 되돌립니다.
