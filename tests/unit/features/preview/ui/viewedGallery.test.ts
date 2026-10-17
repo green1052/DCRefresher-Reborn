@@ -4,7 +4,7 @@ import {afterEach, describe, expect, it} from "vitest";
 import {previewGallery, usePreviewStore} from "@/features/preview/ui/previewStore";
 import {selectedGallery} from "@/stores/ui";
 
-import {preData} from "../../../helpers";
+import {preData} from "../../../../helpers";
 
 describe("버블·메모 창의 갤러리", () => {
     afterEach(() => {
