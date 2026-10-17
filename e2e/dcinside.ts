@@ -1,5 +1,7 @@
 import type {Route} from "@playwright/test";
 
+import {D_ALPHABET} from "../core/preview/dcinside-js";
+
 /**
  * 가짜 디시. fixtures.ts가 dcinside.com 요청을 모두 여기로 보내 실제 디시에는 아무것도 가지 않는다.
  * 콘텐츠 스크립트가 읽는 최소한의 마크업만 흉내 낸다. 디시 마크업이 바뀌어 모듈을 고치면 여기도 같이 고친다.
@@ -235,12 +237,11 @@ export const SERVICE_CODE_TAIL = "e2eRefresh";
  * 풀기: 섞은 base64 → 표준 base64 → atob → 첫 자리 숫자 f를 (f > 5 ? f − 5 : f + 4)로 → 쉼표로 나눈 수 v의 i번째는 글자 2(v − i − 1)/(12 − i).
  */
 function encodeServiceTail(tail: string): string {
-    const shuffled = "yL/M=zNa0bcPQdReSfTgUhViWjXkYIZmnpo+qArOBslCt2D3uE4Fv5G6wH178xJ9K";
     const standard = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
     const numbers = Array.from(tail, (char, index) => (char.charCodeAt(0) * (12 - index)) / 2 + index + 1).join(",");
     const first = Number(numbers[0]);
     const encoded = String(first <= 4 ? first + 5 : first - 4) + numbers.slice(1);
-    return Array.from(btoa(encoded), (char) => shuffled[standard.indexOf(char)]).join("");
+    return Array.from(btoa(encoded), (char) => D_ALPHABET[standard.indexOf(char)]).join("");
 }
 
 /** 1×1 GIF. */
