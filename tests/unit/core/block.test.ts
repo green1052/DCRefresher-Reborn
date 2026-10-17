@@ -1,4 +1,5 @@
 import {webcrypto} from "node:crypto";
+import {ReadableStream as NodeReadableStream} from "node:stream/web";
 
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
@@ -319,6 +320,25 @@ describe("이미지 차단", () => {
 
             fetchImage.mockResolvedValueOnce(new Response(mp4.subarray(16), {status: 206}));
             expect(await imageHash(imageUrl())).toBeUndefined();
+        });
+
+        it("머리나 본문이 멈춘 읽기는 60초에 끊어 다음 읽기를 막지 않는다", async () => {
+            vi.useFakeTimers();
+            try {
+                // jsdom 환경에는 ReadableStream이 없다.
+                vi.stubGlobal("ReadableStream", NodeReadableStream);
+                const stalledBody = () => new Response(new ReadableStream());
+                fetchImage.mockImplementationOnce(() => new Promise(() => {})).mockImplementationOnce(() => new Promise(() => {}))
+                    .mockResolvedValueOnce(stalledBody()).mockResolvedValueOnce(stalledBody());
+                const stalled = [1, 2, 3, 4].map(() => imageHash(imageUrl()));
+                const next = imageHash(imageUrl());
+                await vi.advanceTimersByTimeAsync(60_000);
+
+                expect(await Promise.all(stalled)).toEqual([undefined, undefined, undefined, undefined]);
+                expect(await next).toBeDefined();
+            } finally {
+                vi.useRealTimers();
+            }
         });
 
         it("다시 읽다 실패해도 앞서 구한 파일 해시를 지킨다", async () => {

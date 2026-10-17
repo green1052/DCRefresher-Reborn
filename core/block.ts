@@ -1,3 +1,4 @@
+import ky from "ky";
 import pLimit from "p-limit";
 import QuickLRU from "quick-lru";
 
@@ -169,8 +170,11 @@ const readImageHashes = async (url: string, similar: boolean, onFile: (file: str
     try {
         // 파이어폭스 콘텐츠 스크립트의 요청은 Referer를 붙이지 않아 디시가 403을 준다. 크롬은 원래 붙이고, 캐시 키에 들지 않아 캐시도 그대로 쓴다.
         const {response, file, bytes} = await fetchLimit(async () => {
-            const response = await fetch(url, {cache: "force-cache", referrer: location.href});
-            const file = await response.blob();
+            // 콘텐츠 스크립트 자체의 fetch로 받아야 해서(파이어폭스의 http는 content.fetch라 페이지 CORS에 걸린다) 기본 ky로 받는다.
+            // ky의 timeout은 .blob() 읽기까지 끊어 큰 움짤을 놓치므로 끄고 전체 상한만 둔다. 본문은 같은 요청의 .blob()으로 읽어야 이 상한에 묶인다.
+            const request = ky.get(url, {cache: "force-cache", referrer: location.href, retry: 0, timeout: false, totalTimeout: 60_000});
+            const response = await request;
+            const file = await request.blob();
             return {response, file, bytes: await file.arrayBuffer()};
         });
         // 크롬은 움짤이 구간 요청으로 받아 둔 캐시를 쓰면 206을 준다. 파일 전체를 담았을 때만 받는다 (Content-Range는 CORS로 읽지 못한다).

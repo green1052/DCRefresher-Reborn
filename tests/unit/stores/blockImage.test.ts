@@ -57,7 +57,7 @@ describe("blockImage", () => {
     });
 
     it("이 페이지에서 본 움짤은 mp4와 원본 gif를 같은 지문으로 함께 넣는다", async () => {
-        vi.stubGlobal("fetch", vi.fn(async (url: string) => new Response(url)));
+        vi.stubGlobal("fetch", vi.fn(async (input: Request) => new Response(input.url)));
         const mp4 = `${URL_BASE}4abcdef01`;
         const gif = `${URL_BASE}4`;
         // mp4를 받다 오류가 나 currentSrc가 빈 움짤도 <source>로 짝을 안다.
