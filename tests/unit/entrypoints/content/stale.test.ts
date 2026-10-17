@@ -89,6 +89,22 @@ describe("cleanUpStaleInstance", () => {
         expect(document.title).toBe("목록");
     });
 
+    it("걷어 낸 오버레이에 입력하던 글을 돌려준다", () => {
+        const host = document.body.appendChild(document.createElement("refresher-root"));
+        const textarea = host.attachShadow({mode: "open"}).appendChild(document.createElement("textarea"));
+        textarea.value = "  반쯤 쓴 댓글 ";
+
+        expect(cleanUpStaleInstance()).toBe("반쯤 쓴 댓글");
+    });
+
+    it("오버레이가 없거나 입력하던 글이 비어 있으면 undefined를 돌려준다", () => {
+        expect(cleanUpStaleInstance()).toBeUndefined();
+
+        const host = document.body.appendChild(document.createElement("refresher-root"));
+        host.attachShadow({mode: "open"}).appendChild(document.createElement("textarea")).value = "  ";
+        expect(cleanUpStaleInstance()).toBeUndefined();
+    });
+
     it("다른 문서가 쌓은 기록은 건드리지 않는다", () => {
         const state = {refresher: 1, doc: performance.timeOrigin - 1, back: {url: "/list", title: "목록", state: null}};
         history.replaceState(state, "", "/view?no=1");
