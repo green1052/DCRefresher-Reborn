@@ -13,7 +13,7 @@
 | HTTP | ky + p-limit(동시 요청 수 제한) |
 | HTML 정화 | DOMPurify (`utils/sanitize.ts`) |
 | 메시징 | @webext-core/messaging |
-| 패키지 관리·실행 | Bun 1.4 이상. `scripts/`는 Bun에서 돌아 Bun API를 씁니다. WXT·Vitest·Playwright는 Node에서 돌므로 빌드 모듈(`modules/`)과 E2E는 Node API를 씁니다 |
+| 패키지 관리·실행 | Bun 1.4 이상, Node 26 이상. 단위 테스트와 E2E가 `Uint8Array`의 `toBase64`·`fromBase64`·`toHex`를 써서 Node 24 이하에서는 실패합니다([테스트](testing.md)). `scripts/`는 Bun에서 돌아 Bun API를 씁니다. WXT·Vitest·Playwright는 Node에서 돌므로 빌드 모듈(`modules/`)과 E2E는 Node API를 씁니다 |
 | 테스트 | Vitest, Playwright ([테스트](testing.md)) |
 
 ## 명령

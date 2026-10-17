@@ -105,7 +105,7 @@ Chrome 140, Firefox 144 이상에서 동작합니다.
 
 ## 개발
 
-[Bun](https://bun.sh) 1.4 이상과 [Node.js](https://nodejs.org)가 필요합니다. `bun install` 뒤 `bun run dev`로 띄웁니다. 명령, 구조, 테스트, 릴리즈는 [개발 문서](docs/README.md)에 있습니다.
+[Bun](https://bun.sh) 1.4 이상과 [Node.js](https://nodejs.org) 26 이상이 필요합니다. `bun install` 뒤 `bun run dev`로 띄웁니다. 명령, 구조, 테스트, 릴리즈는 [개발 문서](docs/README.md)에 있습니다.
 
 ## 기여·문의
 
