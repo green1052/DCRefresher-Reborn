@@ -87,6 +87,19 @@ test.describe("미리보기", () => {
         await expect(listPage.refreshButton).toBeVisible();
     });
 
+    test("PageDown을 누르고 있어도 반복 입력으로는 넘기지 않는다", async ({listPage}) => {
+        const {page} = listPage;
+        await listPage.openPreview();
+        await expect(listPage.frameTitle).toHaveText("[말머리] 글 3 제목");
+
+        // 두 번째 down은 Playwright가 반복 입력(repeat)으로 보낸다.
+        await page.keyboard.down("PageDown");
+        await page.keyboard.down("PageDown");
+        await page.keyboard.up("PageDown");
+        await expect(listPage.frameTitle).toHaveText("[말머리] 글 2 제목");
+        await expect(page).toHaveURL(viewUrl(2));
+    });
+
     test("받는 중에 넘기거나 닫아 끊은 요청은 콘솔에 오류를 남기지 않는다", async ({listPage, context}) => {
         const {page} = listPage;
         // 본문·댓글 응답을 창을 닫을 때까지 붙잡아 늘 받는 도중에 끊기게 한다. 파이어폭스에서 content.fetch의 AbortError가 처리되지 않은 오류로 남았다.

@@ -199,12 +199,10 @@ export const Frame = () => {
             // 누른 버튼이 로딩으로 막히거나 사라져 포커스가 body로 빠졌으면 스크롤 칸으로 되돌린다 (Tab은 브라우저의 이어가기 위치에 맡긴다).
             if (ev.key !== "Tab" && focusedElement() === document.body) scroller.current?.focus({preventScroll: true});
 
-            if (ev.code === "PageUp") {
+            if (ev.code === "PageUp" || ev.code === "PageDown") {
                 ev.preventDefault();
-                goToAdjacent(-1);
-            } else if (ev.code === "PageDown") {
-                ev.preventDefault();
-                goToAdjacent(1);
+                // 누르고 있을 때의 반복 입력으로는 넘기지 않는다. 지나가는 글마다 본문 요청이 나가 임시 차단된다(#273).
+                if (!ev.repeat) goToAdjacent(ev.code === "PageUp" ? -1 : 1);
             }
         };
 
