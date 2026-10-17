@@ -1,5 +1,6 @@
 import {useState} from "react";
 
+import {TooltipProvider} from "@/components/ui/tooltip";
 import {PreviewHost} from "@/features/preview/ui/PreviewHost";
 import type {SelectedUser} from "@/stores/ui";
 
@@ -13,12 +14,12 @@ export const ContentRoot = () => {
 
     return (
         // 다크모드는 오버레이 최상위 요소의 light/dark 클래스가 정한다 (entrypoints/content/overlay.tsx의 followDcAppearance).
-        <>
+        <TooltipProvider>
             <ToastHost/>
             <BubbleHost onBlockPackage={setPackageTarget}/>
             {packageTarget && <DcconPackageDialog target={packageTarget} onClose={() => setPackageTarget(null)}/>}
             <MemoDialog/>
             <PreviewHost/>
-        </>
+        </TooltipProvider>
     );
 };
