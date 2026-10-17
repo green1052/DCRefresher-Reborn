@@ -74,7 +74,6 @@ jobs:
                     generate_release_notes: true
 
             -   name: Submit to stores
-                continue-on-error: true
                 run: >-
                     bun wxt submit
                     --chrome-zip .output/*-chrome.zip
