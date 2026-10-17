@@ -8,7 +8,7 @@ import {Popover, PopoverContent} from "@/components/ui/popover";
 import {Separator} from "@/components/ui/separator";
 import {useReturnFocus} from "@/components/useReturnFocus";
 import {blockingEntries} from "@/core/block";
-import {banReasonsOf, databaseVersion, ipInfoOf, subscribeDatabase} from "@/core/database";
+import {banReasonsOf, databaseVersion, ipInfoOf, onDatabaseChange, subscribeDatabase} from "@/core/database";
 import {TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {type BlockRequestOptions, handleBlockRequest} from "@/stores/blockRequest";
@@ -131,7 +131,8 @@ const Bubble = ({bubble, selected, onBlockPackage}: BubbleProps) => {
     const defaults = useBlocksStore((s) => s.defaults);
     const rules = blockingEntries(selected.dccon ? {DCCON: selected.dccon} : {NICK: selected.nick, ID: selected.uid, IP: selected.ip}, gallery ?? undefined, {entries, defaults});
     // DB를 읽을 때마다 오르는 번호를 구독해 다시 그린다. 0이면 아직 읽지 않아 IP·밴을 찾지 않는다.
-    const dbVersion = useSyncExternalStore(subscribeDatabase, databaseVersion);
+    // 디시콘 버블은 IP·밴을 그리지 않으므로 읽기를 시작하지 않는다(onDatabaseChange).
+    const dbVersion = useSyncExternalStore(selected.dccon ? onDatabaseChange : subscribeDatabase, databaseVersion);
 
     // Popover는 스크롤을 따라가지 않으므로 스크롤하면 닫는다.
     // scroll 이벤트는 shadow root 밖으로 나가지 않으므로 미리보기 안의 스크롤은 루트에서 잡는다.

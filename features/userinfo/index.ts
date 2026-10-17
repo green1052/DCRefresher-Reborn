@@ -197,7 +197,7 @@ export default defineModule({
         document.documentElement.classList.add("refresherUserInfo");
         // await 전에 읽는다. 뒤에 두면 기다리는 동안 모듈이 꺼졌을 때 revoke가 지운 값을 다시 쓴다.
         readBadgeSettings(ctx);
-        // IP 정보를 보이지 않고 갱차도 보지 않으면 수백 KB짜리 IP DB를 읽지 않는다. 버블은 열 때 따로 읽는다 (subscribeDatabase).
+        // IP 정보를 보이지 않고 갱차도 보지 않으면 수백 KB짜리 IP DB를 읽지 않는다. 유저 버블은 열 때 따로 읽는다 (subscribeDatabase).
         // 갱차 목록은 banReasonsOf가 처음 불릴 때 읽지만, 갱신 감시는 initDatabase가 건다.
         const needsDatabase = (): boolean => view.ipFilter !== "none" || ctx.settings.checkPermBan;
         ctx.onSettingsChanged(() => {
