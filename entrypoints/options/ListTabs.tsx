@@ -146,7 +146,7 @@ export const ListTabs = <T extends string, I>({
     columns: [string, string];
     emptyText: (type: T) => string;
     exportData: () => unknown;
-    /** 붙여넣은 JSON에서 가져온 종류 수를 돌려준다. 0이면 다른 데이터를 붙여넣은 것으로 보고 실패로 알린다. */
+    /** 붙여넣은 JSON에서 가져온 유효한 항목 수를 돌려준다. 0이면 다른 데이터(또는 항목이 모두 틀린 JSON)로 보고 실패로 알린다. */
     importData: (parsed: Record<string, unknown>) => Promise<number>;
     onClear: (type: T) => Promise<void>;
     onAdd: (type: T) => void;

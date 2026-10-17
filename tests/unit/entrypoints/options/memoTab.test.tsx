@@ -7,10 +7,14 @@ import {MemoTab} from "@/entrypoints/options/MemoTab";
 import {useMemosStore} from "@/stores/memos";
 
 vi.mock("@/core/messaging/protocol", () => ({sendMessage: vi.fn(async () => ({}))}));
-// 목록 화면(Base UI) 대신 UID 메모의 행 머리만 그린다.
+type ImportData = (parsed: Record<string, unknown>) => Promise<number>;
+const captured = vi.hoisted(() => ({importData: undefined as ImportData | undefined}));
+// 목록 화면(Base UI) 대신 UID 메모의 행 머리만 그리고, 가져오기 함수를 잡아 둔다.
 vi.mock("@/entrypoints/options/ListTabs", () => ({
-    ListTabs: ({items, row}: { items: (type: "UID") => [string, unknown][]; row: (type: "UID", item: [string, unknown], remove: () => void) => ReactNode }) =>
-        <>{items("UID").map((item) => row("UID", item, () => undefined))}</>,
+    ListTabs: ({items, row, importData}: { items: (type: "UID") => [string, unknown][]; row: (type: "UID", item: [string, unknown], remove: () => void) => ReactNode; importData: ImportData }) => {
+        captured.importData = importData;
+        return <>{items("UID").map((item) => row("UID", item, () => undefined))}</>;
+    },
     ListRow: ({head}: { head: ReactNode }) => <div>{head}</div>
 }));
 
@@ -33,5 +37,26 @@ describe("메모 탭의 색 점", () => {
         const dot = await dotOf("url(https://example.com/x.png)");
         expect(dot.style.backgroundImage).toBe("");
         expect(dot.getAttribute("style") ?? "").not.toContain("url(");
+    });
+});
+
+describe("메모 가져오기", () => {
+    const importMemos = async (parsed: Record<string, unknown>): Promise<{ count: number; updateMemos: ReturnType<typeof vi.fn> }> => {
+        const updateMemos = vi.fn(async () => undefined);
+        useMemosStore.setState({memos: {UID: {}, NICK: {}, IP: {}}, updateMemos});
+        await act(() => render(<MemoTab/>, root));
+        return {count: await captured.importData!(parsed), updateMemos};
+    };
+
+    it("유효한 메모 수를 돌려준다", async () => {
+        const {count, updateMemos} = await importMemos({UID: {a: {text: "메모", color: "#ff0000"}, b: "틀림"}, IP: {"1.2": {text: "아이피", color: "#00ff00"}}});
+        expect(count).toBe(2);
+        expect(updateMemos).toHaveBeenCalledTimes(2);
+    });
+
+    it("메모가 모두 틀리면 0을 돌려주고 쓰지 않는다", async () => {
+        const {count, updateMemos} = await importMemos({UID: {a: "메모"}, NICK: ["닉"]});
+        expect(count).toBe(0);
+        expect(updateMemos).not.toHaveBeenCalled();
     });
 });

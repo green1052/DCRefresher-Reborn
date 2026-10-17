@@ -13,7 +13,6 @@ import {memoUsageKey} from "@/core/usage";
 import type {MemoType} from "@/core/storage/types";
 import {normalizeMemoMap, ownMemo, randomColor, useMemosStore} from "@/stores/memos";
 import {SAVE_FAILED} from "@/utils/error";
-import {isRecord} from "@/utils/record";
 
 import {formatAppMemos, parseAppMemos} from "./appMemo";
 import {ImportDialog, useUsage} from "./Layout";
@@ -206,11 +205,17 @@ export function MemoTab() {
     };
 
     const importMemos = async (parsed: Record<string, unknown>): Promise<number> => {
-        // 객체만 받는다. 차단 내보내기의 NICK/IP(배열)까지 메모로 세면 다른 데이터인데도 성공으로 알린다.
-        const types = MEMO_TYPES.filter((type) => isRecord(parsed[type]));
-        // 기존 메모에 합치고, 같은 대상은 가져온 메모로 덮는다.
-        for (const type of types) await updateMemos(type, (current) => ({...current, ...normalizeMemoMap(parsed[type])}));
-        return types.length;
+        // 유효한 메모 수를 센다. 차단 내보내기의 NICK/IP(배열)나 틀린 메모까지 세면 다른 데이터인데도 성공으로 알린다.
+        let count = 0;
+        for (const type of MEMO_TYPES) {
+            const imported = normalizeMemoMap(parsed[type]);
+            const size = Object.keys(imported).length;
+            if (size === 0) continue;
+            // 기존 메모에 합치고, 같은 대상은 가져온 메모로 덮는다.
+            await updateMemos(type, (current) => ({...current, ...imported}));
+            count += size;
+        }
+        return count;
     };
 
     return (

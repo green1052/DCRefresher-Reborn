@@ -65,16 +65,19 @@ export function BlockTab() {
     const modeDescId = useId();
 
     const importBlocks = async (parsed: Record<string, unknown>): Promise<number> => {
-        // 차단 목록이 하나도 없으면(0 반환) 메모/설정 등 다른 데이터를 붙여넣은 것이다.
-        const types = BLOCK_TYPES.filter((type) => Array.isArray(parsed[type]));
+        // 유효한 차단 항목이 하나도 없으면(0 반환) 메모/설정 등 다른 데이터나 항목이 모두 틀린 JSON을 붙여넣은 것이다.
         // 모드가 '기본값'인 항목은 내보낸 기기의 기본 모드로 검사됐다. 이 기기와 다르면 그 모드를 적어 검사 방식을 지킨다 (데이터 탭 가져오기와 같다).
         // JSON에 기본 모드가 없으면 내보낸 기기가 기본값을 쓴 것으로 본다.
         const source = normalizeDefaults(parsed.defaults);
         // 기존 목록에 덧붙인다. 같은 content+gallery는 가져온 항목으로 바꿔 뒤로 보내고, id는 새로 준다.
-        for (const type of types) {
-            await addEntries(type, pinDefaultMode(normalizeBlockList(parsed[type]), source[type], defaults[type]));
+        let count = 0;
+        for (const type of BLOCK_TYPES) {
+            const list = normalizeBlockList(parsed[type]);
+            if (list.length === 0) continue;
+            await addEntries(type, pinDefaultMode(list, source[type], defaults[type]));
+            count += list.length;
         }
-        return types.length;
+        return count;
     };
 
     const handleSubmit = async (fields: BlockInputFields): Promise<void> => {
