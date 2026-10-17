@@ -18,7 +18,7 @@ export interface FakeRow {
 /** 댓글 목록 API(/board/comment/)가 주는 댓글. */
 export interface FakeComment {
     no: string;
-    /** 스레드 첫 댓글 번호. 첫 댓글이면 자기 번호다. */
+    /** 스레드 첫 댓글 번호. 실제 디시는 첫 댓글에 숫자 0을 주지만 여기서는 자기 번호를 넣는다. */
     c_no: string;
     depth: 0 | 1;
     user_id: string;

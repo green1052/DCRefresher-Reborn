@@ -142,6 +142,7 @@ export interface DcinsideDcconPackage {
 
 export interface DcinsideComment {
     no: string;
+    /** 답글은 스레드 첫 댓글 번호. 첫 댓글은 디시가 숫자 0을 주므로 깊이로 가려 읽는다. */
     c_no: string;
     depth: number;
     user_id: string;
@@ -152,7 +153,8 @@ export interface DcinsideComment {
     /** "COMMENT_BOY"면 댓글돌이. */
     nicktype?: string;
     ip: string;
-    memo: string;
+    /** 비어 오면 null이다. processComments(core/preview/comments.ts)가 문자열로 바꾼다. */
+    memo: string | null;
     /** "0"이면 살아 있고 그 밖은 삭제. prepareComments(core/preview/comments.ts)를 거치면 "0"/"1"만 남는다. */
     is_delete: string;
     /** "Y"면 디시가 지운 댓글. */

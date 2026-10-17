@@ -100,6 +100,10 @@ describe("processComments", () => {
         expect(source[0]?.memo).toContain("onclick");
     });
 
+    it("null로 온 메모는 빈 문자열로 바꾼다", () => {
+        expect(processComments([comment(1, {memo: null})], preData(), undefined)[0]?.memo).toBe("");
+    });
+
     it("남는 </div> 뒤의 내용도 남긴다", () => {
         const [output] = processComments([comment(1, {memo: "앞</div>뒤"})], preData(), undefined);
         expect(output?.memo).toContain("뒤");

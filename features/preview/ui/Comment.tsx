@@ -147,7 +147,7 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
                             onClick={() =>
                                 // 같은 댓글을 다시 누르면 취소한다. 답글의 부모는 스레드 첫 댓글(c_no)이고, 첫 댓글이면 자기 자신이다.
                                 usePreviewStore.setState({
-                                    reply: replying ? NO_REPLY : {commentNo: comment.c_no || comment.no, replyNo: comment.no}
+                                    reply: replying ? NO_REPLY : {commentNo: comment.depth > 0 ? comment.c_no : comment.no, replyNo: comment.no}
                                 })
                             }
                         >

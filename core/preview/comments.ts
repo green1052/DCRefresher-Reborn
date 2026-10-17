@@ -9,6 +9,7 @@ import {restoreArchive} from "./cache";
 import type {DcinsideComment, GalleryPreData} from "./types";
 
 export interface ProcessedComment extends DcinsideComment {
+    memo: string;
     /** 음성댓글. iframe이면 src가 음성 파일이 아니라 플레이어 페이지라 <audio>로 틀 수 없다. */
     voice?: { src: string; iframe: boolean };
     /** 차단에 걸린 댓글을 가리는 방식 (차단 모듈 설정). blur는 흐리게, hide는 숨긴다. 깡계 댓글은 깡계 처리(userinfo)를 따른다. */
@@ -111,15 +112,14 @@ const markLowActivity = (list: ProcessedComment[], ratios: Ratios | null): Proce
 export const processComments = (
     source: DcinsideComment[], preData: GalleryPreData, block: ModuleSettings["block"] | undefined, ratios: Ratios | null = null
 ): ProcessedComment[] => {
-    const list: ProcessedComment[] = source.map((comment) => ({...comment}));
+    const list: ProcessedComment[] = source.map((comment) => ({...comment, memo: comment.memo ?? ""}));
 
     // 음성 URL은 정화(재직렬화)하면 &가 &amp;로 바뀌므로 정화 전에 떼어 낸다.
     for (const comment of list) {
-        const memo = String(comment.memo ?? "");
-        const voice = extractVoice(memo);
+        const voice = extractVoice(comment.memo);
         // 늘 덮어쓴다. 디시 응답에도 voice 필드가 있어(보통 null) 그대로 두면 음성 댓글이 아닌데도 음성 댓글로 보인다(답글 막힘을 무시한다).
         comment.voice = voice?.voice;
-        comment.memo = remember(cleaned, voice?.memo ?? memo, sanitizeMemo);
+        comment.memo = remember(cleaned, voice?.memo ?? comment.memo, sanitizeMemo);
     }
 
     // 차단 모듈이 꺼져 있으면 block이 없고 깡계만 가린다.
