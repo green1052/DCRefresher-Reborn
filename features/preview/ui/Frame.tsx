@@ -188,7 +188,8 @@ export const Frame = () => {
     // 창 안에서 글자를 끌어 고르다 바깥에서 놓거나 그 반대여도 click은 둘을 감싼 스크롤 칸에 떨어진다. 바깥에서 누르고 뗀 것만 닫는다.
     const pressedOutside = useRef(false);
 
-    useEffect(() => {
+    // 창이 그려진 뒤에 걸면 뜨자마자 누른 PageDown을 놓친다. 그리기 전에 건다.
+    useLayoutEffect(() => {
         if (!visible) return;
 
         const onKey = (ev: KeyboardEvent): void => {
