@@ -28,16 +28,6 @@ jobs:
             -   name: Unit tests
                 run: bun run test
 
-            -   name: Build with bundle analysis
-                run: bunx wxt build --analyze
-
-            -   name: Upload bundle analysis
-                uses: actions/upload-artifact@v7
-                with:
-                    name: bundle-stats
-                    path: stats.html
-                    retention-days: 7
-
     e2e:
         runs-on: ubuntu-latest
         timeout-minutes: 20

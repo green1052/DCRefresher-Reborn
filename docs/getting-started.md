@@ -30,7 +30,7 @@ bun run e2e:live       # 실제 디시 E2E. 디시 마크업·API가 바뀌었�
 bun run zip            # 배포용 zip (zip:firefox는 Firefox zip + 소스 zip)
 ```
 
-커밋 전에 `bun run compile`, `bun run test`, `bun run build`가 통과해야 합니다. 이 검사들과 크로미엄과 파이어폭스 E2E는 PR마다 CI(`.github/workflows/ci.yml`)에서 돕니다. CI는 `wxt build --analyze`가 만든 `stats.html`을 아티팩트로 올립니다.
+커밋 전에 `bun run compile`, `bun run test`, `bun run build`가 통과해야 합니다. 이 검사들과 크로미엄과 파이어폭스 E2E는 PR마다 CI(`.github/workflows/ci.yml`)에서 돕니다. 빌드는 E2E가 먼저 하므로 따로 돌리지 않습니다. 번들 구성은 `bunx wxt build --analyze`가 만드는 `stats.html`로 봅니다.
 
 ## 코드 규칙
 
