@@ -1,5 +1,5 @@
 name: Setup
-description: Bun·Node를 설치하고 의존성을 받는다.
+description: Bun, Node를 설치하고 의존성을 받는다.
 
 runs:
     using: composite
