@@ -100,12 +100,13 @@ const ModuleCard = ({feature, shown, searching}: { feature: AnyModuleMeta; shown
             </CardHeader>
 
             {shown.length > 0 && (
-                <Collapsible open={enabled || searching}>
+                // 접혀서 패널이 빠져도 이 칸은 카드의 자식으로 남아 카드 간격만큼 아래 여백이 벌어진다. 그 간격을 여기서 지운다.
+                <Collapsible open={enabled || searching} className="-mt-(--card-spacing)">
                     {/* 켜고 끌 때 펼치고 접는다. 닫히는 애니메이션이 끝난 뒤 빠진다.
                         overflow-clip에 여백을 둔다. 없으면 가장자리 스위치·입력칸의 포커스 테두리가 잘린다. */}
                     <CollapsibleContent
                         className="h-(--collapsible-panel-height) overflow-clip transition-[height,opacity] duration-200 ease-out [overflow-clip-margin:6px] data-ending-style:h-0 data-ending-style:opacity-0 data-starting-style:h-0 data-starting-style:opacity-0 motion-reduce:transition-none">
-                        <CardContent className="-mt-4">
+                        <CardContent className="mt-2">
                             {/* 검색으로 펼친 꺼진 모듈. 값은 바꿀 수 있지만 켜야 적용되므로 흐리게 그린다. */}
                             {!enabled && <p className="pt-4 text-xs text-muted-foreground">모듈을 켜야 적용됩니다.</p>}
                             <div className={enabled ? undefined : "opacity-60"}>
