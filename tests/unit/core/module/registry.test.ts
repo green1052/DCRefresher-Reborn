@@ -501,6 +501,25 @@ describe("단축키·페이지 토글", () => {
         expect(await state).toEqual({toggles: [{module: "late", id: "t", label: "", desc: "", on: true}], failed: []});
     });
 
+    it("불러오는 중에 물으면 모듈이 다 뜬 뒤에 답한다", async () => {
+        const gate = Promise.withResolvers<void>();
+        const loaded = load([testModule({
+            id: "slow",
+            setup: async () => {
+                await gate.promise;
+                return true;
+            },
+            pageToggles: [{id: "t", label: "", icon: Puzzle, desc: "", isOn: (api) => api, toggle: () => {}}]
+        })]);
+
+        const state = registry.settledPageState();
+        await tick();
+        gate.resolve();
+
+        expect(await state).toEqual({toggles: [{module: "slow", id: "t", label: "", desc: "", on: true}], failed: []});
+        await loaded;
+    });
+
     it("컨텍스트가 끝난 뒤에는 다시 읽지 않는다", async () => {
         const controller = new AbortController();
         await load([], controller.signal);

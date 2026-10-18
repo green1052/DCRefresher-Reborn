@@ -196,12 +196,16 @@ export const pageState = (): PageState => ({
 
 /** loadAll이 끝난 뒤에 생긴다. 저장소의 on/off를 다시 읽어 맞추고, 시작하는 모듈의 setup을 기다린다. */
 let resync: (() => Promise<void>) | null = null;
+/** loadAll이 끝나면(실패해도) 풀린다. 콘텐츠 스크립트는 loadAll보다 팝업 질문 처리기를 먼저 걸므로, 불러오는 중에 온 질문은 이것을 기다린다. */
+let loading: Promise<void> | undefined;
 
 /**
  * 팝업이 묻는 토글 상태. 팝업은 모듈을 켜고 끈 저장이 끝난 뒤에 묻는데, 저장소 감시 알림은 그보다 늦게 올 수 있으므로
  * 저장소를 직접 읽어 맞추고 모듈이 다 뜬 뒤에 답한다.
  */
 export const settledPageState = async (): Promise<PageState> => {
+    // 불러오는 중이면 resync가 아직 없어 바로 답하게 된다. 그러면 아직 안 뜬 모듈의 토글이 빠지고, 팝업은 다시 묻지 않아 빈 목록이 남는다.
+    await loading;
     await resync?.();
     return pageState();
 };
@@ -240,7 +244,7 @@ const sync = async (enables: Record<string, unknown>): Promise<void> => {
  * 모듈을 일괄 등록하고, 옵션 페이지의 on/off(저장소)를 감시해 시작/중지한다. signal은 콘텐츠 스크립트 컨텍스트의 것이다.
  * setup은 ready(차단·메모 스토어 초기화)가 끝난 뒤에 돈다.
  */
-export const loadAll = async (defs: AnyModule[], signal: AbortSignal, ready?: Promise<void[]>): Promise<void> => {
+const load = async (defs: AnyModule[], signal: AbortSignal, ready?: Promise<void[]>): Promise<void> => {
     // UI가 읽는 설정(useModuleSettings)은 모든 모듈의 기본값으로 먼저 채운다. 이 페이지에 등록하지 않는 모듈(미리보기가 없는 글쓰기 페이지 등)도
     // 오버레이의 그 모듈 UI가 마운트되며 설정을 읽는다. 등록하는 모듈은 아래에서 저장된 값으로 덮인다.
     moduleSettingsStore.setState(Object.fromEntries(defs.filter((def) => def.settings).map((def) => [def.id, settingsOf(def, null)])));
@@ -285,4 +289,11 @@ export const loadAll = async (defs: AnyModule[], signal: AbortSignal, ready?: Pr
     resync = async () => sync(enablesOf(await storage.getItem(MODULES_KEY)));
     signal.addEventListener("abort", () => (resync = null), {once: true});
     await resync();
+};
+
+export const loadAll = (defs: AnyModule[], signal: AbortSignal, ready?: Promise<void[]>): Promise<void> => {
+    const done = load(defs, signal, ready);
+    // 실패는 loadAll을 기다리는 쪽이 받는다. 팝업 질문은 실패해도 지금 상태로 답한다.
+    loading = done.catch(() => {});
+    return done;
 };
