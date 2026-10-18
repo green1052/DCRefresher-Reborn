@@ -3,35 +3,28 @@
 /* ===== 스텔스 모드 (stealth 모듈) — html.refresherStealth, 버튼으로 잠시 보이기: html.stlth ===== */
 
 .refresherStealth {
-    /* 미리보기(shadow DOM)엔 선택자가 닿지 않으므로 상속되는 변수로 알린다 (features/preview/overlay.css). */
     &:not(.stlth) {
+        /* 미리보기(shadow DOM)엔 선택자가 닿지 않으므로 상속되는 변수로 알린다 (features/preview/overlay.css). */
         --refresher-stealth-media: none;
+
+        /* 본문 미디어·갤러리 대문·목록 썸네일(실시간 베스트)·오른쪽 영역 썸네일 — 지연 로딩 이미지는 디시 JS가 style="display: inline"을 붙이므로 !important를 쓴다. */
+        .writing_view_box :is(img, video, embed),
+        #zzbang_div,
+        .gall_list .thumimg,
+        .rcontimg_box .img_box {
+            display: none !important;
+        }
+
+        /* 본문 동영상·유튜브 — display:none이면 파이어폭스에서 높이가 20px로 접힌다. 마이너 갤러리 대문(.bgcover)도 같이 가린다. */
+        .writing_view_box iframe,
+        .bgcover {
+            visibility: hidden;
+        }
     }
 
     /* 미리보기 댓글 디시콘 — 페이지 댓글처럼 이미지 보이기 버튼과 상관없이 가린다. */
     --refresher-stealth-dccon-visibility: hidden;
     --refresher-stealth-dccon-label: "디시콘 표시";
-
-    /* 본문 미디어·갤러리 대문·목록 썸네일(실시간 베스트) — 지연 로딩 이미지는 디시 JS가 style="display: inline"을 붙이므로 !important를 쓴다. */
-    &:not(.stlth) .writing_view_box :is(img, video, embed),
-    &:not(.stlth) #zzbang_div,
-    &:not(.stlth) .gall_list .thumimg {
-        display: none !important;
-    }
-
-    /* 본문 동영상·유튜브 — display:none이면 파이어폭스에서 높이가 20px로 접힌다. */
-    &:not(.stlth) .writing_view_box iframe {
-        visibility: hidden;
-    }
-
-    /* 마이너 갤러리 대문(.bgcover)과 오른쪽 영역 썸네일. */
-    &:not(.stlth) .bgcover {
-        visibility: hidden;
-    }
-
-    &:not(.stlth) .rcontimg_box .img_box {
-        display: none !important;
-    }
 
     /* 댓글 디시콘·글자콘: 가려 두고 마우스를 올리면 보인다 (미리보기 댓글과 같은 규칙). */
     .comment_box .comment_dccon {
@@ -56,15 +49,17 @@
     /* 미리보기(assets/styles/overlay.css, 100000)보다 위에 둔다. 미리보기를 연 채로 눌러도 배경 클릭이 아니라 닫히지 않는다. */
     z-index: 100001;
     padding: 4px;
-    border: 1px solid rgb(0 0 0 / 12%);
+    border: 1px solid light-dark(rgb(0 0 0 / 12%), rgb(255 255 255 / 14%));
     border-left: 0;
     border-radius: 0 12px 12px 0;
-    background: #fff;
+    background: light-dark(#fff, #2a2a2a);
     box-shadow: 0 4px 16px rgb(0 0 0 / 16%);
     /* 아이콘(오른쪽 끝)만 보이게. */
     transform: translateX(calc(-100% + 36px));
     transition: transform 0.3s cubic-bezier(0.19, 1, 0.22, 1);
     user-select: none;
+    /* 야간 모드 색은 아래 light-dark()의 두 번째 값이다 (html:has(#css-darkmode)가 dark로 바꾼다). */
+    color-scheme: light;
 
     @media (prefers-reduced-motion: reduce) {
         transition: none;
@@ -84,17 +79,17 @@
         border: 0;
         border-radius: 8px;
         background: none;
-        color: #1c1c1c;
+        color: light-dark(#1c1c1c, #eee);
         font: inherit;
         text-align: inherit;
         cursor: pointer;
 
         &:hover {
-            background: rgb(0 0 0 / 6%);
+            background: light-dark(rgb(0 0 0 / 6%), rgb(255 255 255 / 8%));
         }
 
         &:focus-visible {
-            outline: 2px solid #3b4890;
+            outline: 2px solid light-dark(#3b4890, #8fa3ff);
             outline-offset: 2px;
         }
 
@@ -105,7 +100,7 @@
 
         svg {
             flex-shrink: 0;
-            color: #3b4890;
+            color: light-dark(#3b4890, #8fa3ff);
         }
     }
 }
@@ -117,23 +112,6 @@ html:has(#css-darkmode) {
     }
 
     .stealth_control_button {
-        border-color: rgb(255 255 255 / 14%);
-        background: #2a2a2a;
-
-        .button {
-            color: #eee;
-
-            &:hover {
-                background: rgb(255 255 255 / 8%);
-            }
-
-            &:focus-visible {
-                outline-color: #8fa3ff;
-            }
-
-            svg {
-                color: #8fa3ff;
-            }
-        }
+        color-scheme: dark;
     }
 }
