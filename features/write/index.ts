@@ -16,7 +16,10 @@ let listeners: AbortController | undefined;
 /** hookUploads를 넣어 달라고 이미 했다. 넣은 스크립트는 페이지에 남으므로 다시 보내 배경을 깨울 필요가 없다. */
 let hookRequested = false;
 
-/** 수정 페이지에서 고쳤다는 표시. 파이어폭스는 업데이트하면 이 스크립트를 정리 없이 없애고 다시 주입하므로 새 인스턴스가 이어받게 <html>에 둔다. */
+/**
+ * 수정 페이지에서 고쳤다는 표시. 파이어폭스는 업데이트하면 이 스크립트를 정리 없이 없애고 다시 주입하므로 새 인스턴스가 이어받게 <html>에 둔다.
+ * 모듈을 껐다 켤 때도 이어받아야 하므로 revoke에서도 지우지 않는다. 지우면 고친 글을 두고 나갈 때 확인 없이 날아간다.
+ */
 const EDITED_KEY = "refresherEdited";
 
 /**
@@ -113,6 +116,5 @@ export default defineModule({
     revoke() {
         listeners?.abort();
         delete document.documentElement.dataset[UPLOAD_OPTIONS_KEY];
-        delete document.documentElement.dataset[EDITED_KEY];
     }
 });

@@ -161,6 +161,7 @@ describe("수정 페이지", () => {
         history.replaceState(null, "", "/board/modify/?id=test&no=1");
         subject().value = "원래 제목";
         editor().innerHTML = "<p>원래 본문</p>";
+        delete document.documentElement.dataset.refresherEdited;
     });
 
     it("고치기 전에는 막지 않는다", async () => {
@@ -182,21 +183,18 @@ describe("수정 페이지", () => {
         expect(blocksExit()).toBe(true);
     });
 
-    it("다시 주입된 인스턴스는 앞 인스턴스가 남긴 표시로 처음부터 막고, 모듈을 끄면 표시를 지운다", async () => {
+    it("다시 주입된 인스턴스는 앞 인스턴스가 남긴 표시로 처음부터 막는다", async () => {
         document.documentElement.dataset.refresherEdited = "";
-        const {stop} = await start();
+        await start();
         expect(blocksExit()).toBe(true);
-        stop();
-        running = undefined;
-        expect(document.documentElement.dataset.refresherEdited).toBeUndefined();
     });
 
-    it("고친 뒤 모듈을 끄면 표시를 지운다", async () => {
+    it("고친 뒤 모듈을 껐다 켜도 계속 막는다", async () => {
         const {stop} = await start();
         type(subject());
-        expect(document.documentElement.dataset.refresherEdited).toBe("");
+        expect(blocksExit()).toBe(true);
         stop();
-        running = undefined;
-        expect(document.documentElement.dataset.refresherEdited).toBeUndefined();
+        await start();
+        expect(blocksExit()).toBe(true);
     });
 });
