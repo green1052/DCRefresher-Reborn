@@ -316,6 +316,20 @@ test.describe("미리보기 댓글", () => {
         await expect(memos).toHaveText(["댓글 하나", "답글", "새 댓글"]);
     });
 
+    test("답글순으로 고르면 답글이 많은 스레드를 먼저 둔다", async ({listPage, site}) => {
+        site.comments.push(
+            fakeComment(12, {memo: "새 댓글"}),
+            fakeComment(13, {c_no: "12", depth: 1, memo: "새 답글 1"}),
+            fakeComment(14, {c_no: "12", depth: 1, memo: "새 답글 2"})
+        );
+        const frame = await listPage.openPreview();
+        const memos = listPage.comments.locator(".refresher-html");
+        await expect(memos).toHaveText(["댓글 하나", "답글", "새 댓글", "새 답글 1", "새 답글 2"]);
+
+        await frame.getByRole("button", {name: "답글순", exact: true}).click();
+        await expect(memos).toHaveText(["새 댓글", "새 답글 1", "새 답글 2", "댓글 하나", "답글"]);
+    });
+
     test("댓글을 새로고침하면 새로 들어온 댓글만 강조한다", async ({listPage, site}) => {
         const frame = await listPage.openPreview();
         const fresh = frame.locator(".refresher-comment[data-fresh]");

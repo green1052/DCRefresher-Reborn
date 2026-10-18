@@ -18,6 +18,9 @@ export interface ErrorState {
 
 export type ManageKind = "notice" | "recommend" | "delete" | "bump";
 
+/** 댓글 스레드 순서: 등록순·최신순·답글순 (CommentList.tsx의 threadParents). */
+export type CommentOrderValue = "oldest" | "newest" | "replies";
+
 /** 공지·개념글 [등록, 해제] 동작. 관리 패널의 확인 문구와 결과 알림이 같이 쓴다. */
 export const MANAGE_LABELS = {notice: ["공지로 등록", "공지를 해제"], recommend: ["개념글로 등록", "개념글을 해제"]} as const;
 
@@ -100,8 +103,8 @@ interface PreviewState extends PostState, Hooks {
 
     /** 정보 창(DcconInfoPopup)을 띄운 디시콘 코드. null이면 닫혀 있다. */
     dcconInfo: string | null;
-    /** 댓글 최신순 보기. 글을 넘겨도 그대로 두고 저장하지 않는다. */
-    newestFirst: boolean;
+    /** 댓글 스레드 순서. 글을 넘겨도 그대로 두고 저장하지 않는다. */
+    commentOrder: CommentOrderValue;
 
     /** 글 상태를 비우고 patch를 얹어 한 번의 setState로 연다. */
     open: (preData: GalleryPreData, patch?: Partial<PostState>) => void;
@@ -214,7 +217,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     captcha: null,
     mini: null,
     dcconInfo: null,
-    newestFirst: false,
+    commentOrder: "oldest",
 
     open: (preData, patch) => {
         // 이전 글의 캡차 창은 닫는다. 남아 있으면 입력한 코드가 이전 글로 간다.

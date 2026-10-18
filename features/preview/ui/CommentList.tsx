@@ -14,16 +14,24 @@ import {useUiStore} from "@/stores/ui";
 import {isGalleryManager} from "@/utils/user";
 
 import {Comment, CommentDeletePrompt} from "./Comment";
-import {NO_FRESH, refreshCommentsOf, usePreviewStore} from "./previewStore";
+import {type CommentOrderValue, NO_FRESH, refreshCommentsOf, usePreviewStore} from "./previewStore";
 
 /**
  * 스레드 첫 댓글로 그릴 댓글. 10쪽 제한으로 부모를 받지 못한 답글도 넣는다. 빠뜨리면 머리의 스레드·총 댓글 수와 어긋난다.
- * 댓글은 번호(등록)순이다. newestFirst면 스레드만 거꾸로 세운다. 답글은 첫 댓글 아래에 등록순으로 남는다 (디시 본문의 최신순과 같다).
+ * 댓글은 번호(등록)순이다. 최신순은 스레드만 거꾸로, 답글순은 답글이 많은 스레드부터(같으면 등록순) 세운다.
+ * 답글은 어느 순서든 첫 댓글 아래에 등록순으로 남는다 (디시 본문의 최신순·답글순과 같다).
  */
-export const threadParents = (comments: ProcessedComment[], newestFirst = false): ProcessedComment[] => {
+export const threadParents = (comments: ProcessedComment[], order: CommentOrderValue = "oldest"): ProcessedComment[] => {
     const topNos = new Set(comments.filter((comment) => comment.depth === 0).map((comment) => comment.no));
     const parents = comments.filter((comment) => comment.depth === 0 || !topNos.has(comment.c_no));
-    return newestFirst ? parents.reverse() : parents;
+    if (order === "newest") return parents.reverse();
+    if (order === "replies") {
+        // 부모를 받지 못한 답글은 c_no가 다른 스레드의 번호라 세지 않는다 (topNos에 없다).
+        const replies = Map.groupBy(comments.filter((comment) => comment.depth === 1 && topNos.has(comment.c_no)), (comment) => comment.c_no);
+        const count = (parent: ProcessedComment): number => parent.depth === 0 ? replies.get(parent.no)?.length ?? 0 : 0;
+        return parents.toSorted((a, b) => count(b) - count(a));
+    }
+    return parents;
 };
 
 /** 댓글 머리의 개수 요약. hidden은 가린 댓글 수(차단·깡계·접은 같은 댓글)로, 0이 아닌 것만 적고 없으면 빈 글자다. */
@@ -59,17 +67,19 @@ export const CommentSummary = ({comments}: { comments: ProcessedComment[] }) => 
     );
 };
 
-/** 댓글 머리의 등록순·최신순 고르기. 순서는 여기와 CommentList만 구독한다. Frame이 구독하면 고를 때마다 본문까지 다시 그린다. */
+const ORDER_NAMES: Record<CommentOrderValue, string> = {oldest: "등록순", newest: "최신순", replies: "답글순"};
+const isOrder = (value: string | undefined): value is CommentOrderValue => value !== undefined && value in ORDER_NAMES;
+
+/** 댓글 머리의 등록순·최신순·답글순 고르기. 순서는 여기와 CommentList만 구독한다. Frame이 구독하면 고를 때마다 본문까지 다시 그린다. */
 export const CommentOrder = () => {
-    const newestFirst = usePreviewStore((s) => s.newestFirst);
+    const order = usePreviewStore((s) => s.commentOrder);
 
     return (
-        <ToggleGroup aria-label="댓글 순서" variant="outline" spacing={0} value={[newestFirst ? "newest" : "oldest"]} onValueChange={([value]) => {
+        <ToggleGroup aria-label="댓글 순서" variant="outline" spacing={0} value={[order]} onValueChange={([value]) => {
             // 이미 고른 것을 다시 누르면 빈 값이 온다. 그대로 둔다.
-            if (value !== undefined) usePreviewStore.setState({newestFirst: value === "newest"});
+            if (isOrder(value)) usePreviewStore.setState({commentOrder: value});
         }}>
-            <ToggleGroupItem value="oldest" className="h-6 min-w-0 px-2 text-xs">등록순</ToggleGroupItem>
-            <ToggleGroupItem value="newest" className="h-6 min-w-0 px-2 text-xs">최신순</ToggleGroupItem>
+            {Object.entries(ORDER_NAMES).map(([value, name]) => <ToggleGroupItem key={value} value={value} className="h-6 min-w-0 px-2 text-xs">{name}</ToggleGroupItem>)}
         </ToggleGroup>
     );
 };
@@ -165,12 +175,12 @@ export const CommentList = ({comments}: { comments: ProcessedComment[] }) => {
     const pageRevealed = useUiStore((s) => s.blockRevealed);
     const postRevealed = usePreviewStore((s) => s.commentsRevealed);
     const revealed = pageRevealed || postRevealed;
-    const newestFirst = usePreviewStore((s) => s.newestFirst);
+    const order = usePreviewStore((s) => s.commentOrder);
 
     // 숨김 차단(깡계 숨기기 포함)과 접힌 같은 댓글은 '가린 내용 보기'나 이 글에서 가린 댓글 보기 동안만 (흐리게) 그린다. 블러 차단은 그려 두고 features/preview/overlay.css가 흐린다.
     // 트리 선과 답글 수도 그리는 댓글만 센다.
     const shown = new Set(revealed ? comments : comments.filter((comment) => comment.blocked !== "hide" && comment.duplicates !== 0));
-    const parents = threadParents(comments, newestFirst);
+    const parents = threadParents(comments, order);
     // 답글을 스레드 첫 댓글 번호(c_no)로 한 번에 묶는다. 부모마다 전체를 훑으면 O(n²)이다.
     const repliesOf = Map.groupBy(comments.filter((comment) => comment.depth === 1 && shown.has(comment)), (comment) => comment.c_no);
     // 문서를 querySelector로 훑으므로 댓글마다가 아니라 여기서 한 번 잰다.

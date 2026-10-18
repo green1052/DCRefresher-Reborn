@@ -19,8 +19,14 @@ describe("threadParents", () => {
     });
 
     it("최신순이면 스레드만 거꾸로 세우고 받은 목록은 건드리지 않는다", () => {
-        expect(nos(threadParents(comments, true))).toEqual(["6", "5", "1"]);
+        expect(nos(threadParents(comments, "newest"))).toEqual(["6", "5", "1"]);
         expect(nos(comments)).toEqual(["1", "2", "3", "5", "6"]);
+    });
+
+    it("답글순이면 답글이 많은 스레드부터, 같으면 등록순으로 세운다", () => {
+        // 6의 답글 셋이 1의 답글 둘보다 많다. 부모를 받지 못한 5는 답글이 없는 셈이고, 0개인 5와 10은 등록순이다.
+        const replied = [...comments, comment(7, {c_no: "6", depth: 1}), comment(8, {c_no: "6", depth: 1}), comment(9, {c_no: "6", depth: 1}), comment(10)];
+        expect(nos(threadParents(replied, "replies"))).toEqual(["6", "1", "5", "10"]);
     });
 });
 
