@@ -41,7 +41,7 @@ const TOTAL_CHARS = CLOUD_QUOTA - 2400;
 const FORMAT = 1;
 
 interface BackupMeta {
-    /** 형식을 올려도 chunks·size·createdAt은 그대로 둔다. 옛 버전이 새 형식 백업도 '있음'으로 보고 덮기 전에 확인하게 하려는 것이다. */
+    /** 형식을 올려도 chunks·size·createdAt은 그대로 둔다. 그래야 옛 버전이 새 형식 백업도 '있음'으로 보고 덮기 전에 확인한다. */
     format: number;
     chunks: number;
     /** 압축 데이터의 SHA-256 (hex). */

@@ -5,7 +5,7 @@ import {defineModuleMeta} from "@/core/module/define";
 export default defineModuleMeta({
     id: "requests",
     name: "요청 제한",
-    description: "디시인사이드로 한꺼번에 보내는 요청 수를 제한합니다. 요청이 몰려 차단되는 것을 막습니다.",
+    description: "디시인사이드로 한꺼번에 보내는 요청 수를 제한합니다. 요청이 몰려 차단되지 않게 합니다.",
     icon: Gauge,
 
     settings: {

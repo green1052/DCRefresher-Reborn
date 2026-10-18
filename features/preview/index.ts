@@ -126,7 +126,7 @@ const controller = (ctx: Ctx) => {
 
     /**
      * 캐시에 있으면 캐시, 없으면 받는다. fresh는 방금 받은 본문인지다 (캐시 것은 1분까지 낡았을 수 있다).
-     * archived는 받지 못해 보존해 둔 본문을 대신 준 것이다.
+     * archived: 받지 못해 보존해 둔 본문을 대신 줬다.
      */
     const getPost = async (preData: GalleryPreData): Promise<{ post: PostInfo; fresh: boolean; archived?: true }> => {
         const cached = !ctx.settings.disableCache ? cachedPost(preData) : undefined;

@@ -16,7 +16,7 @@ type Values = Record<string, SettingValue>;
 interface ModulesState {
     /** 모듈 on/off (저장값 없으면 defaultEnable). */
     enables: Record<string, boolean>;
-    /** 모듈별 설정값 (스키마로 정규화됨). */
+    /** 모듈별 설정값 (스키마에 맞춘 값). */
     values: Record<string, Values>;
     toggle: (id: string, value: boolean) => Promise<void>;
     changeSetting: (id: string, key: string, value: SettingValue) => Promise<void>;

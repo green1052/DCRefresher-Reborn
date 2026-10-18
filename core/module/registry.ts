@@ -204,7 +204,7 @@ let loading: Promise<void> | undefined;
  * 저장소를 직접 읽어 맞추고 모듈이 다 뜬 뒤에 답한다.
  */
 export const settledPageState = async (): Promise<PageState> => {
-    // 불러오는 중이면 resync가 아직 없어 바로 답하게 된다. 그러면 아직 안 뜬 모듈의 토글이 빠지고, 팝업은 다시 묻지 않아 빈 목록이 남는다.
+    // 불러오는 중이면 resync가 아직 없어 바로 답한다. 그러면 아직 안 뜬 모듈의 토글이 빠지고, 팝업은 다시 묻지 않아 빈 목록이 남는다.
     await loading;
     await resync?.();
     return pageState();

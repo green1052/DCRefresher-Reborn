@@ -325,7 +325,7 @@ const isBlockedIn = (lists: BlockLists, type: BlockType, content: string, galler
         if (kind !== "miss") markUsed("block", entry.id);
     });
 
-/** 해당 내용이 차단 대상인지 (갤러리 한정 항목은 그 갤러리에서만). */
+/** 내용이 차단 대상인지 (갤러리 한정 항목은 그 갤러리에서만). */
 export const isBlocked = (type: BlockType, content: string, gallery?: string): boolean =>
     content !== "" && isBlockedIn(useBlocksStore.getState(), type, content, gallery);
 

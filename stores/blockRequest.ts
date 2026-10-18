@@ -12,7 +12,7 @@ import {type SelectedUser, useUiStore} from "@/stores/ui";
 type DcconPackageMode = "bundle" | "each";
 
 /**
- * 버블의 차단은 그 값을 막는 것이다. 유형의 기본 모드가 NOT_*(허용 목록)면 모드 없이 넣은 항목이 허용 목록에 들어가므로 일치로 넣는다.
+ * 버블의 차단은 그 값을 막는다. 유형의 기본 모드가 NOT_*(허용 목록)면 모드 없이 넣은 항목이 허용 목록에 들어가므로 일치로 넣는다.
  * 포함(CONTAIN) 기본값은 사용자가 고른 것이라 그대로 따른다.
  */
 const blockMode = (type: BlockType) => (useBlocksStore.getState().defaults[type].startsWith("NOT_") ? "SAME" : undefined);

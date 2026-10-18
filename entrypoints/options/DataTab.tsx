@@ -217,7 +217,7 @@ export function DataTab() {
                 {/* 복원 버튼을 Trigger로 둬야 닫을 때 그 버튼으로 포커스가 돌아온다. */}
                 <Dialog open={restoreOpen} onOpenChange={setRestoreOpen}>
                     <div className="flex flex-wrap gap-2">
-                        {/* 백업 버튼은 수동 칸을 덮는 것이 할 일이다. 다른 기기가 올린 백업일 때만 묻는다(새 기기에서 복원과 헷갈려 누르는 경우). */}
+                        {/* 백업 버튼은 원래 수동 칸을 덮는다. 다른 기기가 올린 백업일 때만 묻는다(새 기기에서 복원과 헷갈려 누르는 경우). */}
                         <Button variant="secondary" disabled={loading || !cloud} onClick={() => (cloud?.manual?.other ? setConfirm("manual") : void backupCloud())}>
                             <CloudUpload data-icon="inline-start"/> 백업
                         </Button>
@@ -289,7 +289,7 @@ export function DataTab() {
                          }/>
             )}
 
-            <Section title="초기화" desc="모든 설정과 차단/메모 데이터를 삭제합니다. 초기화한 뒤에는 되돌리기로 초기화 직전 상태로 돌아갈 수 있습니다."
+            <Section title="초기화" desc="모든 설정과 차단/메모 데이터를 삭제합니다. 초기화한 뒤에는 되돌리기로 직전 상태로 돌아갈 수 있습니다."
                      actions={
                          <Button variant="destructive" disabled={loading} onClick={() => setConfirm("reset")}>
                              <Trash2 data-icon="inline-start"/> 데이터 초기화

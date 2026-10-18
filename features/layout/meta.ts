@@ -35,7 +35,7 @@ export const settings = {
     activePixel: {
         type: "range",
         name: "컴팩트 모드 활성화 조건",
-        desc: "브라우저 가로가 이 값보다 작을 경우 컴팩트 모드를 활성화합니다.",
+        desc: "브라우저 가로가 이 값보다 작으면 컴팩트 모드를 활성화합니다.",
         default: 900,
         min: 100,
         // 모니터마다 다른 screen.width로 두면 큰 모니터에서 저장한 값이 작은 모니터에서 잘린다.
@@ -60,7 +60,7 @@ export const settings = {
     pushToRight: {
         type: "check",
         name: "본문 영역 전체로 확장",
-        desc: "\"잡다 링크 숨기기\" 옵션이 켜진 경우 본문 영역을 확장합니다.",
+        desc: "\"잡다 링크 숨기기\" 옵션이 켜져 있으면 본문 영역을 확장합니다.",
         default: false
     }
 } satisfies SettingsSchema;

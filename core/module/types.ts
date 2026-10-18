@@ -87,9 +87,9 @@ export interface ModuleMeta<S extends SettingsSchema = SettingsSchema> {
     icon: LucideIcon;
     /** 모듈이 돌 URL. 없으면 모든 페이지, []면 어느 페이지에서도 돌지 않는다(설정도 읽지 않는다). */
     urls?: RegExp[];
-    /** 최초 활성 여부 (기본: true). */
+    /** 처음에 켜 둘지 (기본: true). */
     defaultEnable?: boolean;
-    /** 설정 스키마 (옵션 페이지에서 렌더링됨). */
+    /** 설정 스키마 (옵션 페이지가 그린다). */
     settings?: S;
     /** 팝업 '현재 페이지' 토글의 표시 정보. index.ts의 pageToggles가 같은 객체를 펼쳐 동작을 붙인다. */
     toggles?: readonly PageToggleMeta[];

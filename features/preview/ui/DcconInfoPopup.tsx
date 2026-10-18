@@ -77,7 +77,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
         } else if (result === "not_login") {
             showToast("디시콘은 로그인한 뒤에 추가할 수 있습니다.", "warning");
         } else {
-            showToast("디시콘 추가 중 오류가 발생했습니다.", "error");
+            showToast("디시콘을 추가하지 못했습니다.", "error");
         }
         setSending(false);
     };

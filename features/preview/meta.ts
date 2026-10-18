@@ -65,11 +65,11 @@ export const settings = {
         desc: "마우스를 미니 미리보기 위로 옮겨 내용을 스크롤하거나 링크·이미지를 누를 수 있습니다. 미리보기는 커서를 따라다니지 않습니다.",
         default: false
     },
-    reversePreviewKey: {type: "check", name: "미리보기 키 반전", desc: "좌클릭으로 미리보기, 우클릭으로 게시글 이동을 사용합니다. 댓글 수도 같습니다.", default: false},
+    reversePreviewKey: {type: "check", name: "미리보기 키 반전", desc: "좌클릭으로 미리보기를 열고 우클릭으로 게시글로 이동합니다. 댓글 수도 같습니다.", default: false},
     longPressDelay: {
         type: "range",
         name: "길게 누르기 판정 시간",
-        desc: "마우스 오른쪽 버튼을 해당 시간 이상 눌렀다 뗄 때 기본 우클릭 메뉴가 나오게 합니다. (Windows 전용 — Shift+우클릭은 어디서나 기본 메뉴)",
+        desc: "마우스 오른쪽 버튼을 이 시간 이상 눌렀다 뗄 때 기본 우클릭 메뉴가 나오게 합니다. (Windows 전용 — Shift+우클릭은 어디서나 기본 메뉴)",
         default: 300,
         min: 200,
         max: 2000,

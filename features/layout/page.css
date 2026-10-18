@@ -112,7 +112,7 @@
         padding-left: 12px !important;
     }
 
-    /* 디시 메인의 본문(.main_content)은 1000px로 고정되어 있어서, 여백을 더하면 1000px 창에서 가로로 넘친다. */
+    /* 디시 메인의 본문(.main_content)은 1000px로 고정되어 있어서 여백을 더하면 1000px 창에서 가로로 넘친다. */
     .dcwrap > #container:has(> .main_content) {
         padding-right: 0 !important;
         padding-left: 0 !important;
@@ -315,13 +315,13 @@
         max-width: 728px !important;
     }
 
-    /* 입력칸도 702px(+좌우 여백 12px)로 고정되어 있어서, 감싼 상자만 줄이면 그 안에서 그대로 넘친다. */
+    /* 입력칸도 702px(+좌우 여백 12px)로 고정되어 있어서 감싼 상자만 줄이면 그 안에서 그대로 넘친다. */
     #subject {
         width: 100% !important;
         box-sizing: border-box !important;
     }
 
-    /* 디시가 HTML 체크박스를 도구줄 왼쪽에서 940px 떨어진 위치에 고정해 두어서, 폭이 좁은 편집기에서는 편집기 영역을 벗어난다. */
+    /* 디시가 HTML 체크박스를 도구줄 왼쪽에서 940px 떨어진 위치에 고정해 두어서 폭이 좁은 편집기에서는 편집기 영역을 벗어난다. */
     .note-btn-group:has(> .note-btn #chk_html) {
         position: static !important;
     }

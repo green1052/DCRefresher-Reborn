@@ -6,7 +6,7 @@ import {BOARD_PAGE} from "@/core/pages";
 export default defineModuleMeta({
     id: "manage",
     name: "관리",
-    description: "무급 노예들을 위한 여러 편의 기능을 제공합니다.",
+    description: "무급 노예들을 위한 여러 편의 기능입니다.",
     icon: ShieldCheck,
     urls: [BOARD_PAGE],
     defaultEnable: false,
@@ -38,8 +38,8 @@ export default defineModuleMeta({
         },
         enableGifControl: {
             type: "check",
-            name: "GIF 조작 기능 활성화",
-            desc: "GIF를 제어할 수 있는 기능을 활성화합니다.",
+            name: "GIF 조작",
+            desc: "GIF를 제어하는 기능을 켭니다.",
             default: false
         },
         imageOrigin: {
@@ -51,7 +51,7 @@ export default defineModuleMeta({
         titleSearch: {
             type: "check",
             name: "같은 제목 찾기",
-            desc: "게시글 보기에 버튼을 두어, 제목이 같은 글을 디시 통합검색에서 찾습니다.",
+            desc: "게시글 보기에 버튼을 두어 제목이 같은 글을 디시 통합검색에서 찾습니다.",
             default: false
         }
     }

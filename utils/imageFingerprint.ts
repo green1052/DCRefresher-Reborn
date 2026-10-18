@@ -278,7 +278,7 @@ const fingerprint = async (file: Blob): Promise<Sample[] | undefined> => {
         const video = kind === "video" ? animatedSamples(await videoGrids(file).catch(() => [])) : undefined;
         if (video) return video;
 
-        // 원본 크기로 디코딩하는 것 자체가 메모리를 크게 쓴다. 파일은 작아도 화소가 아주 많은 이미지가 있어 디코딩 전에 본다.
+        // 원본 크기로 디코딩하기만 해도 메모리를 크게 쓴다. 파일은 작아도 화소가 아주 많은 이미지가 있어 디코딩 전에 본다.
         if ((await pixelsOf(file)) > MAX_PIXELS) return undefined;
         const animation = kind === "image/gif" || kind === "image/webp" ? await animationGrids(file, kind) : undefined;
         if (animation) return animatedSamples(animation);

@@ -63,7 +63,7 @@ export interface BlockOptions {
 
 /**
  * 차단 요청. nos는 차단할 글(parent 빈 값) 또는 댓글(parent에 글 번호) 번호다.
- * 디시 댓글 차단 창(avoid_pop_cmt)은 avoid_submit에 글 번호와 댓글 여부를 넘긴다.
+ * 디시 댓글 차단 창(avoid_pop_cmt)은 avoid_submit에 글 번호와 댓글인지를 넘긴다.
  */
 const avoid = (preData: GalleryPreData, nos: string | string[], parent: string, options: BlockOptions): Promise<ManageResult> => manage(preData, "update_avoid_list", {
     id: preData.gallery,

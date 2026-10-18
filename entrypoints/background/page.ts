@@ -3,7 +3,7 @@ import {hasTab, runInPage} from "@/core/module/background";
 
 /**
  * 탭의 페이지 컨텍스트에서 실행된다(직렬화되므로 바깥 변수를 쓰지 않는다).
- * 디시는 자체 차단(block-disable)과 이용자 메모 배지를 목록을 처음 그릴 때만 적용하므로 교체한 행에 다시 건다.
+ * 디시는 목록을 처음 그릴 때만 자체 차단(block-disable)과 이용자 메모 배지를 적용하므로 교체한 행에 다시 건다.
  */
 const rerunListScripts = (gallery: string): void => {
     const scope = window as Window & {
