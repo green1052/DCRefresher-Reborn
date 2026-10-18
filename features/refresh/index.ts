@@ -55,6 +55,10 @@ export default defineModule({
         // 지난번 갈아끼운 목록 tbody HTML의 SHA-256. 받은 것이 같으면 파싱·교체를 건너뛴다.
         // HTML을 그대로 들고 있으면 목록 탭마다 비교용으로만 150KB(UTF-16)쯤을 붙잡는다.
         let lastListHash = "";
+        // 글 보기 페이지에서 목록이 화면 밖인지. 글 아래의 목록은 대개 보이지 않는데 주기마다 받으면 분당 400KB쯤을 받는다.
+        let offscreen = false;
+        // 화면 밖이라 건너뛴 자동 새로고침이 있는지. 목록이 보이면 다음 주기를 기다리지 않고 받는다.
+        let missed = false;
         const unseen = createUnseenCounter(ctx);
         const gallery = pageGallery ?? "";
 
@@ -129,6 +133,11 @@ export default defineModule({
                 // 새 글은 1페이지에만 들어온다. 뒤 페이지는 갈아끼워 봐야 행이 밀려 읽던 글이 다음 페이지로 사라질 뿐이다.
                 const page = new URL(originalLocation).searchParams.get("page");
                 if (page && page !== "1") return false;
+
+                if (offscreen) {
+                    missed = true;
+                    return false;
+                }
             }
 
             if (holdList(customURL, force)) return false;
@@ -254,6 +263,27 @@ export default defineModule({
         };
 
         armNext();
+
+        // 건너뛴 자동 새로고침을 곧바로 하고 주기를 다시 잡는다.
+        const catchUp = (): void => {
+            if (!missed) return;
+            missed = false;
+            window.clearTimeout(timer);
+            void load().finally(armNext);
+        };
+
+        if (isViewPage) whenDomReady(() => {
+            // tbody는 새로고침마다 갈아끼우므로 그대로 남는 표를 지켜본다.
+            const table = document.querySelector(LIST_SELECTOR)?.closest("table");
+            if (!table) return;
+            // 한 번에 여러 변화가 오면 마지막이 지금 상태다.
+            const observer = new IntersectionObserver((entries) => {
+                offscreen = entries.at(-1)?.isIntersecting === false;
+                if (!offscreen) catchUp();
+            });
+            observer.observe(table);
+            ctx.addCleanup(() => observer.disconnect());
+        }, ctx.signal);
 
         ctx.onSettingsChanged((keys) => {
             if (keys.has("doNotColorVisited")) applyDoNotColorVisited(ctx);
