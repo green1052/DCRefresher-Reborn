@@ -5,7 +5,7 @@ import {createElement} from "react";
 import {defineModule} from "@/core/module/define";
 import {useUiStore} from "@/stores/ui";
 
-import meta, {REVEAL_TOGGLE} from "./meta";
+import meta from "./meta";
 
 const CONTROL_BUTTON = ".stealth_control_button";
 const TEMPORARY_STEALTH = "stlth";
@@ -44,9 +44,7 @@ const createButton = (): void => {
     document.body.append(frame);
 };
 
-export default defineModule({
-    ...meta,
-
+export default defineModule(meta, {
     setup(ctx) {
         document.documentElement.classList.add("refresherStealth");
 
@@ -61,18 +59,19 @@ export default defineModule({
     },
 
     shortcuts: {
-        stealthPause: (_ctx, api) => {
+        stealthPause: (api) => {
             api.toggle();
             useUiStore.getState().showToast(api.isRevealed() ? "이미지를 보이게 했습니다." : "이미지를 숨겼습니다.");
         }
     },
 
-    pageToggles: [{
-        ...REVEAL_TOGGLE,
-        desc: "스텔스로 숨긴 이미지를 보입니다",
-        isOn: (api) => api.isRevealed(),
-        toggle: (api) => api.toggle()
-    }],
+    pageToggles: {
+        reveal: {
+            desc: "스텔스로 숨긴 이미지를 보입니다",
+            isOn: (api) => api.isRevealed(),
+            toggle: (api) => api.toggle()
+        }
+    },
 
     revoke() {
         document.documentElement.classList.remove("refresherStealth", TEMPORARY_STEALTH);

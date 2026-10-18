@@ -94,16 +94,13 @@ export const settings = {
 
 export type Ctx = ModuleContext<typeof settings>;
 
-/** 팝업 '가린 내용 보기' 토글. index.ts의 pageToggles가 동작을 붙인다. */
-export const REVEAL_TOGGLE = {id: "reveal", label: "가린 내용 보기"} as const;
-
 export default defineModuleMeta({
     id: "block",
     name: "콘텐츠 차단",
     description: "보고 싶지 않은 유저·글·댓글을 숨기거나 흐리게 합니다.",
     urls: [BOARD_PAGE],
     settings,
-    toggles: [REVEAL_TOGGLE],
+    toggles: [{id: "reveal", label: "가린 내용 보기"}],
     commands: {
         blockReveal: {description: "이 페이지에서 가린 내용 보기"}
     }

@@ -56,7 +56,7 @@ export interface ModuleContext<S extends SettingsSchema = SettingsSchema> {
     onSettingsChanged(listener: (keys: ReadonlySet<keyof S & string>) => void): void;
 }
 
-/** 팝업 '현재 페이지' 토글의 표시 정보 (features/<id>/meta.ts). 동작은 index.ts의 PageToggle이 잇고, 아이콘은 icons.ts의 toggles가 id로 찾는다. */
+/** 팝업 '현재 페이지' 토글의 표시 정보 (features/<id>/meta.ts). 동작은 index.ts의 pageToggles가 같은 id로 붙이고, 아이콘은 icons.ts의 toggles가 id로 찾는다. */
 interface PageToggleMeta<Id extends string = string> {
     id: Id;
     label: string;
@@ -67,6 +67,9 @@ export type SchemaOf<M extends AnyModuleMeta> = NonNullable<M["settings"]>;
 
 /** 메타의 팝업 토글 id. 토글이 없으면 never다. */
 export type ToggleKeyOf<M extends AnyModuleMeta> = NonNullable<M["toggles"]>[number]["id"];
+
+/** 메타의 단축키 명령 이름. 명령이 없으면 never다. */
+export type CommandKeyOf<M extends AnyModuleMeta> = keyof NonNullable<M["commands"]> & string;
 
 /**
  * 옵션·팝업이 그리는 아이콘 (features/<id>/icons.ts의 default). 토글이 있으면 메타 toggles의 id마다 하나씩 둔다.
@@ -82,17 +85,20 @@ export interface AnyModuleIcons {
 }
 
 /**
- * 팝업 '현재 페이지'에 나오는 이 페이지 한정 토글. 모듈이 이 페이지에서 돌 때만 보이며, api는 setup()의 리턴값이다.
+ * 팝업 '현재 페이지'에 나오는 이 페이지 한정 토글의 동작. 모듈이 이 페이지에서 돌 때만 보이며, api는 setup()의 리턴값이다.
  * desc가 함수면 팝업을 열 때마다 계산한다 (가린 개수 등).
  */
-interface PageToggle<Api = unknown> extends PageToggleMeta {
+interface PageToggleImpl<Api> {
     desc: string | ((api: Api) => string);
     isOn(api: Api): boolean;
     toggle(api: Api): void;
 }
 
+/** 메타의 표시 정보에 동작을 붙인 토글 (defineModule이 합친다). */
+interface PageToggle<Api = unknown> extends PageToggleMeta, PageToggleImpl<Api> {}
+
 /**
- * 옵션·팝업이 그리는 데 필요한 모듈 정보. features/<id>/meta.ts에 두고 index.ts가 setup 등과 합친다(defineModule({...meta, setup})).
+ * 옵션·팝업이 그리는 데 필요한 모듈 정보. features/<id>/meta.ts에 두고 index.ts가 setup 등과 합친다(defineModule(meta, {setup})).
  * 옵션·팝업은 meta.ts만 불러와, 모듈의 setup이 쓰는 HTTP 클라이언트·캐시·DOM 코드가 그 번들에 딸려 가지 않게 한다.
  */
 export interface ModuleMeta<S extends SettingsSchema = SettingsSchema, T extends string = string, C extends string = string> {
@@ -107,7 +113,7 @@ export interface ModuleMeta<S extends SettingsSchema = SettingsSchema, T extends
     defaultEnable?: boolean;
     /** 설정 스키마 (옵션 페이지가 그린다). */
     settings?: S;
-    /** 팝업 '현재 페이지' 토글의 표시 정보. index.ts의 pageToggles가 같은 객체를 펼쳐 동작을 붙인다. */
+    /** 팝업 '현재 페이지' 토글의 표시 정보. index.ts의 pageToggles가 id마다 동작을 붙인다. */
     toggles?: readonly PageToggleMeta<T>[];
 
     /**
@@ -122,15 +128,48 @@ export interface ModuleMeta<S extends SettingsSchema = SettingsSchema, T extends
 }
 
 /**
- * 기능 모듈. S는 설정 스키마, Api는 setup()의 리턴값으로 단축키·팝업 토글에 넘어간다.
+ * index.ts가 메타에 붙이는 동작 (defineModule(meta, impl)). M은 메타, Api는 setup()의 리턴값으로 단축키·팝업 토글에 넘어간다.
+ * 메타에 명령·토글이 있으면 shortcuts·pageToggles에 이름마다 하나씩 있어야 하고, 없으면 두지 않는다.
+ * 있어야 하는지는 Api를 쓰지 않는 뒤쪽 조건부 타입이 정한다. Api가 든 멤버를 조건부 타입에 넣으면 setup에서 Api를 추론하지 못한다.
  * 객체 리터럴에서 setup을 shortcuts·pageToggles보다 앞에 둔다. Api를 setup에서 먼저 추론해야 뒤쪽 함수의 인자 타입이 정해진다.
+ */
+export type ModuleImpl<M extends AnyModuleMeta, Api> = ModuleImplBase<M, Api>
+    & ([CommandKeyOf<M>] extends [never] ? { shortcuts?: never } : { shortcuts: object })
+    & ([ToggleKeyOf<M>] extends [never] ? { pageToggles?: never } : { pageToggles: object });
+
+/** ModuleImpl의 멤버. 키는 메타의 이름 그대로라 빠지거나 없는 이름을 넣으면 타입 오류다. */
+interface ModuleImplBase<M extends AnyModuleMeta, Api> {
+    /** 모듈을 켤 때 실행. */
+    setup(ctx: ModuleContext<SchemaOf<M>>): Api | Promise<Api>;
+
+    /** 단축키. 키는 메타의 commands 이름이다. setup이 끝난 모듈에만 전달된다. */
+    shortcuts?: Record<CommandKeyOf<M>, (api: Api) => void | Promise<void>>;
+
+    /** 팝업 '현재 페이지' 토글의 동작. 키는 메타의 toggles id다. */
+    pageToggles?: Record<ToggleKeyOf<M>, PageToggleImpl<Api>>;
+
+    /** 모듈을 끌 때 실행 (ModuleDefinition의 revoke). */
+    revoke?(): void;
+}
+
+/** 동작의 타입을 지운 것. defineModule이 레지스트리에 넘기려고 쓴다. */
+export interface AnyModuleImpl {
+    setup(ctx: ModuleContext): unknown;
+    revoke?(): void;
+    shortcuts?: Partial<Record<string, (api: unknown) => void | Promise<void>>>;
+    pageToggles?: Partial<Record<string, PageToggleImpl<unknown>>>;
+}
+
+/**
+ * 레지스트리가 다루는 모듈의 모양. defineModule이 메타와 index.ts의 동작(ModuleImpl)을 합쳐 만든다.
+ * S는 설정 스키마, Api는 setup()의 리턴값이다.
  */
 export interface ModuleDefinition<S extends SettingsSchema = SettingsSchema, Api = unknown> extends ModuleMeta<S> {
     /** 모듈을 켤 때 실행. */
     setup(ctx: ModuleContext<S>): Api | Promise<Api>;
 
     /** 단축키. 키는 메타의 commands 이름이다. setup이 끝난 모듈에만 전달된다. */
-    shortcuts?: Record<string, (ctx: ModuleContext<S>, api: Api) => void | Promise<void>>;
+    shortcuts?: Partial<Record<string, (api: Api) => void | Promise<void>>>;
 
     /** 팝업 '현재 페이지' 토글 (메타의 toggles에 동작을 붙인 것). */
     pageToggles?: PageToggle<Api>[];

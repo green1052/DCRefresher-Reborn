@@ -67,9 +67,7 @@ const isLastPage = (paging: Element): boolean => {
     return !next || next.classList.contains("search_next");
 };
 
-export default defineModule({
-    ...meta,
-
+export default defineModule(meta, {
     setup(ctx) {
         const api = {searchUserPosts};
         const filter = writerFilter();

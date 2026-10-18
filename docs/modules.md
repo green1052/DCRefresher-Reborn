@@ -19,7 +19,7 @@
 
 ## 모듈 정의
 
-옵션·팝업이 그리는 데 필요한 정보는 `features/<id>/meta.ts`에서 `defineModuleMeta`로, 페이지에서 하는 일은 `features/<id>/index.ts`에서 메타를 펼쳐 `defineModule`로 정의해 각각 default로 내보냅니다. 가장 작은 예는 `features/requests`입니다.
+옵션·팝업이 그리는 데 필요한 정보는 `features/<id>/meta.ts`에서 `defineModuleMeta`로, 페이지에서 하는 일은 `features/<id>/index.ts`에서 `defineModule(meta, {setup, …})`으로 정의해 각각 default로 내보냅니다. 가장 작은 예는 `features/requests`입니다.
 
 ```ts
 // meta.ts — 옵션·팝업·콘텐츠·배경이 모두 불러오므로 가벼운 것만 둔다. UI(lucide·Preact)는 불러오지 않는다 (단위 테스트가 확인한다)
@@ -40,9 +40,7 @@ export default defineModuleMeta({
 export default {module: Gauge} satisfies IconsOf<typeof meta>;
 
 // index.ts — 콘텐츠 스크립트만 불러온다
-export default defineModule({
-    ...meta,
-
+export default defineModule(meta, {
     setup(ctx) {
         setRequestConcurrency(ctx.settings.concurrency);
         ctx.onSettingsChanged(() => setRequestConcurrency(ctx.settings.concurrency));
@@ -104,8 +102,8 @@ const apply = (ctx: Ctx): void => { … ctx.settings.bodyFontSize … }; // numb
 ## 단축키와 팝업 토글
 
 - **commands** (meta.ts): `{명령 이름: {description, key?}}`. 빌드할 때 `modules/commands.ts`가 모든 모듈의 것을 모아 manifest `commands`로 넣습니다. `key`는 처음 설치할 때의 기본 키입니다. 크롬은 기본 키가 있는 명령을 4개까지만 받고 dev 빌드의 다시 불러오기(Alt+Shift+R)가 한 자리를 쓰므로, 모듈의 기본 키는 모두 합쳐 3개까지입니다. 넘으면 단위 테스트(`tests/unit/features/meta.test.ts`)와 dev 빌드가 실패합니다.
-- **shortcuts** (index.ts): `{명령 이름: (ctx, api) => …}`. 메타의 `commands`와 이름이 같아야 합니다(`tests/unit/features/meta.test.ts`가 확인합니다). setup이 끝난 모듈에만 전달됩니다.
-- **pageToggles**: 팝업의 "현재 페이지"에 나오는 이 페이지 한정 토글입니다. 표시 정보(`id`, `label`)는 `meta.ts`의 `toggles`에 두고(id가 리터럴 타입이 되게 `as const`로 적습니다. 팝업은 같은 id로 `icons.ts`의 `toggles`에서 아이콘을 찾습니다), `index.ts`의 `pageToggles`가 같은 객체를 펼쳐 `desc`(문자열 또는 `(api) => string`), `isOn(api)`, `toggle(api)`를 붙입니다. setup이 끝난 모듈의 토글만 보입니다.
+- **shortcuts** (index.ts): `{명령 이름: (api) => …}`. 메타의 `commands`에 있는 이름마다 하나씩 있어야 하고, 빠지거나 없는 이름을 넣으면 타입 오류가 납니다. 메타에 명령이 없으면 두지 않습니다. setup이 끝난 모듈에만 전달됩니다.
+- **pageToggles**: 팝업의 "현재 페이지"에 나오는 이 페이지 한정 토글입니다. 표시 정보(`id`, `label`)는 `meta.ts`의 `toggles`에 두고(팝업은 같은 id로 `icons.ts`의 `toggles`에서 아이콘을 찾습니다), `index.ts`의 `pageToggles`가 `{토글 id: {desc, isOn, toggle}}`로 동작을 붙입니다. `desc`는 문자열 또는 `(api) => string`, `isOn(api)`, `toggle(api)`입니다. 토글 id마다 하나씩 있어야 합니다(타입이 확인합니다). setup이 끝난 모듈의 토글만 보입니다.
 
 ## 모듈 간 api
 

@@ -187,9 +187,7 @@ const rebuildUsers = (ctx: Ctx, uids: string[]): void => {
     if (cleared) notifyRowsHidden();
 };
 
-export default defineModule({
-    ...meta,
-
+export default defineModule(meta, {
     async setup(ctx) {
         // 배지 자리를 내는 페이지 스타일을 켠다 (page.css). 끄면 디시 작성자 칸이 원래대로 돌아간다.
         document.documentElement.classList.add("refresherUserInfo");

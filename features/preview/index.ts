@@ -655,9 +655,7 @@ interface PreviewApi {
     isOpen(): boolean;
 }
 
-export default defineModule({
-    ...meta,
-
+export default defineModule(meta, {
     setup: (ctx): PreviewApi => {
         controller(ctx);
         return {archiveArticle: () => ctx.settings.archiveArticle, isOpen: () => usePreviewStore.getState().visible};

@@ -73,16 +73,13 @@ export const settings = {
 
 export type Ctx = ModuleContext<typeof settings>;
 
-/** 팝업 '자동 새로고침 일시정지' 토글. index.ts의 pageToggles가 동작을 붙인다. */
-export const PAUSE_TOGGLE = {id: "pause", label: "자동 새로고침 일시정지"} as const;
-
 export default defineModuleMeta({
     id: "refresh",
     name: "글 목록 새로고침",
     description: "글 목록을 자동으로 새로고침합니다.",
     urls: [BOARD_PAGE],
     settings,
-    toggles: [PAUSE_TOGGLE],
+    toggles: [{id: "pause", label: "자동 새로고침 일시정지"}],
     commands: {
         refreshLists: {description: "새로고침", key: "Alt+R"},
         refreshPause: {description: "자동 새로고침 일시정지", key: "Alt+S"}

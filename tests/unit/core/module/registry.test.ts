@@ -470,7 +470,7 @@ describe("단축키·페이지 토글", () => {
         id,
         defaultEnable,
         setup: () => ({count: 2, on: true}),
-        shortcuts: {jump: (ctx, api) => toggled(id, ctx.signal.aborted, api)},
+        shortcuts: {jump: (api) => toggled(id, api)},
         pageToggles: [
             {id: "fixed", label: "고정", desc: "설명", isOn: (api) => api.on, toggle: (api) => toggled(id, api)},
             {id: "count", label: "개수", desc: (api) => `${api.count}개`, isOn: () => false, toggle: () => {}}
@@ -484,7 +484,7 @@ describe("단축키·페이지 토글", () => {
         registry.runShortcut("none");
 
         expect(toggled).toHaveBeenCalledTimes(1);
-        expect(toggled).toHaveBeenCalledWith("on", false, {count: 2, on: true});
+        expect(toggled).toHaveBeenCalledWith("on", {count: 2, on: true});
     });
 
     it("토글 상태는 돌고 있는 모듈 것만, desc 함수는 계산한다", async () => {

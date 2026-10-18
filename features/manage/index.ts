@@ -37,9 +37,7 @@ const disableGifControl = (): void => {
     }
 };
 
-export default defineModule({
-    ...meta,
-
+export default defineModule(meta, {
     setup(ctx) {
         // 핸들러를 붙인 요소. DOM 속성으로 표시하면 refresh가 체크박스 칸을 복제할 때 표시도 복제돼 새 행에 핸들러가 붙지 않는다.
         const handled = new WeakSet<Element>();

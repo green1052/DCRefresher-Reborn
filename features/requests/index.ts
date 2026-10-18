@@ -3,9 +3,7 @@ import {defineModule} from "@/core/module/define";
 
 import meta from "./meta";
 
-export default defineModule({
-    ...meta,
-
+export default defineModule(meta, {
     setup(ctx) {
         setRequestConcurrency(ctx.settings.concurrency);
         ctx.onSettingsChanged(() => setRequestConcurrency(ctx.settings.concurrency));

@@ -44,9 +44,7 @@ const applyHide = (ctx: Ctx): void => {
     document.documentElement.classList.toggle(PUSH_CLASS, ctx.settings.pushToRight && ctx.settings.hideUselessView);
 };
 
-export default defineModule({
-    ...meta,
-
+export default defineModule(meta, {
     setup(ctx) {
         watchWidth(ctx);
         applyHide(ctx);

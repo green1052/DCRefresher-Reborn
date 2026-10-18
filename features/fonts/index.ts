@@ -26,9 +26,7 @@ const STYLE_ID = "refresher-fonts";
 
 const apply = (ctx: Ctx): void => writeStyle(STYLE_ID, buildCss(ctx));
 
-export default defineModule({
-    ...meta,
-
+export default defineModule(meta, {
     setup(ctx) {
         apply(ctx);
         ctx.onSettingsChanged(() => apply(ctx));

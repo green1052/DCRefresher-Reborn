@@ -11,7 +11,7 @@ import {openWriterBubble, useUiStore} from "@/stores/ui";
 import {textWithoutScripts, whenDomReady} from "@/utils/dom";
 import {eventTarget} from "@/utils/event";
 
-import meta, {type Ctx, REVEAL_TOGGLE} from "./meta";
+import meta, {type Ctx} from "./meta";
 
 /** 보기 방식(블러)만 바꾸는 설정. 이것만 바뀌면 다시 판정하지 않는다. */
 const BLUR_KEYS = new Set<keyof Ctx["settings"]>(["blurReveal", "blurStrength"]);
@@ -243,9 +243,7 @@ const restoreHiddenElements = (): void => {
     for (const element of document.querySelectorAll(".refresherTextNotice, .refresherDuplicateBadge")) element.remove();
 };
 
-export default defineModule({
-    ...meta,
-
+export default defineModule(meta, {
     setup(ctx) {
         const gallery = pageGallery ?? undefined;
 
@@ -264,15 +262,16 @@ export default defineModule({
     },
 
     shortcuts: {
-        blockReveal: (_ctx, api) => api.toggleReveal()
+        blockReveal: (api) => api.toggleReveal()
     },
 
-    pageToggles: [{
-        ...REVEAL_TOGGLE,
-        desc: (api) => `가린 ${api.hiddenCount()}개를 흐리게 보입니다`,
-        isOn: (api) => api.isRevealed(),
-        toggle: (api) => api.toggleReveal()
-    }],
+    pageToggles: {
+        reveal: {
+            desc: (api) => `가린 ${api.hiddenCount()}개를 흐리게 보입니다`,
+            isOn: (api) => api.isRevealed(),
+            toggle: (api) => api.toggleReveal()
+        }
+    },
 
     revoke() {
         restoreHiddenElements();

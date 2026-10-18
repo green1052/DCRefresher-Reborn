@@ -12,7 +12,7 @@ import {sha256} from "@/utils/hash";
 
 import {clearNewPost, isWholeFirstPage, replaceList, syncPaging} from "./list";
 import {LIST_TABLE} from "./markup";
-import meta, {type Ctx, PAUSE_TOGGLE} from "./meta";
+import meta, {type Ctx} from "./meta";
 import {createUnseenCounter} from "./title";
 
 const MINIMUM_REFRESH_INTERVAL = 2000;
@@ -42,9 +42,7 @@ const applyDoNotColorVisited = (ctx: Ctx): void => {
     document.documentElement.classList.toggle("refresherDoNotColorVisited", ctx.settings.doNotColorVisited);
 };
 
-export default defineModule({
-    ...meta,
-
+export default defineModule(meta, {
     setup(ctx) {
         let paused = Boolean(queryString("s_keyword") && ctx.settings.noRefreshOnSearch);
         let lastRefresh = 0;
@@ -407,16 +405,17 @@ export default defineModule({
     },
 
     shortcuts: {
-        refreshLists: (_ctx, api) => void api.refreshLists(),
-        refreshPause: (_ctx, api) => api.togglePause()
+        refreshLists: (api) => void api.refreshLists(),
+        refreshPause: (api) => api.togglePause()
     },
 
-    pageToggles: [{
-        ...PAUSE_TOGGLE,
-        desc: "이 페이지의 자동 새로고침을 멈춥니다",
-        isOn: (api) => api.isPaused(),
-        toggle: (api) => api.togglePause()
-    }],
+    pageToggles: {
+        pause: {
+            desc: "이 페이지의 자동 새로고침을 멈춥니다",
+            isOn: (api) => api.isPaused(),
+            toggle: (api) => api.togglePause()
+        }
+    },
 
     revoke() {
         // 탭 제목의 새 글 수와 '여기까지 읽음' 선은 title.ts의 정리 함수(clear)가 뗀다.

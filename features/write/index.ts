@@ -41,9 +41,7 @@ const publishImageOptions = ({webpConvert: webp, webpQuality, webpConcurrency: c
     });
 };
 
-export default defineModule({
-    ...meta,
-
+export default defineModule(meta, {
     setup(ctx) {
         publishImageOptions(ctx.settings);
         ctx.onSettingsChanged(() => publishImageOptions(ctx.settings));

@@ -184,7 +184,7 @@ const readyModules = () => [...instances.values()].flatMap(({def, running}) => (
 export const runShortcut = (command: string): void => {
     for (const {def, running} of readyModules()) {
         const shortcut = def.shortcuts?.[command];
-        if (shortcut) void shortcut(running.ctx, running.api);
+        if (shortcut) void shortcut(running.api);
     }
 };
 

@@ -20,17 +20,11 @@ describe("모듈 메타", () => {
         expect(ids).toEqual([...ids].sort());
     });
 
-    it("모듈(index.ts)은 같은 순서로 자기 메타를 그대로 펼친다", () => {
-        const byId = new Map(metas.map((meta) => [meta.id, meta]));
-        const ids = features.map((module) => module.id);
-        expect(ids).toEqual(metas.map((meta) => meta.id).filter((id) => ids.includes(id)));
-        for (const module of features) {
-            const meta = byId.get(module.id);
-            expect(meta, module.id).toBeDefined();
-            for (const key of ["name", "description", "urls", "defaultEnable", "settings", "toggles", "commands"] as const) {
-                expect(module[key], `${module.id}.${key}`).toBe(meta?.[key]);
-            }
-        }
+    it("모듈(index.ts)은 자기 폴더의 메타로 정의한다", () => {
+        // 다른 폴더의 meta.ts를 불러와도 타입은 맞으므로 여기서 본다.
+        const modules = Object.entries(import.meta.glob<{ default: { id: string } }>("/features/*/index.ts", {eager: true}));
+        expect(modules.length).toBeGreaterThan(0);
+        for (const [path, module] of modules) expect(module.default.id, path).toBe(/features\/([^/]+)\/index\.ts$/.exec(path)?.[1]);
     });
 
     it("페이지에서 할 일이 없는 모듈만 index.ts가 없다", () => {
@@ -45,12 +39,6 @@ describe("단축키", () => {
     it("명령 이름은 모듈을 통틀어 겹치지 않는다", () => {
         const names = commands.map((command) => command.name);
         expect(new Set(names).size).toBe(names.length);
-    });
-
-    it("메타의 명령마다 index.ts에 동작이 있고, 동작마다 명령이 있다", () => {
-        for (const module of features) {
-            expect(Object.keys(module.shortcuts ?? {}).sort(), module.id).toEqual(Object.keys(module.commands ?? {}).sort());
-        }
     });
 
     it("기본 키는 Ctrl·Alt를 포함한 브라우저 단축키 형식이고 겹치지 않는다", () => {
@@ -71,11 +59,11 @@ describe("단축키", () => {
 });
 
 describe("팝업 토글", () => {
-    it("메타의 토글마다 index.ts가 같은 표시 정보로 동작을 붙인다", () => {
-        for (const module of features) {
-            const toggles = module.pageToggles ?? [];
-            expect(toggles.map(({id, label}) => ({id, label})), module.id).toEqual(module.toggles ?? []);
-            expect(new Set(toggles.map((toggle) => toggle.id)).size).toBe(toggles.length);
+    it("한 모듈의 토글 id는 겹치지 않는다", () => {
+        // 토글마다 동작이 있는지는 index.ts의 pageToggles 타입(ModuleImpl)이 본다.
+        for (const meta of metas) {
+            const ids = (meta.toggles ?? []).map((toggle) => toggle.id);
+            expect(new Set(ids).size, meta.id).toBe(ids.length);
         }
     });
 });
