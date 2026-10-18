@@ -1,21 +1,19 @@
 import {describe, expect, it} from "vitest";
 
-import type {AnyModuleMeta} from "@/core/module/types";
+import type {ModuleInfo} from "@/core/module/types";
 import {matchSettings} from "@/entrypoints/options/GeneralTab";
 
 const GROUP = {name: "차단 프리셋", desc: "차단 키로 차단할 때 쓰는 값입니다."};
 
 const feature = {
-    id: "preview",
     name: "미리보기",
     description: "글 목록에서 미리보기 창을 띄워 줍니다.",
-    urls: [],
     settings: {
         listKeyboard: {type: "check", name: "목록 키보드 이동", desc: "J/K로 글을 고릅니다.", default: true},
         blockPresetDay: {type: "check", group: GROUP, name: "기간", desc: "며칠 동안 막습니다.", default: false},
         blockPresetDelete: {type: "check", group: GROUP, name: "글도 삭제", desc: "게시글도 삭제합니다.", default: false}
     }
-} satisfies AnyModuleMeta;
+} satisfies Pick<ModuleInfo, "name" | "description" | "settings">;
 
 const keys = (needle: string) => matchSettings(feature, needle)?.map(([key]) => key);
 

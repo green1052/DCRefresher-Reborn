@@ -5,7 +5,7 @@ import {Collapsible, CollapsibleContent} from "@/components/ui/collapsible";
 import {Separator} from "@/components/ui/separator";
 import {Switch} from "@/components/ui/switch";
 import {defaultValue} from "@/core/module/settings";
-import type {AnyModuleMeta, SettingSchema} from "@/core/module/types";
+import type {LabeledSetting, ModuleInfo} from "@/core/module/types";
 import features from "@/features/meta";
 import {useModulesStore} from "@/stores/modules";
 import {SAVE_FAILED} from "@/utils/error";
@@ -14,13 +14,13 @@ import {EmptyList, SearchInput} from "./Layout";
 import {notify} from "./optionsStore";
 import {SettingItem} from "./SettingItem";
 
-type SettingEntry = [key: string, schema: SettingSchema];
+type SettingEntry = [key: string, schema: LabeledSetting];
 
 /**
  * 검색어(소문자)에 맞는 설정. 모듈 이름·설명이 맞으면 전부, 아니면 이름·설명·묶음 이름이 맞는 설정만 남긴다.
  * 맞는 것이 없으면 undefined. 검색어가 비면 전부다.
  */
-export const matchSettings = (feature: AnyModuleMeta, needle: string): SettingEntry[] | undefined => {
+export const matchSettings = (feature: Pick<ModuleInfo, "name" | "description" | "settings">, needle: string): SettingEntry[] | undefined => {
     const settings = Object.entries(feature.settings ?? {});
     const has = (...texts: string[]) => texts.some((text) => text.toLowerCase().includes(needle));
     if (has(feature.name, feature.description)) return settings;
@@ -29,11 +29,11 @@ export const matchSettings = (feature: AnyModuleMeta, needle: string): SettingEn
 };
 
 /** 모듈 하나의 세부 설정. 같은 group 객체를 가진 설정은 첫 설정 자리에 한 칸으로 묶는다. shown은 그릴 설정(검색에 맞는 것)이다. */
-const ModuleSettings = ({feature, settings, shown}: { feature: AnyModuleMeta; settings: SettingEntry[]; shown: SettingEntry[] }) => {
+const ModuleSettings = ({feature, settings, shown}: { feature: ModuleInfo; settings: SettingEntry[]; shown: SettingEntry[] }) => {
     // 이 모듈의 값만 구독한다. 다른 모듈의 설정을 바꿔도 이 카드는 다시 그리지 않는다.
     const values = useModulesStore((state) => state.values[feature.id]);
     const changeSetting = useModulesStore((state) => state.changeSetting);
-    const valueOf = (key: string, schema: SettingSchema) => values?.[key] ?? defaultValue(schema);
+    const valueOf = (key: string, schema: LabeledSetting) => values?.[key] ?? defaultValue(schema);
 
     // 같은 모듈의 다른 단축키 설정이 쓰는 키. 고를 수 없게 한다. 검색으로 숨은 설정의 키도 막는다.
     const takenKeys = (key: string): string[] =>
@@ -78,7 +78,7 @@ const ModuleSettings = ({feature, settings, shown}: { feature: AnyModuleMeta; se
 };
 
 /** 모듈 카드. 헤더의 스위치로 켜고 끄며, 켜져 있거나 검색 중일 때 세부 설정(shown)을 펼친다. */
-const ModuleCard = ({feature, shown, searching}: { feature: AnyModuleMeta; shown: SettingEntry[]; searching: boolean }) => {
+const ModuleCard = ({feature, shown, searching}: { feature: ModuleInfo; shown: SettingEntry[]; searching: boolean }) => {
     const enabled = useModulesStore((state) => state.enables[feature.id] === true);
     const toggle = useModulesStore((state) => state.toggle);
     const settings = Object.entries(feature.settings ?? {});

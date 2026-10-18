@@ -204,7 +204,6 @@ export const pageToggleStates = (): PageToggleState[] =>
     readyModules().flatMap(({def, running}) => (def.pageToggles ?? []).map((toggle) => ({
         module: def.id,
         id: toggle.id,
-        label: toggle.label,
         desc: typeof toggle.desc === "function" ? toggle.desc(running.api) : toggle.desc,
         on: toggle.isOn(running.api)
     })));

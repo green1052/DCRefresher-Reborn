@@ -506,8 +506,8 @@ describe("단축키·페이지 토글", () => {
         setup: () => ({count: 2, on: true}),
         shortcuts: {jump: (api) => toggled(id, api)},
         pageToggles: [
-            {id: "fixed", label: "고정", desc: "설명", isOn: (api) => api.on, toggle: (api) => toggled(id, api)},
-            {id: "count", label: "개수", desc: (api) => `${api.count}개`, isOn: () => false, toggle: () => {}}
+            {id: "fixed", desc: "설명", isOn: (api) => api.on, toggle: (api) => toggled(id, api)},
+            {id: "count", desc: (api) => `${api.count}개`, isOn: () => false, toggle: () => {}}
         ]
     });
 
@@ -525,8 +525,8 @@ describe("단축키·페이지 토글", () => {
         await load([withToggles("on"), withToggles("off", false)]);
 
         expect(registry.pageToggleStates()).toEqual([
-            {module: "on", id: "fixed", label: "고정", desc: "설명", on: true},
-            {module: "on", id: "count", label: "개수", desc: "2개", on: false}
+            {module: "on", id: "fixed", desc: "설명", on: true},
+            {module: "on", id: "count", desc: "2개", on: false}
         ]);
     });
 
@@ -549,7 +549,7 @@ describe("단축키·페이지 토글", () => {
                 await gate.promise;
                 return true;
             },
-            pageToggles: [{id: "t", label: "", desc: "", isOn: (api) => api, toggle: () => {}}]
+            pageToggles: [{id: "t", desc: "", isOn: (api) => api, toggle: () => {}}]
         })]);
         // 감시 알림이 아직 오지 않은 상태다.
         muteWatchers();
@@ -559,7 +559,7 @@ describe("단축키·페이지 토글", () => {
         await tick();
         gate.resolve();
 
-        expect(await state).toEqual({toggles: [{module: "late", id: "t", label: "", desc: "", on: true}], failed: []});
+        expect(await state).toEqual({toggles: [{module: "late", id: "t", desc: "", on: true}], failed: []});
     });
 
     it("불러오는 중에 물으면 모듈이 다 뜬 뒤에 답한다", async () => {
@@ -570,14 +570,14 @@ describe("단축키·페이지 토글", () => {
                 await gate.promise;
                 return true;
             },
-            pageToggles: [{id: "t", label: "", desc: "", isOn: (api) => api, toggle: () => {}}]
+            pageToggles: [{id: "t", desc: "", isOn: (api) => api, toggle: () => {}}]
         })]);
 
         const state = registry.settledPageState();
         await tick();
         gate.resolve();
 
-        expect(await state).toEqual({toggles: [{module: "slow", id: "t", label: "", desc: "", on: true}], failed: []});
+        expect(await state).toEqual({toggles: [{module: "slow", id: "t", desc: "", on: true}], failed: []});
         await loaded;
     });
 

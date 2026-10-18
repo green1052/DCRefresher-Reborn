@@ -4,6 +4,7 @@ import {dirname, join} from "node:path";
 import {describe, expect, it} from "vitest";
 
 import {defaultValue, normalizeSetting, settingsOf} from "@/core/module/settings";
+import type {AnyModuleMeta} from "@/core/module/types";
 import features from "@/features/index";
 import metas from "@/features/meta";
 
@@ -34,7 +35,9 @@ describe("모듈 메타", () => {
 });
 
 describe("단축키", () => {
-    const commands = metas.flatMap((meta) => Object.entries(meta.commands ?? {}).map(([name, command]) => ({module: meta.id, name, ...command})));
+    const commands = metas.flatMap((meta) => Object.entries(meta.commands ?? {}).map(([name, command]) => ({
+        module: meta.id, name, description: meta.labels.commands?.[name] ?? "", ...command
+    })));
 
     it("명령 이름은 모듈을 통틀어 겹치지 않는다", () => {
         const names = commands.map((command) => command.name);
@@ -62,7 +65,7 @@ describe("팝업 토글", () => {
     it("한 모듈의 토글 id는 겹치지 않는다", () => {
         // 토글마다 동작이 있는지는 index.ts의 pageToggles 타입(ModuleImpl)이 본다.
         for (const meta of metas) {
-            const ids = (meta.toggles ?? []).map((toggle) => toggle.id);
+            const ids = meta.toggles ?? [];
             expect(new Set(ids).size, meta.id).toBe(ids.length);
         }
     });
@@ -101,6 +104,29 @@ describe("아이콘", () => {
         for (const file of files) expect(reachesUi(join(root, file), new Set())).toBeUndefined();
     });
 
+});
+
+describe("표시 문구", () => {
+    it("모듈마다 labels.ts가 있다", () => {
+        // 설정·토글·명령마다 문구가 있는지는 labels.ts의 satisfies LabelsOf가 본다. 파일이 없으면 features/meta.ts가 id로 그린다.
+        const labels = Object.keys(import.meta.glob("/features/*/labels.ts")).map((path) => path.replace(/labels\.ts$/, "meta.ts"));
+        expect(labels).toEqual(Object.keys(import.meta.glob("/features/*/meta.ts")));
+    });
+
+    it("meta.ts에는 표시 문구가 없다", () => {
+        // meta.ts는 배경·콘텐츠 번들에 들어가므로 옵션·팝업만 보이는 글은 labels.ts에 둔다.
+        const raw = Object.values(import.meta.glob<AnyModuleMeta>("/features/*/meta.ts", {eager: true, import: "default"}));
+        expect(raw.length).toBeGreaterThan(0);
+        for (const meta of raw) {
+            expect(Object.keys(meta), meta.id).not.toContain("name");
+            expect(Object.keys(meta), meta.id).not.toContain("description");
+            for (const [key, schema] of Object.entries(meta.settings ?? {})) {
+                for (const field of ["name", "desc", "group", "placeholder"]) expect(Object.keys(schema), `${meta.id}.${key}`).not.toContain(field);
+            }
+            for (const [name, command] of Object.entries(meta.commands ?? {})) expect(Object.keys(command), `${meta.id}.${name}`).not.toContain("description");
+            for (const toggle of meta.toggles ?? []) expect(typeof toggle, meta.id).toBe("string");
+        }
+    });
 });
 
 describe("설정 스키마", () => {

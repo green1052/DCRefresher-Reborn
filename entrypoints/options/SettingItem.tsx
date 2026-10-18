@@ -10,7 +10,7 @@ import {Kbd} from "@/components/ui/kbd";
 import {Slider} from "@/components/ui/slider";
 import {Switch} from "@/components/ui/switch";
 import {defaultValue} from "@/core/module/settings";
-import type {SettingSchema} from "@/core/module/types";
+import type {LabeledSetting, SettingSchema} from "@/core/module/types";
 import type {SettingValue} from "@/core/storage/types";
 import {pressedKey} from "@/utils/event";
 import {cn} from "cn";
@@ -18,7 +18,7 @@ import {cn} from "cn";
 import {RefresherSelect} from "./RefresherSelect";
 
 interface SettingItemProps {
-    schema: SettingSchema;
+    schema: LabeledSetting;
     value: SettingValue;
     /** 묶음 안에서 쓸 때. 설명은 숨겨 이름의 title과 컨트롤의 aria-describedby로 돌리고 이름·컨트롤만 한 줄에 둔다. */
     compact?: boolean;
@@ -30,7 +30,7 @@ interface SettingItemProps {
 type ValueOf<T extends SettingSchema["type"]> = T extends "check" ? boolean : T extends "range" ? number : T extends "order" ? string[] : string;
 
 type NarrowProps<T extends SettingSchema["type"]> = Omit<SettingItemProps, "schema" | "value" | "onChange"> & {
-    schema: Extract<SettingSchema, { type: T }>;
+    schema: Extract<LabeledSetting, { type: T }>;
     value: ValueOf<T>;
     onChange: (value: ValueOf<T>) => void;
     /** 설명 글의 id. 컨트롤의 aria-describedby로 달아 포커스했을 때 설명도 읽히게 한다. */

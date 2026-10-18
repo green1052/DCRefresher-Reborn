@@ -14,16 +14,12 @@ export const tick = (): Promise<void> => new Promise((resolve) => setTimeout(res
 /** storage.local의 값 하나 (키는 local: 없이). */
 export const stored = async (key: string): Promise<unknown> => (await fakeBrowser.storage.local.get(key))[key];
 
-type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
+/** 설정 스키마 (리터럴을 SettingSchema로 넓힌다). */
+export const setting = (schema: SettingSchema): SettingSchema => schema;
 
-/** 이름·설명을 비운 설정 스키마. */
-export const setting = (schema: DistributiveOmit<SettingSchema, "name" | "desc">): SettingSchema => ({name: "", desc: "", ...schema} as SettingSchema);
-
-/** 레지스트리가 받는 모듈. 이름·설명은 채운다. */
-export const testModule = <Api>({revoke, setup, ...definition}: Omit<ModuleDefinition<Record<string, SettingSchema>, Api>, "name" | "description"> & { revoke?: () => void }): AnyModule =>
+/** 레지스트리가 받는 모듈. */
+export const testModule = <Api>({revoke, setup, ...definition}: ModuleDefinition<Record<string, SettingSchema>, Api> & { revoke?: () => void }): AnyModule =>
     ({
-        name: "",
-        description: "",
         ...definition,
         // revoke는 setup을 시작할 때 ctx.onRevoke로 등록한다 (모듈이 setup 맨 앞에서 등록하는 것과 같다).
         setup: (ctx) => {

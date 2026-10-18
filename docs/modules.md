@@ -8,10 +8,10 @@
 
 | 하려는 것 | 고치는 곳 |
 |---|---|
-| 새 모듈 | `features/<id>/meta.ts`, `icons.ts`, `index.ts` |
-| 설정 | `meta.ts`의 `settings`. 페이지 코드는 `ctx.settings`, 오버레이 컴포넌트는 `useContentModuleSettings(id)`로 읽는다(옵션·팝업과 같이 쓰는 컴포넌트는 `useModuleSettings(id)`). 바뀔 때 할 일은 setup의 `ctx.onSettingsChanged` |
-| 단축키 | `meta.ts`의 `commands`와 `index.ts`의 `shortcuts` |
-| 팝업 '현재 페이지' 토글 | `meta.ts`의 `toggles`와 `index.ts`의 `pageToggles` |
+| 새 모듈 | `features/<id>/meta.ts`, `labels.ts`, `icons.ts`, `index.ts` |
+| 설정 | `meta.ts`의 `settings`와 `labels.ts`의 `settings`(이름·설명). 페이지 코드는 `ctx.settings`, 오버레이 컴포넌트는 `useContentModuleSettings(id)`로 읽는다(옵션·팝업과 같이 쓰는 컴포넌트는 `useModuleSettings(id)`). 바뀔 때 할 일은 setup의 `ctx.onSettingsChanged` |
+| 단축키 | `meta.ts`의 `commands`, `labels.ts`의 `commands`(설명)와 `index.ts`의 `shortcuts` |
+| 팝업 '현재 페이지' 토글 | `meta.ts`의 `toggles`, `labels.ts`·`icons.ts`의 `toggles`와 `index.ts`의 `pageToggles` |
 | 디시 페이지 CSS | `features/<id>/page.css` |
 | 오버레이 UI | 컴포넌트와 그 스토어. 호스트 컴포넌트는 `features/<id>/overlay.tsx`의 default로 내보내면 `components/overlay/ContentRoot.tsx`가 모아 그린다. 스토어에 `needOverlayWhen(store, (state) => …)`로 띄울 조건을 등록한다. CSS는 `features/<id>/overlay.css` |
 | 배경에서 할 일 | `features/<id>/background.ts` ([배경 모듈](#배경-모듈)) |
@@ -25,15 +25,23 @@
 // meta.ts — 옵션·팝업·콘텐츠·배경이 모두 불러오므로 가벼운 것만 둔다. UI(lucide·Preact)는 불러오지 않는다 (단위 테스트가 확인한다)
 export default defineModuleMeta({
     id: "requests",            // 저장소 키에 쓰인다. 바꾸면 사용자 설정이 끊긴다
-    name: "요청 제한",          // 옵션·팝업에 보이는 이름
-    description: "…",
     // urls: [BOARD_PAGE],     // 이 주소에서만 실행 (core/pages.ts). 없으면 모든 디시 페이지, []면 어디서도 실행하지 않음
     // defaultEnable: false,   // 저장된 on/off가 없을 때(새로 설치했거나 업데이트로 새로 생긴 모듈) 꺼 둘 모듈
 
     settings: {
-        concurrency: {type: "range", name: "동시 요청 수", desc: "…", default: 4, min: 1, max: 10, step: 1, unit: "개"}
+        concurrency: {type: "range", default: 4, min: 1, max: 10, step: 1, unit: "개"}
     }
 });
+
+// labels.ts — 옵션·팝업·단축키 설정에 보이는 글. 배경·콘텐츠 번들에 들어가지 않게 meta.ts와 따로 둔다
+// 설정·토글·명령마다 하나씩 있어야 하고 없는 키를 넣으면 타입 오류가 난다
+export default {
+    name: "요청 제한",
+    description: "…",
+    settings: {
+        concurrency: {name: "동시 요청 수", desc: "…"}
+    }
+} satisfies LabelsOf<typeof meta>;
 
 // icons.ts — 옵션·팝업이 그리는 lucide 아이콘. meta.ts는 배경·콘텐츠 번들에도 들어가므로 따로 둔다
 // 토글이 있으면 토글 id마다 하나씩: {module: Ban, toggles: {reveal: Eye}}
@@ -85,27 +93,27 @@ const apply = (ctx: Ctx): void => { … ctx.settings.bodyFontSize … }; // numb
 
 ## 설정 스키마
 
-`core/module/types.ts`의 `SettingSchema`입니다. 옵션 페이지가 스키마만 보고 화면을 그립니다.
+`core/module/types.ts`의 `SettingSchema`입니다. 옵션 페이지가 스키마와 `labels.ts`의 표시 문구(`SettingLabel`: `name`, `desc`, `group`, `placeholder`)를 합쳐 화면을 그립니다.
 
 | type | 값 | 추가 필드 |
 |------|----|-----------|
 | `check` | boolean | |
-| `text` | string | `placeholder`, `maxLength`. 입력칸이 글자 수를 막고, 저장된 값·가져온 값도 그 길이로 자른다 |
+| `text` | string | `maxLength`. 입력칸이 글자 수를 막고, 저장된 값·가져온 값도 그 길이로 자른다. 안내 문구는 labels.ts의 `placeholder` |
 | `range` | number | `min`, `max`, `step`, `unit` |
 | `option` | 항목 키 | `items: {키: 이름}` |
 | `order` | 항목 키 배열 | `items`. 순서를 끌어서 바꾼다 |
 | `color` | `#rrggbb` | |
 | `key` | 키 하나 | 소문자 영문·숫자 |
 
-같은 `group` 객체를 가진 설정은 옵션 화면에서 한 칸에 묶여 보입니다.
+labels.ts에서 같은 `group` 객체를 가진 설정은 옵션 화면에서 한 칸에 묶여 보입니다.
 
 저장된 값은 읽을 때 스키마에 맞게 정리됩니다(`core/module/settings.ts`의 `settingsOf`·`normalizeSetting`). 타입이 틀리면 기본값을 쓰고, `range`는 `step` 단위로 맞춰 `min`~`max`로 자릅니다. 그래서 `range`의 기본값과 `max`는 `min`에서 `step`의 배수만큼 떨어진 값이어야 합니다. 설정을 없애거나 이름을 바꿀 때는 [저장소](architecture.md#저장소)의 규칙을 따릅니다.
 
 ## 단축키와 팝업 토글
 
-- **commands** (meta.ts): `{명령 이름: {description, key?}}`. 빌드할 때 `modules/commands.ts`가 모든 모듈의 것을 모아 manifest `commands`로 넣습니다. `key`는 처음 설치할 때의 기본 키입니다. 크롬은 기본 키가 있는 명령을 4개까지만 받고 dev 빌드의 다시 불러오기(Alt+Shift+R)가 한 자리를 쓰므로, 모듈의 기본 키는 모두 합쳐 3개까지입니다. 넘으면 단위 테스트(`tests/unit/features/meta.test.ts`)와 dev 빌드가 실패합니다.
+- **commands** (meta.ts): `{명령 이름: {key?}}`. 설명은 labels.ts의 `commands`(`{명령 이름: 설명}`)에 둡니다. 빌드할 때 `modules/commands.ts`가 모든 모듈의 것을 모아 manifest `commands`로 넣습니다(설명은 "모듈 이름: 설명"). `key`는 처음 설치할 때의 기본 키입니다. 크롬은 기본 키가 있는 명령을 4개까지만 받고 dev 빌드의 다시 불러오기(Alt+Shift+R)가 한 자리를 쓰므로, 모듈의 기본 키는 모두 합쳐 3개까지입니다. 넘으면 단위 테스트(`tests/unit/features/meta.test.ts`)와 dev 빌드가 실패합니다.
 - **shortcuts** (index.ts): `{명령 이름: (api) => …}`. 메타의 `commands`에 있는 이름마다 하나씩 있어야 하고, 빠지거나 없는 이름을 넣으면 타입 오류가 납니다. 메타에 명령이 없으면 두지 않습니다. setup이 끝난 모듈에만 전달됩니다.
-- **pageToggles**: 팝업의 "현재 페이지"에 나오는 이 페이지 한정 토글입니다. 표시 정보(`id`, `label`)는 `meta.ts`의 `toggles`에 두고(팝업은 같은 id로 `icons.ts`의 `toggles`에서 아이콘을 찾습니다), `index.ts`의 `pageToggles`가 `{토글 id: {desc, isOn, toggle}}`로 동작을 붙입니다. `desc`는 문자열 또는 `(api) => string`, `isOn(api)`, `toggle(api)`입니다. 토글 id마다 하나씩 있어야 합니다(타입이 확인합니다). setup이 끝난 모듈의 토글만 보입니다.
+- **pageToggles**: 팝업의 "현재 페이지"에 나오는 이 페이지 한정 토글입니다. 토글 id는 `meta.ts`의 `toggles`에 두고(팝업은 같은 id로 `labels.ts`·`icons.ts`의 `toggles`에서 이름·아이콘을 찾습니다), `index.ts`의 `pageToggles`가 `{토글 id: {desc, isOn, toggle}}`로 동작을 붙입니다. `desc`는 문자열 또는 `(api) => string`, `isOn(api)`, `toggle(api)`입니다. 토글 id마다 하나씩 있어야 합니다(타입이 확인합니다). setup이 끝난 모듈의 토글만 보입니다.
 
 ## 모듈 간 api
 
@@ -134,6 +142,6 @@ getModuleApi("preview")?.archiveArticle() === true
 - 설치·업데이트 때 한 번만 할 일(옛 모듈 데이터 지우기 등)은 `listen()`에서 `browser.runtime.onInstalled`에 겁니다(`features/preview/background.ts`). `entrypoints/background/index.ts`에 모듈 코드를 넣지 않습니다.
 - 탭이 메시지로 요청한 일을 그 페이지(MAIN world)에서 할 때는 `hasTab`으로 탭에서 온 것인지 보고 `runInPage`로 실행합니다. 함수는 직렬화되어 import를 쓸 수 없으므로, 라이브러리가 필요하면 `entrypoints/<이름>.ts`에 `defineUnlistedScript`로 번들하고 `runFileInPage(sender, "/<이름>.js")`로 넣습니다(`entrypoints/upload-hook.ts`). unlisted script는 `web_accessible_resources`에 넣지 않아 디시 페이지가 불러올 수 없습니다.
 
-배경 번들에는 Preact가 들어가면 안 됩니다. `background.ts`는 `index.ts`·`icons.ts`를 불러오지 않습니다. `meta.ts`는 UI를 불러오지 않으므로(단위 테스트가 확인합니다) 그대로 불러오고, 배경과 같이 쓰는 값(`features/imagesearch`의 엔진 목록 등)도 `meta.ts`에 둡니다. 페이지에서 할 일이 없는 모듈은 `index.ts`를 두지 않습니다.
+배경 번들에는 Preact가 들어가면 안 됩니다. `background.ts`는 `index.ts`·`icons.ts`·`labels.ts`를 불러오지 않습니다. `meta.ts`는 UI를 불러오지 않으므로(단위 테스트가 확인합니다) 그대로 불러오고, 배경과 같이 쓰는 값(`features/imagesearch`의 엔진 목록 등)도 `meta.ts`에 둡니다. 페이지에서 할 일이 없는 모듈은 `index.ts`를 두지 않습니다.
 
 배경·옵션·팝업과 콘텐츠 스크립트가 같이 불러오는 파일(`core/`, `stores/` 등)은 모듈 최상위에서 던지면 안 됩니다. 한 곳에서 던지면 번들 전체가 멈춥니다([Firefox](firefox.md) 참고).

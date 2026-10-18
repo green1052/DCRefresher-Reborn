@@ -45,6 +45,10 @@ const openOptions = async (): Promise<void> => {
 const toggleIcon = ({module, id}: PageAction): LucideIcon =>
     features.find((feature) => feature.id === module)?.icons.toggles?.[id] ?? Puzzle;
 
+/** 토글 이름. 콘텐츠 번들에 두지 않으려고 팝업이 모듈 표시 문구(features/<id>/labels.ts의 toggles)에서 찾는다. */
+const toggleLabel = ({module, id}: PageAction): string =>
+    features.find((feature) => feature.id === module)?.labels.toggles?.[id] ?? id;
+
 const SectionTitle = ({children, aside}: { children: ReactNode; aside?: ReactNode }) => (
     <div className="mb-2 flex items-center justify-between px-1">
         <span className="text-xs font-bold text-muted-foreground">{children}</span>
@@ -127,7 +131,7 @@ function PageSection({tabId, gallery, state: initial, toggled}: Page & { toggled
                 <Card className="py-3">
                     <CardContent className="flex flex-col gap-3 px-3">
                         {state.toggles.map((toggle) => (
-                            <ToggleRow key={`${toggle.module}:${toggle.id}`} icon={toggleIcon(toggle)} label={toggle.label} desc={toggle.desc}
+                            <ToggleRow key={`${toggle.module}:${toggle.id}`} icon={toggleIcon(toggle)} label={toggleLabel(toggle)} desc={toggle.desc}
                                        checked={toggle.on} onChange={() => act({module: toggle.module, id: toggle.id})}/>
                         ))}
                     </CardContent>
