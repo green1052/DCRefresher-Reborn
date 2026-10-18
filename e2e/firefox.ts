@@ -4,7 +4,7 @@ import {isRecord} from "../utils/record";
 
 /**
  * 플레이라이트의 파이어폭스는 실행 인자로 확장을 올리지 못한다. web-ext처럼 원격 디버깅 서버(-start-debugger-server)에 붙어
- * 압축을 푼 확장을 임시 부가 기능으로 설치하고, 같은 연결로 배경 페이지에서 식을 계산한다 (Remote Debugging Protocol).
+ * 압축을 푼 확장을 임시 부가 기능으로 설치하고 같은 연결로 배경 페이지에서 식을 계산한다 (Remote Debugging Protocol).
  * 패킷은 "바이트 길이:JSON"이다. 요청에 대한 응답은 그 actor가 보내는 type 없는 패킷이고 요청 순서대로 온다.
  * type이 있는 패킷은 알림(이벤트)이다.
  */
@@ -144,7 +144,7 @@ class RdpClient {
     }
 
     /**
-     * to에 요청을 보내고, to가 보내는 event 알림 중 match(알림, 응답)에 맞는 것을 기다린다.
+     * to에 요청을 보내고 to가 보내는 event 알림 중 match(알림, 응답)에 맞는 것을 기다린다.
      * 알림이 응답과 같은 묶음으로 올 수 있어 요청 전부터 듣는다. 늦게 온 남의 알림은 match가 걸러 낸다 (evaluationResult의 resultID).
      */
     async requestEvent(to: string, type: string, params: Record<string, unknown>, event: string, match: (packet: Packet, reply: Packet) => boolean): Promise<Packet> {
@@ -213,7 +213,7 @@ export const installTemporaryAddon = async (port: number, addonPath: string): Pr
         const consoleActor = isRecord(background.target) ? background.target.consoleActor : undefined;
         if (typeof consoleActor !== "string") throw new Error("배경 페이지의 consoleActor가 없습니다.");
 
-        // 결과(evaluationResult)는 resultID로만 짝지을 수 있어, 요청을 하나씩 보내 섞이지 않게 한다.
+        // 결과(evaluationResult)는 resultID로만 짝지을 수 있어 요청을 하나씩 보내 섞이지 않게 한다.
         let queue: Promise<unknown> = Promise.resolve();
         const run = async <T>(expression: string): Promise<T> => {
             // 결과를 JSON 문자열 하나로 받는다. {value}로 감싸 undefined(없는 키)도 그대로 돌아오고, 실패는 {error}로 온다.

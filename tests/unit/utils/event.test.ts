@@ -21,7 +21,7 @@ describe("isTyping", () => {
         document.body.replaceChildren();
     });
 
-    /** target에서 keydown을 보내고, 단축키처럼 window에서 받은 isTyping 결과를 돌려준다. */
+    /** target에서 keydown을 보내고 단축키처럼 window에서 받은 isTyping 결과를 돌려준다. */
     const typingOn = (target: EventTarget): boolean | undefined => {
         let result: boolean | undefined;
         window.addEventListener("keydown", (ev) => void (result = isTyping(ev)), {once: true});

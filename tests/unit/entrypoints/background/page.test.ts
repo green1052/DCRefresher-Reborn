@@ -15,7 +15,7 @@ afterEach(() => {
     document.body.replaceChildren();
 });
 
-/** 목록을 바꿨다는 메시지를 받고, 배경이 페이지에서 실행하라고 넘긴 함수를 그 인자로 이 문서에서 부른다. */
+/** 목록을 바꿨다는 메시지를 받고 배경이 페이지에서 실행하라고 넘긴 함수를 그 인자로 이 문서에서 부른다. */
 const replaceList = async (gallery: string, sender: Sender = {tab: {id: 3}} as Sender): Promise<void> => {
     runInPage.mockResolvedValue([]);
     listenPageMessages();

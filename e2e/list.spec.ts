@@ -100,7 +100,7 @@ test.describe("자동 새로고침", () => {
 
     test("목록 위에서 쉬기를 켜도 마우스가 목록을 떠나면 다시 새로고침한다", async ({listPage, site, storage}) => {
         // 목록 위에 있는 동안 받지 않는 것은 단위 테스트(tests/unit/features/refresh)가 가짜 타이머로 본다.
-        // 콘텐츠 스크립트의 타이머는 page.clock이 닿지 않아, 여기서 보려면 한 주기를 그대로 기다려야 한다.
+        // 콘텐츠 스크립트의 타이머는 page.clock이 닿지 않아 여기서 보려면 한 주기를 그대로 기다려야 한다.
         await storage.setModuleSettings("refresh", {refreshRate: 3000, pauseOnHover: true});
         await listPage.rows.nth(1).hover();
         site.rows = [{no: 4, title: "네 번째 글", nick: "새닉", uid: "user4"}, ...site.rows];

@@ -26,7 +26,7 @@ export async function openOptions(page: Page, extensionId: string, tab: OptionsT
     };
 }
 
-/** 팝업 페이지. 팝업은 활성 탭을 보므로, 탭(tab)을 주면 그 탭을 앞으로 가져온 뒤 다시 읽어 그 탭에서 연 것처럼 만든다. */
+/** 팝업 페이지. 팝업은 활성 탭을 보므로 탭(tab)을 주면 그 탭을 앞으로 가져온 뒤 다시 읽어 그 탭에서 연 것처럼 만든다. */
 export async function openPopup(context: BrowserContext, extensionId: string, tab?: Page) {
     const page = await context.newPage();
     const tiles = page.locator("button[aria-pressed]");

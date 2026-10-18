@@ -9,7 +9,7 @@ import {UserCard} from "@/features/preview/ui/UserCard";
 import userinfo from "@/features/userinfo/meta";
 import {type Ratios, useUiStore} from "@/stores/ui";
 
-// 밴 DB는 저장소 대신 표로 두고, 이미 읽은 것(버전 1)으로 본다.
+// 밴 DB는 저장소 대신 표로 두고 이미 읽은 것(버전 1)으로 본다.
 const bans = vi.hoisted(() => new Map<string, string>());
 // 읽기를 시작하는 구독. 미리보기는 부르지 않아야 한다.
 const subscribeDatabase = vi.hoisted(() => vi.fn(() => () => {}));
