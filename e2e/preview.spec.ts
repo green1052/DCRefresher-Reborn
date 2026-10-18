@@ -399,6 +399,20 @@ test.describe("미리보기 댓글", () => {
         await expect(body.locator("br")).toHaveCount(0);
     });
 
+    test("글자콘은 화면 근처에 온 것만 크기를 맞춘다", async ({listPage, site}) => {
+        const txtcon = "<div class=\"coment_dccon_txt cbg_ffffff\"><p class=\"txtcon_txt ctxt_333333\">ㄹㅇ</p></div>";
+        site.comments = Array.from({length: 200}, (_, index) => fakeComment(100 + index, index === 0 || index === 199 ? {memo: txtcon} : {}));
+        await listPage.openPreview();
+        await expect(listPage.comments).toHaveCount(200);
+        // 맞춘 글자콘은 잴 span으로 글을 감싼다.
+        const fitted = (index: number) => listPage.comments.nth(index).locator(".txtcon_txt > span");
+        await expect(fitted(0)).toHaveCount(1);
+        await expect(fitted(199)).toHaveCount(0);
+
+        await listPage.comments.nth(199).scrollIntoViewIfNeeded();
+        await expect(fitted(199)).toHaveCount(1);
+    });
+
     test("본문이 확장 UI의 클래스를 써도 본문 상자 밖을 덮지 못한다", async ({listPage}) => {
         const frame = await listPage.openPreview();
         const contents = frame.locator(".refresher-preview-contents");
