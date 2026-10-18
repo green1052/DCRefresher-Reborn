@@ -16,6 +16,8 @@ import {createUnseenCounter} from "./title";
 const MINIMUM_REFRESH_INTERVAL = 2000;
 /** 목록 요청이 연달아 실패할 때 자동 새로고침 주기를 늘리는 상한. */
 const MAXIMUM_BACKOFF_INTERVAL = 60_000;
+/** 새 글 없는 자동 새로고침이 이어질 때 늘리는 주기의 상한 (설정한 주기의 배수). 한 번마다 0.5배씩 늘린다. */
+const MAXIMUM_QUIET_FACTOR = 4;
 /** 목록 요청 하나(차례 기다리기·응답 머리·본문)의 제한. 머리 제한(15초)에 수백 KB 본문을 받을 시간을 더했다. */
 const LIST_TIMEOUT = 30_000;
 
@@ -51,6 +53,9 @@ export default defineModule({
         let rerun = false;
         // 연달아 실패한 목록 요청 수. 실패할 때마다 자동 새로고침 주기가 두 배가 된다.
         let failures = 0;
+        // 연달아 새 글 없이 끝난 자동 새로고침 수. 조용한 갤러리는 주기를 MAXIMUM_QUIET_FACTOR배까지 늘린다.
+        // 새 글·강제 로드·탭으로 돌아오기·목록 위 마우스·키 입력이 0으로 되돌린다.
+        let quiet = 0;
         // 페이지를 넘긴 주소. 그 목록으로 갈아끼운 직후 목록 위로 스크롤한다 (진행 중인 요청에 막혀 나중에 받아도).
         let scrollAfter: string | null = null;
         // 진행 중인 목록 요청. 주소가 바뀌면 끊는다.
@@ -184,6 +189,7 @@ export default defineModule({
                 if (target !== originalLocation) return false;
                 if (!customURL && listHash && listHash === lastListHash) {
                     failures = 0;
+                    quiet = force ? 0 : quiet + 1;
                     unseen.count([]);
                     return true;
                 }
@@ -225,6 +231,8 @@ export default defineModule({
                     document.querySelector(isViewPage ? ".view_bottom_btnbox" : ".page_head")?.scrollIntoView({behavior: smoothScroll(), block: "start"});
                 }
 
+                quiet = force || newPostList.length > 0 ? 0 : quiet + 1;
+
                 // 페이지를 넘긴 목록은 옛 목록과 겹치는 행이 없으면 전부 새 글로 잡히므로 알리지 않는다 (글댓비 조회가 몰린다).
                 if (!customURL && newPostList.length > 0) getModuleApi("userinfo")?.checkNewPosts(newPostList);
                 unseen.count(customURL ? [] : newPostList);
@@ -261,7 +269,11 @@ export default defineModule({
             if (ctx.signal.aborted || (document.hidden && !ctx.settings.backgroundRefresh)) return;
 
             const rate = document.hidden ? ctx.settings.backgroundRefreshRate : ctx.settings.refreshRate;
-            const interval = Math.min(rate * 2 ** failures, Math.max(rate, MAXIMUM_BACKOFF_INTERVAL));
+            // 실패로 늘린 주기와 새 글이 없어 늘린 주기 중 긴 쪽을 쓴다.
+            const interval = Math.max(
+                rate * Math.min(1 + quiet / 2, MAXIMUM_QUIET_FACTOR),
+                Math.min(rate * 2 ** failures, Math.max(rate, MAXIMUM_BACKOFF_INTERVAL))
+            );
             // 응답을 받은 뒤 다음 주기를 잡아야 방금 실패가 바로 반영된다.
             timer = window.setTimeout(() => void load().finally(armNext), interval + 500 + Math.random() * 1500);
         };
@@ -303,6 +315,7 @@ export default defineModule({
                 return;
             }
 
+            quiet = 0;
             // 실패로 주기가 늘어난 동안은 바로 받지 않는다. 탭을 오갈 때마다 요청하면 늘린 주기가 소용없다.
             if (failures === 0) void load().finally(armNext);
             else armNext();
@@ -321,6 +334,15 @@ export default defineModule({
 
         const {signal} = ctx;
         document.addEventListener("visibilitychange", onVisibilityChange, {signal});
+
+        // 사용자가 목록을 보고 있으면 늘린 주기를 원래대로 되돌린다. 늘어난 동안 한 번만 다시 잡는다 (주기가 계속 밀리지 않게).
+        const onActivity = (ev: Event): void => {
+            if (quiet === 0 || (ev.type === "pointerover" && !(ev.target instanceof Element && ev.target.closest(".gall_list")))) return;
+            quiet = 0;
+            armNext();
+        };
+        document.addEventListener("pointerover", onActivity, {signal, passive: true});
+        document.addEventListener("keydown", onActivity, {signal, passive: true});
         window.addEventListener("popstate", onPopState, {signal});
 
         ctx.addCleanup(() => window.clearTimeout(timer));

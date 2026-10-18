@@ -40,8 +40,8 @@ it("글 보기 페이지는 목록이 화면 밖인 동안 받지 않다가 보�
     report(true);
     await vi.advanceTimersByTimeAsync(0);
     expect(get).toHaveBeenCalledTimes(1);
-    // 받은 뒤엔 다시 원래 주기다.
-    await vi.advanceTimersByTimeAsync(5500);
+    // 받은 뒤엔 다시 주기대로 받는다 (새 글이 없어 1.5배인 7.5초 + 0.5초).
+    await vi.advanceTimersByTimeAsync(8000);
     expect(get).toHaveBeenCalledTimes(2);
     stop();
 });

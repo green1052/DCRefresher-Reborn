@@ -299,7 +299,8 @@ describe("자동 새로고침", () => {
         await start();
         await vi.advanceTimersByTimeAsync(5500);
         const first = document.querySelector("tbody > tr");
-        await vi.advanceTimersByTimeAsync(5500);
+        // 새 글이 없어 다음 주기는 1.5배(7.5초 + 0.5초)다.
+        await vi.advanceTimersByTimeAsync(8000);
         expect(get).toHaveBeenCalledTimes(2);
         expect(document.querySelector("tbody > tr")).toBe(first);
     });
@@ -313,8 +314,42 @@ describe("자동 새로고침", () => {
         await start();
         await vi.advanceTimersByTimeAsync(5500);
         get.mockImplementation(async () => new Response(reordered(["3", "2", "1"])));
-        await vi.advanceTimersByTimeAsync(5500);
+        await vi.advanceTimersByTimeAsync(8000);
         expect(listed()).toEqual(["3", "2", "1"]);
+    });
+
+    it("새 글 없는 새로고침이 이어지면 주기를 0.5배씩 4배까지 늘리고, 새 글이 오면 되돌린다", async () => {
+        vi.useFakeTimers();
+        Element.prototype.checkVisibility = () => true;
+        respond(["2", "1"]);
+        await start();
+        // 5 → 7.5 → 10 → 12.5 → 15 → 17.5 → 20 → 20초 (+0.5초)
+        const gaps = [5500, 8000, 10_500, 13_000, 15_500, 18_000, 20_500, 20_500];
+        for (const [index, gap] of gaps.entries()) {
+            await vi.advanceTimersByTimeAsync(gap - 1);
+            expect(get).toHaveBeenCalledTimes(index);
+            await vi.advanceTimersByTimeAsync(1);
+            expect(get).toHaveBeenCalledTimes(index + 1);
+        }
+
+        respond(["3", "2", "1"]);
+        await vi.advanceTimersByTimeAsync(20_500);
+        expect(listed()).toEqual(["3", "2", "1"]);
+        await vi.advanceTimersByTimeAsync(5500);
+        expect(get).toHaveBeenCalledTimes(gaps.length + 2);
+    });
+
+    it("주기가 늘어난 동안 키를 누르면 원래 주기로 다시 잡는다", async () => {
+        vi.useFakeTimers();
+        respond(["2", "1"]);
+        await start();
+        await vi.advanceTimersByTimeAsync(5500);
+        expect(get).toHaveBeenCalledTimes(1);
+        // 늘어난 주기라면 8초 뒤지만 키를 누른 때부터 5.5초 뒤에 받는다.
+        await vi.advanceTimersByTimeAsync(1000);
+        document.dispatchEvent(new KeyboardEvent("keydown", {key: "j"}));
+        await vi.advanceTimersByTimeAsync(5500);
+        expect(get).toHaveBeenCalledTimes(2);
     });
 
     it("연달아 실패하면 주기를 두 배로 늘리고 알리지 않는다", async () => {
