@@ -1,7 +1,7 @@
 import {SquareMousePointer} from "lucide-react";
 
 import {defineModuleMeta} from "@/core/module/define";
-import type {ModuleContext, SettingGroup, SettingsSchema} from "@/core/module/types";
+import type {ModuleContext, ModuleIcons, SettingGroup, SettingsSchema} from "@/core/module/types";
 import {BOARD_PAGE} from "@/core/pages";
 import {BLOCK_DAYS} from "@/core/preview/types";
 
@@ -135,7 +135,9 @@ export default defineModuleMeta({
     id: "preview",
     name: "미리보기",
     description: "글 목록에서 클릭 또는 우클릭으로 미리보기 창을 띄워 줍니다.",
-    icon: SquareMousePointer,
     urls: [BOARD_PAGE],
     settings
 });
+
+/** 옵션·팝업이 그리는 아이콘. 콘텐츠 번들에 딸려 가지 않게 기본 export와 따로 둔다 (ModuleIcons). */
+export const icons = {module: SquareMousePointer} satisfies ModuleIcons;

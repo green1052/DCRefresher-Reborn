@@ -1,7 +1,7 @@
 import {Ban, Eye} from "lucide-react";
 
 import {defineModuleMeta} from "@/core/module/define";
-import type {ModuleContext} from "@/core/module/types";
+import type {ModuleContext, ModuleIcons} from "@/core/module/types";
 import {BOARD_PAGE} from "@/core/pages";
 
 import {BLOCK_SETTINGS} from "./settings";
@@ -10,13 +10,12 @@ import {BLOCK_SETTINGS} from "./settings";
 export type Ctx = ModuleContext<typeof BLOCK_SETTINGS>;
 
 /** 팝업 '가린 내용 보기' 토글. index.ts의 pageToggles가 동작을 붙인다. */
-export const REVEAL_TOGGLE = {id: "reveal", label: "가린 내용 보기", icon: Eye};
+export const REVEAL_TOGGLE = {id: "reveal", label: "가린 내용 보기"} as const;
 
 export default defineModuleMeta({
     id: "block",
     name: "콘텐츠 차단",
     description: "보고 싶지 않은 유저·글·댓글을 숨기거나 흐리게 합니다.",
-    icon: Ban,
     urls: [BOARD_PAGE],
     settings: BLOCK_SETTINGS,
     toggles: [REVEAL_TOGGLE],
@@ -24,3 +23,6 @@ export default defineModuleMeta({
         blockReveal: {description: "이 페이지에서 가린 내용 보기"}
     }
 });
+
+/** 옵션·팝업이 그리는 아이콘. 콘텐츠 번들에 딸려 가지 않게 기본 export와 따로 둔다 (ModuleIcons). */
+export const icons = {module: Ban, toggles: {reveal: Eye}} satisfies ModuleIcons<typeof REVEAL_TOGGLE.id>;

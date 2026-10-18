@@ -1,12 +1,12 @@
 import {Gauge} from "lucide-react";
 
 import {defineModuleMeta} from "@/core/module/define";
+import type {ModuleIcons} from "@/core/module/types";
 
 export default defineModuleMeta({
     id: "requests",
     name: "요청 제한",
     description: "디시인사이드로 한꺼번에 보내는 요청 수를 제한합니다. 요청이 몰려 차단되지 않게 합니다.",
-    icon: Gauge,
 
     settings: {
         concurrency: {
@@ -21,3 +21,6 @@ export default defineModuleMeta({
         }
     }
 });
+
+/** 옵션·팝업이 그리는 아이콘. 콘텐츠 번들에 딸려 가지 않게 기본 export와 따로 둔다 (ModuleIcons). */
+export const icons = {module: Gauge} satisfies ModuleIcons;

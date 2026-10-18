@@ -1,13 +1,13 @@
 import {ShieldCheck} from "lucide-react";
 
 import {defineModuleMeta} from "@/core/module/define";
+import type {ModuleIcons} from "@/core/module/types";
 import {BOARD_PAGE} from "@/core/pages";
 
 export default defineModuleMeta({
     id: "manage",
     name: "관리",
     description: "무급 노예들을 위한 여러 편의 기능입니다.",
-    icon: ShieldCheck,
     urls: [BOARD_PAGE],
     defaultEnable: false,
 
@@ -56,3 +56,6 @@ export default defineModuleMeta({
         }
     }
 });
+
+/** 옵션·팝업이 그리는 아이콘. 콘텐츠 번들에 딸려 가지 않게 기본 export와 따로 둔다 (ModuleIcons). */
+export const icons = {module: ShieldCheck} satisfies ModuleIcons;

@@ -41,9 +41,9 @@ const openOptions = async (): Promise<void> => {
     window.close();
 };
 
-/** 토글 아이콘(컴포넌트)은 메시지로 보낼 수 없어 팝업이 모듈 메타(toggles)에서 찾는다. */
+/** 토글 아이콘(컴포넌트)은 메시지로 보낼 수 없어 팝업이 모듈 아이콘(meta.ts의 icons.toggles)에서 찾는다. */
 const toggleIcon = ({module, id}: PageAction): LucideIcon =>
-    features.find((feature) => feature.id === module)?.toggles?.find((toggle) => toggle.id === id)?.icon ?? Puzzle;
+    features.find((feature) => feature.id === module)?.icons.toggles?.[id] ?? Puzzle;
 
 const SectionTitle = ({children, aside}: { children: ReactNode; aside?: ReactNode }) => (
     <div className="mb-2 flex items-center justify-between px-1">
@@ -149,7 +149,7 @@ function ModulesSection({onToggled}: { onToggled: () => void }) {
             <div className="grid grid-cols-2 gap-2">
                 {features.map((feature) => {
                     const enabled = enables[feature.id] === true;
-                    const Icon = feature.icon;
+                    const Icon = feature.icons.module;
 
                     return (
                         <Toggle key={feature.id} variant="outline" className="min-w-0 justify-start font-normal"

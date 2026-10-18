@@ -1,6 +1,7 @@
 import {ScanSearch} from "lucide-react";
 
 import {defineModuleMeta} from "@/core/module/define";
+import type {ModuleIcons} from "@/core/module/types";
 
 import {IMAGE_SEARCH_ID, IMAGE_SEARCH_SETTINGS} from "./engines";
 
@@ -8,7 +9,9 @@ export default defineModuleMeta({
     id: IMAGE_SEARCH_ID,
     name: "이미지 검색",
     description: "디시 이미지를 우클릭해 검색 엔진에서 찾습니다.",
-    icon: ScanSearch,
     // 메뉴는 background.ts가 만들고 처리한다. 페이지에선 할 일이 없어 index.ts를 두지 않는다.
     settings: IMAGE_SEARCH_SETTINGS
 });
+
+/** 옵션·팝업이 그리는 아이콘. 콘텐츠 번들에 딸려 가지 않게 기본 export와 따로 둔다 (ModuleIcons). */
+export const icons = {module: ScanSearch} satisfies ModuleIcons;

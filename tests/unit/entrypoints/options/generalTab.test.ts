@@ -1,4 +1,3 @@
-import {Search} from "lucide-react";
 import {describe, expect, it} from "vitest";
 
 import type {AnyModuleMeta} from "@/core/module/types";
@@ -10,7 +9,6 @@ const feature = {
     id: "preview",
     name: "미리보기",
     description: "글 목록에서 미리보기 창을 띄워 줍니다.",
-    icon: Search,
     urls: [],
     settings: {
         listKeyboard: {type: "check", name: "목록 키보드 이동", desc: "J/K로 글을 고릅니다.", default: true},

@@ -25,7 +25,7 @@ describe("모듈 메타", () => {
         for (const module of features) {
             const meta = byId.get(module.id);
             expect(meta, module.id).toBeDefined();
-            for (const key of ["name", "description", "icon", "urls", "defaultEnable", "settings", "toggles", "commands"] as const) {
+            for (const key of ["name", "description", "urls", "defaultEnable", "settings", "toggles", "commands"] as const) {
                 expect(module[key], `${module.id}.${key}`).toBe(meta?.[key]);
             }
         }
@@ -87,8 +87,26 @@ describe("팝업 토글", () => {
     it("메타의 토글마다 index.ts가 같은 표시 정보로 동작을 붙인다", () => {
         for (const module of features) {
             const toggles = module.pageToggles ?? [];
-            expect(toggles.map(({id, label, icon}) => ({id, label, icon})), module.id).toEqual(module.toggles ?? []);
+            expect(toggles.map(({id, label}) => ({id, label})), module.id).toEqual(module.toggles ?? []);
             expect(new Set(toggles.map((toggle) => toggle.id)).size).toBe(toggles.length);
+        }
+    });
+});
+
+describe("아이콘", () => {
+    it("모듈마다 아이콘이 있고, 토글 아이콘은 메타의 토글과 같은 id다", () => {
+        for (const meta of metas) {
+            expect(meta.icons.module, meta.id).toBeDefined();
+            expect(Object.keys(meta.icons.toggles ?? {}).sort(), meta.id).toEqual((meta.toggles ?? []).map((toggle) => toggle.id).sort());
+        }
+    });
+
+    it("콘텐츠 스크립트가 펼치는 메타(기본 export)에는 아이콘이 없다", () => {
+        // 아이콘이 들어가면 lucide 아이콘이 content.js에 딸려 간다.
+        for (const module of features) {
+            expect(module, module.id).not.toHaveProperty("icons");
+            expect(module, module.id).not.toHaveProperty("icon");
+            for (const toggle of module.toggles ?? []) expect(toggle, `${module.id}.${toggle.id}`).not.toHaveProperty("icon");
         }
     });
 });

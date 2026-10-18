@@ -56,11 +56,24 @@ export interface ModuleContext<S extends SettingsSchema = SettingsSchema> {
     onSettingsChanged(listener: (keys: ReadonlySet<keyof S & string>) => void): void;
 }
 
-/** 팝업 '현재 페이지' 토글의 표시 정보. 팝업은 메타(features/<id>/meta.ts)의 이것으로 아이콘을 찾고, 동작은 index.ts의 PageToggle이 잇는다. */
+/** 팝업 '현재 페이지' 토글의 표시 정보 (features/<id>/meta.ts). 동작은 index.ts의 PageToggle이 잇고, 아이콘은 meta.ts의 icons.toggles가 id로 찾는다. */
 interface PageToggleMeta {
     id: string;
     label: string;
-    icon: LucideIcon;
+}
+
+/**
+ * 옵션·팝업이 그리는 아이콘 (features/<id>/meta.ts의 named export icons). ToggleId는 메타 toggles의 id다.
+ * 메타 기본 export에 두면 index.ts가 메타를 펼칠 때 lucide 아이콘(과 Preact)이 콘텐츠·배경 번들에 딸려 가므로 따로 내보낸다.
+ * features/meta.ts(옵션·팝업)만 이것을 모은다.
+ */
+export type ModuleIcons<ToggleId extends string = never> = { module: LucideIcon } &
+    ([ToggleId] extends [never] ? { toggles?: never } : { toggles: Record<ToggleId, LucideIcon> });
+
+/** 옵션·팝업이 모듈 아이콘을 모아 다룰 때의 타입. 토글이 없는 모듈은 toggles도 없다. */
+export interface AnyModuleIcons {
+    module: LucideIcon;
+    toggles?: Partial<Record<string, LucideIcon>>;
 }
 
 /**
@@ -83,8 +96,6 @@ export interface ModuleMeta<S extends SettingsSchema = SettingsSchema> {
     /** 표시명 (한글). */
     name: string;
     description: string;
-    /** 팝업 모듈 타일 아이콘. 배경 스크립트가 import하는 파일에 두면 Preact(lucide 아이콘)가 배경 번들에 딸려 간다 (features/imagesearch 참고). */
-    icon: LucideIcon;
     /** 모듈이 돌 URL. 없으면 모든 페이지, []면 어느 페이지에서도 돌지 않는다(설정도 읽지 않는다). */
     urls?: RegExp[];
     /** 처음에 켜 둘지 (기본: true). */

@@ -1,4 +1,3 @@
-import {Puzzle} from "lucide-react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {fakeBrowser} from "wxt/testing/fake-browser";
 
@@ -445,8 +444,8 @@ describe("단축키·페이지 토글", () => {
         setup: () => ({count: 2, on: true}),
         shortcuts: {jump: (ctx, api) => toggled(id, ctx.signal.aborted, api)},
         pageToggles: [
-            {id: "fixed", label: "고정", icon: Puzzle, desc: "설명", isOn: (api) => api.on, toggle: (api) => toggled(id, api)},
-            {id: "count", label: "개수", icon: Puzzle, desc: (api) => `${api.count}개`, isOn: () => false, toggle: () => {}}
+            {id: "fixed", label: "고정", desc: "설명", isOn: (api) => api.on, toggle: (api) => toggled(id, api)},
+            {id: "count", label: "개수", desc: (api) => `${api.count}개`, isOn: () => false, toggle: () => {}}
         ]
     });
 
@@ -488,7 +487,7 @@ describe("단축키·페이지 토글", () => {
                 await gate.promise;
                 return true;
             },
-            pageToggles: [{id: "t", label: "", icon: Puzzle, desc: "", isOn: (api) => api, toggle: () => {}}]
+            pageToggles: [{id: "t", label: "", desc: "", isOn: (api) => api, toggle: () => {}}]
         })]);
         // 감시 알림이 아직 오지 않은 상태다.
         muteWatchers();
@@ -509,7 +508,7 @@ describe("단축키·페이지 토글", () => {
                 await gate.promise;
                 return true;
             },
-            pageToggles: [{id: "t", label: "", icon: Puzzle, desc: "", isOn: (api) => api, toggle: () => {}}]
+            pageToggles: [{id: "t", label: "", desc: "", isOn: (api) => api, toggle: () => {}}]
         })]);
 
         const state = registry.settledPageState();
