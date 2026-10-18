@@ -351,6 +351,8 @@ const controller = (ctx: Ctx) => {
             // 본문을 방금 받았어도(fresh) 방금 받은 댓글은 쓴다. 그 밖에 캐시로 연 글은 받는 동안 지난번 댓글을 먼저 보인다.
             // 새로 받은 목록이 같으면 다시 그리지 않는다 (shown.raw).
             const last = recent ?? (fresh ? undefined : getEntry(preData)?.comments);
+            // 캐시의 댓글은 본문과 한 번에 그려져, 댓글이 많으면 다 그릴 때까지 본문도 보이지 않는다. 본문을 한 프레임 먼저 그린다.
+            if (last) await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve)));
             if (last) await pullComments(preData, post, mySignal, false, last, true);
             if (!recent) {
                 // 미리 받은 댓글은 같은 요청이었을 때만 쓴다. 비어 있으면 다시 받는다.

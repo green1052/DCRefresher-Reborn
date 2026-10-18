@@ -162,6 +162,29 @@ test.describe("미리보기", () => {
         await expect.poll(() => requests).toEqual(["/board/view/", "/board/comment/", "/board/comment/"]);
     });
 
+    test("캐시로 다시 연 글은 본문을 먼저 그리고 댓글은 다음 프레임에 그린다", async ({listPage}) => {
+        const {page} = listPage;
+        await listPage.openPreview();
+        await expect(listPage.comments).toHaveCount(2);
+        await expect(listPage.overlay.locator(".refresher-frame-scroll")).toBeFocused();
+        await page.keyboard.press("Escape");
+        await expect(listPage.frame).toHaveCount(0);
+
+        // 본문이 들어온 뒤 첫 프레임에 그려진 댓글 수를 잰다. 댓글이 본문과 같이 그려지면 그 프레임까지 본문이 보이지 않는다.
+        const atFirstFrame = page.evaluate(() => new Promise<number>((resolve) => {
+            const root = document.querySelector("refresher-root")!.shadowRoot!;
+            const observer = new MutationObserver(() => {
+                if (!root.querySelector(".refresher-preview-contents")?.childElementCount) return;
+                observer.disconnect();
+                requestAnimationFrame(() => resolve(root.querySelectorAll(".refresher-comment").length));
+            });
+            observer.observe(root, {childList: true, subtree: true});
+        }));
+        await listPage.openPreview();
+        expect(await atFirstFrame).toBe(0);
+        await expect(listPage.comments).toHaveCount(2);
+    });
+
     test("댓글을 받지 못하면 댓글 칸에 다시 시도 안내를 두고, 누르면 다시 받는다", async ({listPage, context, errors}) => {
         let fail = true;
         await context.route(/\/board\/comment\//, (route) => (fail ? route.fulfill({status: 500}) : route.fallback()));
