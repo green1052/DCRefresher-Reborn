@@ -8,8 +8,8 @@ import {useUiStore} from "@/stores/ui";
 
 import {blockEntry, setBlockLists} from "../../../helpers";
 
-// Base UI·lucide는 변환되지 않아 진짜 React를 불러 그려지지 않으므로 버블·버튼을 평범한 요소로 바꾼다.
-vi.mock("lucide-react", () => ({Copy: () => null}));
+// Base UI는 변환되지 않아 진짜 React를 불러 그려지지 않으므로 버블·버튼을 평범한 요소로 바꾼다.
+
 vi.mock("@/components/ui/popover", () => ({
     Popover: ({children}: { children?: ReactNode }) => <>{children}</>,
     PopoverContent: ({children}: { children?: ReactNode }) => <div>{children}</div>

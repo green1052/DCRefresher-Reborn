@@ -1,4 +1,3 @@
-import {Copy} from "lucide-react";
 import {useEffect, useRef, useSyncExternalStore} from "react";
 
 import {DialogActions, ModalDialog} from "@/components/dialogs";
@@ -22,11 +21,10 @@ import {overlay} from "./shadow";
 
 /** 클릭하면 복사되는 값 한 줄. */
 const CopyRow = ({label, value, onCopy}: { label: string; value: string; onCopy: (value: string) => void }) => (
-    <Button variant="ghost" size="sm" className="w-full justify-between font-normal" title="클릭하면 복사됩니다." onClick={() => onCopy(value)}>
+    <Button variant="ghost" size="sm" className="w-full cursor-pointer justify-start font-normal" title="클릭하면 복사됩니다." onClick={() => onCopy(value)}>
         <span className="truncate">
             <span className="text-muted-foreground">{label}</span> <strong>{value}</strong>
         </span>
-        <Copy data-icon="inline-end"/>
     </Button>
 );
 
