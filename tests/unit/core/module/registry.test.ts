@@ -314,6 +314,34 @@ describe("설정 변경", () => {
 });
 
 describe("켜기·끄기", () => {
+    it("끄자마자 다시 켜면 앞 setup이 끝난 뒤에 새 setup을 시작한다", async () => {
+        const {promise: blocker, resolve: release} = Promise.withResolvers<void>();
+        const log: string[] = [];
+        let runs = 0;
+        await load([testModule({
+            id: "a", setup: async () => {
+                const run = ++runs;
+                log.push(`start ${run}`);
+                if (run === 2) await blocker;
+                log.push(`end ${run}`);
+            }
+        })]);
+        await setEnables({a: false});
+        await setEnables({a: true});
+        await tick();
+        expect(log).toEqual(["start 1", "end 1", "start 2"]);
+
+        // 두 번째 setup이 await 중일 때 껐다 켠다.
+        await setEnables({a: false});
+        await setEnables({a: true});
+        await tick();
+        expect(log).toEqual(["start 1", "end 1", "start 2"]);
+
+        release();
+        await tick();
+        expect(log).toEqual(["start 1", "end 1", "start 2", "end 2", "start 3", "end 3"]);
+    });
+
     it("끄면 정리하고 revoke하며, 다시 켜면 새로 setup한다", async () => {
         const cleanup = vi.fn();
         const revoke = vi.fn();

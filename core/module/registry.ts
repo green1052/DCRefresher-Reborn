@@ -20,6 +20,8 @@ interface ModuleInstance {
     running?: { ctx: ModuleContext; controller: AbortController; ready: boolean; api?: unknown; setup?: Promise<void>; listeners: ((keys: ReadonlySet<string>) => void)[] };
     /** setup이 던졌다. 켜짐 값이 그대로면 다시 시작하지 않는다 (다른 모듈을 켜고 끌 때마다 실패를 되풀이한다). 껐다 켜면 다시 시도한다. */
     failed?: boolean;
+    /** 멈춘 실행의 setup이 끝나면(실패해도) 풀린다. 다음 setup은 이것을 기다린다. 끄자마자 켜면 앞 setup이 아직 await 중이라 둘이 겹친다. */
+    settling?: Promise<void>;
 }
 
 const instances = new Map<string, ModuleInstance>();
@@ -84,8 +86,14 @@ const start = async (instance: ModuleInstance): Promise<void> => {
     instance.running = running;
     runningModulesStore.setState({[instance.def.id]: true});
 
+    const previous = instance.settling;
     running.setup = (async () => {
         try {
+            if (previous) {
+                await previous;
+                // 기다리는 사이 다시 껐다.
+                if (signal.aborted) return;
+            }
             const api = await instance.def.setup(ctx);
             if (!signal.aborted) {
                 running.api = api;
@@ -111,6 +119,7 @@ const stop = (instance: ModuleInstance, keepDom = false): void => {
     const running = instance.running;
     if (!running) return;
     instance.running = undefined;
+    instance.settling = running.setup?.catch(() => {});
     runningModulesStore.setState({[instance.def.id]: false});
 
     running.controller.abort();
