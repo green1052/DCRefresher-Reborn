@@ -50,13 +50,6 @@ export const normalizeSetting = (schema: SettingSchema, value: unknown): Setting
     }
 };
 
-export const areEqual = (a: SettingValue | undefined, b: SettingValue): boolean => {
-    if (a === b) return true;
-    if (Array.isArray(a) && Array.isArray(b)) return a.length === b.length && a.every((v, i) => v === b[i]);
-    return false;
-};
-
-
 /** 저장소의 모듈 on/off 값. 없거나 모양이 다르면 빈 객체(모두 defaultEnable). */
 export const enablesOf = (stored: unknown): Record<string, unknown> => (isRecord(stored) ? stored : {});
 

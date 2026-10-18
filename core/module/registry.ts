@@ -2,6 +2,7 @@ import {addFilter} from "@/core/filtering";
 import {documentUrl} from "@/core/http/urls";
 import type {PageAction, PageState, PageToggleState} from "@/core/messaging/protocol";
 import {storage} from "wxt/utils/storage";
+import {shallow} from "zustand/shallow";
 import {createStore} from "zustand/vanilla";
 
 import {MODULES_KEY, moduleSettingsKey} from "@/core/storage/items";
@@ -9,7 +10,7 @@ import {watchStorage} from "@/core/storage/sync";
 import type {SettingValue} from "@/core/storage/types";
 import {onBfcacheRestore} from "@/utils/dom";
 
-import {areEqual, enablesOf, isModuleEnabled, readModuleStorage, settingsOf} from "./settings";
+import {enablesOf, isModuleEnabled, readModuleStorage, settingsOf} from "./settings";
 import type {AnyModule, ModuleApis, ModuleContext, ModuleSettings} from "./types";
 
 interface ModuleInstance {
@@ -125,7 +126,7 @@ const stop = (instance: ModuleInstance, keepDom = false): void => {
 const applySettings = (instance: ModuleInstance, stored: unknown): void => {
     const changed: string[] = [];
     for (const [key, next] of Object.entries(settingsOf(instance.def, stored))) {
-        if (areEqual(instance.settings[key], next)) continue;
+        if (shallow(instance.settings[key], next)) continue;
         changed.push(key);
         instance.settings[key] = next;
     }
