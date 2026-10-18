@@ -235,6 +235,9 @@ const rememberPair = (video: HTMLVideoElement): void => {
     mediaPairs.set(gif, mp4);
 };
 
+/** 차단 모듈 설정의 가리는 방식. 흐리게 처리를 켜면 흐리게, 아니면 숨긴다. */
+export const blockMode = (settings: ModuleSettings["block"]): "blur" | "hide" => (settings.blur ? "blur" : "hide");
+
 /** 차단 모듈 설정의 비슷한 이미지 기준 (dHash·pHash가 각각 다를 수 있는 비트 수). 끄면 undefined다. 페이지(차단 모듈)와 미리보기가 같이 쓴다. */
 export const similarImageThreshold = (settings: ModuleSettings["block"]): number | undefined =>
     settings.similarImages ? settings.similarThreshold : undefined;

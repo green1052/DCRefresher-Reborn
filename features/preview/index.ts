@@ -1,7 +1,7 @@
 import {HTTPError} from "ky";
 import {shallow} from "zustand/shallow";
 
-import {duplicateOf, isBlocked} from "@/core/block";
+import {blockMode, duplicateOf, isBlocked} from "@/core/block";
 import {BlockedError, isAbortError} from "@/core/http/client";
 import {defineModule} from "@/core/module/define";
 import {getModuleApi, moduleSettingsStore, runningModuleSettings, runningModulesStore} from "@/core/module/registry";
@@ -47,7 +47,7 @@ const textBlockOf = (preData: GalleryPreData, postInfo: PostInfo): PostInfo["tex
     const block = runningModuleSettings("block");
     // block 모듈 checkText처럼 .write_div의 글자(writeText)로 검사한다. 본문 HTML을 풀면 디시 스크립트 글자가 섞이고
     // '<b>광</b>고'처럼 태그로 쪼갠 글이 빠져나간다.
-    return block && postInfo.writeText !== undefined && isBlocked("TEXT", postInfo.writeText, preData.gallery) ? (block.blur ? "blur" : "hide") : undefined;
+    return block && postInfo.writeText !== undefined && isBlocked("TEXT", postInfo.writeText, preData.gallery) ? blockMode(block) : undefined;
 };
 
 /** 받은 지 1분 안의 캐시 본문과 그 나이(ms). 댓글 보존·추천이 항목을 다시 저장해 수명을 늘리므로 받은 시각으로 본다. */

@@ -1,6 +1,6 @@
 import QuickLRU from "quick-lru";
 
-import {duplicateOf, groupDuplicates, isAnyBlocked, isBlocked} from "@/core/block";
+import {blockMode, duplicateOf, groupDuplicates, isAnyBlocked, isBlocked} from "@/core/block";
 import type {ModuleSettings} from "@/core/module/types";
 import {lowActivityOf, type Ratios} from "@/stores/ui";
 import {htmlToText, sanitizeHtml} from "@/utils/sanitize";
@@ -143,13 +143,13 @@ export const processComments = (
                 preData.gallery
             ) || dcconNos.some((no) => isBlocked("DCCON", no, preData.gallery));
 
-        if (blocked) comment.blocked = block.blur ? "blur" : "hide";
+        if (blocked) comment.blocked = blockMode(block);
     }
 
     if (block.replyRemove) {
         // 답글의 c_no는 스레드 첫 댓글 번호다.
         const blockedThreads = new Set(list.filter((comment) => comment.depth === 0 && comment.blocked).map((comment) => comment.no));
-        for (const comment of list) if (comment.depth === 1 && blockedThreads.has(comment.c_no)) comment.blocked ??= block.blur ? "blur" : "hide";
+        for (const comment of list) if (comment.depth === 1 && blockedThreads.has(comment.c_no)) comment.blocked ??= blockMode(block);
     }
 
     // 답글 함께 가리기 뒤에 매긴다. 페이지처럼 깡계 댓글의 답글은 가리지 않는다.
