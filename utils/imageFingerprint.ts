@@ -118,7 +118,6 @@ export type Sample = [fingerprint: string, mirrored: string];
 
 const sampleOf = ([small, large]: Grids): Sample => [dHash(small) + pHash(large), dHash(mirror(small, 9)) + pHash(mirror(large, 32))];
 
-/** RGBA 화소의 표본. */
 export const fingerprintsOf = (rgba: Uint8ClampedArray, width: number, height: number): Sample => sampleOf(lumaGrids(width, height, rgbaRows(rgba, width)));
 
 /**
@@ -130,7 +129,7 @@ const SAMPLE_TIMES = [0, 0.505, 1.505, 3.005];
 /** 밝기가 거의 고른 장면(검은 화면·흰 화면). 어느 움짤의 앞뒤에나 있어 표본으로 쓰지 않는다. */
 const isFlat = ([small]: Grids): boolean => Math.max(...small) - Math.min(...small) < 8;
 
-/** 흰 바탕에 그려 RGBA로 읽은 그리드. 반투명한 곳은 그대로 두면 브라우저마다 값이 다르다. 그린 source는 바로 닫는다. 그리기 전에 돌아오면 닫지 않으니 부른 쪽도 닫는다. */
+/** 흰 바탕에 그려 RGBA로 읽은 그리드. 바탕이 없으면 반투명한 곳의 값이 브라우저마다 다르다. 그리기 전에 돌아오면 source를 닫지 않으니 부른 쪽도 닫는다. */
 const drawnGrids = (source: ImageBitmap | VideoFrame, width: number, height: number): Grids | undefined => {
     const context = width * height <= MAX_PIXELS ? new OffscreenCanvas(width, height).getContext("2d", {willReadFrequently: true}) : null;
     if (!context) return undefined;
@@ -321,7 +320,7 @@ export const isSimilar = (a: string, b: string, threshold: number): boolean =>
 /**
  * 표본들이 차단 항목의 지문들(prints)과 비슷한지. 표본의 원본이나 좌우 반전본이 어느 지문과 비슷하면 그 표본은 맞은 것이다.
  * 한쪽이 장면 하나(정지 이미지)면 하나만 맞아도 되고, 둘 다 움짤이면 하나 빼고 다 맞아야 한다. 같은 방송의 다른 움짤처럼
- * 몇 장면만 닮은 것을 막지 않으려고 과반을 본다. 순서는 보지 않는다 (gif와 그걸 바꾼 mp4는 시간이 조금 어긋난다).
+ * 몇 장면만 닮은 것은 막지 않는다. 순서는 보지 않는다 (gif와 그걸 바꾼 mp4는 시간이 조금 어긋난다).
  */
 export const isSimilarSet = (samples: Sample[], prints: string[], threshold: number): boolean => {
     const hits = samples.filter((sample) => prints.some((print) => sample.some((fingerprint) => isSimilar(print, fingerprint, threshold)))).length;

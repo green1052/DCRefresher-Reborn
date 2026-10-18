@@ -23,7 +23,7 @@ export interface SelectedUser {
     ip?: string;
     /** 우클릭한 디시콘 코드 (dccon.php?no= 값). */
     dccon?: string;
-    /** 버블·메모 창이 갤러리 한정 차단·메모에 쓰는 갤러리. 없으면 이 문서의 갤러리다 (selectedGallery). 미리보기 글에서 연 버블은 그 글의 갤러리를 넘긴다. */
+    /** 갤러리 한정 차단·메모에 쓰는 갤러리. 미리보기 글에서 연 버블은 그 글의 갤러리를 넘긴다 (selectedGallery). */
     gallery?: string;
 }
 

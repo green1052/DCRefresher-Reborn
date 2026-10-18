@@ -3,11 +3,10 @@ import {defineWxtModule} from "wxt/modules";
 import {featureFolders} from "./lib/features";
 
 /**
- * 기능 모듈의 타입 목록을 만든다. features/<폴더>/index.ts를 모아 ModuleApis(모듈 id → setup의 리턴값)를 채우므로
- * getModuleApi(id)가 id를 자동완성하고 api 타입을 안다. features/<폴더>/meta.ts로는 ModuleSettings(모듈 id → 설정값)를 채워
- * useModuleSettings(id)가 설정 타입을 안다. 새 모듈도 폴더만 만들면 된다 (런타임은 features/index.ts의 glob이 모은다).
- * wxt prepare(설치·dev·build)가 .wxt/types/modules.d.ts로 쓴다.
- * 모듈 id 목록(meta.ts가 있는 폴더 이름 = id)은 .wxt/module-ids.ts로 쓴다. 배경도 쓰는 백업(core/backup.ts)이 meta.ts(lucide 아이콘·Preact)를 불러오지 않고 모듈을 알게 한다.
+ * wxt prepare(설치·dev·build) 때 기능 모듈의 타입을 만든다. 런타임 목록은 features/index.ts의 glob이 모은다.
+ * - .wxt/types/modules.d.ts: features/<폴더>/index.ts로 ModuleApis(id → setup 리턴값)를, meta.ts로 ModuleSettings(id → 설정값)를 채워
+ *   getModuleApi(id)·useModuleSettings(id)가 타입을 안다.
+ * - .wxt/module-ids.ts: meta.ts가 있는 폴더 이름(= id) 목록. 배경도 쓰는 백업(core/backup.ts)이 meta.ts(lucide 아이콘·Preact)를 불러오지 않고 모듈을 알게 한다.
  */
 export default defineWxtModule((wxt) => {
     wxt.hook("prepare:types", (_, entries) => {

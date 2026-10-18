@@ -90,7 +90,7 @@ export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true,
     const modal = useModal(onClose, focusOnOpen);
 
     return (
-        // actionsRef.close()(일을 마친 창이 스스로 닫기)는 dismissible과 상관없이 닫는다. 끝난 직후라 dismissible이 아직 옛 값일 수 있다.
+        // actionsRef.close()는 dismissible과 상관없이 닫는다. 일이 끝난 직후라 dismissible이 아직 옛 값일 수 있다.
         <Dialog {...modal.root} actionsRef={actionsRef} disablePointerDismissal={disablePointerDismissal}
                 onOpenChange={(next, {reason}) => !next && (dismissible || reason === "imperative-action") && modal.close()}>
             <DialogContent {...modal.popup} showCloseButton={false} className={className}>

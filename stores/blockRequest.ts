@@ -97,7 +97,6 @@ export type BlockRequestOptions = {
     gallery?: string;
 };
 
-/** 유저 버블의 차단 요청을 처리한다. */
 export const handleBlockRequest = async (options: BlockRequestOptions, selected: SelectedUser): Promise<void> => {
     try {
         if (options.target === "dccon") await blockDccon(selected, options.dcconPackage);

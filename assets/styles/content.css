@@ -2,7 +2,7 @@
 
 /* ===== 디시 페이지에 주입하는 공용 스타일. 기능별 스타일은 features/<id>/page.css (modules/feature-styles.ts가 모은다) ===== */
 
-/* 차단 — 흐리게 처리 옵션 (block 모듈)과 깡계 흐리게 (userinfo 모듈). 강도·마우스 오버 보기는 block 모듈이 <html>에 거는 변수/클래스. */
+/* 차단 흐리게 (block 모듈)와 깡계 흐리게 (userinfo 모듈). */
 .refresherBlur,
 .refresherLowActivityBlur {
     @apply refresher-blurred;

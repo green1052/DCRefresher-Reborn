@@ -54,7 +54,6 @@ const DcconSummary = ({code, onOpen}: { code: string; onOpen: () => void }) => {
         <MenuItem title="디시콘 정보 보기" className="h-auto items-start gap-2 py-1.5 whitespace-normal" onClick={onOpen}>
             {dccon ? (
                 <>
-                    {/* 패키지 대표 이미지 (정보 창의 큰 이미지와 같다). */}
                     <img src={urls.dccon.image + dccon.info.main_img_path} alt="" className="size-10 flex-none rounded-sm object-contain"/>
                     <span className="flex min-w-0 flex-col items-start gap-0.5">
                         <strong>{dccon.info.title}</strong>
@@ -195,7 +194,7 @@ interface BubbleProps extends BubbleActions {
     selected: SelectedUser;
 }
 
-/** 유저 버블. 열 때 마운트되어 연 요소(닉네임 버튼 등)를 기억했다가 닫을 때 그리로 포커스를 돌려준다. */
+/** 유저 버블. 열 때 마운트되어 닫을 때 연 요소로 포커스를 돌려준다 (useReturnFocus). */
 const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) => {
     const popup = useRef<HTMLDivElement>(null);
     const focus = useReturnFocus(popup);
@@ -249,8 +248,8 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
     return (
         <Popover open onOpenChange={(open, details) => {
             if (open) return;
-            // 닫힌 버블도 Preact가 effect 정리를 그린 뒤로 미뤄, 그동안 Base UI가 클릭·Esc를 받는다. 지금 떠 있는 버블이 아니면 손대지 않고 흘려보낸다.
-            // 두면 곧바로 다시 연 버블을 여는 클릭으로 닫고, 다음 Esc(미리보기 닫기 등)를 먹는다.
+            // Preact가 effect 정리를 그린 뒤로 미뤄 닫힌 버블도 잠시 클릭·Esc를 받는다. 지금 버블이 아니면 흘려보낸다.
+            // 받으면 곧바로 다시 연 버블을 그 클릭으로 닫고, 다음 Esc(미리보기 닫기 등)를 먹는다.
             if (useUiStore.getState().bubble !== bubble) {
                 details.cancel();
                 details.allowPropagation();
