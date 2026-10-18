@@ -51,8 +51,7 @@ export const writeSettings = async (data: Record<string, unknown>, mode: "replac
         const localDefaults = normalizeDefaults(previous[DEFAULTS_KEY]);
         const importDefaults = normalizeDefaults(next[DEFAULTS_KEY]);
         delete next[DEFAULTS_KEY];
-        for (const type of BLOCK_TYPES) {
-            const key = rawKey(blockListKey(type));
+        for (const [key, type] of BLOCK_LIST_TYPES) {
             if (key in next) next[key] = pinDefaultMode(next[key] as BlockEntry[], importDefaults[type], localDefaults[type]);
         }
         for (const [key, value] of Object.entries(next)) {
