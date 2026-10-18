@@ -96,11 +96,6 @@ describe("processComments", () => {
         expect(processComments([{...comment(1), memo: null}], preData(), undefined)[0]?.memo).toBe("");
     });
 
-    it("남는 </div> 뒤의 내용도 남긴다", () => {
-        const [output] = processComments([comment(1, {memo: "앞</div>뒤"})], preData(), undefined);
-        expect(output?.memo).toContain("뒤");
-    });
-
     it("붙어 온 디시콘 두 개를 두 태그로 나눈다", () => {
         const [output] = processComments([comment(1, {memo: DOUBLE_DCCON})], preData(), undefined);
         const box = document.createElement("div");

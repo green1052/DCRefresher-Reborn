@@ -14,8 +14,6 @@ export async function openOptions(page: Page, extensionId: string, tab: OptionsT
 
     const cards = page.locator("[data-slot=card]");
     return {
-        page,
-        goto,
         cards,
         /** 모듈 카드 (제목으로 찾는다). */
         card: (name: string) => cards.filter({has: page.getByRole("heading", {name, exact: true})}),

@@ -235,6 +235,7 @@ test.describe("옵션 - 차단 탭", () => {
         const {table, alert, toasts} = await openOptions(page, extensionId, "block");
 
         await page.getByRole("button", {name: "전체 삭제", exact: true}).click();
+        await expect(alert).toContainText("모두(2개) 삭제할까요?");
         await alert.getByRole("button", {name: "삭제", exact: true}).click();
         await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([]);
         // 다른 곳에서 같은 닉을 새 id로 다시 차단했다.
@@ -244,15 +245,6 @@ test.describe("옵션 - 차단 탭", () => {
 
         await toasts.getByRole("button", {name: "되돌리기", exact: true}).click();
         await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([readded, list[1]]);
-    });
-
-    test("전체 삭제는 확인한 뒤 그 종류의 항목을 모두 지운다", async ({page, extensionId, storage}) => {
-        await storage.set({"refresher:block:NICK": [{id: "a", content: "가닉", isRegex: false}, {id: "b", content: "나닉", isRegex: false}]});
-        const {alert} = await openOptions(page, extensionId, "block");
-        await page.getByRole("button", {name: "전체 삭제", exact: true}).click();
-        await expect(alert).toContainText("모두(2개) 삭제할까요?");
-        await alert.getByRole("button", {name: "삭제", exact: true}).click();
-        await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([]);
     });
 
     test("갤러리·마지막 사용으로 걸러 보이는 항목만 지우고, 페이지를 다시 열 때 지운 항목의 사용 기록을 정리한다", async ({page, extensionId, storage}) => {

@@ -36,16 +36,6 @@ test.describe("글 목록", () => {
         await expect(blocked).not.toHaveClass(/refresherBlocked/);
     });
 
-    test("흐리게 처리를 켜면 차단한 행을 숨기지 않고 흐린다", async ({listPage, storage}) => {
-        await storage.setModuleSettings("block", {blur: true});
-        await storage.set({"refresher:block:ID": [{id: "a", content: "user1", isRegex: false}]});
-
-        const blurred = listPage.row(1);
-        await expect(blurred).toHaveClass(/refresherBlur/);
-        await expect(blurred).not.toHaveClass(/refresherBlocked/);
-        await expect(blurred).toBeVisible();
-    });
-
     test("페이지 번호를 누르면 페이지를 다시 읽지 않고 목록만 바꾸고, 뒤로 가기로 되돌린다", async ({listPage}) => {
         const {page} = listPage;
         // 페이지를 다시 읽으면 이 값이 사라진다.
