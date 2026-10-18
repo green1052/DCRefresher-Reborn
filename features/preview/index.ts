@@ -2,7 +2,7 @@ import {HTTPError} from "ky";
 import {shallow} from "zustand/shallow";
 
 import {blockMode, duplicateOf, isBlocked} from "@/core/block";
-import {BlockedError, isAbortError} from "@/core/http/client";
+import {isAbortError} from "@/core/http/client";
 import {defineModule} from "@/core/module/define";
 import {getModuleApi, moduleSettingsStore, runningModuleSettings, runningModulesStore} from "@/core/module/registry";
 import type {ModuleSettings} from "@/core/module/types";
@@ -11,7 +11,7 @@ import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} fro
 import {useBlocksStore} from "@/stores/blocks";
 import {lowActivityOf, useUiStore} from "@/stores/ui";
 import {whenDomReady} from "@/utils/dom";
-import {messageOf} from "@/utils/error";
+import {isBlockedError, messageOf} from "@/utils/error";
 import {isTyping, pressedKey} from "@/utils/event";
 import {createDoublePress} from "@/utils/doublePress";
 import {isGalleryManager} from "@/utils/user";
@@ -33,7 +33,7 @@ import {type ErrorState, MANAGE_LABELS, type ManageKind, NO_FRESH, NO_HOOKS, NO_
 const errorOf = (error: unknown): ErrorState => ({
     detail: messageOf(error),
     // 임시 차단(빈 페이지)은 200으로 오므로 요청 제한(429)으로 본다.
-    status: error instanceof HTTPError ? error.response.status : error instanceof BlockedError ? 429 : undefined,
+    status: error instanceof HTTPError ? error.response.status : isBlockedError(error) ? 429 : undefined,
     adult: error instanceof Error && error.message === ADULT_ERROR,
     secret: error instanceof Error && error.message === SECRET_ERROR
 });
@@ -289,7 +289,7 @@ const controller = (ctx: Ctx) => {
             if (isAbortError(e)) return true;
             if (store.getState().signalId === st.signalId) store.setState({commentsFailed: true});
             // 임시 차단은 HTTP 클라이언트가 이미 알렸다. 덮어쓰지 않는다.
-            if (!(e instanceof BlockedError)) {
+            if (!isBlockedError(e)) {
                 console.error("Comment refresh failed:", e);
                 if (report) ui.showToast("댓글을 불러오지 못했습니다.", "error");
             }
@@ -311,7 +311,7 @@ const controller = (ctx: Ctx) => {
             store.setState({post, error: undefined, archived: false});
         } catch (e) {
             // 실패해도(삭제된 글 등) 보고 있던 본문은 그대로 둔다. 임시 차단은 HTTP 클라이언트가 이미 알렸다.
-            if (isAbortError(e) || e instanceof BlockedError || store.getState().signalId !== signalId) return;
+            if (isAbortError(e) || isBlockedError(e) || store.getState().signalId !== signalId) return;
             console.error("Preview reload failed:", e);
             ui.showToast("게시글을 다시 불러오지 못했습니다.", "error");
             return;
@@ -368,7 +368,7 @@ const controller = (ctx: Ctx) => {
             // 댓글만 못 받았으면 본문은 그대로 두고 댓글 칸에 '다시 시도' 안내를 보인다. 임시 차단은 HTTP 클라이언트가 이미 알렸다.
             if (store.getState().signalId === mySignal && !isAbortError(e)) {
                 store.setState({commentsFailed: true});
-                if (!(e instanceof BlockedError)) {
+                if (!isBlockedError(e)) {
                     console.error("Comment load failed:", e);
                     // 캐시의 지난 댓글을 보이고 있으면 안내가 뜨지 않으므로 토스트로 알린다.
                     if (store.getState().comments !== undefined) ui.showToast("댓글을 불러오지 못했습니다.", "error");

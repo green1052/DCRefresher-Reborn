@@ -5,10 +5,11 @@ import {documentUrl, pageGallery, queryString} from "@/core/http/urls";
 import {checkboxFiller, highlightSearchResults, LIST_SELECTOR, notifyListReplaced, PAGING_SELECTOR} from "@/core/list";
 import {sendMessage} from "@/core/messaging/protocol";
 import {defineModule} from "@/core/module/define";
-import {LIST_PAGE} from "@/core/pages";
+import {BLOCKED_PAGE_MESSAGE, LIST_PAGE} from "@/core/pages";
 import {reportFailure} from "@/stores/notify";
 import {type SelectedUser, useUiStore} from "@/stores/ui";
 import {whenDomReady, writeStyle} from "@/utils/dom";
+import {isBlockedError} from "@/utils/error";
 
 import meta from "./meta";
 import {addWriterTypes, keepWriterFilter, removeWriterTypes, type WriterFilter, writerFilter, writerSearchUrl, writerSelector} from "./writer";
@@ -34,11 +35,14 @@ const searchWriter = async (filter: WriterFilter): Promise<void> => {
     }
     if (!/^[\w.-]+$/.test(filter.value)) return showToast("아이디를 입력해 주세요.", "warning");
     try {
-        const page = new DOMParser().parseFromString(await sendMessage("refresher:gallogPage", filter.value), "text/html");
-        const nick = page.querySelector(".nick_name")?.textContent?.trim();
+        const html = await sendMessage("refresher:gallogPage", filter.value);
+        // 없는 아이디면 갤로그가 404를 줘 null이 온다.
+        const nick = html === null ? undefined : new DOMParser().parseFromString(html, "text/html").querySelector(".nick_name")?.textContent?.trim();
         if (!nick) return showToast("갤로그에서 그 아이디를 찾지 못했습니다.", "warning");
         location.href = writerSearchUrl(filter, nick);
     } catch (e) {
+        // 임시 차단은 배경이 받아 이 탭엔 아직 알림이 없다.
+        if (isBlockedError(e)) return showToast(BLOCKED_PAGE_MESSAGE, "warning");
         console.error("Gallog lookup failed:", e);
         showToast("갤로그를 불러오지 못했습니다.", "error");
     }

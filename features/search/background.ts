@@ -1,3 +1,5 @@
+import {isHTTPError} from "ky";
+
 import {http} from "@/core/http/client";
 import {onMessage} from "@/core/messaging/protocol";
 import {defineBackgroundModule} from "@/core/module/background";
@@ -8,6 +10,14 @@ export default defineBackgroundModule({
     id: "search",
 
     listen() {
-        onMessage("refresher:gallogPage", ({data: id}) => http.get(`https://gallog.dcinside.com/${encodeURIComponent(id)}`).text());
+        // 없는 아이디는 갤로그가 404를 준다. 오류가 아니라 null로 돌려준다.
+        onMessage("refresher:gallogPage", async ({data: id}) => {
+            try {
+                return await http.get(`https://gallog.dcinside.com/${encodeURIComponent(id)}`).text();
+            } catch (e) {
+                if (isHTTPError(e) && e.response.status === 404) return null;
+                throw e;
+            }
+        });
     }
 });

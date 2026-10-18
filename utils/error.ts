@@ -15,6 +15,9 @@ export const isTimeoutError = (e: unknown): boolean => isNamed(e, "TimeoutError"
 /** 끊은 요청(AbortController)의 오류인지. */
 export const isAbortError = (e: unknown): boolean => isNamed(e, "AbortError");
 
+/** 디시 임시 차단(core/http/client.ts의 BlockedError)인지. 배경에서 받은 요청의 오류는 메시지를 건너오며 클래스를 잃고 이름만 남는다. */
+export const isBlockedError = (e: unknown): boolean => isNamed(e, "BlockedError");
+
 /** 오류의 메시지. 파이어폭스 content.fetch의 오류는 페이지 영역의 DOMException이라 instanceof Error가 거짓이므로 모양으로 꺼낸다. */
 export const messageOf = (error: unknown): string =>
     typeof error === "object" && error !== null && "message" in error && typeof error.message === "string" ? error.message : String(error);

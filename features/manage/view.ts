@@ -1,8 +1,10 @@
 import {pageGallery, pagePostNo, postSearchUrl} from "@/core/http/urls";
 import {sendMessage} from "@/core/messaging/protocol";
+import {BLOCKED_PAGE_MESSAGE} from "@/core/pages";
 import {NUMBERED_SOURCE} from "@/core/preview/parser";
 import {useUiStore} from "@/stores/ui";
 import {textWithoutScripts} from "@/utils/dom";
+import {isBlockedError} from "@/utils/error";
 
 const ORIGIN_CLASS = "refresherImageOrigin";
 const SEARCH_CLASS = "refresherTitleSearch";
@@ -64,6 +66,8 @@ const searchSameTitle = async (button: HTMLButtonElement, title: string): Promis
         if (galleries.length === 0) showToast("제목이 같은 글을 찾지 못했습니다.", "info", 5000, openResults);
         else showToast(`제목이 같은 글 ${galleries.length}개: ${[...new Set(galleries)].join(", ")}`, "warning", 10_000, openResults);
     } catch (e) {
+        // 임시 차단은 배경이 받아 이 탭엔 아직 알림이 없다.
+        if (isBlockedError(e)) return showToast(BLOCKED_PAGE_MESSAGE, "warning");
         console.error("Title search failed:", e);
         showToast("통합검색을 불러오지 못했습니다.", "error");
     } finally {

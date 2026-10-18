@@ -1,7 +1,8 @@
 import ky, {NetworkError, TimeoutError as KyTimeoutError} from "ky";
 import {describe, expect, it} from "vitest";
 
-import {friendlyMessage, isAbortError, isTimeoutError} from "@/utils/error";
+import {BlockedError} from "@/core/http/client";
+import {friendlyMessage, isAbortError, isBlockedError, isTimeoutError} from "@/utils/error";
 
 /** ky가 직접 만든 HTTPError. fetch를 바꿔 요청은 나가지 않는다. */
 const httpError = (status: number): Promise<unknown> =>
@@ -28,6 +29,14 @@ describe("isAbortError", () => {
         expect(isAbortError(new Error("AbortError"))).toBe(false);
         expect(isAbortError(null)).toBe(false);
         expect(isAbortError("AbortError")).toBe(false);
+    });
+});
+
+describe("isBlockedError", () => {
+    it("메시지를 건너와 클래스를 잃은 오류도 이름으로 본다", () => {
+        expect(isBlockedError(new BlockedError("디시인사이드 임시 차단"))).toBe(true);
+        expect(isBlockedError({name: "BlockedError", message: "디시인사이드 임시 차단"})).toBe(true);
+        expect(isBlockedError(new Error("BlockedError"))).toBe(false);
     });
 });
 
