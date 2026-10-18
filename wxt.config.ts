@@ -1,5 +1,8 @@
+import {fileURLToPath} from "node:url";
+
 import preact from "@preact/preset-vite";
 import tailwindcss from "@tailwindcss/vite";
+import {cn} from "cn/vite";
 import {defineConfig} from "wxt";
 
 import {CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES, IMAGE_HOST_ORIGINS} from "./core/pages";
@@ -7,7 +10,17 @@ import {CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES, IMAGE_HOST_ORIGINS} from "./co
 export default defineConfig({
     modules: ["@wxt-dev/auto-icons"],
     vite: () => ({
+        resolve: {
+            alias: [
+                // cn(클래스 병합)은 소스에 실제로 쓴 클래스 그룹만 담은 표(utils/cn-tables.ts, 아래 cn 플러그인이 빌드마다 만든다)를 쓴다. 전체 표보다 5KB쯤 작다.
+                // 클래스 이름을 문자열로 이어 붙여 만들면 표에 없어 병합되지 않는다 (Tailwind 스캔과 같은 제약).
+                {find: /^cn$/, replacement: fileURLToPath(new URL("utils/cn.ts", import.meta.url))},
+                // Base UI가 부르는 React 18 shim 대신 preact/compat의 useSyncExternalStore를 쓴다.
+                {find: /^use-sync-external-store\/shim(\/index\.js)?$/, replacement: "preact/compat"}
+            ]
+        },
         plugins: [
+            cn({content: ["{components,core,entrypoints,features,stores,utils}/**/*.{ts,tsx}"], out: "utils/cn-tables.ts", css: "assets/styles/tailwind.css"}),
             preact(),
             // Tailwind의 자체 최적화는 대상 브라우저가 고정(Chrome 111·Firefox 128)이라 CSS 중첩을 풀고 접두어를 붙인다.
             // 끄고 Vite의 압축(lightningcss)이 아래 cssTarget, 곧 manifest의 최소 버전에 맞추게 한다.
