@@ -614,11 +614,13 @@ const controller = (ctx: Ctx) => {
             history.replaceState({...entry, doc: historyDoc, reopen: false}, "", preData.link);
             savedHistory = back;
             whenDomReady(() => open(preData, false, true), ctx.signal);
-        } else if (navigation instanceof PerformanceNavigationTiming && navigation.type === "back_forward") {
+        } else if (navigation instanceof PerformanceNavigationTiming && navigation.type === "back_forward" && document.readyState !== "complete") {
+            // 문서를 불러오는 중일 때만 옮긴다. 미리보기를 끈 채 연 글 페이지에서 나중에 켜면(팝업·옵션·bfcache 동기화) setup이 다시 도는데,
+            // 탐색 종류는 그대로 back_forward라 읽던 글이 목록으로 바뀌고 쓰던 댓글이 날아간다.
             history.replaceState({...entry, reopen: true}, "", back.url);
             location.reload();
-        } else if (navigation instanceof PerformanceNavigationTiming && navigation.type === "reload") {
-            // 새로고침한 글 페이지는 이제 진짜 글 항목이다. 미리보기 표시를 지운다.
+        } else if (navigation instanceof PerformanceNavigationTiming && (navigation.type === "reload" || navigation.type === "back_forward")) {
+            // 새로고침했거나 다 불러온 뒤에 미리보기를 켠 글 페이지는 이제 진짜 글 항목이다. 미리보기 표시를 지운다.
             // 남겨 두면 목록으로 뒤로 갔다 앞으로 올 때 bfcache가 없으면 위 back_forward로 다시 목록·미리보기가 된다.
             history.replaceState(null, "");
         }
