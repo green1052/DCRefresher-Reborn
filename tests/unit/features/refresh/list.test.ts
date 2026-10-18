@@ -194,6 +194,18 @@ describe("replaceList", () => {
             expect(current().querySelector("[data-no='2']")?.classList.contains("refresherDeleted")).toBe(true);
         });
 
+        it("남긴 글이 다시 받아지면 붉은 표시를 지운다", () => {
+            const list = mount([row("3"), row("2"), row("1")]);
+            replaceList(list, tbody([row("3"), row("1"), row("0")]), KEEP);
+            const kept = list.querySelector("[data-no='2']");
+            expect(kept?.classList.contains("refresherDeleted")).toBe(true);
+
+            replaceList(list, tbody([row("3"), row("2"), row("1")]), KEEP);
+            expect(current()).toBe(list);
+            expect(list.querySelector("[data-no='2']")).toBe(kept);
+            expect(kept?.classList.contains("refresherDeleted")).toBe(false);
+        });
+
         it("새 글에 밀려 다음 페이지로 간 글은 남기지 않는다", () => {
             mount([row("3"), row("2"), row("1")]);
             replaceList(current(), tbody([row("5"), row("4"), row("3")]), KEEP);

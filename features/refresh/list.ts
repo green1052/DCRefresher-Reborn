@@ -169,6 +169,8 @@ export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigat
             if (index >= at && index < at + count) continue;
             const old = oldRows[index < at ? index : index - count]!;
             if (rowFrames.get(old) === rowFrames.get(row)) {
+                // 남긴 행은 원래 행과 틀이 같아 그대로 둔다. 지웠던 글이 다시 받아지면 붉은 표시를 받아온 행에 맞춰 뗀다.
+                old.classList.toggle("refresherDeleted", row.classList.contains("refresherDeleted"));
                 syncCounts(old, row);
                 continue;
             }
