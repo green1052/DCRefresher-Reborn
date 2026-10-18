@@ -207,6 +207,24 @@ describe("붙여넣기·끌어 놓기", () => {
         expect(dropped[0]?.[0]?.name).toMatch(/^[0-9a-f-]{36}\.png$/);
     });
 
+    it("이미지 올리기 팝업에 놓거나 붙여 넣은 이미지는 바꿔 파일 선택칸에 넘긴다", async () => {
+        document.body.innerHTML = "<form id=\"fileupload\"><input type=\"file\" class=\"file_add\"><p id=\"guide\"></p></form>";
+        const popupInput = document.querySelector<HTMLInputElement>(".file_add")!;
+        const changed: File[][] = [];
+        popupInput.addEventListener("change", () => changed.push([...(popupInput.files ?? [])]));
+        // jsdom의 files는 FileList만 받아 속성으로 바꿔 둔다.
+        Object.defineProperty(popupInput, "files", {value: null, writable: true, configurable: true});
+        setOptions({webp: false, quality: 0.8, rename: true, concurrency: 2});
+
+        for (const type of ["drop", "paste"] as const) {
+            const ev = transferEvent(type, [png("내 사진.png", ["IHDR", "IDAT"])]);
+            document.getElementById("guide")!.dispatchEvent(ev);
+            expect(ev.defaultPrevented).toBe(true);
+        }
+        await vi.waitFor(() => expect(changed).toHaveLength(2));
+        for (const [file] of changed) expect(file?.name).toMatch(/^[0-9a-f-]{36}\.png$/);
+    });
+
     it("에디터 밖은 건드리지 않는다", async () => {
         setOptions({webp: false, quality: 0.8, rename: true, concurrency: 2});
         const ev = transferEvent("drop", [png("a.png", ["IHDR", "IDAT"])]);
