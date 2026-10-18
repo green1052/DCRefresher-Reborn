@@ -7,8 +7,8 @@ import {Checkbox} from "@/components/ui/checkbox";
 import {DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import {Input} from "@/components/ui/input";
 import type {ProcessedComment} from "@/core/preview/comments";
-import type {CommentForm, User} from "@/core/preview/types";
-import {adminDeleteComments} from "@/core/preview/request";
+import type {CommentForm, GalleryPreData, User} from "@/core/preview/types";
+import {adminDeleteComments, type ManageResult} from "@/core/preview/request";
 import {notifyManage} from "@/stores/notify";
 import {cn} from "cn";
 
@@ -195,11 +195,16 @@ const removeComment = async (no: string, isAdmin: boolean, password: string): Pr
     const signal = st.signalId;
 
     setDeleting(no, true);
-    const request = isAdmin ? adminDeleteComments(st.preData, [no]) : deleteOwnComment(st.preData, st.post, no, password);
-    const deleted = await notifyManage(request, "댓글을 삭제했습니다.", "댓글을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+    await notifyDeleted(st.preData, isAdmin ? adminDeleteComments(st.preData, [no]) : deleteOwnComment(st.preData, st.post, no, password));
     // 그새 다른 글로 넘어갔으면 그 글의 상태는 건드리지 않는다 (글을 열면 freshPost가 비운다).
     if (usePreviewStore.getState().signalId === signal) setDeleting(no, false);
-    if (deleted) refreshCommentsOf(st.preData);
+};
+
+/** 댓글 삭제 결과를 알리고, 지웠으면 그 글의 댓글을 새로 받는다. 지웠는지 돌려준다. 고른 댓글 삭제(CommentList.tsx)도 쓴다. */
+export const notifyDeleted = async (preData: GalleryPreData, request: Promise<ManageResult>): Promise<boolean> => {
+    const deleted = await notifyManage(request, "댓글을 삭제했습니다.", "댓글을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+    if (deleted) refreshCommentsOf(preData);
+    return deleted;
 };
 
 /**

@@ -9,13 +9,12 @@ import {Field, FieldLabel} from "@/components/ui/field";
 import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
 import type {ProcessedComment} from "@/core/preview/comments";
 import {adminDeleteComments} from "@/core/preview/request";
-import {notifyManage} from "@/stores/notify";
 import {useUiStore} from "@/stores/ui";
 import {eventTarget, isTyping} from "@/utils/event";
 import {isGalleryManager} from "@/utils/user";
 
-import {Comment, CommentDeletePrompt} from "./Comment";
-import {type CommentOrderValue, NO_FRESH, refreshCommentsOf, usePreviewStore} from "./previewStore";
+import {Comment, CommentDeletePrompt, notifyDeleted} from "./Comment";
+import {type CommentOrderValue, NO_FRESH, usePreviewStore} from "./previewStore";
 
 /** 처음 그리는 스레드 수와 그린 뒤마다 더 그리는 수 (CommentList). 처음 것은 창 한두 화면을 채운다. */
 const FIRST_THREADS = 60;
@@ -141,12 +140,10 @@ const SelectionTools = ({shownSelectable, foldable}: { shownSelectable: Processe
         if (!st.preData) return;
         const signal = st.signalId;
         setDeleting(true);
-        const deleted = await notifyManage(adminDeleteComments(st.preData, picked), "댓글을 삭제했습니다.", "댓글을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+        const deleted = await notifyDeleted(st.preData, adminDeleteComments(st.preData, picked));
         setDeleting(false);
-        if (!deleted) return;
-        refreshCommentsOf(st.preData);
         // 그새 다른 글로 넘어갔으면 그 글의 고른 댓글은 건드리지 않는다.
-        if (usePreviewStore.getState().signalId === signal) usePreviewStore.setState({selectedComments: NO_FRESH});
+        if (deleted && usePreviewStore.getState().signalId === signal) usePreviewStore.setState({selectedComments: NO_FRESH});
     };
 
     return (
