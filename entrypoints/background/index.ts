@@ -1,5 +1,3 @@
-import {MatchPattern} from "wxt/utils/match-patterns";
-
 import {onMessage, sendMessage} from "@/core/messaging/protocol";
 import {type BackgroundModule, startBackgroundModules} from "@/core/module/background";
 import {CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES} from "@/core/pages";
@@ -16,11 +14,16 @@ import {listenPageMessages} from "./page";
 const backgroundModules = Object.values(import.meta.glob<{ default: BackgroundModule }>("../../features/*/background.ts", {eager: true}))
     .map((module) => module.default);
 
-/** 콘텐츠 스크립트가 도는 주소인지. manifest와 같은 core/pages.ts 상수를 쓴다 (MatchPattern이 content.js에 딸려 가지 않게 여기 둔다). */
-const CONTENT = CONTENT_MATCHES.map((pattern) => new MatchPattern(pattern));
-const EXCLUDED = CONTENT_EXCLUDE_MATCHES.map((pattern) => new MatchPattern(pattern));
+/**
+ * 콘텐츠 스크립트가 도는 주소인지. manifest와 같은 core/pages.ts 상수를 쓴다.
+ * 브라우저 내장 URLPattern이라 wxt의 MatchPattern을 번들에 넣지 않는다 (Chrome 95·Firefox 142부터).
+ * match pattern의 "*.dcinside.com"은 dcinside.com 자체도 맞으므로 "{*.}?"로 바꿔 하위 도메인을 선택으로 둔다.
+ */
+const toUrlPattern = (pattern: string): URLPattern => new URLPattern(pattern.replace("//*.", "//{*.}?"));
+const CONTENT = CONTENT_MATCHES.map(toUrlPattern);
+const EXCLUDED = CONTENT_EXCLUDE_MATCHES.map(toUrlPattern);
 const hasContentScript = (url: string): boolean =>
-    CONTENT.some((pattern) => pattern.includes(url)) && !EXCLUDED.some((pattern) => pattern.includes(url));
+    CONTENT.some((pattern) => pattern.test(url)) && !EXCLUDED.some((pattern) => pattern.test(url));
 
 /**
  * 배경 스크립트. 서비스 워커(크롬)는 언제든 멈췄다 다시 뜨므로 리스너는 모두 여기서 동기로 걸고, 상태는 저장소에 둔다.

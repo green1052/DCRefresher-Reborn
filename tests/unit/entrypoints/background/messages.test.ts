@@ -1,6 +1,7 @@
 import {describe, expect, it, vi} from "vitest";
 import {fakeBrowser} from "wxt/testing/fake-browser";
 
+import {CONTENT_EXCLUDE_MATCHES} from "@/core/pages";
 import background from "@/entrypoints/background/index";
 
 const onMessage = vi.hoisted(() => vi.fn<(type: string) => void>());
@@ -42,5 +43,28 @@ describe("배경 메시지 처리기", () => {
 
         await press("https://gall.dcinside.com/board/lists?id=programming");
         expect(sendMessage).toHaveBeenCalledExactlyOnceWith("refresher:executeShortcut", "refresh", {tabId: 1});
+    });
+
+    it.each<[url: string, expected: boolean]>([
+        ["https://dcinside.com/", true],
+        ["https://www.dcinside.com/", true],
+        ["https://gall.dcinside.com/mgallery/board/view/?id=programming&no=1#comment", true],
+        ["https://a.b.dcinside.com/", true],
+        // manifest의 match pattern과 같게: https만, 이름 끝이 정확히 .dcinside.com인 호스트만.
+        ["http://gall.dcinside.com/board/lists?id=programming", false],
+        ["https://evildcinside.com/", false],
+        ["https://dcinside.com.evil.com/", false],
+        ...CONTENT_EXCLUDE_MATCHES.map((pattern): [string, boolean] => [pattern.replace("*", "board?id=a"), false])
+    ])("콘텐츠 스크립트 주소 판정: %s → %s", async (url, expected) => {
+        let listener: Parameters<typeof fakeBrowser.commands.onCommand.addListener>[0] | undefined;
+        vi.spyOn(fakeBrowser.commands.onCommand, "addListener").mockImplementation((callback) => {
+            listener = callback;
+        });
+        vi.spyOn(fakeBrowser.contextMenus.onClicked, "addListener").mockImplementation(() => {});
+        vi.spyOn(console, "error").mockImplementation(() => {});
+        background.main();
+
+        await listener?.("refresh", {id: 1, url} as Browser.tabs.Tab);
+        expect(sendMessage).toHaveBeenCalledTimes(expected ? 1 : 0);
     });
 });

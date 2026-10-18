@@ -3,6 +3,8 @@
  * 목·스파이는 vitest.config.ts의 mockReset·restoreMocks가 테스트마다 되돌린다.
  * 아래 polyfill은 jsdom·fake-browser에만 없는 것이다. 확장이 도는 브라우저에는 다 있다.
  */
+import {URLPattern} from "node:url";
+
 import {afterEach, beforeEach, vi} from "vitest";
 import {fakeBrowser} from "wxt/testing/fake-browser";
 
@@ -20,6 +22,9 @@ for (const event of [fakeBrowser.permissions.onAdded, fakeBrowser.permissions.on
 
 // Cookie Store API (core/http/cookie). 쿠키가 하나도 없는 것으로 둔다.
 Object.assign(globalThis, {cookieStore: {get: async () => null}});
+
+// 배경의 콘텐츠 스크립트 주소 판정 (entrypoints/background/index.ts). Node에는 있지만 jsdom 환경의 전역에는 없다.
+if (!("URLPattern" in globalThis)) Object.assign(globalThis, {URLPattern});
 
 if (typeof window !== "undefined") {
     // core/http/urls가 불러올 때 내비게이션 기록을 읽는다.
