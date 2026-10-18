@@ -411,6 +411,13 @@ const controller = (ctx: Ctx) => {
         store.getState().close();
     };
 
+    // 사용자가 창을 닫으면 창이 열린 동안 건너뛴 목록 새로고침을 곧바로 한다.
+    // 삭제·차단 뒤에 닫을 때는 refresh의 reload가 어차피 다시 받으므로 close를 그대로 부른다 (같이 부르면 목록을 두 번 받는다).
+    const dismiss = (fromHistory = false) => {
+        close(fromHistory);
+        getModuleApi("refresh")?.catchUp();
+    };
+
     /** dir: PageUp/Down·스크롤로 넘긴 방향. 그 방향 다음 글을 미리 받는다. */
     const open = (preData: GalleryPreData, commentsOnly = false, historySkip = false, dir = 0) => {
         // 대기·요청 중인 미니가 전체 미리보기 위에 뜨지 않게 한다.
@@ -577,7 +584,7 @@ const controller = (ctx: Ctx) => {
             return;
         }
 
-        if (store.getState().visible) close(true);
+        if (store.getState().visible) dismiss(true);
     };
 
     bindListKeys(ctx, (preData) => open(preData));
@@ -626,7 +633,7 @@ const controller = (ctx: Ctx) => {
 
     store.setState({
         requestOpen: (preData, commentsOnly, dir) => open(preData, commentsOnly, false, dir),
-        requestClose: () => close(),
+        requestClose: () => dismiss(),
         requestRefresh: async (report) => {
             await refreshComments(report);
         },
@@ -640,6 +647,9 @@ const controller = (ctx: Ctx) => {
 interface PreviewApi {
     /** '삭제된 글과 댓글 보존' 설정. 새로고침 모듈도 목록에서 지워진 글을 남길지 이것으로 정한다. */
     archiveArticle(): boolean;
+
+    /** 미리보기 창이 열려 있는지. 열린 동안 새로고침 모듈은 가려진 목록을 자동으로 받지 않는다. */
+    isOpen(): boolean;
 }
 
 export default defineModule({
@@ -647,6 +657,6 @@ export default defineModule({
 
     setup: (ctx): PreviewApi => {
         controller(ctx);
-        return {archiveArticle: () => ctx.settings.archiveArticle};
+        return {archiveArticle: () => ctx.settings.archiveArticle, isOpen: () => usePreviewStore.getState().visible};
     }
 });

@@ -20,6 +20,16 @@ vi.mock("@/core/http/client", async (importOriginal) => ({
 // 같은 목록이면 같은 값만 주면 되므로 받은 글자를 그대로 돌려준다.
 vi.mock("@/utils/hash", () => ({sha256: async (data: Uint8Array) => new TextDecoder().decode(data)}));
 
+// 미리보기 모듈은 띄우지 않고 창이 열려 있는지만 바꿔 답한다.
+const preview = vi.hoisted(() => ({open: false}));
+vi.mock("@/core/module/registry", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@/core/module/registry")>();
+    return {
+        ...actual,
+        getModuleApi: ((id) => (id === "preview" ? {archiveArticle: () => false, isOpen: () => preview.open} : actual.getModuleApi(id))) as typeof actual.getModuleApi
+    };
+});
+
 const row = (no: string): string => `<tr class="ub-content" data-no="${no}"><td class="gall_num">${no}</td><td class="gall_tit"><a href="/board/view/?id=test&no=${no}">글 ${no}</a></td></tr>`;
 
 const page = (nos: string[], current = 1): string =>
@@ -34,7 +44,7 @@ const respond = (nos: string[], current = 1): void => {
     get.mockImplementation(async () => new Response(`<html><body>${page(nos, current)}</body></html>`));
 };
 
-let running: Running<{ refreshLists(): Promise<void>; togglePause(): void; isPaused(): boolean; reload(): Promise<void> }> | undefined;
+let running: Running<{ refreshLists(): Promise<void>; togglePause(): void; isPaused(): boolean; reload(): Promise<void>; catchUp(): void }> | undefined;
 
 const start = async (patch = {}) => {
     running = await runModule(refresh, patch);
@@ -46,6 +56,7 @@ beforeEach(() => {
     document.body.innerHTML = page(["2", "1"]);
     useUiStore.setState({toasts: []});
     vi.spyOn(Math, "random").mockReturnValue(0);
+    preview.open = false;
 });
 
 afterEach(() => {
@@ -245,6 +256,22 @@ describe("자동 새로고침", () => {
 
         checkbox.checked = false;
         await vi.advanceTimersByTimeAsync(7500);
+        expect(listed()).toEqual(["3", "2", "1"]);
+    });
+
+    it("미리보기 창이 열린 동안 받지 않다가 닫으면 곧바로 받는다", async () => {
+        vi.useFakeTimers();
+        // jsdom에는 없는 API. 새 글을 셀 때 부른다.
+        Element.prototype.checkVisibility = () => true;
+        respond(["3", "2", "1"]);
+        preview.open = true;
+        const {api} = await start();
+        await vi.advanceTimersByTimeAsync(20_000);
+        expect(get).not.toHaveBeenCalled();
+
+        preview.open = false;
+        api.catchUp();
+        await vi.advanceTimersByTimeAsync(0);
         expect(listed()).toEqual(["3", "2", "1"]);
     });
 

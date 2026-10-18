@@ -29,6 +29,9 @@ interface RefreshApi {
 
     /** 목록을 곧바로 다시 받고 다음 주기를 새로 잡는다. 미리보기의 관리 동작(삭제·차단 등) 뒤에 부른다. */
     reload(): Promise<void>;
+
+    /** 건너뛴 자동 새로고침이 있으면 곧바로 한다. 미리보기 창을 닫은 뒤 부른다. */
+    catchUp(): void;
 }
 
 const applyDoNotColorVisited = (ctx: Ctx): void => {
@@ -57,7 +60,7 @@ export default defineModule({
         let lastListHash = "";
         // 글 보기 페이지에서 목록이 화면 밖인지. 글 아래의 목록은 대개 보이지 않는데 주기마다 받으면 분당 400KB쯤을 받는다.
         let offscreen = false;
-        // 화면 밖이라 건너뛴 자동 새로고침이 있는지. 목록이 보이면 다음 주기를 기다리지 않고 받는다.
+        // 목록이 화면 밖이거나 미리보기 창에 가려 건너뛴 자동 새로고침이 있는지. 다시 보이면 다음 주기를 기다리지 않고 받는다.
         let missed = false;
         const unseen = createUnseenCounter(ctx);
         const gallery = pageGallery ?? "";
@@ -134,7 +137,8 @@ export default defineModule({
                 const page = new URL(originalLocation).searchParams.get("page");
                 if (page && page !== "1") return false;
 
-                if (offscreen) {
+                // 미리보기 창이 목록을 덮고 있는 동안 받아 봐야 볼 사람이 없다. 창을 닫으면 catchUp이 곧바로 받는다.
+                if (offscreen || getModuleApi("preview")?.isOpen()) {
                     missed = true;
                     return false;
                 }
@@ -368,7 +372,9 @@ export default defineModule({
                 window.clearTimeout(timer);
                 await load(undefined, true);
                 armNext();
-            }
+            },
+
+            catchUp
         };
 
         return api;

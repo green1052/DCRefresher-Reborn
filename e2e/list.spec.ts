@@ -81,13 +81,20 @@ test.describe("자동 새로고침", () => {
         await expect(listPage.row(3)).toHaveAttribute("data-e2e-kept");
     });
 
-    test("미리보기를 연 동안에도 목록을 새로고침한다", async ({listPage, site}) => {
+    test("미리보기를 연 동안에는 목록을 받지 않다가 닫으면 곧바로 받는다", async ({listPage, site}) => {
         await listPage.openPreview();
         await expect(listPage.frameTitle).toHaveText("[말머리] 글 3 제목");
+        const requests = site.listRequests;
 
         site.rows = [{no: 4, title: "네 번째 글", nick: "새닉", uid: "user4"}, ...site.rows];
-        await expect(listPage.row(4)).toBeAttached({timeout: 15_000});
-        await expect(listPage.frame).toBeVisible();
+        // 콘텐츠 스크립트의 타이머는 page.clock이 닿지 않아 한 주기(3초 + 지터 0.5~2초)를 넘게 그대로 기다린다.
+        await listPage.page.waitForTimeout(6000);
+        expect(site.listRequests).toBe(requests);
+        await expect(listPage.row(4)).not.toBeAttached();
+
+        await listPage.page.keyboard.press("Escape");
+        // 다음 주기(3.5초 이상)를 기다리지 않고 닫자마자 받는다.
+        await expect(listPage.row(4)).toBeAttached({timeout: 3000});
     });
 
     test("삭제된 글 보존을 켜면 목록에서 빠진 글을 제자리에 붉게 남긴다", async ({listPage, site, storage}) => {
