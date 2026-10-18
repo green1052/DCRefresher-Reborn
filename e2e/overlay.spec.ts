@@ -205,4 +205,20 @@ test.describe("글 페이지 댓글", () => {
         await summary.click();
         await expect(page.getByRole("dialog", {name: "디시콘 정보"})).toBeVisible();
     });
+
+    test("버블이 떠 있는 채로 다른 디시콘을 우클릭하면 그 디시콘의 패키지를 보인다", async ({page, site}) => {
+        site.pageComments = [
+            fakeComment(20, {memo: `<img class="written_dccon" src="${DCCON.list_img}" alt="${DCCON.title}">`}),
+            fakeComment(21, {memo: "<img class=\"written_dccon\" src=\"https://dcimg5.dcinside.com/dccon.php?no=81\" alt=\"인사\">"})
+        ];
+        await openView(page);
+        const dccons = page.locator("img.written_dccon");
+        const summary = page.getByLabel("디시콘 메뉴").getByTitle("디시콘 정보 보기");
+
+        await dccons.nth(0).click({button: "right"});
+        await expect(summary).toHaveText("테스트콘웃는 얼굴 모음");
+        // 첫 버블이 아래 댓글을 덮을 수 있어 우클릭 이벤트를 그 디시콘에 바로 보낸다.
+        await dccons.nth(1).dispatchEvent("contextmenu", {button: 2, bubbles: true});
+        await expect(summary).toHaveText("둘째콘인사 모음");
+    });
 });

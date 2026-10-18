@@ -266,7 +266,8 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
                 {/* 여기서 여는 창(메모·패키지 차단)은 연 요소로 포커스를 먼저 옮겨 둔다. 그래야 그 창이 닫힐 때 사라진 버블 대신 그리로 돌아간다. */}
                 {selected.dccon ? (
                     <>
-                        <DcconSummary code={selected.dccon} onOpen={() => {
+                        {/* 버블이 떠 있는 채로 다른 디시콘을 우클릭해도 그 디시콘의 정보를 새로 받게 코드로 다시 만든다. */}
+                        <DcconSummary key={selected.dccon} code={selected.dccon} onOpen={() => {
                             focus.returnFocus();
                             close();
                             onDcconInfo(selected.dccon!);

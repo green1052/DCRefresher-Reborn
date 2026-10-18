@@ -143,10 +143,13 @@ export class FakeSite {
                 this.rows = this.rows.filter(({no}) => !nos.includes(String(no)));
                 return json({result: "success"});
             }
-            case "/dccon/package_detail":
-                // 디시콘 하나의 패키지 정보 (정보 창·디시콘 버블). 목록의 path가 그 디시콘의 코드(dccon.php?no=)다.
-                return json({info: {package_idx: DCCON.package_idx, code: "", title: "테스트콘", description: "웃는 얼굴 모음", seller_name: "판매자", reg_date_short: "2026.10.01",
-                    main_img_path: DCCON.detail_idx, register: false, residual: false}, detail: [{idx: DCCON.detail_idx, path: DCCON.detail_idx, title: DCCON.title}], tags: []});
+            case "/dccon/package_detail": {
+                // 디시콘 하나의 패키지 정보 (정보 창·디시콘 버블). 목록의 path가 그 디시콘의 코드(dccon.php?no=)다. 81은 둘째 패키지의 디시콘이다.
+                const second = form().get("code") === "81";
+                return json({info: {package_idx: second ? "8" : DCCON.package_idx, code: "", title: second ? "둘째콘" : "테스트콘", description: second ? "인사 모음" : "웃는 얼굴 모음",
+                    seller_name: "판매자", reg_date_short: "2026.10.01", main_img_path: second ? "81" : DCCON.detail_idx, register: false, residual: false},
+                detail: second ? [{idx: "81", path: "81", title: "인사"}] : [{idx: DCCON.detail_idx, path: DCCON.detail_idx, title: DCCON.title}], tags: []});
+            }
             case "/dccon/lists":
                 // 패키지 줄을 키보드로 옮겨 보도록 패키지를 둘 준다.
                 return json({target: "icon", max_page: 0, list: [
