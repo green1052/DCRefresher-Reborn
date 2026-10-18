@@ -265,10 +265,14 @@ test.describe("미리보기", () => {
         const scroll = listPage.overlay.locator(".refresher-frame-scroll");
         const box = await scroll.boundingBox();
         await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
-        await page.mouse.wheel(0, 2000);
-        await expect.poll(() => scroll.evaluate((el) => el.scrollTop + el.clientHeight >= el.scrollHeight - 2)).toBe(true);
-        // 끝에 닿은 그 동작(관성 포함)으로는 넘어가지 않는다. 이어지는 휠은 동작 간격(250ms) 안에 곧바로 보낸다.
-        for (let i = 0; i < 4; i++) await page.mouse.wheel(0, 2000);
+        // 끝에 닿은 그 동작(관성 포함)으로는 넘어가지 않는다. 동작 하나는 휠 사이가 250ms 안이어야 해서 한 번에 보낸다.
+        // 실제 휠로 굴리고 끝에 닿기를 기다리면 느린 환경에서 그 사이가 벌어져 이어지는 휠이 새 동작이 되고 다음 글로 넘어간다.
+        await scroll.evaluate((element) => {
+            const wheel = (deltaY: number) => element.dispatchEvent(new WheelEvent("wheel", {deltaY, bubbles: true, cancelable: true}));
+            wheel(100);
+            element.scrollTop = element.scrollHeight;
+            for (let i = 0; i < 4; i++) wheel(2000);
+        });
         await expect(listPage.overlay.locator(".refresher-skip-hint")).toBeVisible();
         await expect(listPage.frameTitle).toHaveText("[말머리] 글 2 제목");
 
