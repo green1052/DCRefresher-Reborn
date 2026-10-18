@@ -78,9 +78,8 @@ export default defineModule({
         const counted = (row: HTMLElement): boolean => Boolean(row.dataset.no) && (!filter || row.querySelector(writerSelector(filter)) !== null);
 
         const gallery = pageGallery ?? "";
-        // 새로고침 모듈이 목록을 갈아끼우면 다시 이어 붙이는데, 이미 받은 검색 페이지는 다시 요청·파싱하지 않는다. 검색어를 칠한 결과 행과 페이징 HTML만 담는다.
+        // 받은 검색 페이지(칠한 결과 행과 페이징 HTML). 새로고침 모듈이 목록을 갈아끼워 다시 이을 때 요청·파싱을 건너뛴다.
         // 다시 이을 때 같은 다음 검색을 처음부터 따라가므로 최대 다음 검색 횟수만큼 둔다. 더 작으면 따라가는 동안 앞 페이지가 밀려나 하나도 맞지 않는다.
-        // quick-lru는 두 세대로 나눠 두어 그 두 배 가까이 남긴다.
         const pages = new QuickLRU<string, { rows: HTMLTableRowElement[]; paging: string }>({maxSize: ctx.settings.maxSearches});
         ctx.onSettingsChanged(() => pages.resize(ctx.settings.maxSearches));
         // 행을 붙이면 같은 tbody로 필터가 다시 불리므로 한 번만 채운다.
@@ -90,8 +89,8 @@ export default defineModule({
         const fill = async (list: HTMLElement): Promise<void> => {
             if (filled.has(list)) return;
             filled.add(list);
-            // 앞 인스턴스가 이미 이어 붙인 목록이다 (파이어폭스는 확장을 업데이트하면 열린 탭에 스크립트를 다시 넣고, 무효화된 쪽은 되돌리지 않는다).
-            // 페이징도 그쪽이 바꾼 것이라 처음 것으로 저장하면 안 되고, 더 이으면 최대 다음 검색 횟수를 넘는다.
+            // 파이어폭스 재주입 전 인스턴스가 이미 이어 붙인 목록이다. 페이징도 그쪽이 바꾼 것이라 원본으로 저장할 수 없고,
+            // 더 이으면 최대 다음 검색 횟수를 넘는다.
             if (list.querySelector(`.${ADDED_ROW}`)) return;
 
             running?.abort();

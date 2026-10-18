@@ -26,7 +26,6 @@ export const writerFilter = (href = location.href): WriterFilter | null => {
 /** 그 작성자의 작성자 칸 (디시 목록의 td.ub-writer[data-uid|data-ip]). */
 export const writerSelector = ({kind, value}: WriterFilter): string => `.ub-writer[data-${kind}="${CSS.escape(value)}"]`;
 
-/** 주소에 작성자 거르기를 얹는다. */
 const withFilter = (href: string, filter: WriterFilter): string => {
     const url = new URL(href);
     url.searchParams.set(PARAMS[filter.kind], filter.value);

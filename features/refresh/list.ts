@@ -10,9 +10,8 @@ import {COUNT_CELLS, COUNT_TEXT} from "./markup";
 const rowKey = (row: HTMLElement): string => rowPostNo(row) ?? row.querySelector(".gall_num")?.textContent ?? "";
 
 /**
- * 받아온 행의 원래 HTML에서 수 칸의 글자를 비운 것 (체크박스 칸·강조·효과를 입히기 전). 행 순서가 같을 때 바뀐 행을 가려내는 데 쓴다.
- * 수만 바뀐 행은 갈아끼우지 않고 글자만 고친다. 갈아끼우면 필터·차단 검사·배지·리스너가 다시 돌고 hover가 풀린다.
- * 마크업이 예상과 달라 정규식이 못 비우면 수가 바뀐 행도 달라 보여 통째로 갈아끼운다.
+ * 받아온 행의 원래 HTML(체크박스 칸·강조·효과를 입히기 전)에서 수 칸 글자를 비운 틀. 틀이 같은 행은 갈아끼우지 않고 수만 고친다.
+ * 갈아끼우면 필터·차단 검사·배지·리스너가 다시 돌고 hover가 풀린다. 정규식이 못 비우면 달라 보여 갈아끼울 뿐이다.
  */
 const rowFrames = new WeakMap<Element, string>();
 const frameOf = (html: string): string => html.replace(COUNT_TEXT, "$1");
@@ -27,11 +26,10 @@ const syncCounts = (target: Element, source: Element): void => {
 };
 
 /**
- * 새 목록에서 빠진 글 행을 제자리에 남기고 붉게 칠한다 (v5의 삭제된 글 보존). 한 번 남긴 행은 다음 새로고침에도 남는다.
- * 위에 새 글이 n개 들어오면 맨 아래 n개는 다음 페이지로 밀려난 것이라 남기지 않는다. 남긴 만큼 아래 행을 빼 행 수를 맞춘다.
- * first: 남아 있던 마지막 글 다음 행(다음 페이지에서 올라온 첫 행). 맨 아래 글이 지워졌을 때 그 앞에 끼워야 행 수를 맞출 때 잘리지 않는다.
- * 새 목록에는 복제본을 끼우고 옛 행은 그 자리에 둔다. 그래서 replaceList가 남긴 행이 있어도 제자리에서 고칠 수 있다 (같은 틀이라 옛 행이 남는다).
- * 옮겨 넣으면 옛 목록이 비어 남긴 행이 하나라도 있는 동안 새로고침마다 목록을 통째로 갈아끼운다.
+ * 새 목록에서 빠진 글 행을 제자리에 붉게 남긴다. 한 번 남긴 행은 다음 새로고침에도 남는다.
+ * 위에 새 글이 n개 들어오면 맨 아래 n개는 다음 페이지로 밀려난 것이라 남기지 않고, 남긴 만큼 아래 행을 빼 행 수를 맞춘다.
+ * first: 남아 있던 마지막 글 다음 행(다음 페이지에서 올라온 첫 행). 맨 아래 글이 지워졌으면 그 앞에 끼워야 행 수를 맞출 때 잘리지 않는다.
+ * 새 목록에는 복제본을 끼우고 옛 행은 둔다. 틀이 같아 replaceList가 제자리에서 고칠 수 있다. 옮겨 넣으면 남긴 행이 있는 동안 매번 목록을 통째로 갈아끼운다.
  */
 const keepDeletedRows = (oldRows: HTMLTableRowElement[], newKeys: Set<string>, newList: HTMLElement, newPostCount: number, first: Element | null): void => {
     const newRows = new Map(Array.from(newList.querySelectorAll<HTMLTableRowElement>(":scope > tr"), (row) => [rowKey(row), row]));
@@ -50,7 +48,7 @@ const keepDeletedRows = (oldRows: HTMLTableRowElement[], newKeys: Set<string>, n
             continue;
         }
 
-        // 떼었다 붙인 요소는 애니메이션이 처음부터 다시 돈다. 예전에 새 글로 들어올 때 단 등장 효과를 떼어 새로고침마다 다시 나타나지 않게 한다.
+        // 떼었다 붙인 요소는 애니메이션이 다시 돈다. 새 글 등장 효과를 떼어 새로고침마다 다시 나타나지 않게 한다.
         row.classList.remove("refresherNewPost");
         row.style.removeProperty("animation-delay");
         row.classList.add("refresherDeleted");
@@ -157,8 +155,8 @@ export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigat
         keepDeletedRows(oldRows, new Set(newKeys), newList, newPostList.length, newRows[lastKept + 1] ?? null);
     }
 
-    // 행 순서가 같거나, 한 자리(공지 아래)에 새 글이 끼어들고 그만큼 아래가 밀려난 것뿐이면 제자리에서 고친다.
-    // 새 행을 끼우고 밀려난 행을 빼고, 나머지는 바뀐 행만 갈아끼운다(수만 바뀐 행은 글자만 고친다). 그대로인 행은 hover·리스너가 남고 필터·스타일·배치도 다시 하지 않는다.
+    // 행 순서가 같거나 한 자리(공지 아래)에 새 글이 끼어들고 그만큼 아래가 밀려난 것뿐이면 제자리에서 고친다.
+    // 그대로인 행은 hover·리스너가 남고 필터·배치도 다시 돌지 않는다.
     // 검색 결과는 강조와 글·댓글 행 짝이 얽혀 있어 통째로 바꾼다. 남긴 삭제된 글 행(복제본)도 새 목록의 행으로 친다.
     const rows = keepDeleted ? Array.from(newList.querySelectorAll<HTMLTableRowElement>(":scope > tr")) : newRows;
     const shift = !navigated && search === undefined ? insertionOf(oldKeys, rows.map(rowKey)) : null;
