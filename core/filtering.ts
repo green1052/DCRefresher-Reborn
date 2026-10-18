@@ -25,12 +25,12 @@ const rebuildUnion = (): void => {
 };
 
 // 옵저버가 넘기는 mutation 묶음을 한 번에 처리한다. 추가된 요소 자신·자손과, 자식이 붙어 조건을 새로 만족했을 수 있는 조상을 본다.
-// 문서를 읽는 동안에는 한 묶음에 노드가 수천 개라 노드마다 필터를 돌리면 콜백보다 훑기가 더 오래 걸린다. 그래서 가장 바깥 덩어리만 훑는다.
-// FILTER_SKIP_ATTR이 붙은 장식(userinfo의 작성자별 배지 묶음 등)은 건너뛴다. closest로 작성자 요소가 다시 잡혀 행마다 모든 필터(차단 정규식 등)가 한 번 더 돌기 때문이다.
+// 문서를 읽는 동안에는 한 묶음에 노드가 수천 개라 가장 바깥 덩어리만 훑는다.
+// FILTER_SKIP_ATTR이 붙은 장식은 건너뛴다. closest로 작성자 요소가 다시 잡혀 행마다 모든 필터(차단 정규식 등)가 한 번 더 돌기 때문이다.
 const flush = (mutations: MutationRecord[]): void => {
     const added = new Set<HTMLElement>();
     // 부모(target)가 이번 묶음에 추가된 요소 안이면 그 요소를 훑을 때 잡히므로 노드를 꺼내 보지 않는다.
-    // 문서를 읽는 동안에는 노드마다 래퍼를 만드는 비용이 flush의 대부분이다. 판정은 부모마다 한 번만 한다.
+    // 노드마다 래퍼를 만드는 비용이 flush의 대부분이라 판정은 부모마다 한 번만 한다.
     const covered = new Map<Node, boolean>();
     const isCovered = (node: Node): boolean => {
         let result = covered.get(node);

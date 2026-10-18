@@ -91,7 +91,6 @@ export const setNotice = (preData: GalleryPreData, notice: boolean): Promise<Man
 export const setRecommend = (preData: GalleryPreData, recommend: boolean): Promise<ManageResult> =>
     manage(preData, "set_recommend", {mode: recommend ? "SET" : "REL", id: preData.gallery, "nos[]": preData.id});
 
-/** 이미지 캡차 URL. */
 export const captchaImage = (preData: GalleryPreData, type: "comment" | "recommend"): string =>
     `${urls.base}kcaptcha/image_v3/?gall_id=${preData.gallery}&kcaptcha_type=${type}&time=${Date.now()}&_GALLTYPE_=${galltypeOf(preData.link)}`;
 

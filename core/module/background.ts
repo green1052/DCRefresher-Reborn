@@ -59,7 +59,6 @@ export const startBackgroundModules = (modules: BackgroundModule[]): (() => Prom
             console.error(`Background module listen failed: ${module.id}`, e);
             return async () => {};
         }
-        // listen만 하는 모듈은 맞출 상태가 없다.
         const applyState = module.apply?.bind(module);
         if (!applyState) return async () => {};
 

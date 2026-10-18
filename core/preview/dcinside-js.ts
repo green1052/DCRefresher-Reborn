@@ -22,6 +22,6 @@ const BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/
 
 /**
  * 디시 _d()를 옮긴 것. 섞은 알파벳을 표준 알파벳으로 바꿔 base64로 푼다 (65번째 '='는 채움, 모르는 글자는 버린다).
- * s 플래그: 개행도 한 글자로 세어 매핑 표에 없어 버린다. 빠지면 atob가 실패한다. 형식이 틀리면 던진다.
+ * s 플래그가 있어야 개행도 버린다. 개행이 남으면 atob가 실패한다. 형식이 틀리면 던진다.
  */
 export const decodeD = (value: string): string => atob(value.replace(/./gs, (c) => BASE64[D_ALPHABET.indexOf(c)] ?? ""));

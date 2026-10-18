@@ -43,7 +43,6 @@ const MAX_PAGES = 20;
 /** 내 디시콘 패키지 목록. 로그인하지 않았으면 'not_login', 디시콘이 하나도 없으면(상점 안내) 'shop'. */
 type DcconListResult = DcinsideDcconDetailList[] | "not_login" | "shop";
 
-// 디시콘이 하나도 없으면 목록 대신 상점 안내(target "shop")가 온다.
 const isDcconDetail = (value: unknown): value is DcinsideDcconDetail => isRecord(value) && (value.target === "shop" || Array.isArray(value.list));
 
 /** 한 쪽. 비로그인이면 JSON 대신 'not_login'이 온다 (디시 dccon.js). */
@@ -59,8 +58,8 @@ const fetchPage = async (page: number, signal: AbortSignal): Promise<DcinsideDcc
 };
 
 /**
- * 모든 쪽의 패키지를 이어 붙인다. 디시는 쪽마다 따로 주고(0부터 max_page까지) 창 안에서 넘기게 하지만,
- * 한 줄로 이어 두면 넘기지 않고 가로로 훑어 고를 수 있다. 첫 쪽 뒤의 쪽은 한꺼번에 받는다 (동시 요청 수는 요청 제한을 따른다).
+ * 모든 쪽(0부터 max_page까지)의 패키지를 이어 붙여, 쪽을 넘기지 않고 가로로 훑어 고르게 한다.
+ * 첫 쪽 뒤의 쪽은 한꺼번에 받는다 (동시 요청 수는 요청 제한을 따른다).
  */
 export const fetchDcconList = async (signal: AbortSignal): Promise<DcconListResult> => {
     const first = await fetchPage(0, signal);

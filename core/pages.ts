@@ -22,13 +22,9 @@ export const IMAGE_URL_PATTERNS = ["*://*.dcinside.co.kr/viewimage.php*", "*://*
  */
 export const IMAGE_HOST_ORIGINS = ["https://*.dcinside.co.kr/*"];
 
-/** 글 목록·본문. */
 export const BOARD_PAGE = /\/board\/(view|lists)/;
-/** 글 본문. */
 export const VIEW_PAGE = /\/board\/view/;
-/** 글쓰기·수정. */
 export const WRITE_PAGE = /\/board\/(write|modify)/;
-/** 글 목록. */
 export const LIST_PAGE = /\/board\/lists/;
 
 /**

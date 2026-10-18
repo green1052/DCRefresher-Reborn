@@ -76,9 +76,9 @@ const indexFor = (lists: BlockLists, type: BlockType): Index => {
 /**
  * 한 유형의 항목으로 내용이 막히는지 판정한다 (갤러리 한정 항목은 그 갤러리에서만). SAME/CONTAIN은 맞는 항목마다 막는다.
  * NOT_*(불일치·불포함)는 한 유형의 항목을 묶어 허용 목록으로 본다: 어느 것에도 맞지 않으면 그 항목들 전부로 막는다.
- * 항목마다 뒤집으면 둘만 돼도 서로를 막아(A는 B와 다르다) 모두 막힌다. 잘못된 정규식은 NOT_*로도 걸지 않는다.
+ * 항목마다 뒤집으면 둘만 돼도 서로를 막아 모두 막힌다. 잘못된 정규식은 NOT_*로도 걸지 않는다.
  * onEntry: 맞은 SAME/CONTAIN("hit"), 맞은 NOT_*("allow"), 맞지 않은 NOT_*("miss"). 목록 행·댓글마다 불리므로 판정만 할 때는 배열을 만들지 않는다.
- * 정규식이 아닌 SAME 항목은 색인에서 찾아 먼저 넘기고, 나머지는 목록 순서대로 본다.
+ * 정규식이 아닌 SAME 항목은 색인에서 찾아 먼저 넘긴다.
  */
 const scan = (lists: BlockLists, type: BlockType, content: string, gallery: string | undefined, onEntry?: (entry: BlockEntry, kind: "hit" | "allow" | "miss") => void): boolean => {
     const {exact, rest} = indexFor(lists, type);
@@ -149,7 +149,7 @@ interface ImageRead {
 
 // 주소 → 읽은 것. 차단 목록이 바뀌어 다시 판정하거나 미리보기를 다시 열 때 또 읽지 않는다.
 // 읽지 못한 것(이미지 호스트 권한이 없는 등)도 남겨 둔다. 지우면 판정할 때마다 이미지를 다시 요청한다.
-// 페이지를 오래 열어 두고 미리보기로 많이 봐도 끝없이 늘지 않게 오래된 것부터 버린다. quick-lru는 maxSize의 두 배 가까이 남긴다 (배경의 MAX_IMAGE_HASHES와 비슷하게).
+// 오래 열어 둔 페이지에서 끝없이 늘지 않게 오래된 것부터 버린다. quick-lru는 maxSize의 두 배 가까이 남기므로 배경의 MAX_IMAGE_HASHES(500)와 비슷하다.
 const imageReads = new QuickLRU<string, ImageRead>({maxSize: 250});
 
 /** 파이어폭스 배경에 그 주소의 해시를 묻는다. similar가 아니면 지문을 기다리지 않고 파일 해시만 받는다. */
@@ -239,14 +239,14 @@ const rememberPair = (video: HTMLVideoElement): void => {
 export const similarImageThreshold = (settings: ModuleSettings["block"]): number | undefined =>
     settings.similarImages ? settings.similarThreshold : undefined;
 
-/**
- * 표본이 비슷한 이미지 항목에 걸리는지 (isSimilarSet). 걸린 항목은 모두 쓰였다고 적는다. 지문이 없는 항목(지문이 생기기 전에 넣었거나 디코딩하지 못한 이미지)은 보지 않는다.
- * 불일치·불포함(NOT_*) 항목은 허용 목록이라 비슷한 이미지로 넓히지 않는다.
- */
 // 표본(imageReads가 주소마다 같은 배열을 준다) → 지난 판정. 움짤은 반복 재생할 때마다(크롬은 seeked·canplaythrough 둘 다) 다시 보므로
 // 목록(스토어는 바뀌면 새 배열을 만든다)·기본 모드·갤러리·기준이 그대로면 다시 훑지 않고, 걸린 항목만 다시 쓰였다고 적는다.
 const similarHits = new WeakMap<Sample[], { entries: BlockEntry[]; mode: DetectMode; gallery: string | undefined; threshold: number; hits: BlockEntry[] }>();
 
+/**
+ * 표본이 비슷한 이미지 항목에 걸리는지 (isSimilarSet). 걸린 항목은 모두 쓰였다고 적는다. 지문이 없는 항목(지문이 생기기 전에 넣었거나 디코딩하지 못한 이미지)은 보지 않는다.
+ * 불일치·불포함(NOT_*) 항목은 허용 목록이라 비슷한 이미지로 넓히지 않는다.
+ */
 const isSimilarBlocked = (samples: Sample[], gallery: string | undefined, threshold: number): boolean => {
     const {entries, defaults} = useBlocksStore.getState();
     let last = similarHits.get(samples);

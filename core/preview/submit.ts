@@ -49,11 +49,11 @@ export const submitComment = async (
     // service_code를 못 만든 채 보내면 서버가 모호한 오류만 주므로 보내지 않고 알린다.
     if (!code) return {result: "false", message: "댓글 폼을 읽지 못했습니다. 원문에서 작성해 주세요."};
 
-    // 폼의 필드 중 같은 이름은 아래 값으로 바뀐다 (자리는 폼 순서 그대로).
-    // 디시콘 댓글은 디시 dccon.js처럼 CSRF 토큰(ci_t)도 보낸다. 글 댓글(comment.js)은 보내지 않는다.
-    // 댓글을 받는 글은 글이 정한 comment_id·comment_no다 (comment.js·dccon.js, 댓글 목록 fetchComments와 같다). 없으면 이 글이다.
+    // 댓글을 받는 글은 글이 정한 comment_id·comment_no다 (comment.js·dccon.js·fetchComments와 같다). 없으면 이 글이다.
     const gallery = postInfo.commentId ?? preData.gallery;
     const no = postInfo.commentNo ?? preData.id;
+    // 폼의 필드 중 같은 이름은 아래 값으로 바뀐다 (자리는 폼 순서 그대로).
+    // 디시콘 댓글은 디시 dccon.js처럼 CSRF 토큰(ci_t)도 보낸다. 글 댓글(comment.js)은 보내지 않는다.
     const params = await (typeof memo === "string" ? formBody : csrfBody)({
         t_vch2: "",
         t_vch2_chk: "",

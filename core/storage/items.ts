@@ -68,7 +68,7 @@ export const BLOCK_DEFAULTS_KEY = "local:refresher:block:defaults";
 export const memoMapKey = (type: MemoType): `local:refresher:memo:${MemoType}` => `local:refresher:memo:${type}`;
 export const MODULES_KEY = "local:refresher:modules";
 
-/** 기본 차단 모드 항목 (쓰기용). moduleSettingsStorage처럼 처음 쓸 때 만든다. */
+/** 기본 차단 모드 항목 (쓰기용). */
 export const blockDefaultsStorage = lazyItem<Record<BlockType, DetectMode>>(BLOCK_DEFAULTS_KEY, {...DEFAULT_DETECT_MODE});
 
 /** 모듈 on/off 항목 (쓰기·감시용). */
@@ -92,7 +92,7 @@ export const moduleSettingsStorage = (id: string): WxtStorageItem<Record<string,
 /** 모듈 설정 키면 그 모듈 id, 아니면 undefined (local: 없이). */
 export const settingsKeyModule = (key: string): string | undefined => /^refresher:module:(.+):settings$/.exec(key)?.[1];
 
-/** 모듈 캐시(글댓비 등) 항목 (쓰기용). 백업·내보내기에는 넣지 않는다 (core/backup.ts의 isBackupTarget). 만드는 순간 값을 읽으므로 처음 쓸 때 만들고, 읽기·감시는 moduleDataKey로 한다. */
+/** 모듈 캐시(글댓비 등) 항목 (쓰기용). 백업·내보내기에는 넣지 않는다 (core/backup.ts의 isBackupTarget). 만드는 순간 값을 읽으므로 쓸 때만 만든다. */
 export const moduleDataStorage = <T>(id: string, fallback: T): WxtStorageItem<T, {}> =>
     storage.defineItem<T>(moduleDataKey(id), {fallback});
 
@@ -118,8 +118,7 @@ export const dbStorage = {
 };
 
 /**
- * ip·ban 키. defineItem은 만드는 순간 값을 한 번 읽으므로, 여기서 만들면 이 파일을 불러오는 모든 페이지·서비스 워커가
- * 쓰지도 않는 수백 KB를 읽는다. 쓰는 곳(core/database.ts)에서 storage.getItem·watch로 다룬다.
+ * ip·ban 키. 항목으로 만들면 만드는 순간 수백 KB를 읽으므로(lazyItem 참고) 쓰는 곳(core/database.ts)에서 키로 다룬다.
  * 값은 CompactIpData(core/ipdb.ts)·BanList의 JSON 문자열이고, 없으면 ""다. ip는 서버(ip.json)가 준 문자열 그대로다.
  * 객체로 두면 값 약 10만 개짜리 객체 그래프를 읽을 때마다 메인 스레드가 10ms 넘게 막힌다.
  */

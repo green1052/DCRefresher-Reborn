@@ -26,7 +26,7 @@ export const urls = {
 
 /**
  * 갤러리 종류별 주소 경로 접두사, 디시 요청의 _GALLTYPE_ 값, 관리 API 접두사(<manager>_manager_board_ajax). 디시가 정한 값이라 바꾸면 안 된다.
- * 관리 접두사는 디시 get_gall_type_name()처럼 경로 첫 칸을 쓰고 mgallery만 minor로 바꾼다. 일반 갤러리엔 관리 기능이 없어 전처럼 minor로 둔다.
+ * 관리 접두사는 디시 get_gall_type_name()처럼 경로 첫 칸을 쓰고 mgallery만 minor로 바꾼다. 일반 갤러리엔 관리 기능이 없어 minor로 둔다.
  * 코드에서는 종류 이름(GalleryKind)으로 다루고, 이 값들은 주소·요청을 만들 때만 꺼낸다.
  */
 const GALLERIES = {
@@ -36,7 +36,6 @@ const GALLERIES = {
     person: {path: "person/", galltype: "PR", manager: "person"}
 } as const;
 
-/** 갤러리 종류: 일반, 마이너, 미니, 인물. */
 type GalleryKind = keyof typeof GALLERIES;
 
 /**

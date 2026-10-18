@@ -110,7 +110,7 @@ export interface ModuleMeta<S extends SettingsSchema = SettingsSchema> {
  * 객체 리터럴에서 setup을 shortcuts·pageToggles보다 앞에 둔다. Api를 setup에서 먼저 추론해야 뒤쪽 함수의 인자 타입이 정해진다.
  */
 export interface ModuleDefinition<S extends SettingsSchema = SettingsSchema, Api = unknown> extends ModuleMeta<S> {
-    /** 모듈을 켤 때 실행. 리턴값은 shortcuts·pageToggles에 api로 전달된다. */
+    /** 모듈을 켤 때 실행. */
     setup(ctx: ModuleContext<S>): Api | Promise<Api>;
 
     /** 단축키. 키는 메타의 commands 이름이다. setup이 끝난 모듈에만 전달된다. */

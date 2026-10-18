@@ -54,7 +54,7 @@ export const getGallogActivity = (uid: string): Promise<GallogActivity | undefin
         const pending: Promise<GallogActivity | undefined> = fetchGallogActivity(uid).catch(() => undefined).then((activity) => {
             if (!activity && activityCache.get(uid) === pending) activityCache.delete(uid);
             if (activity) {
-                // 듣는 쪽이 던져도 기다리던 쪽은 값을 받고, 거절된 요청이 1시간 캐시에 남지 않게 한다.
+                // 듣는 쪽이 던져도 기다리던 쪽은 값을 받는다. 그대로 던지면 거절된 요청이 1시간 캐시에 남는다.
                 for (const listener of listeners) {
                     try {
                         listener(uid, activity);

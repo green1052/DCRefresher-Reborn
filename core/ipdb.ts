@@ -141,8 +141,7 @@ export const createIpLookup = (data: CompactIpData): ((ip: string) => IpCandidat
     if (runs.length % 2 !== 0) throw new Error("IP 데이터 형식이 올바르지 않습니다.");
     const count = runs.length / 2;
 
-    // 시작점이 늘지 않으면 fill이 조용히 어긋나 잘못된 표가 되므로 여기서 띤다.
-    // 값(=후보 번호+1)도 meta·lists 범위 밖이면 조회가 조용히 빈 결과를 내므로 함께 띤다.
+    // 시작점이 늘지 않거나 값(=후보 번호+1)이 meta·lists 범위 밖이면 표·조회가 조용히 어긋나므로 여기서 던진다.
     const total = data.meta.length / 3 + data.lists.length;
     for (let run = 0; run < count; run++) {
         if ((run > 0 && runs[run]! <= runs[run - 1]!) || runs[count + run]! - 1 >= total) throw new Error("IP 데이터 형식이 올바르지 않습니다.");

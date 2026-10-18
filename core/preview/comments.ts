@@ -35,7 +35,6 @@ const sanitizeMemo = (memo: string): string => sanitizeHtml(splitDccons(memo).re
 // 정화된 댓글의 평문(차단 검사용)도 마찬가지로 입력에만 달려 있어 함께 기억한다.
 const plainTexts = new QuickLRU<string, string>({maxSize: 2000});
 
-/** 있으면 기억한 값, 없으면 compute로 만들어 기억한다. */
 const remember = (cache: QuickLRU<string, string>, key: string, compute: (key: string) => string): string => {
     const cached = cache.get(key);
     if (cached !== undefined) return cached;

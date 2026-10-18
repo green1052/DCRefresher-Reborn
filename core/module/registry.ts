@@ -25,12 +25,12 @@ const instances = new Map<string, ModuleInstance>();
 
 /**
  * 등록된 모듈의 설정 (모듈 id → 설정값). 바뀔 때마다 그 모듈의 값을 새 객체로 바꾼다.
- * UI가 구독한다 (core/module/useModuleSettings.ts). 모듈이 설정을 다른 스토어로 옮겨 적지 않아도 된다.
+ * UI가 구독한다 (core/module/useModuleSettings.ts).
  */
 export const moduleSettingsStore = createStore<Record<string, Readonly<Record<string, SettingValue>>>>(() => ({}));
 /**
- * 이 페이지에서 도는 모듈 (모듈 id → setup을 시작했고 아직 멈추지 않았는지). moduleSettingsStore는 꺼진 모듈의 설정도 채우므로
- * 다른 모듈이 돌 때만 그 설정을 따르는 UI(미리보기의 차단·배지)는 이것으로 가린다 (runningModuleSettings).
+ * 이 페이지에서 도는 모듈 (모듈 id → setup을 시작했고 아직 멈추지 않았는지). 꺼진 모듈의 설정을 거르는 데 쓴다
+ * (runningModuleSettings, useRunningModuleSettings 참고).
  */
 export const runningModulesStore = createStore<Record<string, boolean>>(() => ({}));
 
@@ -46,8 +46,8 @@ export const runningModuleSettings = <Id extends keyof ModuleSettings>(id: Id): 
     runningModulesStore.getState()[id] ? moduleSettings(id) : undefined;
 
 /**
- * stopAll 뒤에는 다시 켜지 않는다. 새 스크립트가 주입되어 무효화된 경우 확장은 살아 있다. on/off·설정 감시와 bfcache 처리는
- * 컨텍스트 signal로 풀리지만, 불러오는 중이던 register·sync는 그 뒤에도 끝까지 돈다. 여기서 켜면 새 스크립트의 모듈과 두 벌로 돈다.
+ * stopAll 뒤에는 다시 켜지 않는다. 감시는 컨텍스트 signal로 풀리지만 불러오는 중이던 register·sync는 끝까지 돌아,
+ * 켜면 새로 주입된 스크립트의 모듈과 두 벌로 돈다.
  */
 let stopped = false;
 
@@ -251,9 +251,8 @@ const load = async (defs: AnyModule[], signal: AbortSignal, ready?: Promise<void
     // 이 문서의 주소(documentUrl)는 바뀌지 않으므로 urls가 이 페이지를 빼는 모듈은 끝내 돌지 않는다. 설정을 읽거나 감시하지 않게 등록하지 않는다.
     // 경로만 본다. 주소 전체를 보면 검색어(s_keyword)에 든 "/board/write" 같은 글자에 걸린다.
     defs = defs.filter((def) => !def.urls || def.urls.some((re) => re.test(documentUrl.pathname)));
-    // on/off·모듈 설정을 한 번에 읽고 ready와 같이 기다린다. 차례로 기다리면 저장소 왕복이 쌓여 모듈이 본문을 한참 읽은 뒤에야 뜬다.
-    // 설정 감시는 읽기 전에 건다. 읽은 뒤에 걸면 그사이 옵션에서 바꾼 설정을 놓친다 (storageSync와 같다).
-    // 등록 전에 온 값은 모아 두었다가 읽은 값 대신 쓴다.
+    // on/off·모듈 설정을 한 번에 읽고 ready와 같이 기다린다. 차례로 기다리면 저장소 왕복이 쌓여 모듈이 늦게 뜬다.
+    // 설정 감시는 읽기 전에 건다 (storageSync와 같다). 등록 전에 온 값은 모아 두었다가 읽은 값 대신 쓴다.
     const early = new Map<string, unknown>();
     for (const def of defs) {
         if (!def.settings) continue;
@@ -265,7 +264,7 @@ const load = async (defs: AnyModule[], signal: AbortSignal, ready?: Promise<void
     }
     const all = readAll(defs);
     const enables = Promise.all([all, ready]).then(([value]) => value.enables);
-    // 읽기가 실패하면 아래 await all에서 던져 기다리는 쪽이 없고, ready가 먼저 실패해도 register가 기다리기 전이다. 거절은 await all·await enables가 받는다.
+    // 기다리기 전에 거절될 수 있다(await all이 먼저 던지거나 ready가 먼저 실패). 처리되지 않은 거절로 남지 않게 한다.
     enables.catch(() => {});
 
     const {settings} = await all;

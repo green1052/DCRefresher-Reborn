@@ -70,7 +70,7 @@ export const writeSettings = async (data: Record<string, unknown>, mode: "replac
         await browser.storage.local.set(next);
     } catch (e) {
         // 건드린 키만 되돌린다. 저장소 전체를 다시 쓰면 그사이 다른 탭이 한 쓰기(차단 추가, DB 갱신)를 지운다.
-        // 되돌리기도 실패할 수 있다(용량이 꽉 참). 그때는 되돌리기 실패를 덮어 쓴 원래 실패를 알린다.
+        // 되돌리기도 실패할 수 있다(용량이 꽉 참). 그때도 원래 실패를 던진다.
         const touched = [...removed, ...Object.keys(next)];
         try {
             await browser.storage.local.remove(touched.filter((key) => !(key in previous)));
@@ -95,8 +95,7 @@ export const writeSettings = async (data: Record<string, unknown>, mode: "replac
  * 차단 목록은 백업에만 있는 항목(내용+갤러리)을 뒤에 붙이고, 메모·설정 객체는 백업에만 있는 키를 더한다. 그 밖의 값은 지금 없을 때만 백업 값을 쓴다.
  */
 export const mergeBackup = (current: Record<string, unknown>, backup: Record<string, unknown>): Record<string, unknown> => {
-    // 모드 없는 차단 항목은 유형의 기본 모드를 따른다. 기본 모드는 이 기기 것을 남기고, 백업의 기본 모드가 다른 유형은
-    // 백업에서 온 항목에 그 모드를 적어 둔다. 어느 한쪽 기본 모드만 남으면 다른 쪽 항목의 검사 방식이 바뀐다('ㅋ'이 포함 검사가 되는 등).
+    // 기본 모드는 이 기기 것을 남기고, 백업에서 온 모드 없는 항목에는 백업의 기본 모드를 적는다 (pinDefaultMode).
     const localDefaults = normalizeDefaults(current[DEFAULTS_KEY]);
     const backupDefaults = normalizeDefaults(backup[DEFAULTS_KEY]);
     const merged = Object.fromEntries(Object.entries(backup).map(([key, value]) => {
