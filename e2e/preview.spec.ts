@@ -436,6 +436,54 @@ test.describe("미리보기 댓글", () => {
         await expect(fitted(199)).toHaveCount(1);
     });
 
+    test("스레드가 많으면 앞의 일부를 먼저 그리고 나머지를 이어 그린다", async ({listPage, site}) => {
+        site.comments = Array.from({length: 1000}, (_, index) => fakeComment(100 + index));
+        // 댓글이 처음 들어온 순간에 그려진 댓글 수를 잰다. 오버레이는 처음 쓸 때(우클릭을 누를 때) 붙으므로 붙기를 기다렸다가 지켜본다.
+        const first = listPage.page.evaluate(() => new Promise<number>((resolve) => {
+            const watch = (root: ShadowRoot): void => {
+                const observer = new MutationObserver(() => {
+                    const count = root.querySelectorAll(".refresher-comment").length;
+                    if (!count) return;
+                    observer.disconnect();
+                    resolve(count);
+                });
+                observer.observe(root, {childList: true, subtree: true});
+            };
+            const find = (): void => {
+                const root = document.querySelector("refresher-root")?.shadowRoot;
+                if (root) watch(root);
+                else setTimeout(find);
+            };
+            find();
+        }));
+        const frame = await listPage.openPreview();
+        expect(await first).toBeLessThan(1000);
+        await expect(listPage.comments).toHaveCount(1000);
+        // 개수 요약은 처음부터 모든 댓글을 센다.
+        await expect(frame.getByText("스레드 1000개, 총 댓글 1000개")).toBeVisible();
+    });
+
+    test("다 그리기 전에 누른 End는 마지막 댓글까지 간다", async ({listPage, site}) => {
+        site.comments = Array.from({length: 1000}, (_, index) => fakeComment(100 + index));
+        await listPage.openPreview();
+        await expect(listPage.overlay.locator(".refresher-frame-scroll")).toBeFocused();
+        expect(await listPage.comments.count()).toBeLessThan(1000);
+        await listPage.page.keyboard.press("End");
+        // 키를 받는 그 자리에서 다 그린다. 늦게 그리면 End가 그때까지 그린 끝에 멈춘다.
+        expect(await listPage.comments.count()).toBe(1000);
+        await expect(listPage.comments.last()).toBeInViewport();
+    });
+
+    test("다 그리기 전에 누른 답글 버튼은 다 그린 뒤의 입력칸으로 데려간다", async ({listPage, site}) => {
+        site.comments = Array.from({length: 1000}, (_, index) => fakeComment(100 + index));
+        const frame = await listPage.openPreview();
+        await listPage.comments.first().getByRole("button", {name: "ㅇㅇ 댓글에 답글", exact: true}).click();
+        expect(await listPage.comments.count()).toBe(1000);
+        const input = frame.getByRole("textbox", {name: "답글 입력", exact: true});
+        await expect(input).toBeFocused();
+        await expect(input).toBeInViewport();
+    });
+
     test("본문이 확장 UI의 클래스를 써도 본문 상자 밖을 덮지 못한다", async ({listPage}) => {
         const frame = await listPage.openPreview();
         const contents = frame.locator(".refresher-preview-contents");

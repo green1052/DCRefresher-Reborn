@@ -1,5 +1,5 @@
 import {Ban, Trash2} from "lucide-react";
-import {Fragment, useId, useState} from "react";
+import {Fragment, memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState} from "react";
 
 import {ConfirmDialog} from "@/components/dialogs";
 import {Button} from "@/components/ui/button";
@@ -11,10 +11,15 @@ import type {ProcessedComment} from "@/core/preview/comments";
 import {adminDeleteComments} from "@/core/preview/request";
 import {notifyManage} from "@/stores/notify";
 import {useUiStore} from "@/stores/ui";
+import {eventTarget, isTyping} from "@/utils/event";
 import {isGalleryManager} from "@/utils/user";
 
 import {Comment, CommentDeletePrompt} from "./Comment";
 import {type CommentOrderValue, NO_FRESH, refreshCommentsOf, usePreviewStore} from "./previewStore";
+
+/** 처음 그리는 스레드 수와 그린 뒤마다 더 그리는 수 (CommentList). 처음 것은 창 한두 화면을 채운다. */
+const FIRST_THREADS = 60;
+const MORE_THREADS = 150;
 
 /**
  * 스레드 첫 댓글로 그릴 댓글. 10쪽 제한으로 부모를 받지 못한 답글도 넣는다. 빠뜨리면 머리의 스레드·총 댓글 수와 어긋난다.
@@ -86,8 +91,9 @@ export const CommentOrder = () => {
 
 /**
  * 스레드 하나(첫 댓글과 접을 수 있는 답글). 접힘은 스레드마다 구독한다. 목록 전체가 구독하면 하나를 접을 때마다 댓글 전부를 다시 그린다.
+ * memo로 감싸 목록이 스레드를 더 그릴 때 이미 그린 스레드(Collapsible이 높이를 다시 잰다)는 건너뛴다. replies는 목록이 useMemo로 유지한다.
  */
-const Thread = ({parent, replies, isAdmin}: { parent: ProcessedComment; replies: ProcessedComment[]; isAdmin: boolean }) => {
+const Thread = memo(({parent, replies, isAdmin}: { parent: ProcessedComment; replies: ProcessedComment[]; isAdmin: boolean }) => {
     // 펼치기 버튼은 답글이 둘 이상일 때만 있다. 접은 뒤 답글이 하나로 줄면(삭제·차단) 펼칠 수 없게 갇히므로 펼쳐 둔다.
     const isCollapsed = usePreviewStore((s) => replies.length > 1 && s.collapsed.has(parent.no));
 
@@ -110,7 +116,7 @@ const Thread = ({parent, replies, isAdmin}: { parent: ProcessedComment; replies:
             ) : children}
         </>
     );
-};
+});
 
 /**
  * 관리자가 고른 댓글을 한 번에 지우거나 작성자를 차단한다 (디시 댓글 목록 아래의 댓글 삭제·차단 버튼).
@@ -179,13 +185,62 @@ export const CommentList = ({comments}: { comments: ProcessedComment[] }) => {
 
     // 숨김 차단(깡계 숨기기 포함)과 접힌 같은 댓글은 '가린 내용 보기'나 이 글에서 가린 댓글 보기 동안만 (흐리게) 그린다. 블러 차단은 그려 두고 features/preview/overlay.css가 흐린다.
     // 트리 선과 답글 수도 그리는 댓글만 센다.
-    const shown = new Set(revealed ? comments : comments.filter((comment) => comment.blocked !== "hide" && comment.duplicates !== 0));
-    const parents = threadParents(comments, order);
-    // 답글을 스레드 첫 댓글 번호(c_no)로 한 번에 묶는다. 부모마다 전체를 훑으면 O(n²)이다.
-    const repliesOf = Map.groupBy(comments.filter((comment) => comment.depth === 1 && shown.has(comment)), (comment) => comment.c_no);
+    // 스레드를 나눠 그리는 동안(아래 limit) 답글 배열이 그대로여야 memo한 Thread가 다시 그려지지 않으므로 useMemo로 둔다.
+    const {shown, parents, repliesOf} = useMemo(() => {
+        const shown = new Set(revealed ? comments : comments.filter((comment) => comment.blocked !== "hide" && comment.duplicates !== 0));
+        return {
+            shown,
+            parents: threadParents(comments, order),
+            // 답글을 스레드 첫 댓글 번호(c_no)로 한 번에 묶는다. 부모마다 전체를 훑으면 O(n²)이다.
+            repliesOf: Map.groupBy(comments.filter((comment) => comment.depth === 1 && shown.has(comment)), (comment) => comment.c_no)
+        };
+    }, [comments, revealed, order]);
     // 문서를 querySelector로 훑으므로 댓글마다가 아니라 여기서 한 번 잰다.
     // 모듈 전역에 두면 페이지를 다 읽기 전에 잰 false가 굳는다.
     const isAdmin = isGalleryManager();
+
+    // 스레드가 많으면 처음엔 앞의 일부만 그리고 그린 뒤마다 더 그린다. 천 개를 한 번에 그리면 수백 ms 동안 창이 멈춘다.
+    // 개수 요약·전체 선택·삭제 창은 DOM이 아니라 comments를 보므로 다 그리기 전에도 맞다.
+    const [limit, setLimit] = useState(FIRST_THREADS);
+    // 답글 버튼은 맨 아래 입력칸으로 데려간다. 그 뒤에 위에서 댓글이 늘면 입력칸이 밀려 내려가므로 다 그린 채로 데려간다.
+    // 답글을 취소해도 다시 줄이지 않는다.
+    const replying = usePreviewStore((s) => s.reply.replyNo !== null);
+    const count = replying ? Infinity : limit;
+    useEffect(() => {
+        if (replying) setLimit(Infinity);
+    }, [replying]);
+    // 더 그리기는 그린 것을 화면에 낸 뒤(useEffect)에 건다.
+    useEffect(() => {
+        if (count >= parents.length) return;
+        const timer = window.setTimeout(() => setLimit((current) => current + MORE_THREADS));
+        return () => window.clearTimeout(timer);
+    }, [count, parents.length]);
+    // 다 그리기 전에 누른 End는 다 그린 뒤 직접 끝으로 굴린다. 기본 동작에 맡기면 파이어폭스는 키를 받은 때의 높이로 끝을 정해 그때까지 그린 끝에 멈춘다.
+    // 그리자마자 누른 키도 받게 useLayoutEffect로 건다. 캡처로 받는다: Base UI 다이얼로그(창)가 화살표·Home·End의 전파를 멈춰 window까지 올라오지 않는다.
+    const unfinished = count < parents.length;
+    const endScroller = useRef<Element | null>(null);
+    useLayoutEffect(() => {
+        if (!unfinished) return;
+        const onKey = (ev: KeyboardEvent): void => {
+            if (ev.key !== "End" || isTyping(ev)) return;
+            const target = eventTarget(ev);
+            const scroller = target instanceof Element ? target.closest(".refresher-frame-scroll") : null;
+            if (scroller) {
+                ev.preventDefault();
+                endScroller.current = scroller;
+            }
+            setLimit(Infinity);
+        };
+        window.addEventListener("keydown", onKey, true);
+        return () => window.removeEventListener("keydown", onKey, true);
+    }, [unfinished]);
+    useLayoutEffect(() => {
+        const scroller = endScroller.current;
+        if (unfinished || !scroller) return;
+        endScroller.current = null;
+        // 바로 옮긴다. 부드럽게 굴리면 지나는 댓글이 어림 높이(48px)에서 실제 높이로 바뀌며 끝이 멀어져 도중에 멈춘다.
+        scroller.scrollTop = scroller.scrollHeight;
+    }, [unfinished]);
 
     return (
         <div className="py-1" data-comments-revealed={postRevealed || undefined}>
@@ -193,7 +248,7 @@ export const CommentList = ({comments}: { comments: ProcessedComment[] }) => {
                 <SelectionTools shownSelectable={comments.filter((comment) => shown.has(comment) && comment.is_delete !== "1")}
                                 foldable={new Set(parents.filter((parent) => shown.has(parent) && (repliesOf.get(parent.no)?.length ?? 0) > 1).map((parent) => parent.no))}/>
             )}
-            {parents.map((parent) => {
+            {parents.slice(0, count).map((parent) => {
                 const replies = repliesOf.get(parent.no) ?? [];
 
                 // 부모를 숨겼으면 답글을 들여쓰지 않고 그 자리에 그린다. 이어 줄 트리 선이 없다.
