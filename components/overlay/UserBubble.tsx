@@ -76,12 +76,20 @@ const DcconSummary = ({code, onOpen}: { code: string; onOpen: () => void }) => {
     );
 };
 
-/** 클릭하면 복사되는 값 한 줄. 라벨 폭을 맞춰 값이 한 줄로 늘어서게 한다. */
-const CopyRow = ({label, value, onCopy}: { label: string; value: string; onCopy: (value: string) => void }) => (
-    <MenuItem title="클릭하면 복사됩니다." onClick={() => onCopy(value)}>
-        <span className="w-18 shrink-0 text-left text-muted-foreground">{label}</span>{" "}
-        <strong className="min-w-0 truncate">{value}</strong>
-    </MenuItem>
+/** 클릭하면 복사되는 값 한 줄. 라벨 폭을 맞춰 값이 한 줄로 늘어서게 한다. onSearch가 있으면 오른쪽에 그 값으로 글을 찾는 버튼을 둔다. */
+const CopyRow = ({label, value, onCopy, onSearch}: { label: string; value: string; onCopy: (value: string) => void; onSearch?: () => void }) => (
+    <div className="flex items-center">
+        <MenuItem className="min-w-0 flex-1" title="클릭하면 복사됩니다." onClick={() => onCopy(value)}>
+            <span className="w-18 shrink-0 text-left text-muted-foreground">{label}</span>{" "}
+            <strong className="min-w-0 truncate">{value}</strong>
+        </MenuItem>
+        {onSearch && (
+            <Button variant="ghost" size="icon-sm" className="shrink-0 cursor-pointer text-muted-foreground" aria-label={`${label}(으)로 글 검색`} title={`${label}(으)로 글 검색`}
+                    onClick={onSearch}>
+                <Search/>
+            </Button>
+        )}
+    </div>
 );
 
 const formatActivity = (activity: ActivityState): string | undefined => {
@@ -230,6 +238,10 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
     const identity = identityValue(selected);
     // 검색 이어 보기가 이 페이지에서 돌 때만 (아이디·IP 거르기를 그 모듈이 한다).
     const searchApi = getModuleApi("search");
+    const searchBy = (by: "nick" | "identity"): (() => void) | undefined => searchApi && (() => {
+        close();
+        searchApi.searchUserPosts(selected, by);
+    });
     const ipLabel = dbVersion > 0 && selected.ip ? ipInfoOf(selected.ip)?.label : undefined;
     const bans = dbVersion > 0 && selected.uid ? banReasonsOf(selected.uid) : undefined;
     const activity = formatActivity(activityState);
@@ -275,8 +287,8 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
                 ) : (
                     <>
                         <div className="flex flex-col">
-                            {selected.nick && <CopyRow label="닉네임" value={selected.nick} onCopy={copy}/>}
-                            {identity && <CopyRow label="아이디/IP" value={identity} onCopy={copy}/>}
+                            {selected.nick && <CopyRow label="닉네임" value={selected.nick} onCopy={copy} onSearch={searchBy("nick")}/>}
+                            {identity && <CopyRow label="아이디/IP" value={identity} onCopy={copy} onSearch={searchBy("identity")}/>}
                             {ipLabel && <CopyRow label="IP 정보" value={ipLabel} onCopy={copy}/>}
                             {activity && <CopyRow label="글/댓글" value={activity} onCopy={copy}/>}
                             {bans && <CopyRow label="갱차 갤러리" value={bans} onCopy={copy}/>}
@@ -299,14 +311,6 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
                             }}>
                                 <StickyNote/> 메모
                             </MenuItem>
-                            {searchApi && (selected.uid || selected.ip) && (
-                                <MenuItem title="이 갤러리에서 이 사람의 글을 찾습니다. 아이디나 IP가 같은 글만 남깁니다." onClick={() => {
-                                    close();
-                                    searchApi.searchUserPosts(selected);
-                                }}>
-                                    <Search/> 작성글 검색
-                                </MenuItem>
-                            )}
                             {selected.uid && (
                                 <MenuItem nativeButton={false}
                                           render={<a href={`https://gallog.dcinside.com/${selected.uid}`} target="_blank" rel="noreferrer" onClick={close}/>}>

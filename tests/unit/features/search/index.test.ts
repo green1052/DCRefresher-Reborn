@@ -34,7 +34,7 @@ const results = new Map([
 
 const nos = (list: Element): string[] => Array.from(list.children, (tr) => tr.getAttribute("data-no") ?? "");
 
-let running: Running<{ searchUserPosts: (user: SelectedUser) => void }> | undefined;
+let running: Running<{ searchUserPosts: (user: SelectedUser, by: "nick" | "identity") => void }> | undefined;
 
 beforeEach(() => {
     document.body.innerHTML = `<input id="sch_q" value="abc">${page(row("30", true) + row("29", true), 10000)}`;

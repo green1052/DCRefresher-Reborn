@@ -43,8 +43,15 @@ const searchWriter = async (filter: WriterFilter): Promise<void> => {
     }
 };
 
-/** 버블의 '작성글 검색'. 닉네임을 알므로 글쓴이 검색에 아이디(반고닉·고닉)나 IP(유동)로 거르기를 얹는다. */
-const searchUserPosts = (user: SelectedUser): void => {
+/**
+ * 유저 버블의 검색. by가 "nick"이면 닉네임으로만 찾고(디시 글쓴이 검색), "identity"면 닉네임으로 찾은 글을 아이디(반고닉·고닉)나 IP(유동)로 거른다.
+ * 닉네임이 없으면 목록을 넘기며 거른다.
+ */
+const searchUserPosts = (user: SelectedUser, by: "nick" | "identity"): void => {
+    if (by === "nick") {
+        if (user.nick) location.href = writerSearchUrl(null, user.nick);
+        return;
+    }
     const filter: WriterFilter | null = user.uid ? {kind: "uid", value: user.uid} : user.ip ? {kind: "ip", value: user.ip} : null;
     if (filter) location.href = writerSearchUrl(filter, user.nick);
 };

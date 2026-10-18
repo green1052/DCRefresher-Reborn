@@ -33,15 +33,18 @@ const withFilter = (href: string, filter: WriterFilter): string => {
     return url.href;
 };
 
-/** 이 갤러리 목록에서 그 작성자의 글을 찾는 주소. nick을 주면 디시 글쓴이 검색으로 찾고, 없으면 목록 1쪽부터 거른다. */
-export const writerSearchUrl = (filter: WriterFilter, nick?: string): string => {
+/**
+ * 이 갤러리 목록에서 그 작성자의 글을 찾는 주소. nick을 주면 디시 글쓴이 검색으로 찾고, 없으면 목록 1쪽부터 거른다.
+ * filter가 null이면 거르지 않고 닉네임으로만 찾는다 (디시 글쓴이 검색 그대로).
+ */
+export const writerSearchUrl = (filter: WriterFilter | null, nick?: string): string => {
     const url = new URL(listUrl(location.href));
     for (const key of ["page", "s_type", "s_keyword", "search_pos", "search_head", "exception_mode"]) url.searchParams.delete(key);
     if (nick) {
         url.searchParams.set("s_type", "search_name");
         url.searchParams.set("s_keyword", nick);
     }
-    return withFilter(url.href, filter);
+    return filter ? withFilter(url.href, filter) : url.href;
 };
 
 /** 페이징 링크에도 작성자 거르기를 얹는다. 디시가 만든 링크에는 없어 다음 쪽에서 풀린다. */
