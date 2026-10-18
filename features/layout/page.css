@@ -172,6 +172,11 @@
         height: auto !important;
     }
 
+    /* 더보기 버튼이 표시하는 상자는 마이너, 미니 갤에서는 위 규칙으로 숨겨져 있고, 일반 갤에서는 컴팩트 폭에서 내부 항목이 서로 겹쳐 표시된다. */
+    .page_head button[onclick^="gt_toggle_issue"] {
+        display: none !important;
+    }
+
     .gall_issuebox {
         padding-top: 0 !important;
     }
