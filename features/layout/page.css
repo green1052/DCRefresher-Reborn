@@ -8,10 +8,9 @@
     /* 머리글, 최근 방문 줄, 본문이 같이 쓰는 최대 폭. */
     --refresher-compact-width: 1000px;
 
-    /* #container가 .dcwrap의 바로 아래에 있는 페이지 — .wrap_inner가 없는 글쓰기 페이지와 갤 메인(갤러리 디렉터리 루트)이다.
-     * 글쓰기 폼은 1160px에 맞춰져 있어 디시 원래 폭을 쓴다. 갤 메인 상자들은 1050px 설계라 이 폭이 실질 차이를 만들지 않는다. */
-    &:has(.dcwrap > #container) {
-        --refresher-compact-width: 1160px;
+    /* 갤 메인 계열 페이지는 분류 상자가 1050px로 고정되어 있어서 디시의 본문 폭을 사용한다. */
+    &:has(.dcwrap > #container > .category_listwrap) {
+        --refresher-compact-width: 1050px;
     }
 
     /* 페이지 전체 틀(#top.dcwrap)에 min-width 1515px가 걸려 있다. */
@@ -275,6 +274,26 @@
     .input_write_tit {
         float: none !important;
         clear: both !important;
+    }
+
+    /* 디시가 HTML 체크박스를 도구줄 왼쪽에서 940px 떨어진 위치에 고정해 두어서, 폭이 좁은 편집기에서는 편집기 영역을 벗어난다. */
+    .note-btn-group:has(> .note-btn #chk_html) {
+        position: static !important;
+    }
+
+    .note-btn:has(#chk_html) {
+        top: 6px !important;
+        right: 3px !important;
+        left: auto !important;
+    }
+
+    /* AI 이미지 입력 칸은 885px로 고정되어 있어서 폭이 좁은 편집기에서는 영역을 벗어난다. 123px은 등록 버튼과 닫기 버튼이 차지하는 폭이다. */
+    .ai_easy_box .ipt_box {
+        width: calc(100% - 123px) !important;
+    }
+
+    .ai_easy_box .ipt_txt {
+        width: 100% !important;
     }
 }
 
