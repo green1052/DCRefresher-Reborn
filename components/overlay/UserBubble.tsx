@@ -31,7 +31,7 @@ const MenuItem = ({danger, className, ...props}: ComponentProps<typeof Button> &
 );
 
 /**
- * 디시콘 버블 맨 위의 이름·패키지·설명. 누르면 디시콘 정보 창을 연다.
+ * 디시콘 버블 맨 위의 패키지 이름과 설명. 누르면 디시콘 정보 창을 연다. 디시콘 하나의 이름("33" 등)은 뜻이 없는 것이 많아 쓰지 않는다.
  * 정보 창과 같은 캐시(dcconPackages)를 써 이어서 열어도 다시 받지 않는다. 받지 못하면 이름 없이 열기만 둔다.
  */
 const DcconSummary = ({code, onOpen}: { code: string; onOpen: () => void }) => {
@@ -48,13 +48,11 @@ const DcconSummary = ({code, onOpen}: { code: string; onOpen: () => void }) => {
         return () => controller.abort();
     }, [code]);
 
-    const name = dccon?.detail.find((item) => item.path === code)?.title;
     return (
         <MenuItem title="디시콘 정보 보기" className="h-auto flex-col items-start gap-0.5 py-1.5 whitespace-normal" onClick={onOpen}>
             {dccon ? (
                 <>
-                    <strong>{name || dccon.info.title}</strong>
-                    {name && <span className="text-xs text-muted-foreground">{dccon.info.title}</span>}
+                    <strong>{dccon.info.title}</strong>
                     {dccon.info.description && <span className="line-clamp-2 text-left text-xs text-muted-foreground">{dccon.info.description}</span>}
                 </>
             ) : failed ? (
