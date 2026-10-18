@@ -41,8 +41,10 @@ export const updateDatabase = async (force = false): Promise<void> => {
     // ban은 JSON인지만 본다 (깨졌으면 여기서 던진다).
     JSON.parse(ban);
 
-    // version 파일과 ip.json은 CDN에 따로 캐시된다. 새 version에 옛 ip.json이 오면, 받은 데이터의 버전을 저장해 다음 확인 때 다시 받게 한다.
-    await writeDatabase({version: data.version ?? version, lastUpdate: Date.now(), format: IP_FORMAT}, ip, ban);
+    // version 파일과 ip.json은 CDN에 따로 캐시된다. 새 version에 옛 ip.json이 오면 받은 데이터의 버전을 저장하고 확인 시각은 그대로 둔다.
+    // 확인 시각을 지금으로 바꾸면 배경 알람이 7일 동안 다시 받지 않는다. 두면 다음 날 알람이 다시 받는다.
+    const stale = data.version !== undefined && data.version !== version;
+    await writeDatabase({version: data.version ?? version, lastUpdate: stale ? meta.lastUpdate : Date.now(), format: IP_FORMAT}, ip, ban);
 };
 
 /**

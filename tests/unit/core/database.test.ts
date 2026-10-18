@@ -76,6 +76,20 @@ describe("updateDatabase", () => {
         expect(await stored(META)).toMatchObject({version: "v1"});
     });
 
+    it("받은 ip.json이 version 파일보다 옛것이면 확인 시각을 그대로 둔다", async () => {
+        const {updateDatabase} = await load();
+        // 확인 시각이 지금으로 바뀌면 배경 알람이 7일 동안 다시 받지 않는다.
+        await browser.storage.local.set({[META]: {version: "v0", lastUpdate: 1, format: IP_FORMAT}});
+        serve("v2", ipJson([], "v1"));
+        vi.spyOn(Date, "now").mockReturnValue(5000);
+        await updateDatabase();
+        expect(await stored(META)).toEqual({version: "v1", lastUpdate: 1, format: IP_FORMAT});
+
+        serve("v2", ipJson([], "v2"));
+        await updateDatabase();
+        expect(await stored(META)).toEqual({version: "v2", lastUpdate: 5000, format: IP_FORMAT});
+    });
+
     it("버전과 형식이 같으면 확인 시각만 바꾸고 본문은 받지 않는다", async () => {
         const {updateDatabase} = await load();
         await browser.storage.local.set({[META]: {version: "v1", lastUpdate: 1, format: IP_FORMAT}, [IP]: "old"});
