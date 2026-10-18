@@ -7,7 +7,7 @@ import {Checkbox} from "@/components/ui/checkbox";
 import {DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import {Input} from "@/components/ui/input";
 import type {ProcessedComment} from "@/core/preview/comments";
-import type {User} from "@/core/preview/types";
+import type {CommentForm, User} from "@/core/preview/types";
 import {adminDeleteComments} from "@/core/preview/request";
 import {notifyManage} from "@/stores/notify";
 import {cn} from "cn";
@@ -18,7 +18,7 @@ import {markPressable, pressContents} from "./contentsClick";
 import {openDcconInfo} from "./DcconInfoPopup";
 import {fitTxtcon} from "./fitTxtcon";
 import {watchGifVideos} from "./gifVideos";
-import {NO_REPLY, refreshCommentsOf, usePreviewStore} from "./previewStore";
+import {NO_REPLY, parseDate, refreshCommentsOf, usePreviewStore} from "./previewStore";
 import {TimeStamp} from "./TimeStamp";
 import {UserCard} from "./UserCard";
 
@@ -207,6 +207,17 @@ const removeComment = async (no: string, isAdmin: boolean, password: string): Pr
 };
 
 /**
+ * 디시의 댓삭튀 차단 경고 (comment.js chk_notice_comment_avoid). 이 규칙을 켠 갤러리는 공지글에 notice_comment_del_avoid를 '1'로 두고,
+ * 5분 안에 지운 댓글의 작성자를 매니저 이름으로 차단한다. 차단은 디시 서버가 하므로 미리보기에서 지워도 똑같이 당한다.
+ */
+export const noticeDeleteWarning = (fields: CommentForm["fields"], date: string): string | undefined => {
+    const field = (key: string): string | undefined => fields.find(([name]) => name === key)?.[1];
+    if (field("notice_comment_del_avoid") !== "1" || !date || Date.now() - parseDate(date).getTime() >= 5 * 60_000) return undefined;
+
+    return `공지글에 작성한 댓글을 5분 내 삭제 시 매니저에 의해 [${field("notice_comment_del_avoid_msg") ?? ""}] 사유로 차단됩니다.`;
+};
+
+/**
  * 댓글 X가 띄운 삭제 확인 창(deletePrompt). CommentList가 한 번만 그린다.
  * 댓글 안에 그리면 답글 수가 1개와 2개 사이를 오갈 때(Thread가 답글을 Collapsible 안팎으로 옮긴다) 그 답글이 새로 마운트되어
  * 창이 말없이 닫히고 입력하던 비밀번호도 사라진다.
@@ -214,6 +225,7 @@ const removeComment = async (no: string, isAdmin: boolean, password: string): Pr
  */
 export const CommentDeletePrompt = ({comments, isAdmin}: { comments: ProcessedComment[]; isAdmin: boolean }) => {
     const prompt = usePreviewStore((s) => s.deletePrompt);
+    const fields = usePreviewStore((s) => s.post?.commentForm.fields);
     const target = prompt ? comments.find((comment) => comment.no === prompt.no && comment.is_delete !== "1") : undefined;
     // 새로고침으로 대상이 사라졌거나 이미 지워졌으면 창을 닫는다. 두면 같은 번호가 다시 보일 때 창이 저절로 뜬다.
     const gone = prompt !== null && !target;
@@ -223,10 +235,13 @@ export const CommentDeletePrompt = ({comments, isAdmin}: { comments: ProcessedCo
     if (!prompt || !target) return null;
 
     const close = (): void => usePreviewStore.setState({deletePrompt: null});
+    // 관리자 삭제는 남의 댓글을 지우는 것이라 차단 대상이 아니다.
+    const warning = isAdmin || !fields ? undefined : noticeDeleteWarning(fields, String(target.reg_date ?? target.date_time ?? ""));
     return prompt.kind === "confirm" ? (
-        <ConfirmDialog title="댓글을 삭제할까요?" confirmLabel="삭제" danger onConfirm={() => void removeComment(target.no, isAdmin, "")} onClose={close}/>
+        <ConfirmDialog title={warning ? `${warning} 댓글을 삭제할까요?` : "댓글을 삭제할까요?"} confirmLabel="삭제" danger
+                       onConfirm={() => void removeComment(target.no, isAdmin, "")} onClose={close}/>
     ) : (
-        <PasswordDialog onSubmit={(password) => void removeComment(target.no, isAdmin, password)} onClose={close}/>
+        <PasswordDialog warning={warning} onSubmit={(password) => void removeComment(target.no, isAdmin, password)} onClose={close}/>
     );
 };
 
@@ -234,7 +249,7 @@ export const CommentDeletePrompt = ({comments, isAdmin}: { comments: ProcessedCo
  * 유동 댓글을 지울 비밀번호를 묻는다. 미리보기에서 쓴 댓글은 저장해 둔 비밀번호를 썼으므로 비워 두면 그것을 쓴다.
  * 저장된 비밀번호는 칸에 채우지 않는다 (WriteComment와 같다). 채우면 화면에 그대로 보인다.
  */
-const PasswordDialog = ({onSubmit, onClose}: { onSubmit: (password: string) => void; onClose: () => void }) => {
+const PasswordDialog = ({warning, onSubmit, onClose}: { warning?: string; onSubmit: (password: string) => void; onClose: () => void }) => {
     const [saved] = useState(() => savedNonmember().pw);
     const [password, setPassword] = useState("");
     const input = useRef<HTMLInputElement>(null);
@@ -244,6 +259,7 @@ const PasswordDialog = ({onSubmit, onClose}: { onSubmit: (password: string) => v
         <ModalDialog onClose={onClose} className="sm:max-w-[320px]" focusOnOpen={input}>
             <DialogHeader>
                 <DialogTitle>댓글 비밀번호</DialogTitle>
+                {warning && <p className="text-sm text-destructive">{warning}</p>}
             </DialogHeader>
             <SubmitForm onSubmit={() => value && onSubmit(value)} className="flex flex-col gap-4">
                 <Input
