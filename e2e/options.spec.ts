@@ -141,7 +141,10 @@ test.describe("옵션 - 차단 탭", () => {
         await expect(dialog).toHaveCount(0);
 
         await page.getByRole("tab", {name: /^이미지/}).click();
-        await page.getByRole("button", {name: "추가", exact: true}).click();
+        // 탭이 바뀌는 동안은 앞 탭의 추가 버튼도 잠깐 남는다. 하나만 남은 뒤 누른다.
+        const add = page.getByRole("button", {name: "추가", exact: true});
+        await expect(add).toHaveCount(1);
+        await add.click();
         const input = dialog.getByPlaceholder("이미지 값을 입력해 주세요");
         // 이미지 값은 파일 해시라 정규식을 고르지 않는다.
         await expect(dialog.getByRole("checkbox", {name: "정규식", exact: true})).toHaveCount(0);
