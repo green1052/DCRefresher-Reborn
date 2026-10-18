@@ -1,4 +1,4 @@
-import {Ban, ExternalLink, PackageX, StickyNote, UserX} from "lucide-react";
+import {Ban, ExternalLink, PackageX, Search, StickyNote, UserX} from "lucide-react";
 import {type ComponentProps, useEffect, useRef, useState, useSyncExternalStore} from "react";
 
 import {DialogActions, ModalDialog} from "@/components/dialogs";
@@ -11,6 +11,7 @@ import {useReturnFocus} from "@/components/useReturnFocus";
 import {blockingEntries} from "@/core/block";
 import {banReasonsOf, databaseVersion, ipInfoOf, onDatabaseChange, subscribeDatabase} from "@/core/database";
 import {urls} from "@/core/http/urls";
+import {getModuleApi} from "@/core/module/registry";
 import {dcconPackages, fetchDcconPackage} from "@/core/preview/request";
 import {TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
@@ -227,6 +228,8 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
     };
 
     const identity = identityValue(selected);
+    // 검색 이어 보기가 이 페이지에서 돌 때만 (아이디·IP 거르기를 그 모듈이 한다).
+    const searchApi = getModuleApi("search");
     const ipLabel = dbVersion > 0 && selected.ip ? ipInfoOf(selected.ip)?.label : undefined;
     const bans = dbVersion > 0 && selected.uid ? banReasonsOf(selected.uid) : undefined;
     const activity = formatActivity(activityState);
@@ -296,6 +299,14 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
                             }}>
                                 <StickyNote/> 메모
                             </MenuItem>
+                            {searchApi && (selected.uid || selected.ip) && (
+                                <MenuItem title="이 갤러리에서 이 사람의 글을 찾습니다. 아이디나 IP가 같은 글만 남깁니다." onClick={() => {
+                                    close();
+                                    searchApi.searchUserPosts(selected);
+                                }}>
+                                    <Search/> 작성글 검색
+                                </MenuItem>
+                            )}
                             {selected.uid && (
                                 <MenuItem nativeButton={false}
                                           render={<a href={`https://gallog.dcinside.com/${selected.uid}`} target="_blank" rel="noreferrer" onClick={close}/>}>

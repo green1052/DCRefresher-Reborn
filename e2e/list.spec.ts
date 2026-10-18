@@ -174,3 +174,27 @@ test.describe("임시 차단", () => {
         await expect(page.locator("refresher-root [data-slot=toast]")).toContainText("잠시 접속을 막았습니다");
     });
 });
+
+test.describe("작성자 검색", () => {
+    test("아이디로 거르면 그 사람의 글만 남기고, 다음 쪽도 이어 보며, 페이징 링크에 거르기를 남긴다", async ({page, storage}) => {
+        await storage.setModules({search: true});
+        await page.goto("https://gall.dcinside.com/board/lists/?id=test&rf_uid=user1");
+
+        const rows = page.locator(".gall_list tbody > tr");
+        await expect(rows.filter({hasText: "첫 번째 글"})).toBeVisible();
+        await expect(rows.filter({hasText: "세 번째 글"})).toBeHidden();
+        // 2쪽 행도 이어 붙지만 다른 사람의 글이라 숨는다.
+        await expect(rows.filter({hasText: "2쪽 첫 글"})).toHaveCount(1);
+        await expect(rows.filter({hasText: "2쪽 첫 글"})).toBeHidden();
+        await expect(page.locator(".bottom_paging_box a").first()).toHaveAttribute("href", /rf_uid=user1/);
+    });
+
+    test("유저 메뉴의 작성글 검색은 글쓴이 검색에 IP 거르기를 얹는다", async ({listPage, storage}) => {
+        await storage.setModules({search: true});
+        await listPage.page.reload();
+        await listPage.writer(2).click({button: "right"});
+        await listPage.bubble.getByRole("button", {name: "작성글 검색"}).click();
+
+        await expect(listPage.page).toHaveURL(/s_type=search_name&s_keyword=%E3%85%87%E3%85%87&rf_ip=1\.2/);
+    });
+});

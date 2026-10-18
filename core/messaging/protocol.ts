@@ -57,6 +57,9 @@ interface ProtocolMap {
     /** 탭 → 배경: 디시 통합검색 결과 페이지(HTML). search.dcinside.com은 CORS를 열지 않아 콘텐츠 스크립트가 받을 수 없다. */
     "refresher:searchPosts"(query: string): string;
 
+    /** 탭 → 배경: 갤로그 첫 화면(HTML). 아이디로 작성자 글을 찾을 때 닉네임을 읽는다 (features/search). gallog.dcinside.com도 CORS를 열지 않는다. */
+    "refresher:gallogPage"(id: string): string;
+
     /** 탭 → 배경: 쓰인 차단 항목·메모 (core/usage.ts). 여러 탭이 동시에 써도 기록을 잃지 않게 배경이 차례로 저장한다. */
     "refresher:markUsed"(batch: UsageData): void;
 

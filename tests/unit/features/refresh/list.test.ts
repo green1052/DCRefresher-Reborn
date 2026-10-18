@@ -282,6 +282,8 @@ describe("isWholeFirstPage", () => {
         expect(isWholeFirstPage("https://gall.dcinside.com/board/lists/?id=test&page=2")).toBe(false);
         expect(isWholeFirstPage("https://gall.dcinside.com/board/lists/?id=test&exception_mode=recommend")).toBe(false);
         expect(isWholeFirstPage("https://gall.dcinside.com/board/lists/?id=test&search_head=10")).toBe(false);
+        // 작성자 거르기는 다음 쪽 글을 이어 붙인다.
+        expect(isWholeFirstPage("https://gall.dcinside.com/board/lists/?id=test&rf_ip=1.2")).toBe(false);
     });
 });
 

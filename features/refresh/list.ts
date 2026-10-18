@@ -1,5 +1,6 @@
 import {isViewPage, pagePostNo, rowPostNo} from "@/core/http/urls";
 import {checkboxFiller, highlightSearchResults, PAGING_SELECTOR} from "@/core/list";
+import {writerFilter} from "@/features/search/writer";
 
 import {COUNT_CELLS, COUNT_TEXT} from "./markup";
 
@@ -97,10 +98,13 @@ interface ReplaceOptions {
     keepDeleted: boolean;
 }
 
-/** 거르지 않은 목록(개념글·공지·말머리가 아닌)의 1페이지인지. 새 글이 들어오고, 빠진 글이 지워진 글인 목록이다. */
+/**
+ * 거르지 않은 목록(개념글·공지·말머리·작성자 거르기가 아닌)의 1페이지인지. 새 글이 들어오고, 빠진 글이 지워진 글인 목록이다.
+ * 작성자 거르기(features/search)는 다음 쪽 글을 이어 붙이므로, 1쪽에 없다고 지워진 글이 아니다.
+ */
 export const isWholeFirstPage = (url: string): boolean => {
     const params = new URL(url).searchParams;
-    return (params.get("page") ?? "1") === "1" && !params.has("exception_mode") && !params.has("search_head");
+    return (params.get("page") ?? "1") === "1" && !params.has("exception_mode") && !params.has("search_head") && !writerFilter(url);
 };
 
 /**

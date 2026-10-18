@@ -2,6 +2,7 @@
 import {afterEach, beforeEach, expect, it, vi} from "vitest";
 
 import search from "@/features/search/index";
+import type {SelectedUser} from "@/stores/ui";
 
 import {type Running, runModule} from "../module";
 
@@ -33,7 +34,7 @@ const results = new Map([
 
 const nos = (list: Element): string[] => Array.from(list.children, (tr) => tr.getAttribute("data-no") ?? "");
 
-let running: Running<void> | undefined;
+let running: Running<{ searchUserPosts: (user: SelectedUser) => void }> | undefined;
 
 beforeEach(() => {
     document.body.innerHTML = `<input id="sch_q" value="abc">${page(row("30", true) + row("29", true), 10000)}`;
