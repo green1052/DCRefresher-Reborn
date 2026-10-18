@@ -9,9 +9,9 @@ export interface Running<Api> {
     ctx: ModuleContext;
     /** 설정을 바꾸고 onSettingsChanged 리스너에 바뀐 키로 알린다. */
     change(patch: Record<string, SettingValue>): void;
-    /** 컨텍스트가 무효화된 것처럼(stopAll) revoke 없이 리스너만 푼다. */
+    /** 컨텍스트가 무효화된 것처럼(stopAll) onRevoke 없이 리스너만 푼다. */
     abort(): void;
-    /** 레지스트리처럼 리스너를 풀고 revoke를 부른다. */
+    /** 레지스트리처럼 리스너를 풀고 onRevoke로 등록한 함수를 부른다. */
     stop(): void;
 }
 
@@ -21,6 +21,7 @@ export const runModule = async <Api>(def: AnyModule & { readonly apiType?: Api }
     const {signal} = controller;
     const settings: Record<string, SettingValue> = settingsOf(def, patch);
     const listeners: ((keys: ReadonlySet<string>) => void)[] = [];
+    const revokers: (() => void)[] = [];
     const addCleanup = (dispose: () => void): void => {
         if (signal.aborted) dispose();
         else signal.addEventListener("abort", () => dispose(), {once: true});
@@ -34,7 +35,8 @@ export const runModule = async <Api>(def: AnyModule & { readonly apiType?: Api }
             return dispose;
         },
         addCleanup,
-        onSettingsChanged: (listener) => void listeners.push(listener)
+        onSettingsChanged: (listener) => void listeners.push(listener),
+        onRevoke: (revoke) => void revokers.push(revoke)
     };
 
     // defineModule이 지운 api 타입을 apiType으로 되찾는다 (레지스트리의 getModuleApi와 같은 단언).
@@ -50,7 +52,7 @@ export const runModule = async <Api>(def: AnyModule & { readonly apiType?: Api }
         abort: () => controller.abort(),
         stop: () => {
             controller.abort();
-            def.revoke?.();
+            for (const revoke of revokers) revoke();
         }
     };
 };

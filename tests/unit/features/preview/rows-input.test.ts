@@ -13,7 +13,7 @@ const prefetch = vi.fn();
 const bind = (patch: Partial<Ctx["settings"]> = {}): void => {
     // settingsOf는 스키마 키로 값을 채우지만 타입은 Record라 meta의 설정 타입으로 되찾는다.
     const values = {...settingsOf({settings}, {}), ...patch} as Ctx["settings"];
-    const ctx: Ctx = {settings: values, signal: controller.signal, addFilter: () => () => undefined, addCleanup: () => undefined, onSettingsChanged: () => undefined};
+    const ctx: Ctx = {settings: values, signal: controller.signal, addFilter: () => () => undefined, addCleanup: () => undefined, onSettingsChanged: () => undefined, onRevoke: () => undefined};
     bindRows(ctx, {open, prefetch, mini: {onMiniEnter: vi.fn(), onMiniMove: vi.fn(), onMiniLeave: vi.fn(), onMiniLeaveSoon: vi.fn()}});
 };
 

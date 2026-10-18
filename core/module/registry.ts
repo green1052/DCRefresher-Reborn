@@ -17,7 +17,7 @@ interface ModuleInstance {
     def: AnyModule;
     settings: Record<string, SettingValue>;
     /** 실행 중일 때만 있다. ready는 setup이 끝나 api가 준비됐다는 뜻이며, 단축키·팝업 토글은 그때부터 받는다. */
-    running?: { ctx: ModuleContext; controller: AbortController; ready: boolean; api?: unknown; setup?: Promise<void>; listeners: ((keys: ReadonlySet<string>) => void)[] };
+    running?: { ctx: ModuleContext; controller: AbortController; ready: boolean; api?: unknown; setup?: Promise<void>; listeners: ((keys: ReadonlySet<string>) => void)[]; revokers: (() => void)[] };
     /** setup이 던졌다. 켜짐 값이 그대로면 다시 시작하지 않는다 (다른 모듈을 켜고 끌 때마다 실패를 되풀이한다). 껐다 켜면 다시 시도한다. */
     failed?: boolean;
     /** 멈춘 실행의 setup이 끝나면(실패해도) 풀린다. 다음 setup은 이것을 기다린다. 끄자마자 켜면 앞 setup이 아직 await 중이라 둘이 겹친다. */
@@ -67,6 +67,7 @@ const start = async (instance: ModuleInstance): Promise<void> => {
         else signal.addEventListener("abort", () => dispose(), {once: true});
     };
     const listeners: ((keys: ReadonlySet<string>) => void)[] = [];
+    const revokers: (() => void)[] = [];
     const ctx: ModuleContext = {
         settings: instance.settings,
         signal,
@@ -79,10 +80,15 @@ const start = async (instance: ModuleInstance): Promise<void> => {
         addCleanup,
         onSettingsChanged: (listener) => {
             if (!signal.aborted) listeners.push(listener);
+        },
+        onRevoke: (revoke) => {
+            // setup이 await하는 사이 꺼졌으면 바로 되돌린다. 컨텍스트가 무효화됐으면(stopAll) 페이지를 그대로 둔다.
+            if (!signal.aborted) revokers.push(revoke);
+            else if (!stopped) runRevoke(instance, revoke);
         }
     };
 
-    const running: NonNullable<ModuleInstance["running"]> = {ctx, controller, ready: false, listeners};
+    const running: NonNullable<ModuleInstance["running"]> = {ctx, controller, ready: false, listeners, revokers};
     instance.running = running;
     runningModulesStore.setState({[instance.def.id]: true});
 
@@ -112,9 +118,18 @@ const start = async (instance: ModuleInstance): Promise<void> => {
 };
 
 /**
- * keepDom이면 revoke 없이 리스너·타이머만 푼다. abort를 revoke보다 먼저 해서 revoke가 던져도 리스너가 남지 않게 한다.
- * revoke 오류는 남기기만 한다. 던지면 sync가 나머지 모듈을 건너뛰고, setup 실패 정리 중이면 실패 표시가 빠진다.
+ * ctx.onRevoke로 등록한 정리 함수를 부른다. 오류는 남기기만 한다. 던지면 sync가 나머지 모듈을 건너뛰고,
+ * setup 실패 정리 중이면 실패 표시가 빠진다.
  */
+const runRevoke = (instance: ModuleInstance, revoke: () => void): void => {
+    try {
+        revoke();
+    } catch (e) {
+        console.error(`Module revoke failed: ${instance.def.id}`, e);
+    }
+};
+
+/** keepDom이면 onRevoke 없이 리스너·타이머만 푼다. abort를 onRevoke보다 먼저 해서 정리 함수가 던져도 리스너가 남지 않게 한다. */
 const stop = (instance: ModuleInstance, keepDom = false): void => {
     const running = instance.running;
     if (!running) return;
@@ -124,11 +139,7 @@ const stop = (instance: ModuleInstance, keepDom = false): void => {
 
     running.controller.abort();
     if (keepDom) return;
-    try {
-        instance.def.revoke?.();
-    } catch (e) {
-        console.error(`Module revoke failed: ${instance.def.id}`, e);
-    }
+    for (const revoke of running.revokers) runRevoke(instance, revoke);
 };
 
 /** 저장된 설정을 반영. 바뀐 값만 실행 중인 모듈의 설정 리스너(ctx.onSettingsChanged)에 알린다. stored는 저장소에서 온 그대로(없으면 null)라 모양을 검사한다. */
@@ -228,7 +239,7 @@ export const runPageToggle = ({module, id}: PageAction): void => {
 
 /**
  * 모든 모듈 중지 (콘텐츠 스크립트 컨텍스트가 무효화됐을 때). 해제 함수 하나가 던져도 abort 리스너라 나머지는 계속 돈다.
- * revoke는 부르지 않고 페이지를 지금 모습대로 둔다. 부르면 확장을 업데이트할 때 열린 탭마다 차단·스텔스·레이아웃이 풀려
+ * onRevoke는 부르지 않고 페이지를 지금 모습대로 둔다. 부르면 확장을 업데이트할 때 열린 탭마다 차단·스텔스·레이아웃이 풀려
  * 새로고침 전까지 가린 내용이 드러난다.
  */
 export const stopAll = (): void => {

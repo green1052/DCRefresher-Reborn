@@ -44,6 +44,14 @@ const applyDoNotColorVisited = (ctx: Ctx): void => {
 
 export default defineModule(meta, {
     setup(ctx) {
+        ctx.onRevoke(() => {
+            // 탭 제목의 새 글 수와 '여기까지 읽음' 선은 title.ts의 정리 함수(clear)가 뗀다.
+            document.documentElement.classList.remove("refresherDoNotColorVisited");
+            // 남긴 삭제된 글 행은 서버 목록에 없다. 모듈을 끄면 목록을 다시 받는 쪽이 없어 페이지를 새로고침할 때까지 남는다.
+            for (const row of document.querySelectorAll(".refresherDeleted")) row.remove();
+            for (const row of document.querySelectorAll<HTMLElement>(".refresherNewPost")) clearNewPost(row);
+        });
+
         let paused = Boolean(queryString("s_keyword") && ctx.settings.noRefreshOnSearch);
         let lastRefresh = 0;
         let loading = false;
@@ -415,13 +423,5 @@ export default defineModule(meta, {
             isOn: (api) => api.isPaused(),
             toggle: (api) => api.togglePause()
         }
-    },
-
-    revoke() {
-        // 탭 제목의 새 글 수와 '여기까지 읽음' 선은 title.ts의 정리 함수(clear)가 뗀다.
-        document.documentElement.classList.remove("refresherDoNotColorVisited");
-        // 남긴 삭제된 글 행은 서버 목록에 없다. 모듈을 끄면 목록을 다시 받는 쪽이 없어 페이지를 새로고침할 때까지 남는다.
-        for (const row of document.querySelectorAll(".refresherDeleted")) row.remove();
-        for (const row of document.querySelectorAll<HTMLElement>(".refresherNewPost")) clearNewPost(row);
     }
 });

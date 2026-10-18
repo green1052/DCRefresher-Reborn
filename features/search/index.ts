@@ -69,6 +69,18 @@ const isLastPage = (paging: Element): boolean => {
 
 export default defineModule(meta, {
     setup(ctx) {
+        ctx.onRevoke(() => {
+            document.querySelector(`style#${WRITER_STYLE_ID}`)?.remove();
+            removeWriterTypes();
+            // 모듈을 끄면 목록을 다시 받는 쪽이 없어 이어 붙인 다른 구간 행과 페이징이 새로고침할 때까지 남는다.
+            for (const row of document.querySelectorAll(`.${ADDED_ROW}`)) row.remove();
+            const paging = document.querySelector<HTMLElement>(PAGING_SELECTOR);
+            const original = paging?.dataset.refresherSearchPaging;
+            if (!paging || original === undefined) return;
+            paging.innerHTML = original;
+            delete paging.dataset.refresherSearchPaging;
+        });
+
         const api = {searchUserPosts};
         const filter = writerFilter();
         whenDomReady(() => addWriterTypes(filter, (next) => void searchWriter(next), ctx.signal), ctx.signal);
@@ -174,17 +186,5 @@ export default defineModule(meta, {
         // 처음 목록은 페이징까지 읽은 뒤에, 그 뒤로는 새로고침 모듈이 갈아끼운 목록마다.
         whenDomReady(() => ctx.addFilter(LIST_SELECTOR, (list) => void fill(list)), ctx.signal);
         return api;
-    },
-
-    revoke() {
-        document.querySelector(`style#${WRITER_STYLE_ID}`)?.remove();
-        removeWriterTypes();
-        // 모듈을 끄면 목록을 다시 받는 쪽이 없어 이어 붙인 다른 구간 행과 페이징이 새로고침할 때까지 남는다.
-        for (const row of document.querySelectorAll(`.${ADDED_ROW}`)) row.remove();
-        const paging = document.querySelector<HTMLElement>(PAGING_SELECTOR);
-        const original = paging?.dataset.refresherSearchPaging;
-        if (!paging || original === undefined) return;
-        paging.innerHTML = original;
-        delete paging.dataset.refresherSearchPaging;
     }
 });

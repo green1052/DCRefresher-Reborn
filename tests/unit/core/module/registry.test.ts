@@ -378,6 +378,40 @@ describe("켜기·끄기", () => {
         expect(registry.runningModuleSettings("preview")).toEqual({size: 2});
     });
 
+    it("setup이 기다리는 사이 꺼진 뒤 등록한 onRevoke는 바로 부르고, 무효화(stopAll) 뒤에는 부르지 않는다", async () => {
+        // 처음 setup은 바로 끝나고, 다시 켠 setup은 gate가 풀린 뒤에 onRevoke를 등록한다.
+        const lateModule = (id: string) => {
+            const gate = Promise.withResolvers<void>();
+            const revoke = vi.fn();
+            let starts = 0;
+            const module = testModule({id, setup: async (ctx) => {
+                if (starts++ > 0) await gate.promise;
+                ctx.onRevoke(revoke);
+            }});
+            return {module, revoke, open: gate.resolve};
+        };
+        const disabled = lateModule("a");
+        const invalidated = lateModule("b");
+        await load([disabled.module, invalidated.module]);
+        await setEnables({a: false, b: false});
+        await tick();
+        expect(disabled.revoke).toHaveBeenCalledTimes(1);
+        expect(invalidated.revoke).toHaveBeenCalledTimes(1);
+
+        await setEnables({a: true, b: true});
+        await tick();
+        await setEnables({a: false, b: true});
+        await tick();
+        disabled.open();
+        await tick();
+        expect(disabled.revoke).toHaveBeenCalledTimes(2);
+
+        registry.stopAll();
+        invalidated.open();
+        await tick();
+        expect(invalidated.revoke).toHaveBeenCalledTimes(1);
+    });
+
     it("setup이 끝나기 전에는 api가 없다", async () => {
         const gate = Promise.withResolvers<void>();
         void load([testModule({id: "preview", setup: async () => {

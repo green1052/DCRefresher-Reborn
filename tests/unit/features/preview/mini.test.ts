@@ -28,7 +28,7 @@ describe("createMini", () => {
     it("조작할 수 있는 미니는 들어온 자리가 아니라 지연 시간 뒤의 커서 오른쪽에 뜬다", async () => {
         // settingsOf는 스키마 키로 값을 채우지만 타입은 Record라 meta의 설정 타입으로 되찾는다.
         const values = {...settingsOf({settings}, {}), tooltipMode: true, tooltipInteraction: true} as Ctx["settings"];
-        const ctx: Ctx = {settings: values, signal: controller.signal, addFilter: () => () => undefined, addCleanup: () => undefined, onSettingsChanged: () => undefined};
+        const ctx: Ctx = {settings: values, signal: controller.signal, addFilter: () => () => undefined, addCleanup: () => undefined, onSettingsChanged: () => undefined, onRevoke: () => undefined};
         const post: PostInfo = {title: "제목", contents: "본문", commentForm: {fields: [], serviceCode: "", checks: {}}};
         const mini = createMini(ctx, async () => ({post}), async (_preData, p) => p);
         bindRows(ctx, {open: vi.fn(), prefetch: vi.fn(), mini});

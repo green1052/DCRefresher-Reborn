@@ -245,6 +245,13 @@ const restoreHiddenElements = (): void => {
 
 export default defineModule(meta, {
     setup(ctx) {
+        ctx.onRevoke(() => {
+            restoreHiddenElements();
+            useUiStore.setState({blockRevealed: false});
+            document.documentElement.style.removeProperty("--refresher-blur");
+            document.documentElement.classList.remove("refresherBlurReveal", REVEAL_CLASS);
+        });
+
         const gallery = pageGallery ?? undefined;
 
         applyBlurStyle(ctx);
@@ -271,12 +278,5 @@ export default defineModule(meta, {
             isOn: (api) => api.isRevealed(),
             toggle: (api) => api.toggleReveal()
         }
-    },
-
-    revoke() {
-        restoreHiddenElements();
-        useUiStore.setState({blockRevealed: false});
-        document.documentElement.style.removeProperty("--refresher-blur");
-        document.documentElement.classList.remove("refresherBlurReveal", REVEAL_CLASS);
     }
 });

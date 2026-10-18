@@ -8,18 +8,14 @@ import {AUTO, EDITOR, LEAVE, POSTED, SUBJECT, SUBMIT} from "./markup";
 import meta from "./meta";
 
 /**
- * 나가기 방지 리스너. ctx.signal에 묶지 않고 모듈을 끌 때만 revoke가 푼다: 확장 업데이트로 컨텍스트가 무효화되면(stopAll) ctx.signal이 풀려,
- * 새로고침 안내를 따를 때 작성 중인 글이 확인 없이 날아간다.
- * 업로드 설정도 같은 이유로 revoke만 지운다. 페이지의 hookUploads는 무효화 뒤에도 살아 있어, 지우면 이미지가 원래 이름으로 올라간다.
+ * hookUploads를 넣어 달라고 이미 했다. 넣은 스크립트는 페이지에 남으므로 다시 보내 배경을 깨울 필요가 없다.
+ * 모듈을 껐다 켜도 페이지의 스크립트는 그대로라 setup 밖에 둔다.
  */
-let listeners: AbortController | undefined;
-
-/** hookUploads를 넣어 달라고 이미 했다. 넣은 스크립트는 페이지에 남으므로 다시 보내 배경을 깨울 필요가 없다. */
 let hookRequested = false;
 
 /**
  * 수정 페이지에서 고쳤다는 표시. 파이어폭스는 업데이트하면 이 스크립트를 정리 없이 없애고 다시 주입하므로 새 인스턴스가 이어받게 <html>에 둔다.
- * 모듈을 껐다 켤 때도 이어받아야 하므로 revoke에서도 지우지 않는다. 지우면 고친 글을 두고 나갈 때 확인 없이 날아간다.
+ * 모듈을 껐다 켤 때도 이어받아야 하므로 끌 때(onRevoke)도 지우지 않는다. 지우면 고친 글을 두고 나갈 때 확인 없이 날아간다.
  */
 const EDITED_KEY = "refresherEdited";
 
@@ -43,6 +39,11 @@ const publishImageOptions = ({webpConvert: webp, webpQuality, webpConcurrency: c
 
 export default defineModule(meta, {
     setup(ctx) {
+        // 업로드 설정은 ctx.signal이 아니라 끌 때만 지운다. 확장 업데이트로 컨텍스트가 무효화돼도(stopAll) 페이지의 hookUploads는 살아 있어,
+        // 지우면 이미지가 원래 이름으로 올라간다.
+        ctx.onRevoke(() => {
+            delete document.documentElement.dataset[UPLOAD_OPTIONS_KEY];
+        });
         publishImageOptions(ctx.settings);
         ctx.onSettingsChanged(() => publishImageOptions(ctx.settings));
         if (!WRITE_PAGE.test(location.pathname)) return;
@@ -83,7 +84,10 @@ export default defineModule(meta, {
             if (written) ev.preventDefault();
         };
 
-        listeners = new AbortController();
+        // 나가기 방지 리스너도 ctx.signal에 묶지 않고 끌 때만 푼다. 컨텍스트가 무효화될 때 ctx.signal로 풀리면
+        // 새로고침 안내를 따를 때 작성 중인 글이 확인 없이 날아간다.
+        const listeners = new AbortController();
+        ctx.onRevoke(() => listeners.abort());
         const {signal} = listeners;
         document.addEventListener("click", onClick, {capture: true, signal});
         document.addEventListener("input", onInput, {capture: true, signal});
@@ -104,10 +108,5 @@ export default defineModule(meta, {
         };
         for (const type of ["pointerdown", "keydown", "dragenter"]) document.addEventListener(type, watch, {capture: true, signal});
         signal.addEventListener("abort", () => observer.disconnect());
-    },
-
-    revoke() {
-        listeners?.abort();
-        delete document.documentElement.dataset[UPLOAD_OPTIONS_KEY];
     }
 });

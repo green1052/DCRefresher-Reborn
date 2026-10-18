@@ -42,15 +42,16 @@ export default {module: Gauge} satisfies IconsOf<typeof meta>;
 // index.ts — 콘텐츠 스크립트만 불러온다
 export default defineModule(meta, {
     setup(ctx) {
+        ctx.onRevoke(() => setRequestConcurrency(Number.POSITIVE_INFINITY));
+
         setRequestConcurrency(ctx.settings.concurrency);
         ctx.onSettingsChanged(() => setRequestConcurrency(ctx.settings.concurrency));
-    },
-    revoke() { setRequestConcurrency(Number.POSITIVE_INFINITY); }
+    }
 });
 ```
 
 - **setup(ctx)**: 모듈이 켜진 페이지에서 실행됩니다. 돌려준 값은 모듈의 api가 되어 단축키·팝업 토글·다른 모듈이 받습니다. setup이 던지면 실패로 표시하고 모듈을 껐다 켤 때까지 그 페이지에서는 다시 시작하지 않습니다. 실패한 모듈은 팝업의 "현재 페이지"에 시작하지 못한 모듈로 나옵니다.
-- **revoke()**: 모듈을 끄면 signal을 abort한 뒤 실행됩니다. 페이지에 넣은 DOM·클래스·스타일을 되돌립니다. 던져도 오류만 남기고 다른 모듈의 켜기·끄기는 이어집니다. 컨텍스트가 무효가 됐을 때(확장 업데이트 등)는 abort만 하고 revoke는 부르지 않아 페이지를 그대로 둡니다.
+- **ctx.onRevoke(fn)**: 모듈을 끄면 signal을 abort한 뒤 실행됩니다. 페이지에 넣은 DOM·클래스·스타일을 되돌립니다. setup 맨 앞에서 등록하고, 실행 상태(캐시·감시 등)는 setup 안의 변수에 두어 다시 켤 때 새로 만들어지게 합니다. 던져도 오류만 남기고 다른 모듈의 켜기·끄기는 이어집니다. 컨텍스트가 무효가 됐을 때(확장 업데이트 등)는 abort만 하고 부르지 않아 페이지를 그대로 둡니다. setup이 await하는 사이 꺼진 뒤에 등록하면 바로 부릅니다.
 - **ctx.onSettingsChanged(listener)**: 켜져 있는 동안 설정이 바뀌면 바뀐 키들(Set)로 한 번 부릅니다. 여러 키가 한꺼번에 바뀌어도 한 번입니다. `ctx.settings`는 늘 최신 값이므로, 설정을 쓸 때마다 읽는 모듈은 등록하지 않아도 됩니다.
 - 객체를 쓸 때 `setup`을 `shortcuts`, `pageToggles`보다 앞에 둡니다. TypeScript가 api 타입을 `setup`의 반환값에서 추론하기 때문입니다.
 
@@ -63,6 +64,7 @@ export default defineModule(meta, {
 | `addFilter(selector, fn)` | 지금 있는 요소와 이후 추가되는 요소마다 `fn`을 실행한다 |
 | `addCleanup(fn)` | signal을 받지 못하는 것(storage watch, zustand subscribe, 타이머)의 해제 함수를 등록한다 |
 | `onSettingsChanged(fn)` | 위 설명 참고. setup 안에서 등록한다 |
+| `onRevoke(fn)` | 위 설명 참고. 모듈을 끌 때 페이지를 되돌린다 |
 
 오버레이 컴포넌트(Preact)는 설정을 `useContentModuleSettings("모듈 id")`로 직접 읽습니다. 설정을 UI 스토어로 옮겨 적지 마세요. 설정 스토어는 콘텐츠 스크립트만 채우므로, 옵션·팝업과 같이 쓰는 컴포넌트는 `useModuleSettings`로 읽고 undefined일 때의 기본값을 정합니다(`components/dialogs.tsx`). 두 훅 모두 꺼진 모듈의 설정도 주므로, 다른 모듈이 이 페이지에서 돌 때만 그 설정을 따르는 UI(미리보기의 차단·배지)는 `useRunningModuleSettings("모듈 id")`로 읽습니다. 모듈이 돌지 않으면 undefined입니다. 컴포넌트 밖에서는 `core/module/registry.ts`의 `runningModuleSettings(id)`를 씁니다.
 

@@ -5,8 +5,9 @@ import meta from "./meta";
 
 export default defineModule(meta, {
     setup(ctx) {
+        ctx.onRevoke(() => setRequestConcurrency(Number.POSITIVE_INFINITY));
+
         setRequestConcurrency(ctx.settings.concurrency);
         ctx.onSettingsChanged(() => setRequestConcurrency(ctx.settings.concurrency));
-    },
-    revoke: () => setRequestConcurrency(Number.POSITIVE_INFINITY)
+    }
 });

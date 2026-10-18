@@ -46,6 +46,12 @@ const createButton = (): void => {
 
 export default defineModule(meta, {
     setup(ctx) {
+        ctx.onRevoke(() => {
+            document.documentElement.classList.remove("refresherStealth", TEMPORARY_STEALTH);
+
+            for (const element of document.querySelectorAll(CONTROL_BUTTON)) element.remove();
+        });
+
         document.documentElement.classList.add("refresherStealth");
 
         // 광고까지 다 받는 load를 기다리면 한참 늦으므로 body가 생기자마자 만든다.
@@ -71,11 +77,5 @@ export default defineModule(meta, {
             isOn: (api) => api.isRevealed(),
             toggle: (api) => api.toggle()
         }
-    },
-
-    revoke() {
-        document.documentElement.classList.remove("refresherStealth", TEMPORARY_STEALTH);
-
-        for (const element of document.querySelectorAll(CONTROL_BUTTON)) element.remove();
     }
 });

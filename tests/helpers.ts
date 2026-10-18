@@ -20,8 +20,17 @@ type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K>
 export const setting = (schema: DistributiveOmit<SettingSchema, "name" | "desc">): SettingSchema => ({name: "", desc: "", ...schema} as SettingSchema);
 
 /** 레지스트리가 받는 모듈. 이름·설명은 채운다. */
-export const testModule = <Api>(definition: Omit<ModuleDefinition<Record<string, SettingSchema>, Api>, "name" | "description">): AnyModule =>
-    ({name: "", description: "", ...definition}) as AnyModule;
+export const testModule = <Api>({revoke, setup, ...definition}: Omit<ModuleDefinition<Record<string, SettingSchema>, Api>, "name" | "description"> & { revoke?: () => void }): AnyModule =>
+    ({
+        name: "",
+        description: "",
+        ...definition,
+        // revoke는 setup을 시작할 때 ctx.onRevoke로 등록한다 (모듈이 setup 맨 앞에서 등록하는 것과 같다).
+        setup: (ctx) => {
+            if (revoke) ctx.onRevoke(revoke);
+            return setup(ctx);
+        }
+    }) as AnyModule;
 
 /** 목록 행에서 읽은 글 정보. 주지 않은 필드는 test 갤러리 1번 글이다. */
 export const preData = (fields: Partial<GalleryPreData> = {}): GalleryPreData =>

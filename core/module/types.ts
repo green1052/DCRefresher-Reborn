@@ -54,6 +54,13 @@ export interface ModuleContext<S extends SettingsSchema = SettingsSchema> {
      * setup 안에서 등록해 setup이 만든 상태를 그대로 쓴다. await 전에 등록해야 그사이 바뀐 설정도 받는다.
      */
     onSettingsChanged(listener: (keys: ReadonlySet<keyof S & string>) => void): void;
+
+    /**
+     * 사용자가 모듈을 끌 때 부를 정리 함수(페이지에 넣은 DOM·클래스·스타일 되돌리기)를 등록한다. 리스너(signal)·cleanup이 풀린 뒤에 부른다.
+     * 콘텐츠 스크립트 컨텍스트가 무효화될 때(stopAll)는 부르지 않아 페이지를 그대로 둔다 (확장 업데이트 때 가린 내용이 드러나지 않게).
+     * 이미 꺼진 뒤에 등록하면(setup이 await하는 사이 꺼짐) 바로 부른다. 던져도 오류만 남기고 다른 정리·모듈은 이어진다.
+     */
+    onRevoke(revoke: () => void): void;
 }
 
 /** 팝업 '현재 페이지' 토글의 표시 정보 (features/<id>/meta.ts). 동작은 index.ts의 pageToggles가 같은 id로 붙이고, 아이콘은 icons.ts의 toggles가 id로 찾는다. */
@@ -148,14 +155,11 @@ interface ModuleImplBase<M extends AnyModuleMeta, Api> {
     /** 팝업 '현재 페이지' 토글의 동작. 키는 메타의 toggles id다. */
     pageToggles?: Record<ToggleKeyOf<M>, PageToggleImpl<Api>>;
 
-    /** 모듈을 끌 때 실행 (ModuleDefinition의 revoke). */
-    revoke?(): void;
 }
 
 /** 동작의 타입을 지운 것. defineModule이 레지스트리에 넘기려고 쓴다. */
 export interface AnyModuleImpl {
     setup(ctx: ModuleContext): unknown;
-    revoke?(): void;
     shortcuts?: Partial<Record<string, (api: unknown) => void | Promise<void>>>;
     pageToggles?: Partial<Record<string, PageToggleImpl<unknown>>>;
 }
@@ -173,12 +177,6 @@ export interface ModuleDefinition<S extends SettingsSchema = SettingsSchema, Api
 
     /** 팝업 '현재 페이지' 토글 (메타의 toggles에 동작을 붙인 것). */
     pageToggles?: PageToggle<Api>[];
-
-    /**
-     * 모듈을 끌 때 실행 (DOM 정리 등). 리스너(signal)·cleanup은 이미 풀린 뒤다.
-     * 콘텐츠 스크립트 컨텍스트가 무효화될 때(stopAll)는 부르지 않는다.
-     */
-    revoke?(): void;
 }
 
 /**
