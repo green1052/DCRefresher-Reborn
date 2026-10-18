@@ -138,7 +138,7 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
                 <DialogTitle>자동입력 방지 코드</DialogTitle>
             </DialogHeader>
             <img src={captcha.url} alt="자동입력 방지 코드" className="block w-full rounded-lg"/>
-            <SubmitForm onSubmit={send} className="flex flex-col gap-4">
+            <SubmitForm onSubmit={send}>
                 <Input
                     ref={input}
                     value={code}

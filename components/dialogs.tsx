@@ -7,6 +7,7 @@ import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, A
 import {Button} from "@/components/ui/button";
 import {Dialog, DialogClose, DialogContent, DialogFooter} from "@/components/ui/dialog";
 import {useModuleSettings} from "@/core/module/useModuleSettings";
+import {cn} from "cn";
 
 /**
  * 연 창의 포커스.
@@ -110,7 +111,7 @@ export const DialogActions = ({cancelLabel = "취소", children}: { cancelLabel?
 
 /** Enter로 저장하는 다이얼로그 폼. 폼 제출이라 한글 조합을 끝내는 Enter로는 브라우저가 제출하지 않는다. */
 export const SubmitForm = ({onSubmit, className, children}: { onSubmit: () => unknown; className?: string; children: ReactNode }) => (
-    <form className={className} onSubmit={(ev) => {
+    <form className={cn("flex flex-col gap-4", className)} onSubmit={(ev) => {
         ev.preventDefault();
         void onSubmit();
     }}>

@@ -262,7 +262,7 @@ const PasswordDialog = ({warning, onSubmit, onClose}: { warning?: string; onSubm
                 <DialogTitle>댓글 비밀번호</DialogTitle>
                 {warning && <p className="text-sm text-destructive">{warning}</p>}
             </DialogHeader>
-            <SubmitForm onSubmit={() => value && onSubmit(value)} className="flex flex-col gap-4">
+            <SubmitForm onSubmit={() => value && onSubmit(value)}>
                 <Input
                     ref={input}
                     type="password"

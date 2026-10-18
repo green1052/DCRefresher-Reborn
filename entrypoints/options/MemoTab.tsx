@@ -79,7 +79,7 @@ const MemoFormDialog = ({
                 <DialogTitle>메모 {editing ? "수정" : "추가"}</DialogTitle>
             </DialogHeader>
 
-            <SubmitForm onSubmit={submit} className="flex flex-col gap-4">
+            <SubmitForm onSubmit={submit}>
                 <FieldGroup>
                     <Field orientation="horizontal" className="justify-between">
                         <FieldLabel>종류</FieldLabel>

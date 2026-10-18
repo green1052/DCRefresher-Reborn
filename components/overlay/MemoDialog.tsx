@@ -82,7 +82,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
                 </DialogDescription>
             </DialogHeader>
 
-            <SubmitForm onSubmit={submit} className="flex flex-col gap-4">
+            <SubmitForm onSubmit={submit}>
                 <div className="flex flex-col gap-3">
                     <ToggleGroup aria-label="메모 대상" variant="outline" spacing={0} value={[type]} onValueChange={([next]) => {
                         if (!arrayIncludes(MEMO_TYPES, next)) return;

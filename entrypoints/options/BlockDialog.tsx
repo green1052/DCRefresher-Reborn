@@ -97,7 +97,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                 </DialogDescription>
             </DialogHeader>
 
-            <SubmitForm onSubmit={submit} className="flex flex-col gap-4">
+            <SubmitForm onSubmit={submit}>
                 <FieldGroup>
                     <Field>
                         <FieldLabel htmlFor={`${id}-content`}>값</FieldLabel>
