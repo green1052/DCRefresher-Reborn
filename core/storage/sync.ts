@@ -23,6 +23,10 @@ export const watchStorage = <T>(key: StorageItemKey, callback: (next: T | null, 
     return dispose;
 };
 
+/** 키 여러 개를 storage.getItems 한 번으로 읽는다. getItems는 받은 키로 값을 돌려주지만 순서는 약속이 아니므로 키로 짝짓는다. */
+export const readItems = async (keys: readonly StorageItemKey[]): Promise<Map<StorageItemKey, unknown>> =>
+    new Map((await storage.getItems([...keys])).map(({key, value}) => [key, value]));
+
 /**
  * 저장소 키 여러 개를 한 번의 storage.local.get으로 읽어 apply에 넘기고, 바뀌면(다른 탭·옵션 페이지·이 탭의 쓰기) 다시 넘긴다.
  * 항목(defineItem)은 만드는 순간 키마다 한 번 더 읽으므로 키로 읽고 감시한다 (core/storage/items.ts). 값이 없으면 null이다.
@@ -39,11 +43,8 @@ export const storageSync = <K extends StorageItemKey>(keys: readonly K[], onChan
         if (pending === 0) onChange(key, value);
     };
 
-    // getItems는 받은 키로 값을 돌려준다. 순서에 기대지 않고 키로 짝짓는다.
-    const read = async (): Promise<Map<StorageItemKey, unknown>> => new Map((await storage.getItems([...keys])).map(({key, value}) => [key, value]));
-
     const load = async (): Promise<void> => {
-        const items = await read();
+        const items = await readItems(keys);
         for (const key of keys) apply(key, items.get(key) ?? null);
     };
 
@@ -56,7 +57,7 @@ export const storageSync = <K extends StorageItemKey>(keys: readonly K[], onChan
             apply(key, next);
         }, signal));
         try {
-            const items = await read();
+            const items = await readItems(keys);
             for (const key of keys) if (!changed.has(key)) apply(key, items.get(key) ?? null);
         } catch (e) {
             // once가 다음 호출에 다시 시도한다. 그때 감시가 두 번 걸리지 않게 푼다.
