@@ -6,7 +6,7 @@ import {listUrl} from "@/core/http/urls";
  */
 const PARAMS = {uid: "rf_uid", ip: "rf_ip"} as const;
 
-export type WriterKind = keyof typeof PARAMS;
+type WriterKind = keyof typeof PARAMS;
 
 export interface WriterFilter {
     kind: WriterKind;
