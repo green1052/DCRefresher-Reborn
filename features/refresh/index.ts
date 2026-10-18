@@ -181,7 +181,7 @@ export default defineModule({
                 if (holdList(customURL, force)) return false;
 
                 // 자동 새로고침은 목록 표만 파싱한다 (문서 전체의 1/3). 페이징 박스는 사용자가 한 로드(강제·이동)에서만 맞춘다.
-                // 검색 결과(검색 이어 보기가 페이징을 보고 다시 이어 붙인다)와 지난 요청이 실패한 뒤(사용자의 페이지 이동이 실패해
+                // 검색 결과(검색 모듈이 페이징을 보고 다시 이어 붙인다)와 지난 요청이 실패한 뒤(사용자의 페이지 이동이 실패해
                 // 페이징이 옛 페이지일 수 있다)에는 문서 전체를 파싱해 페이징도 맞춘다.
                 const partial = !force && failures === 0 && !queryString("s_keyword") && listHtml;
                 const dom = new DOMParser().parseFromString(partial ? `<table class="gall_list">${listHtml}` : response, "text/html");

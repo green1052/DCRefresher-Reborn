@@ -31,8 +31,8 @@ interface Markup {
 const PAGING = ".left_content article:has(.gall_listwrap) .bottom_paging_box";
 
 const LIST_MARKUP: Markup[] = [
-    {feature: "새로고침·검색 이어 보기 (갈아끼울 목록)", selector: ".gall_list:not([id]) tbody > tr.ub-content"},
-    {feature: "새로고침·검색 이어 보기 (페이징의 현재 쪽)", selector: `${PAGING} em`},
+    {feature: "새로고침·검색 (갈아끼울 목록)", selector: ".gall_list:not([id]) tbody > tr.ub-content"},
+    {feature: "새로고침·검색 (페이징의 현재 쪽)", selector: `${PAGING} em`},
     {feature: "차단 (작성자 닉네임·아이디·IP)", selector: ".gall_list tr.ub-content > .ub-writer[data-nick][data-uid][data-ip]"},
     {feature: "차단 (제목)", selector: ".gall_list tr.ub-content .gall_tit > a:not([class])"},
     {feature: "차단 (말머리)", selector: ".gall_list tr.ub-content .gall_subject", optional: true},
@@ -55,12 +55,12 @@ const VIEW_MARKUP: Markup[] = [
 ];
 
 const SEARCH_MARKUP: Markup[] = [
-    {feature: "검색 이어 보기 (검색 결과 행)", selector: ".gall_list:not([id]) tbody > tr[data-no]"},
-    {feature: "검색 이어 보기 (검색어)", selector: "#sch_q"},
-    {feature: "검색 이어 보기 (목록 줄 수)", selector: "#list_num"},
-    {feature: "검색 이어 보기 (페이징의 현재 쪽)", selector: `${PAGING} em`},
+    {feature: "검색 (검색 결과 행)", selector: ".gall_list:not([id]) tbody > tr[data-no]"},
+    {feature: "검색 (검색어)", selector: "#sch_q"},
+    {feature: "검색 (목록 줄 수)", selector: "#list_num"},
+    {feature: "검색 (페이징의 현재 쪽)", selector: `${PAGING} em`},
     // 검색 구간이 하나뿐인 작은 갤러리에는 없다.
-    {feature: "검색 이어 보기 (다음 검색)", selector: `${PAGING} a.search_next`, optional: true}
+    {feature: "검색 (다음 검색)", selector: `${PAGING} a.search_next`, optional: true}
 ];
 
 // 에디터(EDITOR)와 자동 짤방·작성 가이드(AUTO)는 디시 스크립트가 그려 여기 없다. 테스트에서 디시 스크립트가 그 선택자를 쓰는지 따로 본다.
@@ -187,7 +187,7 @@ test.describe("실제 디시", () => {
 
     // 목록·글·검색 결과·글쓰기 페이지를 한 번씩 GET으로 받아(요청 4개) 디시 스크립트를 뺀 채 빈 페이지에 그리고 선택자를 센다.
     // 확장이 고치기 전의 디시 마크업을 봐야 하므로 디시 주소로 열지 않는다. 댓글은 댓글 API로 따로 받아 그리므로 여기서 보지 않는다.
-    test("새로고침·차단·검색 이어 보기·레이아웃·스텔스·글쓰기가 찾는 디시 마크업이 그대로 있다", async ({page, request}) => {
+    test("새로고침·차단·검색·레이아웃·스텔스·글쓰기가 찾는 디시 마크업이 그대로 있다", async ({page, request}) => {
         // 그린 HTML의 스타일·이미지·iframe은 받지 않는다. 마크업만 보면 된다.
         await page.route("**/*", (route) => route.abort());
         // 받은 HTML을 돌려준다. 문자열로 찾는 마크업은 그것으로 본다.

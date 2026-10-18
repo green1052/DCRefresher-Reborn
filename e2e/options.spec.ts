@@ -28,13 +28,13 @@ test.describe("옵션 - 설정 탭", () => {
     test("설정 검색은 맞는 설정만 남기고, 꺼진 모듈의 설정도 펼쳐 켜야 적용된다고 알린다", async ({page, extensionId}) => {
         const options = await openOptions(page, extensionId, "general");
         const search = page.getByRole("searchbox", {name: "설정 검색", exact: true});
-        const card = options.card("검색 이어 보기");
+        const card = options.card("검색");
         const slider = card.getByRole("slider", {name: "최대 다음 검색 횟수", exact: true});
         await expect(slider).toHaveCount(0);
 
         await search.fill("최대 다음 검색");
         await expect(options.cards).toHaveCount(1);
-        await expect(card.getByRole("switch", {name: "검색 이어 보기 사용", exact: true})).not.toBeChecked();
+        await expect(card.getByRole("switch", {name: "검색 사용", exact: true})).not.toBeChecked();
         await expect(slider).toBeVisible();
         await expect(card.getByText("모듈을 켜야 적용됩니다.")).toBeVisible();
         // 맞은 글자(설정 이름)를 칠한다.

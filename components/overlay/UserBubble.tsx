@@ -236,7 +236,7 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
     };
 
     const identity = identityValue(selected);
-    // 검색 이어 보기가 이 페이지에서 돌 때만 (아이디·IP 거르기를 그 모듈이 한다).
+    // 검색 모듈이 이 페이지에서 돌 때만 (아이디·IP 거르기를 그 모듈이 한다).
     const searchApi = getModuleApi("search");
     const searchBy = (by: "nick" | "identity"): (() => void) | undefined => searchApi && (() => {
         close();
