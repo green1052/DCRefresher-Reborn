@@ -9,8 +9,13 @@ export default defineConfig({
     vite: () => ({
         plugins: [
             preact(),
-            tailwindcss()
-        ]
+            // Tailwind의 자체 최적화는 대상 브라우저가 고정(Chrome 111·Firefox 128)이라 CSS 중첩을 풀고 접두어를 붙인다.
+            // 끄고 Vite의 압축(lightningcss)이 아래 cssTarget, 곧 manifest의 최소 버전에 맞추게 한다.
+            tailwindcss({optimize: false})
+        ],
+        build: {
+            cssTarget: ["chrome140", "firefox144"]
+        }
     }),
     hooks: {
         // components·utils 자동 import 스캔은 제네릭 타입 인자(V 등)를 export로 잘못 읽어 경고만 낸다. 직접 import하므로 끈다.
