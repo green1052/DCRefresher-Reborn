@@ -48,11 +48,8 @@
         color: rgb(from var(--muted-foreground) calc(255 - r) calc(255 - g) calc(255 - b));
     }
 
-    img,
-    video,
-    iframe,
-    embed {
-        max-width: 100%;
+    /* 최대 폭은 아래 * 규칙이 준다. */
+    :is(img, video, iframe, embed) {
         border-radius: var(--radius);
     }
 
@@ -163,7 +160,6 @@
 .refresher-imgnum {
     position: relative;
     display: inline-block;
-    max-width: 100%;
     vertical-align: top;
 
     &::before {
@@ -196,27 +192,26 @@
     font-size: var(--refresher-preview-font-size, 15px);
     line-height: 1.6;
 
-    &[data-dccon] img,
-    &[data-dccon] video {
-        width: 100px;
-        height: 100px;
-        border-radius: 0;
-
-        /* 대왕콘 (디시 common.css와 같은 크기). */
-        &.bigdccon {
-            width: 150px;
-            height: 150px;
-        }
-    }
-
-    /* 스텔스 모드: 가려 두고 마우스를 올리면 보인다 (변수는 features/stealth/page.css가 페이지에서 넘긴다). */
     &[data-dccon] {
+        /* 스텔스 모드: 가려 두고 마우스를 올리면 보인다 (변수는 features/stealth/page.css가 페이지에서 넘긴다). */
         --refresher-dccon-cover-border: var(--border);
         @apply refresher-dccon-cover;
 
         /* 다크 모드에서는 이 상자가 통째로 뒤집히므로(.refresher-html) 테두리 색도 미리 뒤집는다. 아니면 거의 안 보인다. */
         .dark & {
             --refresher-dccon-cover-border: rgb(from var(--border) calc(255 - r) calc(255 - g) calc(255 - b));
+        }
+
+        :is(img, video) {
+            width: 100px;
+            height: 100px;
+            border-radius: 0;
+
+            /* 대왕콘 (디시 common.css와 같은 크기). */
+            &.bigdccon {
+                width: 150px;
+                height: 150px;
+            }
         }
     }
 
@@ -250,11 +245,7 @@
         box-sizing: border-box;
     }
 
-    /* 색 목록은 core/preview/txtcon.ts의 TXTCON_BACKGROUNDS·TXTCON_COLORS와 같다. */
-    .cbg_3b4890 {
-        background-color: #3b4890;
-    }
-
+    /* 색 목록은 core/preview/txtcon.ts의 TXTCON_BACKGROUNDS·TXTCON_COLORS와 같다. 기본색(cbg_3b4890·ctxt_ffffff)은 위 .coment_dccon_txt·.txtcon_txt가 준다. */
     .cbg_b4b4e1 {
         background-color: #b4b4e1;
     }
@@ -273,10 +264,6 @@
 
     .cbg_333333 {
         background-color: #333333;
-    }
-
-    .ctxt_ffffff {
-        color: #ffffff;
     }
 
     .ctxt_333333 {
