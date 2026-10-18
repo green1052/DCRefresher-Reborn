@@ -154,6 +154,14 @@ export const NO_REPLY: Reply = {commentNo: null, replyNo: null};
 /** 새 댓글(고른 댓글)이 없을 때 쓰는 빈 집합. 새로고침마다 새 객체를 넣지 않는다. */
 export const NO_FRESH: ReadonlySet<string> = new Set();
 
+/** no를 넣거나(on) 뺀 새 집합. on을 주지 않으면 있으면 빼고 없으면 넣는다. 스토어에는 고친 집합이 아니라 새 집합을 넣어야 다시 그려진다. */
+export const toggled = (set: ReadonlySet<string>, no: string, on = !set.has(no)): Set<string> => {
+    const next = new Set(set);
+    if (on) next.add(no);
+    else next.delete(no);
+    return next;
+};
+
 export const NO_HOOKS: Hooks = {
     requestOpen: () => undefined,
     requestClose: () => undefined,
@@ -236,19 +244,9 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
         fadeTimer = window.setTimeout(() => set({fading: false}), 200);
     },
 
-    toggleCollapse: (no) =>
-        set((state) => {
-            const next = new Set(state.collapsed);
-            if (!next.delete(no)) next.add(no);
-            return {collapsed: next};
-        }),
+    toggleCollapse: (no) => set((state) => ({collapsed: toggled(state.collapsed, no)})),
 
-    toggleSelected: (no) =>
-        set((state) => {
-            const next = new Set(state.selectedComments);
-            if (!next.delete(no)) next.add(no);
-            return {selectedComments: next};
-        }),
+    toggleSelected: (no) => set((state) => ({selectedComments: toggled(state.selectedComments, no)})),
 
     openCaptcha: (url) => new Promise((resolve) => set({captcha: {url, resolve}})),
 

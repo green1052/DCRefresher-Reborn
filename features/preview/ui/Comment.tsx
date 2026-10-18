@@ -18,7 +18,7 @@ import {markPressable, pressContents} from "./contentsClick";
 import {openDcconInfo} from "./DcconInfoPopup";
 import {fitTxtconNearView} from "./fitTxtcon";
 import {watchGifVideos} from "./gifVideos";
-import {NO_REPLY, parseDate, refreshCommentsOf, usePreviewStore} from "./previewStore";
+import {NO_REPLY, parseDate, refreshCommentsOf, toggled, usePreviewStore} from "./previewStore";
 import {TimeStamp} from "./TimeStamp";
 import {UserCard} from "./UserCard";
 
@@ -186,12 +186,7 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
 });
 
 const setDeleting = (no: string, deleting: boolean): void =>
-    usePreviewStore.setState((s) => {
-        const next = new Set(s.deletingComments);
-        if (deleting) next.add(no);
-        else next.delete(no);
-        return {deletingComments: next};
-    });
+    usePreviewStore.setState((s) => ({deletingComments: toggled(s.deletingComments, no, deleting)}));
 
 const removeComment = async (no: string, isAdmin: boolean, password: string): Promise<void> => {
     usePreviewStore.setState({deletePrompt: null});
