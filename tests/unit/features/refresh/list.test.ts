@@ -30,7 +30,7 @@ const nos = (list: Element): string[] => Array.from(list.children, (child) => ch
 
 const current = (): HTMLElement => document.querySelector("tbody")!;
 
-/** 페이지에 목록을 두고 같은 목록으로 한 번 갈아끼운다. 처음 그린 행은 비교할 원래 HTML이 없어 첫 교체에서 모두 바뀌기 때문이다. */
+/** 페이지에 목록을 두고 같은 목록으로 한 번 갈아끼워 모든 행에 받아온 틀을 둔다. */
 const mount = (rows: string[]): HTMLElement => {
     const list = tbody(rows);
     document.body.append(list.closest("table")!);
@@ -96,12 +96,13 @@ describe("replaceList", () => {
         expect(list.children[1]).toBe(second);
     });
 
-    it("페이지가 처음 그린 행은 첫 교체에서 갈아끼운다", () => {
-        const list = tbody([row("1")]);
+    it("페이지가 처음 그린 행은 제목·작성자가 같으면 첫 교체에서도 그대로 두고, 제목이 바뀌었으면 갈아끼운다", () => {
+        const list = tbody([row("2"), row("1")]);
         document.body.append(list.closest("table")!);
-        const original = list.children[0];
-        replaceList(list, tbody([row("1")]), OPTIONS);
-        expect(list.children[0]).not.toBe(original);
+        const [second, first] = list.children;
+        replaceList(list, tbody([row("2"), row("1", {title: "고친 제목"})]), OPTIONS);
+        expect(list.children[0]).toBe(second);
+        expect(list.children[1]).not.toBe(first);
     });
 
     it("받아온 행의 이미지는 화면에 올 때 받는다", () => {

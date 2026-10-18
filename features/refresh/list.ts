@@ -105,6 +105,16 @@ export const isWholeFirstPage = (url: string): boolean => {
     return (params.get("page") ?? "1") === "1" && !params.has("exception_mode") && !params.has("search_head") && !writerFilter(url);
 };
 
+/** 같은 자리의 같은 글 행인지 제목과 작성자로 본다. 틀이 없는 행(페이지가 처음 그린 행)을 견줄 때 쓴다. */
+const sameRow = (a: Element, b: Element): boolean => {
+    const title = (row: Element) => row.querySelector(".gall_tit > a")?.textContent;
+    const writer = (row: Element) => {
+        const cell = row.querySelector<HTMLElement>(".ub-writer");
+        return cell && `${cell.dataset.nick}|${cell.dataset.uid}|${cell.dataset.ip}`;
+    };
+    return title(a) === title(b) && writer(a) === writer(b);
+};
+
 /**
  * 받아온 목록(newList)을 지금 목록(oldList) 자리에 넣고, 새로 들어온 글 행(added)과 행을 넣거나 빼거나 갈아끼웠는지(changed)를 돌려준다.
  * 수 칸 글자만 고친 것은 바뀐 것이 아니다.
@@ -172,6 +182,8 @@ export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigat
         for (const [index, row] of rows.entries()) {
             if (index >= at && index < at + count) continue;
             const old = oldRows[index < at ? index : index - count]!;
+            // 페이지가 처음 그린 행은 틀이 없다(다른 모듈이 이미 고쳐 원래 HTML을 모른다). 제목·작성자가 같으면 받아온 행의 틀을 물려준다.
+            if (!rowFrames.has(old) && sameRow(old, row)) rowFrames.set(old, rowFrames.get(row) ?? "");
             if (rowFrames.get(old) === rowFrames.get(row)) {
                 // 남긴 행은 원래 행과 틀이 같아 그대로 둔다. 지웠던 글이 다시 받아지면 붉은 표시를 받아온 행에 맞춰 뗀다.
                 old.classList.toggle("refresherDeleted", row.classList.contains("refresherDeleted"));
