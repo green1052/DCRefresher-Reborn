@@ -31,7 +31,6 @@ export const OFFLINE_PREFS = {
     "network.proxy.no_proxies_on": ""
 };
 
-/** 비어 있는 TCP 포트. */
 export const freePort = (): Promise<number> =>
     new Promise((resolve, reject) => {
         const server = net.createServer();
@@ -145,9 +144,8 @@ class RdpClient {
     }
 
     /**
-     * to에 요청을 보내고, 그 요청으로 to가 보내는 event 알림 중 match(알림, 요청의 응답)에 맞는 것을 기다린다.
-     * 알림은 응답과 같은 묶음으로 올 수 있어 요청보다 먼저 듣고, 응답을 받은 뒤 그때까지 온 것부터 짝짓는다.
-     * 알림을 가져가지 않으므로 시간이 지난 뒤 늦게 온 알림도 다음 요청이 응답으로 걸러 낸다 (evaluationResult의 resultID).
+     * to에 요청을 보내고, to가 보내는 event 알림 중 match(알림, 응답)에 맞는 것을 기다린다.
+     * 알림이 응답과 같은 묶음으로 올 수 있어 요청 전부터 듣는다. 늦게 온 남의 알림은 match가 걸러 낸다 (evaluationResult의 resultID).
      */
     async requestEvent(to: string, type: string, params: Record<string, unknown>, event: string, match: (packet: Packet, reply: Packet) => boolean): Promise<Packet> {
         const seen: Packet[] = [];

@@ -39,7 +39,6 @@ export async function openListPage(page: Page, url = FAKE_LIST_URL) {
         paging: page.locator(".bottom_paging_box"),
         /** 미리보기 창. */
         frame,
-        /** 미리보기 창의 글 제목. */
         frameTitle: frame.getByRole("heading", {level: 2}),
         comments: frame.locator(".refresher-comment"),
         /** 미니 미리보기 카드. */

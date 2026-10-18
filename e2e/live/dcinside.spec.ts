@@ -8,7 +8,7 @@ import {openListPage} from "../pages/list";
  * 실제 디시에서 읽기만 한다 (bun run e2e:live). 디시 마크업·API가 바뀌면 여기서 걸린다. 쓰기 요청은 픽스처가 끊는다.
  * 글·댓글은 그때그때 다르므로 개수·내용이 아니라 모양만 본다.
  * 기본은 미니 갤러리 bjwg64다. 콘텐츠 스크립트는 모바일 페이지에서 돌지 않아 PC 주소로 연다. DC_LIST_URL로 다른 갤러리의 PC 목록 주소를 줄 수 있다.
- * GitHub의 Live 워크플로(손으로 실행)가 비워 두면 빈 문자열이 오므로 그때도 기본값을 쓴다.
+ * Live 워크플로가 DC_LIST_URL을 비워 두면 빈 문자열이 오므로 ||로 기본값을 쓴다.
  */
 const LIST_URL = process.env.DC_LIST_URL || "https://gall.dcinside.com/mini/board/lists/?id=bjwg64";
 const {pathname: LIST_PATH, searchParams} = new URL(LIST_URL);
@@ -190,7 +190,6 @@ test.describe("실제 디시", () => {
     test("새로고침·차단·검색·레이아웃·스텔스·글쓰기가 찾는 디시 마크업이 그대로 있다", async ({page, request}) => {
         // 그린 HTML의 스타일·이미지·iframe은 받지 않는다. 마크업만 보면 된다.
         await page.route("**/*", (route) => route.abort());
-        // 받은 HTML을 돌려준다. 문자열로 찾는 마크업은 그것으로 본다.
         const check = async (url: string, markups: Markup[]): Promise<string> => {
             const response = await request.get(url);
             expect(response.ok(), url).toBe(true);
@@ -204,9 +203,8 @@ test.describe("실제 디시", () => {
             return html;
         };
 
-        // 새로고침은 받은 목록을 문자열로 다룬다(features/refresh/markup.ts). LIST_TABLE 뒤 첫 tbody를 잘라 비교·부분 파싱하고,
-        // 파싱한 행의 outerHTML에 COUNT_TEXT를 써 수 칸 글자를 비워 수만 바뀐 행을 가린다(list.ts frameOf). 자른 tbody가 갈아끼울 목록과 행 수가 같아야 하고,
-        // 각 행의 outerHTML을 정규식으로 고쳐 다시 파싱하면 수 칸이 모두 비어 있어야 한다. 수를 자식 요소로 감싸면 정규식이 잡아도 비우지 못한다.
+        // 새로고침(features/refresh/markup.ts)은 받은 목록을 문자열로 다룬다. LIST_TABLE 뒤 첫 tbody를 잘라 쓰므로 행 수가 목록과 같아야 한다.
+        // 수만 바뀐 행은 outerHTML에서 COUNT_TEXT로 수 칸 글자를 비워 가린다(list.ts frameOf). 디시가 수를 자식 요소로 감싸면 비우지 못한다.
         const listHtml = await check(LIST_URL, LIST_MARKUP);
         const table = listHtml.indexOf(LIST_TABLE);
         expect(table, `새로고침 (목록 표): ${LIST_TABLE}가 없다`).toBeGreaterThan(-1);

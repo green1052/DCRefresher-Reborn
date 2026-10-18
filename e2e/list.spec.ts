@@ -73,7 +73,7 @@ test.describe("자동 새로고침", () => {
 
     test("새 글을 맨 위에 넣고 그대로인 행은 갈아끼우지 않는다. 차단한 사람의 새 글은 가린다", async ({listPage, site, storage}) => {
         await storage.set({"refresher:block:NICK": [{id: "a", content: "차단닉", isRegex: false}]});
-        // 첫 새로고침은 페이지에 있던 행을 모두 받은 행으로 바꾼다. 두 번째 요청이 왔으면 첫 교체는 끝났다 (요청은 앞 교체가 끝난 뒤에 나간다).
+        // 첫 새로고침은 행을 모두 갈아끼운다. 요청은 앞 교체가 끝난 뒤에 나가므로 두 번째 요청(문서 포함 세 번째)이 오면 첫 교체는 끝났다.
         await expect.poll(() => site.listRequests, {timeout: 15_000}).toBeGreaterThanOrEqual(3);
         await listPage.row(3).evaluate((row) => row.setAttribute("data-e2e-kept", ""));
 

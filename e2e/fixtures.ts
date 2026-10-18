@@ -17,7 +17,6 @@ const FIREFOX_EXTENSION = fileURLToPath(new URL("../.output/firefox-mv2", import
 const IP_DB_HOST = "dcrefresher.green1052.com";
 const DCINSIDE = /^https:\/\/([a-z0-9-]+\.)*dcinside\.(com|co\.kr)$/;
 
-/** 저장소 값 (JSON). */
 type Json = string | number | boolean | null | Json[] | { [key: string]: Json };
 
 /** 확장 저장소(browser.storage.local). 디시 페이지의 evaluate로는 닿지 않아 배경에서 읽고 쓴다. */
@@ -77,7 +76,7 @@ export const test = base.extend<{ live: boolean; serveIpDb: boolean }>({
         let context: BrowserContext | undefined;
         try {
             if (browserName === "firefox") {
-                // 플레이라이트의 파이어폭스는 수십 번에 한 번꼴로 뜨다가 멈춘다 (디버깅 서버 없이도 그렇다). 짧게 기다리고 새 프로필로 다시 띄운다.
+                // 플레이라이트의 파이어폭스는 수십 번에 한 번꼴로 뜨다가 멈춘다 (디버깅 서버 없이도 그렇다). 15초 안에 뜨지 않으면 새 프로필로 세 번까지 띄운다.
                 for (let attempt = 1; !context; attempt++) {
                     const port = await freePort();
                     try {

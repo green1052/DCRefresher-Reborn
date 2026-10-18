@@ -109,7 +109,7 @@ export class FakeSite {
                 return html(viewPage(url.searchParams.get("no") ?? "", this.pageComments, this.commentTarget, this.comments.length));
             case "/mini/management/":
                 return html(MANAGE_PAGE);
-            // 디시가 요청이 많을 때 주는 임시 차단 페이지. 본문이 비어 있다.
+            // 글쓰기 페이지는 디시가 요청이 많을 때 주는 임시 차단 페이지(빈 본문)로 응답한다.
             case "/board/write/":
                 return html("<!DOCTYPE html><html><head><meta charset=\"utf-8\"></head><body></body></html>");
             case "/board/comment/":
@@ -231,8 +231,6 @@ ${pageCommentList(comments)}
 <script id="reply-setting-tmpl" type="text/x-jquery-tmpl"></script><script>_d('${encodeServiceTail(SERVICE_CODE_TAIL)}');</script>
 <script>$(document).data('comment_id', '${target?.id ?? "test"}'); $(document).data('comment_no', '${target?.no ?? no}');</script>
 </body></html>`;
-
-// ===== 댓글 폼의 service_code =====
 
 /** 글 페이지 댓글 폼의 service_code. 확장은 끝 10자리를 _d() 값을 푼 글자로 갈아 끼워 보낸다. */
 const SERVICE_CODE = "abc0123456789";

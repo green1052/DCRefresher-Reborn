@@ -118,7 +118,7 @@ test.describe("미리보기", () => {
             let requested = postRequest(no);
             await listPage.openPreview(3 - no);
             await requested;
-            // 본문 요청은 우클릭을 누를 때 나가 창이 뜨기 전이다. 스크롤 칸에 포커스가 오면 같은 효과 차례에 PageDown 처리기도 붙어 있다.
+            // PageDown 처리기는 스크롤 칸 포커스와 같은 effect 차례에 붙으므로 포커스를 본 뒤에 누른다.
             await expect(scroller).toBeFocused();
             requested = postRequest(no - 1);
             await page.keyboard.press("PageDown");
@@ -150,7 +150,7 @@ test.describe("미리보기", () => {
         for (let i = 0; i < 3; i++) {
             await listPage.openPreview();
             await expect(listPage.comments).toHaveCount(2);
-            // 캐시 hit이면 댓글이 바로 그려진다. Base UI는 Esc 리스너를 effect로 걸어, 스크롤 칸 포커스(같은 effect 차례)를 본 뒤에 누른다.
+            // Base UI의 Esc 리스너는 스크롤 칸 포커스와 같은 effect 차례에 붙으므로 포커스를 본 뒤에 누른다.
             await expect(listPage.overlay.locator(".refresher-frame-scroll")).toBeFocused();
             await listPage.page.keyboard.press("Escape");
             await expect(listPage.frame).toHaveCount(0);
@@ -272,8 +272,7 @@ test.describe("미리보기", () => {
         await expect(listPage.overlay.locator(".refresher-skip-hint")).toBeVisible();
         await expect(listPage.frameTitle).toHaveText("[말머리] 글 2 제목");
 
-        // 휠 사이가 동작 간격(250ms)보다 벌어져야 새 동작이다. 시간이 지나는 것 자체가 입력이라 기다릴 사건이 없고,
-        // 간격은 휠 이벤트의 timeStamp로 재 page.clock으로 넘길 수 없다.
+        // 휠 사이가 250ms보다 벌어져야 새 동작이다. 간격은 휠 이벤트의 timeStamp로 재므로 page.clock으로 넘길 수 없어 실제로 기다린다.
         await page.waitForTimeout(400);
         await page.mouse.wheel(0, 300);
         await expect(listPage.frameTitle).toHaveText("[말머리] 글 1 제목");
