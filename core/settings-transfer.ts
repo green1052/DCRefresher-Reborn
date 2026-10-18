@@ -115,7 +115,7 @@ export const mergeBackup = (current: Record<string, unknown>, backup: Record<str
     return {...merged, [DEFAULTS_KEY]: localDefaults};
 };
 
-/** 붙여 넣은 설정 JSON. 설정 키(refresher:…)가 하나도 없으면 잘못 붙여 넣은 것으로 보고 던진다. */
+/** 붙여 넣은 설정 JSON. 설정 키(refresher:…)가 하나도 없으면 잘못 붙여 넣은 것으로 보고 던진다. v5 데이터도 던진다. */
 export const parseImport = (input: string): Record<string, unknown> => {
     const parsed: unknown = JSON.parse(input);
     if (!isRecord(parsed)) throw new Error("가져오기 데이터는 JSON 객체여야 합니다.");
@@ -123,5 +123,10 @@ export const parseImport = (input: string): Record<string, unknown> => {
     if (!Object.keys(parsed).some((key) => key.startsWith("refresher:"))) {
         throw new Error("설정 데이터가 아닙니다.");
     }
+    // v5 내보내기는 읽지 않는다. 그대로 쓰면 모듈·차단 모드 키는 조용히 빠지고, 초기 v5의 문자열 목록은 이 기기 목록을 비우는데도 "가져왔습니다"가 뜬다.
+    const isV5 = Object.entries(parsed).some(([key, value]) =>
+        /^refresher:(module:.+:(enable|setting:.+)|block:[A-Z]+:mode)$/.test(key) ||
+        (/^refresher:(block|memo):[A-Z]+$/.test(key) && typeof value === "string"));
+    if (isV5) throw new Error("v5 데이터는 가져올 수 없습니다.");
     return parsed;
 };

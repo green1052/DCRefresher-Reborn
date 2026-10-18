@@ -217,4 +217,14 @@ describe("parseImport", () => {
         expect(() => parseImport("{\"NICK\":[]}")).toThrow("설정 데이터가 아닙니다");
         expect(() => parseImport("{")).toThrow(SyntaxError);
     });
+
+    it("v5 내보내기는 던진다", () => {
+        expect(() => parseImport("{\"refresher:module:미리보기:enable\":true}")).toThrow("v5 데이터");
+        expect(() => parseImport("{\"refresher:module:미리보기:setting:delay\":1}")).toThrow("v5 데이터");
+        expect(() => parseImport("{\"refresher:block:NICK:mode\":\"SAME\"}")).toThrow("v5 데이터");
+        // 초기 v5는 목록을 JSON 문자열로 저장했다. 그대로 쓰면 이 기기 목록이 비워진다.
+        expect(() => parseImport(`{"${NICK}":"[]"}`)).toThrow("v5 데이터");
+        expect(() => parseImport("{\"refresher:memo:UID\":\"{}\"}")).toThrow("v5 데이터");
+        expect(parseImport(`{"${SETTINGS}":{},"${DEFAULTS}":{},"${NICK}":[]}`)).toEqual({[SETTINGS]: {}, [DEFAULTS]: {}, [NICK]: []});
+    });
 });
