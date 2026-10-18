@@ -10,12 +10,6 @@ import meta, {REVEAL_TOGGLE} from "./meta";
 const CONTROL_BUTTON = ".stealth_control_button";
 const TEMPORARY_STEALTH = "stlth";
 
-interface StealthApi {
-    isRevealed(): boolean;
-
-    toggle(): void;
-}
-
 // 토글 상태는 CSS가 보는 <html>의 stlth 클래스 하나뿐이다. 버튼·단축키·팝업이 같이 읽는다.
 const isRevealed = (): boolean => document.documentElement.classList.contains(TEMPORARY_STEALTH);
 
@@ -63,8 +57,7 @@ export default defineModule({
             document.addEventListener("DOMContentLoaded", createButton, {once: true, signal: ctx.signal});
         }
 
-        const api: StealthApi = {isRevealed, toggle};
-        return api;
+        return {isRevealed, toggle};
     },
 
     shortcuts: {

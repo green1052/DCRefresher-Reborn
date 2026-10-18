@@ -39,14 +39,14 @@ const REVEALED_SELECTOR = `${HIDDEN_ROW_SELECTOR}, .refresherDuplicate`;
 /** 미리보기도 '가린 내용 보기'를 따르게 알린다. 가리는 방식은 미리보기가 이 모듈의 설정에서 바로 읽는다. */
 const publishRevealed = (): void => useUiStore.setState({blockRevealed: isRevealed()});
 
-/** setup()이 돌려주는 객체. 단축키와 팝업이 쓴다. */
-interface BlockApi {
-    isRevealed(): boolean;
+const hiddenCount = (): number => document.querySelectorAll(REVEALED_SELECTOR).length;
 
-    hiddenCount(): number;
+const toggleReveal = (): void => {
+    document.documentElement.classList.toggle(REVEAL_CLASS);
+    publishRevealed();
 
-    toggleReveal(): void;
-}
+    useUiStore.getState().showToast(isRevealed() ? `이 페이지에서 가린 내용을 보입니다. (${hiddenCount()}개)` : "가린 내용을 다시 숨겼습니다.");
+};
 
 /** 작성자 칸(checkWriter)이 보는 차단 유형. */
 const WRITER_TYPES: BlockType[] = ["NICK", "ID", "IP", "TITLE", "TAB", "COMMENT"];
@@ -259,17 +259,8 @@ export default defineModule({
             if (!keys.isSubsetOf(BLUR_KEYS)) recheck();
         });
 
-        const api: BlockApi = {
-            isRevealed,
-            hiddenCount: () => document.querySelectorAll(REVEALED_SELECTOR).length,
-            toggleReveal: () => {
-                document.documentElement.classList.toggle(REVEAL_CLASS);
-                publishRevealed();
-
-                useUiStore.getState().showToast(isRevealed() ? `이 페이지에서 가린 내용을 보입니다. (${api.hiddenCount()}개)` : "가린 내용을 다시 숨겼습니다.");
-            }
-        };
-        return api;
+        // 단축키와 팝업이 쓴다.
+        return {isRevealed, hiddenCount, toggleReveal};
     },
 
     shortcuts: {
