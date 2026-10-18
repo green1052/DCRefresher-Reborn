@@ -47,14 +47,11 @@ export const bindListKeys = (ctx: Ctx, open: (preData: GalleryPreData) => void):
 
         if (ev.code === "KeyJ" || ev.code === "KeyK") {
             move(ev.code === "KeyJ" ? 1 : -1);
-        } else if (selected && idle && (ev.code === "Enter" || ev.code === "NumpadEnter") && !ev.repeat) {
+        } else if (selected && idle && (ev.code === "Enter" || ev.code === "NumpadEnter" || ev.code === "KeyO") && !ev.repeat) {
             const entry = current();
             if (!entry) return;
-            open(entry.pre);
-        } else if (selected && idle && ev.code === "KeyO" && !ev.repeat) {
-            const entry = current();
-            if (!entry) return;
-            location.href = entry.pre.link;
+            if (ev.code === "KeyO") location.href = entry.pre.link;
+            else open(entry.pre);
         } else if (selected && ev.code === "Escape") {
             select(undefined);
         } else {
