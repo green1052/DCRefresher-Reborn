@@ -501,6 +501,26 @@ test.describe("미리보기 댓글", () => {
         await expect(input).toBeInViewport();
     });
 
+    test("댓글마다 되풀이되는 버튼은 클릭 리스너 하나만 단다", async ({listPage, browserName}) => {
+        test.skip(browserName === "firefox", "요소의 리스너는 크로미움 CDP로만 센다.");
+        await listPage.openPreview();
+        const reply = listPage.comments.first().getByRole("button", {name: "고닉 댓글에 답글", exact: true});
+        await expect(reply).toBeVisible();
+        // 리스너는 콘텐츠 스크립트의 격리된 world에서 붙으므로 그 world에서 요소를 잡아야 보인다.
+        const cdp = await listPage.page.context().newCDPSession(listPage.page);
+        const contexts: number[] = [];
+        cdp.on("Runtime.executionContextCreated", ({context}) => {
+            if (context.auxData?.type === "isolated") contexts.push(context.id);
+        });
+        await cdp.send("Runtime.enable");
+        const {result} = await cdp.send("Runtime.evaluate", {
+            contextId: contexts[0],
+            expression: "document.querySelector('refresher-root').shadowRoot.querySelector('.refresher-comment button[aria-label=\"고닉 댓글에 답글\"]')"
+        });
+        const {listeners} = await cdp.send("DOMDebugger.getEventListeners", {objectId: result.objectId!});
+        expect(listeners.map(({type}) => type)).toEqual(["click"]);
+    });
+
     test("본문이 확장 UI의 클래스를 써도 본문 상자 밖을 덮지 못한다", async ({listPage}) => {
         const frame = await listPage.openPreview();
         const contents = frame.locator(".refresher-preview-contents");

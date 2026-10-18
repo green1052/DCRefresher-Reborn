@@ -2,7 +2,7 @@ import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-react";
 import {memo, useEffect, useLayoutEffect, useRef, useState} from "react";
 
 import {ConfirmDialog, DialogActions, ModalDialog, SubmitForm} from "@/components/dialogs";
-import {Button} from "@/components/ui/button";
+import {Button, buttonVariants} from "@/components/ui/button";
 import {Checkbox} from "@/components/ui/checkbox";
 import {DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import {Input} from "@/components/ui/input";
@@ -128,22 +128,23 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
                     <UserCard user={user} op={isOp}/>
                     {comment.duplicates ? <span className="text-xs whitespace-nowrap text-muted-foreground">같은 댓글 ×{comment.duplicates}</span> : null}
                     {/* 툴팁은 브라우저 기본(title)을 쓴다. 스레드마다 툴팁 부품을 달면 댓글이 많은 글을 열 때 느려진다. */}
+                    {/* 댓글마다 되풀이되는 버튼(접기·답글·삭제)은 Base UI Button 대신 shadcn 버튼 모양(buttonVariants)의 기본 button을 쓴다.
+                        Base UI Button은 버튼마다 이벤트 리스너를 여럿 달아 댓글이 천 개면 그것만 8천 개가 넘는다. 기본 button도 키보드·disabled 동작은 같다. */}
                     {/* 펼친 상태는 aria-expanded로 알린다. ghost 버튼이 펼친 상태에 까는 배경은 지워 보이는 모습은 그대로 둔다. */}
                     {depth === 0 && replyCount > 1 && (
-                        <Button size="icon-xs" variant="ghost" className="aria-expanded:not-hover:bg-transparent"
+                        <button type="button" className={cn(buttonVariants({size: "icon-xs", variant: "ghost", className: "aria-expanded:not-hover:bg-transparent"}))}
                                 aria-label={`${who} 댓글의 답글 ${replyCount}개`} aria-expanded={!collapsed}
                                 title={collapsed ? "답글 펼치기" : "답글 접기"} onClick={() => toggleCollapse(comment.no)}>
                             <ChevronDown className={cn("transition-transform motion-reduce:transition-none", collapsed && "-rotate-90")}/>
-                        </Button>
+                        </button>
                     )}
                 </div>
 
                 <div className="flex shrink-0 items-center gap-3">
                     {canReply && (
-                        <Button
-                            size="icon-xs"
-                            variant="ghost"
-                            className={cn(replying && "text-link")}
+                        <button
+                            type="button"
+                            className={cn(buttonVariants({size: "icon-xs", variant: "ghost", className: replying && "text-link"}))}
                             aria-label={`${who} 댓글에 답글`}
                             aria-pressed={replying}
                             onClick={() =>
@@ -154,13 +155,13 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
                             }
                         >
                             {replying ? <Check/> : <ReplyIcon/>}
-                        </Button>
+                        </button>
                     )}
                     {canDelete && (
-                        <Button size="icon-xs" variant="ghost" aria-label={`${who} 댓글 삭제`} disabled={deleting}
+                        <button type="button" className={cn(buttonVariants({size: "icon-xs", variant: "ghost"}))} aria-label={`${who} 댓글 삭제`} disabled={deleting}
                                 onClick={() => usePreviewStore.setState({deletePrompt: {no: comment.no, kind: isAdmin || comment.user_id ? "confirm" : "password"}})}>
                             <X/>
-                        </Button>
+                        </button>
                     )}
                     <TimeStamp date={String(comment.reg_date ?? comment.date_time ?? "")}/>
                 </div>
