@@ -11,6 +11,11 @@
     /* 갤 메인 계열 페이지는 분류 상자가 1050px로 고정되어 있어서 디시의 본문 폭을 사용한다. */
     &:has(.dcwrap > #container > .category_listwrap) {
         --refresher-compact-width: 1050px;
+
+        /* 폭이 이보다 줄어들면 사이드바가 728px 왼쪽 칸과 겹친다. */
+        .dcwrap > #container {
+            min-width: var(--refresher-compact-width) !important;
+        }
     }
 
     /* 페이지 전체 틀(#top.dcwrap)에 min-width 1515px가 걸려 있다. */
@@ -142,7 +147,8 @@
     /* 알림 목록·설정 창(#alarmList, #alarmConf)은 사이드바 로그인 상자 안에 있어 display: none으로 숨기면 머리글의 알림 버튼을 눌러도 안 보인다 (#270). */
     /* 사이드바는 자리를 차지하지 않게 빼고 보이지만 않게 둔다. visibility는 자손이 되돌릴 수 있어 알림 창만 다시 보인다. */
     /* 갤러리 관리 페이지(.minor_uadmin_wrap)는 왼쪽 메뉴·오른쪽 설정 칸에 같은 클래스를 쓴다. 사이드바가 아니므로 둘 다 디시 배치대로 둔다. */
-    .right_content:not(.minor_uadmin_wrap *) {
+    /* #top에 width1160이 없는 메인 계열 페이지는 고정 폭 상자가 사이드바 옆에 배치되어 있어서, 사이드바를 숨기면 상자 사이에 빈 공간이 생긴다. */
+    .right_content:not(.minor_uadmin_wrap *, .dcwrap:not(.width1160) *) {
         position: absolute !important;
         width: 0 !important;
         height: 0 !important;
@@ -172,7 +178,7 @@
         display: none !important;
     }
 
-    .left_content:not(.minor_uadmin_wrap *) {
+    .left_content:not(.minor_uadmin_wrap *, .dcwrap:not(.width1160) *) {
         width: auto !important;
         float: none !important;
     }
