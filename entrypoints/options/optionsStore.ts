@@ -35,3 +35,7 @@ export const notifyDone = (done: Done): void => {
     // 되돌리기가 달린 알림은 잘못 누른 것을 알아챌 시간을 넉넉히 둔다.
     else showToast(done.message, "info", 20_000, {label: "되돌리기", run: done.undo});
 };
+
+/** text를 클립보드에 복사하고 결과를 알린다. */
+export const copyText = (text: string, done: Done, failed: string): Promise<void> =>
+    navigator.clipboard.writeText(text).then(() => notifyDone(done), () => notify(failed));

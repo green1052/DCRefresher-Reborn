@@ -219,19 +219,11 @@ export const ListTabs = <T extends string, I>({
         );
     };
 
-    const exportList = async (): Promise<void> => {
+    const exportList = async (sink: "클립보드" | "파일"): Promise<void> => {
         try {
-            await navigator.clipboard.writeText(JSON.stringify(exportData()));
-            notifyDone(`${object} 클립보드로 내보냈습니다.`);
-        } catch {
-            notify(`${object} 내보내지 못했습니다.`);
-        }
-    };
-
-    const exportFile = (): void => {
-        try {
-            downloadJson(fileName, exportData());
-            notifyDone(`${object} 파일로 내보냈습니다.`);
+            if (sink === "파일") downloadJson(fileName, exportData());
+            else await navigator.clipboard.writeText(JSON.stringify(exportData()));
+            notifyDone(`${object} ${sink}로 내보냈습니다.`);
         } catch {
             notify(`${object} 내보내지 못했습니다.`);
         }
@@ -279,10 +271,10 @@ export const ListTabs = <T extends string, I>({
                             })}
                         </TabsList>
                         <div className="flex gap-1 pb-1">
-                            <WithTooltip tip="클립보드로 내보내기" trigger={<Button variant="ghost" size="icon" aria-label="클립보드로 내보내기" onClick={() => void exportList()}/>}>
+                            <WithTooltip tip="클립보드로 내보내기" trigger={<Button variant="ghost" size="icon" aria-label="클립보드로 내보내기" onClick={() => void exportList("클립보드")}/>}>
                                 <ClipboardCopy/>
                             </WithTooltip>
-                            <WithTooltip tip="파일로 내보내기" trigger={<Button variant="ghost" size="icon" aria-label="파일로 내보내기" onClick={exportFile}/>}>
+                            <WithTooltip tip="파일로 내보내기" trigger={<Button variant="ghost" size="icon" aria-label="파일로 내보내기" onClick={() => void exportList("파일")}/>}>
                                 <FileDown/>
                             </WithTooltip>
                             <WithTooltip tip="가져오기" trigger={<Button variant="ghost" size="icon" aria-label="가져오기" onClick={() => setImportOpen(true)}/>}>

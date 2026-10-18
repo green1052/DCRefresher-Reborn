@@ -17,7 +17,7 @@ import {SAVE_FAILED} from "@/utils/error";
 import {formatAppMemos, parseAppMemos} from "./appMemo";
 import {ImportDialog, useUsage} from "./Layout";
 import {ListRow, ListTabs} from "./ListTabs";
-import {notify, notifyDone} from "./optionsStore";
+import {copyText, notify} from "./optionsStore";
 import {RefresherSelect} from "./RefresherSelect";
 
 interface MemoFormState {
@@ -201,12 +201,7 @@ export function MemoTab() {
             notify("공앱으로 옮길 아이디·IP 메모가 없습니다.");
             return;
         }
-        try {
-            await navigator.clipboard.writeText(text);
-            notifyDone(`공앱 형식으로 메모 ${count}개를 복사했습니다.${skipped ? ` 닉네임 메모 ${skipped}개는 공앱에 없는 종류라 뺐습니다.` : ""}`);
-        } catch {
-            notify("복사하지 못했습니다.");
-        }
+        await copyText(text, `공앱 형식으로 메모 ${count}개를 복사했습니다.${skipped ? ` 닉네임 메모 ${skipped}개는 공앱에 없는 종류라 뺐습니다.` : ""}`, "복사하지 못했습니다.");
     };
 
     const importMemos = async (parsed: Record<string, unknown>): Promise<number> => {
