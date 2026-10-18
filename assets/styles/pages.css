@@ -1,0 +1,5 @@
+/* ===== 확장 페이지(옵션·팝업) 스타일 ===== */
+
+@import "./tailwind.css";
+/* 미리보기 창(오버레이 전용) 화면의 클래스는 옵션·팝업 CSS에 만들지 않는다. 옵션·팝업이 이 폴더를 불러오면 스타일이 빠진다 (tests/unit/assets/styles/pages.test.ts가 지킨다). */
+@source not "../../features/preview/ui";
