@@ -9,6 +9,8 @@
 /* 클래스를 찾을 폴더를 직접 정한다. 자동 탐색은 .gitignore에 기대는데 파이어폭스 심사용 소스 zip에는 .gitignore가 없어,
    심사 쪽 빌드의 CSS와 해시 붙은 파일 이름이 우리가 올린 빌드와 달라진다. */
 @source "../../{components,core,entrypoints,features,stores,utils}";
+/* cn 플러그인이 만드는 클래스 그룹 표(wxt.config.ts). 표의 낱말이 클래스로 읽혀 쓰지 않는 유틸리티가 생긴다. */
+@source not "../../utils/cn-tables.ts";
 
 @custom-variant dark (&:is(.dark *));
 
