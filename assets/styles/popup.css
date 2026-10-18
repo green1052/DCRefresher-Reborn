@@ -1,0 +1,9 @@
+/* ===== 팝업 스타일 ===== */
+
+@import "./tailwind.css";
+/* 팝업은 작은 화면 하나라 옵션·기능 화면·오버레이의 클래스까지 만들면 CSS가 두 배가 넘는다. 팝업이 쓰지 않는 소스는 스캔에서 뺀다.
+   features·core·stores는 설정 메타와 상태만 불러오고 화면을 그리지 않는다. 팝업이 여기서 뺀 화면을 불러오면 스타일이 빠진다 (tests/unit/assets/styles/popup.test.ts가 지킨다). */
+@source not "../../entrypoints/{options,content,background}";
+@source not "../../{features,core,stores,components/overlay}";
+@source not "../../components/{dialogs.tsx,ColorInput.tsx,WithTooltip.tsx,useReturnFocus.ts}";
+@source not "../../components/ui/{alert-dialog,alert,checkbox,collapsible,dialog,empty,input-group,input,kbd,popover,radio-group,select,separator,skeleton,slider,spinner,table,tabs,textarea,toggle-group,tooltip}.tsx";
