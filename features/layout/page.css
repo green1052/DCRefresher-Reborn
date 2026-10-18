@@ -46,9 +46,8 @@
         display: none !important;
     }
 
-    /* 오른쪽 위 링크 줄. 디시는 이 상자를 absolute로 띄우고 안의 목록을 float: left로 둔다. */
-    /* 상자만 static으로 내리면 text-align이 float에 안 먹어 목록이 왼쪽으로 붙고 창 폭에 따라 떠다닌다 (#267). */
-    /* flex로 바꿔 오른쪽에 붙이고 안쪽 float·위치 지정을 푼다. */
+    /* 오른쪽 위 링크 줄. 디시는 상자를 absolute로 띄우고 안의 목록을 float: left로 둔다. */
+    /* 상자만 static으로 내리면 목록이 왼쪽에 붙어 창 폭에 따라 떠다니므로 (#267) flex로 오른쪽에 붙인다. */
     .area_links {
         position: static !important;
         inset: auto !important;
@@ -75,8 +74,7 @@
             left: auto !important;
 
             &::after {
-                /* 꼬리 오른쪽 끝을 .darkmodebox의 오른쪽에서 23px에 두는 손맞춤 값: '야간모드' 글자 위에 온다. */
-                /* 글꼴을 바꾸면 글자 폭이 변해 몇 픽셀 어긋난다. */
+                /* '야간모드' 글자 위에 오도록 손으로 맞춘 값이다. 글꼴을 바꾸면 몇 픽셀 어긋난다. */
                 right: 23px !important;
                 left: auto !important;
             }
@@ -156,10 +154,8 @@
     }
 
     /* 목록: 사이드바를 빼고 목록이 폭을 다 쓴다. */
-    /* 알림 목록·설정 창(#alarmList, #alarmConf)은 사이드바 로그인 상자 안에 있어 display: none으로 숨기면 머리글의 알림 버튼을 눌러도 안 보인다 (#270). */
-    /* 사이드바는 자리를 차지하지 않게 빼고 보이지만 않게 둔다. visibility는 자손이 되돌릴 수 있어 알림 창만 다시 보인다. */
-    /* 갤러리 관리 페이지(.minor_uadmin_wrap)는 왼쪽 메뉴·오른쪽 설정 칸에 같은 클래스를 쓴다. 사이드바가 아니므로 둘 다 디시 배치대로 둔다. */
-    /* #top에 width1160이 없는 메인 계열 페이지는 고정 폭 상자가 사이드바 옆에 배치되어 있어서, 사이드바를 숨기면 상자 사이에 빈 공간이 생긴다. */
+    /* display: none 대신 visibility로 숨긴다. 사이드바 로그인 상자 안의 알림 창(#alarmList, #alarmConf)만 visibility를 되돌려 머리글 알림 버튼으로 열 수 있다 (#270). */
+    /* 갤러리 관리 페이지(.minor_uadmin_wrap)는 메뉴·설정 칸에 같은 클래스를 쓰고, #top에 width1160이 없는 메인 계열 페이지는 고정 폭 상자가 사이드바 옆에 붙어 있어 둘 다 그대로 둔다. */
     .right_content:not(.minor_uadmin_wrap *, .dcwrap:not(.width1160) *) {
         position: absolute !important;
         width: 0 !important;
@@ -208,7 +204,7 @@
         height: auto !important;
     }
 
-    /* 더보기 버튼이 표시하는 상자는 마이너, 미니 갤에서는 위 규칙으로 숨겨져 있고, 일반 갤에서는 컴팩트 폭에서 내부 항목이 서로 겹쳐 표시된다. */
+    /* 더보기 버튼이 여는 상자는 마이너·미니 갤에선 위 규칙으로 숨고, 일반 갤에선 컴팩트 폭에서 항목이 겹친다. */
     .page_head button[onclick^="gt_toggle_issue"] {
         display: none !important;
     }
@@ -236,8 +232,7 @@
         float: none !important;
     }
 
-    /* 댓글 한 줄(닉네임 | 본문 | 작성 시간). 본문 칸의 float를 풀면 본문이 줄 전체를 차지해 작성 시간이 다음 줄로 밀리므로 (#265) */
-    /* 줄을 flex로 바꿔 본문이 남는 폭만 쓰게 한다. */
+    /* 댓글 한 줄(닉네임 | 본문 | 작성 시간). 본문 칸의 float를 풀면 작성 시간이 다음 줄로 밀려 (#265) flex로 본문이 남는 폭만 쓰게 한다. */
     :is(.cmt_info, .reply_info):has(> .fr) {
         display: flex !important;
         align-items: flex-start;
@@ -304,8 +299,7 @@
         float: none !important;
     }
 
-    /* 폭을 맞추려고 border-box로 바꾸면 여백과 테두리까지 78px 안에 들어가 입력칸이 작아진다. */
-    /* 원래 높이인 106px로 다시 지정한다. */
+    /* border-box로 바꾸면 여백·테두리까지 78px 안에 들어가 입력칸이 작아지므로 원래 높이 106px로 다시 지정한다. */
     .cmt_txt_cont textarea {
         width: 100% !important;
         height: 106px !important;

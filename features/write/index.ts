@@ -7,9 +7,9 @@ import {AUTO, EDITOR, LEAVE, POSTED, SUBJECT, SUBMIT} from "./markup";
 import meta from "./meta";
 
 /**
- * 나가기 방지 리스너의 수명. ctx.signal에 묶지 않는다: 확장이 업데이트되어 컨텍스트가 무효화되면(stopAll) ctx.signal이 풀려,
- * 작성 중인 글을 두고 새로고침하라는 안내를 따를 때 확인 없이 글이 날아간다. 모듈을 끌 때만 revoke가 푼다.
- * 업로드 설정도 같은 이유로 revoke만 지운다. 페이지에 넣은 hookUploads는 무효화 뒤에도 살아 있어, 지우면 이미지가 원래 이름으로 올라간다.
+ * 나가기 방지 리스너. ctx.signal에 묶지 않고 모듈을 끌 때만 revoke가 푼다: 확장 업데이트로 컨텍스트가 무효화되면(stopAll) ctx.signal이 풀려,
+ * 새로고침 안내를 따를 때 작성 중인 글이 확인 없이 날아간다.
+ * 업로드 설정도 같은 이유로 revoke만 지운다. 페이지의 hookUploads는 무효화 뒤에도 살아 있어, 지우면 이미지가 원래 이름으로 올라간다.
  */
 let listeners: AbortController | undefined;
 
@@ -23,8 +23,7 @@ let hookRequested = false;
 const EDITED_KEY = "refresherEdited";
 
 /**
- * 페이지에 넣는 hookUploads가 읽을 설정을 둔다. 켜진 설정이 있으면 배경에 hookUploads를 넣어 달라고 한다 (페이지마다 한 번만 걸린다).
- * 둘 다 꺼져 있으면 지워 파일을 건드리지 않게 한다.
+ * hookUploads가 읽을 설정을 둔다. 켜진 설정이 있으면 배경에 hookUploads를 넣어 달라고 한다 (페이지마다 한 번만 걸린다).
  */
 const publishImageOptions = ({webpConvert: webp, webpQuality, webpConcurrency: concurrency, obfuscateName: rename}: {
     webpConvert: boolean;
@@ -54,7 +53,7 @@ export default defineModule({
         ctx.onSettingsChanged(() => publishImageOptions(ctx.settings));
         if (!WRITE_PAGE.test(location.pathname)) return;
 
-        // 등록을 누른 뒤의 페이지 이동은 막지 않는다. 디시가 성공 표시(#clickbutton)를 두는 페이지는 그것을 본다.
+        // 등록을 누른 뒤의 페이지 이동은 막지 않는다. POSTED가 있는 페이지는 그것을 본다.
         let submitting = false;
         // 디시 취소 레이어에서 이미 나가겠다고 확인했다.
         let leaving = false;
@@ -77,7 +76,7 @@ export default defineModule({
         };
 
         const onBeforeUnload = (ev: BeforeUnloadEvent): void => {
-            // 디시는 등록에 성공해야 #clickbutton을 Y로 바꾸고 페이지를 옮긴다. 실패(alert)하면 N 그대로라 계속 막는다.
+            // 등록에 실패(alert)하면 POSTED가 N 그대로라 계속 막는다.
             const flag = document.querySelector<HTMLInputElement>(POSTED);
             const posted = flag ? flag.value === "Y" : submitting;
             if (!ctx.settings.preventExit || posted || leaving || !edited) return;
@@ -97,8 +96,8 @@ export default defineModule({
         window.addEventListener("beforeunload", onBeforeUnload, {signal});
 
         // 수정 페이지에서 에디터 스크립트로 넣거나 뺀 이미지는 input 이벤트가 나지 않아 에디터의 DOM 변화로 알아챈다.
-        // 디시가 원래 글을 채우는 것까지 잡지 않게 사용자가 페이지를 건드린 뒤부터 본다. 등록 뒤에 디시가 에디터를 고칠 수 있어 submitting은 풀지 않고,
-        // 속성(hover·class) 변화는 보지 않는다. 같은 요소를 다시 observe해도 옵션만 바뀌므로 건드릴 때마다 부른다.
+        // 디시가 원래 글을 채우는 변화는 빼려고 사용자가 페이지를 건드린 뒤부터 보고, 속성(hover·class) 변화는 보지 않는다.
+        // 등록 뒤에 디시가 에디터를 고칠 수 있어 submitting은 풀지 않는다. 같은 요소를 다시 observe하면 옵션만 바뀐다.
         if (edited) return;
         const observer = new MutationObserver(() => {
             markEdited();

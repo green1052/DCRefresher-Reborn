@@ -16,7 +16,6 @@ export default defineBackgroundModule({
             const url = id.startsWith(MENU_PREFIX) && info.srcUrl ? imageSearchUrl(id.slice(MENU_PREFIX.length), info.srcUrl) : null;
             if (!url) return;
 
-            // 이미지가 있던 탭 바로 옆에, 그 탭을 opener로 연다.
             await browser.tabs.create(tab?.id !== undefined && tab.id >= 0 ? {url, index: tab.index + 1, openerTabId: tab.id, windowId: tab.windowId} : {url});
         });
     },

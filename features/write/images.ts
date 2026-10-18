@@ -119,9 +119,8 @@ export const hookUploads = (): void => {
 
     const convertAll = async (files: File[], options: ImageOptions): Promise<DataTransfer> => {
         const transfer = new DataTransfer();
-        // 캔버스를 믿을 수 없으면 WebP 변환만 끄고 이름 숨기기는 그대로 한다.
         const settings = options.webp && !(await canvasReliable()) ? {...options, webp: false} : options;
-        // 큰 사진 여러 장을 한꺼번에 바꾸면 원본 크기 캔버스가 장수만큼 메모리에 쌓인다. 결과는 고른 순서대로 온다.
+        // 결과는 고른 순서대로 온다.
         for (const file of await pLimit(settings.concurrency).map(files, (file) => convert(file, settings))) {
             done.add(file);
             transfer.items.add(file);
@@ -149,9 +148,9 @@ export const hookUploads = (): void => {
         });
     }, true);
 
-    // 붙여넣기·끌어 놓기는 에디터(summernote) 안과 이미지 올리기 팝업에서 바꾼다. 이벤트가 끝나면 clipboardData·dataTransfer를 읽을 수 없어 파일을 먼저 꺼낸다.
-    // 에디터에서는 바꾼 파일을 둘 다 끌어 놓기 칸에 drop으로 넘긴다. 파이어폭스는 만든 paste 이벤트에 파일을 실을 수 없다(clipboardData를 무시한다).
-    // 팝업은 jQuery File Upload가 문서 어디에 놓거나 붙여 넣어도 받는다. 만든 drop은 webkitGetAsEntry가 null이라 못 읽으므로 파일 선택칸의 change로 넘긴다.
+    // 붙여넣기·끌어 놓기는 에디터(summernote)와 이미지 올리기 팝업에서 바꾼다. 이벤트가 끝나면 clipboardData·dataTransfer를 읽을 수 없어 파일을 먼저 꺼낸다.
+    // 에디터: 파이어폭스는 만든 paste 이벤트의 clipboardData를 무시하므로 둘 다 끌어 놓기 칸에 drop으로 넘긴다.
+    // 팝업: jQuery File Upload는 문서 어디서든 받지만 만든 drop은 못 읽으므로(webkitGetAsEntry가 null) 파일 선택칸의 change로 넘긴다.
     const intercept = (ev: Event, transfer: DataTransfer | null): void => {
         const dropzone = ev.target instanceof Element ? ev.target.closest(".note-editor")?.querySelector(".note-dropzone") : null;
         const input = dropzone ? null : document.querySelector<HTMLInputElement>("#fileupload input[type=file]");

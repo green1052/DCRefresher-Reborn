@@ -11,7 +11,6 @@ const CONTROL_BUTTON = ".stealth_control_button";
 const TEMPORARY_STEALTH = "stlth";
 
 interface StealthApi {
-    /** 이번 페이지에서 이미지를 잠시 보이게 했는지. */
     isRevealed(): boolean;
 
     toggle(): void;
@@ -42,7 +41,7 @@ const createButton = (): void => {
     // 미리보기가 뒤 페이지를 inert로 막을 때 이 버튼은 남긴다 (preview/ui/Frame.tsx).
     frame.dataset.refresherUi = "";
 
-    // 키보드로도 누를 수 있게 button으로 만든다. 이름은 안의 문구(누르면 할 동작)다.
+    // 키보드로도 누를 수 있게 button으로 만든다.
     const button = Object.assign(document.createElement("button"), {type: "button", className: "button", id: "tempview"});
     render(button);
     button.addEventListener("click", toggle);

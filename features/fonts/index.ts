@@ -3,8 +3,7 @@ import {writeStyle} from "@/utils/dom";
 
 import meta, {type Ctx, fontFamilyOf} from "./meta";
 
-// "디시인사이드 폰트 교체"가 켜졌을 때 폰트를 바꿀 디시 요소.
-// :root 접두사는 명시도를 올려 디시 규칙을 이기려는 것이다.
+// changeDCFont가 켜졌을 때 폰트를 바꿀 디시 요소. :root 접두사로 명시도를 올려 디시 규칙을 이긴다.
 const DC_FONT_TARGETS = ["body", "button", "input", "textarea", "select", ".gall_list", ".view_content_wrap", ".view_comment div", ".btn_cmt_open", ".btn_cmt_close"]
     .map((selector) => `:root ${selector}`)
     .join(", ");
