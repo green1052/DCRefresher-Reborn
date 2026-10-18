@@ -9,7 +9,7 @@ import {BOARD_PAGE, CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES} from "@/core/pages
 import features from "@/features";
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
-import {useUiStore} from "@/stores/ui";
+import {copyWithToast, useUiStore} from "@/stores/ui";
 
 import {warnWhenBlocked} from "./blocked";
 import {showInvalidatedNote} from "./invalidated";
@@ -66,10 +66,7 @@ export default defineContentScript({
         if (staleDraft) {
             useUiStore.getState().showToast("확장 프로그램이 다시 시작되어 열려 있던 창을 닫았습니다.", "warning", 0, {
                 label: "입력하던 글 복사",
-                run: () => navigator.clipboard.writeText(staleDraft).then(
-                    () => useUiStore.getState().showToast("복사했습니다."),
-                    () => useUiStore.getState().showToast("복사하지 못했습니다.", "error")
-                )
+                run: () => void copyWithToast(staleDraft)
             });
         }
 

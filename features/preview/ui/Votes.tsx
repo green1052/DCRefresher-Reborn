@@ -7,7 +7,7 @@ import {WithTooltip} from "@/components/WithTooltip";
 import {getEntry, setEntry} from "@/core/preview/cache";
 import {captchaImage, viewUrl, vote} from "@/core/preview/request";
 import type {GalleryPreData, PostInfo} from "@/core/preview/types";
-import {useUiStore} from "@/stores/ui";
+import {copyWithToast} from "@/stores/ui";
 import {notifyManage} from "@/stores/notify";
 
 import {usePreviewStore} from "./previewStore";
@@ -53,10 +53,7 @@ export const Votes = ({post}: { post: PostInfo }) => {
     // 목록 쿼리(검색어·페이지)를 뺀 글 주소를 복사한다.
     const onShare = (): void => {
         if (!preData) return;
-        navigator.clipboard.writeText(viewUrl(preData.link, preData.gallery, preData.id)).then(
-            () => useUiStore.getState().showToast("링크를 복사했습니다."),
-            () => useUiStore.getState().showToast("링크를 복사하지 못했습니다.", "error")
-        );
+        void copyWithToast(viewUrl(preData.link, preData.gallery, preData.id), "링크를 ");
     };
 
     // 숫자까지 읽히게 라벨에 넣는다. aria-label은 버튼 안의 글을 대신한다.

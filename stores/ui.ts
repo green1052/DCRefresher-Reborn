@@ -113,6 +113,15 @@ export const useUiStore = create<UiState>((set, get) => ({
     closeMemo: () => set({memo: null})
 }));
 
+/** text를 클립보드에 복사하고 토스트로 알린다. subject는 "링크를 "처럼 문구 앞에 붙는다. */
+export const copyWithToast = (text: string, subject = ""): Promise<void> => {
+    const {showToast} = useUiStore.getState();
+    return navigator.clipboard.writeText(text).then(
+        () => showToast(`${subject}복사했습니다.`),
+        () => showToast(`${subject}복사하지 못했습니다.`, "error")
+    );
+};
+
 /**
  * 페이지의 작성자 칸(.ub-writer)을 우클릭하면 브라우저 메뉴 대신 유저 버블(차단·메모·갤로그)을 연다. document의 capture 리스너로 건다.
  * 차단과 유저 정보 모듈이 각자 건다. 메모는 차단 모듈을 꺼도 쓸 수 있어야 한다.
