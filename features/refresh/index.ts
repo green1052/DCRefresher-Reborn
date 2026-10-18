@@ -275,7 +275,13 @@ export default defineModule({
                 Math.min(rate * 2 ** failures, Math.max(rate, MAXIMUM_BACKOFF_INTERVAL))
             );
             // 응답을 받은 뒤 다음 주기를 잡아야 방금 실패가 바로 반영된다.
-            timer = window.setTimeout(() => void load().finally(armNext), interval + 500 + Math.random() * 1500);
+            timer = window.setTimeout(() => void loadNow(), interval + 500 + Math.random() * 1500);
+        };
+
+        // 잡힌 주기를 버리고 곧바로 받은 뒤 다음 주기를 잡는다. load는 실패해도 false를 돌려줄 뿐 던지지 않는다.
+        const loadNow = (customURL?: string, force?: boolean): Promise<boolean> => {
+            window.clearTimeout(timer);
+            return load(customURL, force).finally(armNext);
         };
 
         armNext();
@@ -284,8 +290,7 @@ export default defineModule({
         const catchUp = (): void => {
             if (!missed) return;
             missed = false;
-            window.clearTimeout(timer);
-            void load().finally(armNext);
+            void loadNow();
         };
 
         if (isViewPage) whenDomReady(() => {
@@ -317,7 +322,7 @@ export default defineModule({
 
             quiet = 0;
             // 실패로 주기가 늘어난 동안은 바로 받지 않는다. 탭을 오갈 때마다 요청하면 늘린 주기가 소용없다.
-            if (failures === 0) void load().finally(armNext);
+            if (failures === 0) void loadNow();
             else armNext();
         };
 
@@ -328,8 +333,7 @@ export default defineModule({
             if (ownPreviewEntry(history.state)) return;
             if (listUrl(location.href) === listUrl(originalLocation)) return;
 
-            window.clearTimeout(timer);
-            void load(location.href, true).finally(armNext);
+            void loadNow(location.href, true);
         };
 
         const {signal} = ctx;
@@ -366,7 +370,7 @@ export default defineModule({
             if (newUrl !== location.href) history.pushState(null, document.title, newUrl);
 
             scrollAfter = newUrl;
-            void load(newUrl, true).finally(armNext);
+            void loadNow(newUrl, true);
         };
 
         document.addEventListener("click", onPagingClick, {signal});
@@ -391,9 +395,7 @@ export default defineModule({
             isPaused: () => paused,
 
             reload: async () => {
-                window.clearTimeout(timer);
-                await load(undefined, true);
-                armNext();
+                await loadNow(undefined, true);
             },
 
             catchUp
