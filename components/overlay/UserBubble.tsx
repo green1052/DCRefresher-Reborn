@@ -10,6 +10,7 @@ import {Skeleton} from "@/components/ui/skeleton";
 import {useReturnFocus} from "@/components/useReturnFocus";
 import {blockingEntries} from "@/core/block";
 import {banReasonsOf, databaseVersion, ipInfoOf, onDatabaseChange, subscribeDatabase} from "@/core/database";
+import {urls} from "@/core/http/urls";
 import {dcconPackages, fetchDcconPackage} from "@/core/preview/request";
 import {TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
@@ -49,18 +50,25 @@ const DcconSummary = ({code, onOpen}: { code: string; onOpen: () => void }) => {
     }, [code]);
 
     return (
-        <MenuItem title="디시콘 정보 보기" className="h-auto flex-col items-start gap-0.5 py-1.5 whitespace-normal" onClick={onOpen}>
+        <MenuItem title="디시콘 정보 보기" className="h-auto items-start gap-2 py-1.5 whitespace-normal" onClick={onOpen}>
             {dccon ? (
                 <>
-                    <strong>{dccon.info.title}</strong>
-                    {dccon.info.description && <span className="line-clamp-2 text-left text-xs text-muted-foreground">{dccon.info.description}</span>}
+                    {/* 패키지 대표 이미지 (정보 창의 큰 이미지와 같다). */}
+                    <img src={urls.dccon.image + dccon.info.main_img_path} alt="" className="size-10 flex-none rounded-sm object-contain"/>
+                    <span className="flex min-w-0 flex-col items-start gap-0.5">
+                        <strong>{dccon.info.title}</strong>
+                        {dccon.info.description && <span className="line-clamp-2 text-left text-xs text-muted-foreground">{dccon.info.description}</span>}
+                    </span>
                 </>
             ) : failed ? (
                 <span>디시콘 정보</span>
             ) : (
                 <>
-                    <Skeleton className="h-4 w-24"/>
-                    <Skeleton className="h-3 w-40"/>
+                    <Skeleton className="size-10 flex-none"/>
+                    <span className="flex flex-col gap-1">
+                        <Skeleton className="h-4 w-24"/>
+                        <Skeleton className="h-3 w-40"/>
+                    </span>
                 </>
             )}
         </MenuItem>
