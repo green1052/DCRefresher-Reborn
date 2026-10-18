@@ -157,8 +157,16 @@ export const createIpLookup = (data: CompactIpData): ((ip: string) => IpCandidat
     for (let run = 0; run < count; run++) table.fill(runs[count + run]!, runs[run]!, run + 1 < count ? runs[run + 1]! : 65536);
 
     // 조회에 쓰는 필드만 클로저에 남긴다. data를 통째로 잡으면 이미 디코드한 base64 문자열이 탭마다 남는다.
-    const {orgs, countries, meta, lists} = data;
+    // meta와 lists는 작은 JS 배열 1만 개쯤이라 탭마다 0.5MB를 차지한다. 형식화 배열 하나로 이어 두면 그 10분의 1이다.
+    // 번호는 모두 표 값(Uint16) 범위 안이다. orgs·countries도 쓰이는 것만 담기므로 후보 수(65535개)를 넘지 않는다.
+    const {orgs, countries} = data;
+    const meta = Uint16Array.from(data.meta);
     const metaCount = meta.length / 3;
+    // 목록 i는 listFlat[listStart[i] .. listStart[i + 1]) 이다.
+    const listStart = new Uint32Array(data.lists.length + 1);
+    for (const [index, list] of data.lists.entries()) listStart[index + 1] = listStart[index]! + list.length;
+    const listFlat = new Uint16Array(listStart[data.lists.length]!);
+    for (const [index, list] of data.lists.entries()) listFlat.set(list, listStart[index]);
 
     const candidate = (index: number): IpCandidate => ({
         org: orgs[meta[index * 3]!] || undefined,
@@ -171,7 +179,8 @@ export const createIpLookup = (data: CompactIpData): ((ip: string) => IpCandidat
         const value = slot === undefined ? 0 : table[slot]!;
         if (!value) return undefined;
 
-        const indexes = value - 1 < metaCount ? [value - 1] : lists[value - 1 - metaCount] ?? [];
-        return indexes.map(candidate);
+        if (value - 1 < metaCount) return [candidate(value - 1)];
+        const list = value - 1 - metaCount;
+        return Array.from(listFlat.subarray(listStart[list], listStart[list + 1]), candidate);
     };
 };
