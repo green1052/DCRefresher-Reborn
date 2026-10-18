@@ -7,7 +7,7 @@ import {Input} from "@/components/ui/input";
 import {Spinner} from "@/components/ui/spinner";
 import {Textarea} from "@/components/ui/textarea";
 import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
-import {WithTooltip} from "@/components/WithTooltip";
+import {TooltipButton, WithTooltip} from "@/components/WithTooltip";
 import {captchaImage, normalizeTxtcon, TXTCON_BACKGROUNDS, TXTCON_COLORS} from "@/core/preview/request";
 import {postKey} from "@/core/preview/cache";
 import type {DcinsideDccon} from "@/core/preview/types";
@@ -230,14 +230,12 @@ export const WriteComment = () => {
             {reply.replyNo && (
                 <div className="mb-1 flex items-center gap-1 text-xs text-muted-foreground">
                     <span className="truncate">{replyName}에게 답글</span>
-                    <WithTooltip tip="답글 취소"
-                                 trigger={<Button variant="ghost" size="icon-xs" aria-label="답글 취소"
-                                                  onClick={() => {
-                                                      usePreviewStore.setState({reply: NO_REPLY});
-                                                      textarea.current?.focus();
-                                                  }}/>}>
+                    <TooltipButton tip="답글 취소" variant="ghost" size="icon-xs" onClick={() => {
+                        usePreviewStore.setState({reply: NO_REPLY});
+                        textarea.current?.focus();
+                    }}>
                         <X/>
-                    </WithTooltip>
+                    </TooltipButton>
                 </div>
             )}
 
@@ -271,11 +269,10 @@ export const WriteComment = () => {
                 />
                 <div className="flex flex-col gap-2">
                     <div className="flex gap-2">
-                        <WithTooltip tip={dccons.length > 0 ? "디시콘 취소" : "디시콘"}
-                                     trigger={<Button variant="secondary" size="icon" aria-label={dccons.length > 0 ? "디시콘 취소" : "디시콘"}
-                                                      onClick={() => (dccons.length > 0 ? setDccon(NO_DCCON) : setDcconOpen(true))}/>}>
+                        <TooltipButton tip={dccons.length > 0 ? "디시콘 취소" : "디시콘"} variant="secondary" size="icon"
+                                       onClick={() => (dccons.length > 0 ? setDccon(NO_DCCON) : setDcconOpen(true))}>
                             {dccons.length > 0 ? <X/> : <Smile/>}
-                        </WithTooltip>
+                        </TooltipButton>
                         <WithTooltip tip={txtcon ? "글자콘 취소" : "글자콘"}
                                      trigger={<Button variant={txtcon ? "default" : "secondary"} size="icon" aria-label="글자콘" aria-pressed={txtcon}
                                                       onClick={() => {

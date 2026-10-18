@@ -7,7 +7,7 @@ import {Alert, AlertDescription} from "@/components/ui/alert";
 import {Button} from "@/components/ui/button";
 import {Separator} from "@/components/ui/separator";
 import {Spinner} from "@/components/ui/spinner";
-import {WithTooltip} from "@/components/WithTooltip";
+import {TooltipButton} from "@/components/WithTooltip";
 import {focusedElement} from "@/components/useReturnFocus";
 import {BLOCKED_TEXT, similarImageThreshold} from "@/core/block";
 import {useContentModuleSettings, useRunningModuleSettings} from "@/core/module/useModuleSettings";
@@ -55,13 +55,12 @@ const RefreshButton = ({label, run}: { label: string; run: () => Promise<void> }
     const [busy, setBusy] = useState(false);
 
     return (
-        <WithTooltip tip={label} trigger={<Button size="icon-xs" variant="ghost" aria-label={label} disabled={busy}
-                                                  onClick={() => {
-                                                      setBusy(true);
-                                                      void run().finally(() => setBusy(false));
-                                                  }}/>}>
+        <TooltipButton tip={label} size="icon-xs" variant="ghost" disabled={busy} onClick={() => {
+            setBusy(true);
+            void run().finally(() => setBusy(false));
+        }}>
             {busy ? <Spinner aria-hidden/> : <RotateCw/>}
-        </WithTooltip>
+        </TooltipButton>
     );
 };
 
@@ -388,15 +387,15 @@ export const Frame = () => {
                     {/* 맨 위로 / 댓글로 — 창 오른쪽 아래. 높이 0인 칸을 화면 아래 끝에 sticky로 붙여 긴 글을 읽는 동안에도 보이게 한다. */}
                     <div className="sticky bottom-0 h-0">
                         <div className="absolute right-4 bottom-4 flex flex-col gap-2">
-                            <WithTooltip tip="맨 위로" side="left" trigger={<Button variant="secondary" size="icon" className="rounded-full" aria-label="맨 위로"
-                                                                                    onClick={() => scroller.current?.scrollTo({top: 0, behavior: smoothScroll()})}/>}>
+                            <TooltipButton tip="맨 위로" side="left" variant="secondary" size="icon" className="rounded-full"
+                                           onClick={() => scroller.current?.scrollTo({top: 0, behavior: smoothScroll()})}>
                                 <ArrowUp/>
-                            </WithTooltip>
+                            </TooltipButton>
                             {hasComments && (
-                                <WithTooltip tip="댓글로" side="left" trigger={<Button variant="secondary" size="icon" className="rounded-full" aria-label="댓글로"
-                                                                                       onClick={() => commentsSection.current?.scrollIntoView({behavior: smoothScroll(), block: "start"})}/>}>
+                                <TooltipButton tip="댓글로" side="left" variant="secondary" size="icon" className="rounded-full"
+                                               onClick={() => commentsSection.current?.scrollIntoView({behavior: smoothScroll(), block: "start"})}>
                                     <MessageSquare/>
-                                </WithTooltip>
+                                </TooltipButton>
                             )}
                         </div>
                     </div>

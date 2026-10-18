@@ -2,7 +2,7 @@ import {ClipboardCopy, FileDown, Plus, Trash2, Upload} from "lucide-react";
 import {type ReactNode, useRef, useState} from "react";
 
 import {ConfirmDialog} from "@/components/dialogs";
-import {WithTooltip} from "@/components/WithTooltip";
+import {TooltipButton} from "@/components/WithTooltip";
 import {focusPanel} from "@/components/useReturnFocus";
 import {Badge} from "@/components/ui/badge";
 import {Button} from "@/components/ui/button";
@@ -263,15 +263,15 @@ export const ListTabs = <T extends string, I>({
                             })}
                         </TabsList>
                         <div className="flex gap-1 pb-1">
-                            <WithTooltip tip="클립보드로 내보내기" trigger={<Button variant="ghost" size="icon" aria-label="클립보드로 내보내기" onClick={() => void exportList("클립보드")}/>}>
+                            <TooltipButton tip="클립보드로 내보내기" variant="ghost" size="icon" onClick={() => void exportList("클립보드")}>
                                 <ClipboardCopy/>
-                            </WithTooltip>
-                            <WithTooltip tip="파일로 내보내기" trigger={<Button variant="ghost" size="icon" aria-label="파일로 내보내기" onClick={() => void exportList("파일")}/>}>
+                            </TooltipButton>
+                            <TooltipButton tip="파일로 내보내기" variant="ghost" size="icon" onClick={() => void exportList("파일")}>
                                 <FileDown/>
-                            </WithTooltip>
-                            <WithTooltip tip="가져오기" trigger={<Button variant="ghost" size="icon" aria-label="가져오기" onClick={() => setImportOpen(true)}/>}>
+                            </TooltipButton>
+                            <TooltipButton tip="가져오기" variant="ghost" size="icon" onClick={() => setImportOpen(true)}>
                                 <Upload/>
-                            </WithTooltip>
+                            </TooltipButton>
                         </div>
                     </div>
 
@@ -303,20 +303,19 @@ export const ListTabs = <T extends string, I>({
                                                          setLimit(PAGE);
                                                      }}/>
                                         {/* 검색 중에도 걸러진 것만이 아니라 이 종류 전부를 지우므로 확인 문구에 전체 개수를 적는다. */}
-                                        <WithTooltip tip="전체 삭제" trigger={<Button variant="destructive" size="icon" aria-label="전체 삭제" disabled={total === 0}
-                                                                                   onClick={() => setConfirm({kind: "clear", type})}/>}>
+                                        <TooltipButton tip="전체 삭제" variant="destructive" size="icon" disabled={total === 0} onClick={() => setConfirm({kind: "clear", type})}>
                                             <Trash2/>
-                                        </WithTooltip>
-                                        <WithTooltip tip="추가" trigger={<Button size="icon" aria-label="추가" onClick={() => {
+                                        </TooltipButton>
+                                        <TooltipButton tip="추가" size="icon" onClick={() => {
                                             // 걸러진 조건에 안 맞는 새 항목이 바로 숨어 추가가 안 된 것처럼 보이지 않게 검색어와 거르기를 모두 푼다.
                                             setQuery("");
                                             setGallery("all");
                                             setUnusedDays("0");
                                             setLimit(PAGE);
                                             onAdd(type);
-                                        }}/>}>
+                                        }}>
                                             <Plus/>
-                                        </WithTooltip>
+                                        </TooltipButton>
                                     </div>
                                 </div>
 

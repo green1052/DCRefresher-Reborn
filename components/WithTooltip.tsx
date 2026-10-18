@@ -1,5 +1,6 @@
 import type {ComponentProps, ReactElement, ReactNode} from "react";
 
+import {Button} from "@/components/ui/button";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 
 /**
@@ -16,4 +17,12 @@ export const WithTooltip = ({tip, side, trigger, children}: {
         <TooltipTrigger render={trigger}>{children}</TooltipTrigger>
         <TooltipContent side={side}>{tip}</TooltipContent>
     </Tooltip>
+);
+
+/** 툴팁 글이 곧 이름(aria-label)인 버튼. 아이콘만 있는 버튼에 쓴다. */
+export const TooltipButton = ({tip, side, children, ...props}: ComponentProps<typeof Button> & {
+    tip: string;
+    side?: ComponentProps<typeof TooltipContent>["side"];
+}) => (
+    <WithTooltip tip={tip} side={side} trigger={<Button aria-label={tip} {...props}/>}>{children}</WithTooltip>
 );

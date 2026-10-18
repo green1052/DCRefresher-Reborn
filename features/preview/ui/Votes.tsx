@@ -3,7 +3,7 @@ import {useState} from "react";
 
 import {Button} from "@/components/ui/button";
 import {Spinner} from "@/components/ui/spinner";
-import {WithTooltip} from "@/components/WithTooltip";
+import {TooltipButton} from "@/components/WithTooltip";
 import {getEntry, setEntry} from "@/core/preview/cache";
 import {captchaImage, viewUrl, vote} from "@/core/preview/request";
 import type {GalleryPreData, PostInfo} from "@/core/preview/types";
@@ -72,13 +72,13 @@ export const Votes = ({post}: { post: PostInfo }) => {
                     {downvotes}
                 </Button>
             )}
-            <WithTooltip tip="링크 복사" trigger={<Button size="icon-lg" variant="ghost" aria-label="링크 복사" onClick={onShare}/>}>
+            <TooltipButton tip="링크 복사" size="icon-lg" variant="ghost" onClick={onShare}>
                 <Link2/>
-            </WithTooltip>
-            <WithTooltip tip="새 탭으로 열기" trigger={<Button size="icon-lg" variant="ghost" nativeButton={false} aria-label="새 탭으로 열기"
-                                                         render={<a href={preData?.link ?? location.href} target="_blank" rel="noreferrer"/>}/>}>
+            </TooltipButton>
+            <TooltipButton tip="새 탭으로 열기" size="icon-lg" variant="ghost" nativeButton={false}
+                           render={<a href={preData?.link ?? location.href} target="_blank" rel="noreferrer"/>}>
                 <ExternalLink/>
-            </WithTooltip>
+            </TooltipButton>
         </div>
     );
 };

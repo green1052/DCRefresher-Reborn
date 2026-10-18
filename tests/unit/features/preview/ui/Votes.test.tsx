@@ -1,6 +1,6 @@
 import {render} from "preact";
 import {act} from "preact/test-utils";
-import type {ReactElement, ReactNode} from "react";
+import type {ReactNode} from "react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {getEntry, setEntry} from "@/core/preview/cache";
@@ -17,7 +17,7 @@ vi.mock("@/components/ui/button", () => ({
 }));
 vi.mock("@/components/ui/spinner", () => ({Spinner: () => null}));
 vi.mock("lucide-react", () => ({ChevronDown: () => null, ChevronUp: () => null, ExternalLink: () => null, Link2: () => null}));
-vi.mock("@/components/WithTooltip", () => ({WithTooltip: ({trigger}: { trigger: ReactElement }) => trigger}));
+vi.mock("@/components/WithTooltip", () => ({TooltipButton: () => null}));
 vi.mock("@/core/preview/request", async (importOriginal) => ({...await importOriginal<typeof import("@/core/preview/request")>(), vote: vi.fn()}));
 
 const target = preData({id: "7"});
