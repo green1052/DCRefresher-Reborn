@@ -79,7 +79,7 @@ export const listUrl = (url: string): string => {
 
 /** origin의 쿼리에 from의 쿼리를 덮어쓴 "?..." 문자열. */
 export const mergeParamURL = (origin: string, from: string): string => {
-    const params = new URLSearchParams(new URL(origin).search);
+    const params = new URL(origin).searchParams;
     for (const [key, value] of new URL(from).searchParams) params.set(key, value);
     return `?${params}`;
 };
