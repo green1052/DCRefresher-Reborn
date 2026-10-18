@@ -14,13 +14,16 @@ export const hasModifier = (ev: Pick<KeyboardEvent, "ctrlKey" | "altKey" | "meta
 export const pressedKey = (ev: Pick<KeyboardEvent, "code" | "key">): string =>
     (/^(?:Key|Digit)([A-Z\d])$/.exec(ev.code)?.[1] ?? ev.key).toLowerCase();
 
+/** 모달 다이얼로그(components/ui/dialog.tsx·alert-dialog.tsx)의 배경. 떠 있으면 그 다이얼로그가 키를 받는다. */
+export const MODAL_OVERLAY_SELECTOR = "[data-slot=dialog-overlay], [data-slot=alert-dialog-overlay]";
+
 /**
  * 단축키를 무시해야 하는지. 입력칸에 타이핑 중이거나 다이얼로그(메모·차단·캡차 등)가 떠 있으면 true다.
  * 다이얼로그는 포커스가 입력칸 밖에 있어도 막아야 뒤의 글을 지우거나 넘기지 않는다.
  */
 export const isTyping = (ev: Event): boolean => {
-    // 모달 다이얼로그(components/ui/dialog.tsx·alert-dialog.tsx)의 배경. 미리보기 창(비모달)과 이미지 크게 보기는 저마다 키를 받으므로 세지 않는다.
-    if (overlay.portal?.querySelector("[data-slot=dialog-overlay], [data-slot=alert-dialog-overlay]")) return true;
+    // 미리보기 창(비모달)과 이미지 크게 보기는 저마다 키를 받으므로 세지 않는다.
+    if (overlay.portal?.querySelector(MODAL_OVERLAY_SELECTOR)) return true;
 
     const target = eventTarget(ev);
     return target instanceof HTMLElement && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
