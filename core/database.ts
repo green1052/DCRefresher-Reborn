@@ -73,10 +73,10 @@ interface IpInfo {
 
 let lookupIp: ((ip: string) => IpCandidate[] | undefined) | null = null;
 /**
- * uid → 이유들. 저장된 ban은 갤러리 → uid[] 형태라 뒤집어 둔다. 갤러리 이름이 그대로 갱차 이유로 보인다.
+ * uid → 이유들 조회 (indexBans). 저장된 ban은 갤러리 → uid[] 형태라 뒤집어 둔다. 갤러리 이름이 그대로 갱차 이유로 보인다.
  * 기본 설정에서는 유저 버블만 쓰므로 처음 조회할 때 읽기 시작한다. 읽는 동안은 null이고, 다 읽으면 번호(bump)를 올려 다시 그리게 한다.
  */
-let bans: Map<string, string> | null = null;
+let bans: ((uid: string) => string | undefined) | null = null;
 let bansRequested = false;
 /** 감시로 받은 밴 DB 갱신 수. 처음 읽기가 늦게 끝나 새 값을 덮지 않게 견준다. */
 let banVersion = 0;
@@ -118,7 +118,7 @@ const loadIp = (stored: string, format: number | undefined): void => {
 };
 
 const loadBans = (stored: string): void => {
-    bans = new Map();
+    bans = indexBans({});
     try {
         bans = indexBans(parseBans(stored));
     } catch (e) {
@@ -127,12 +127,43 @@ const loadBans = (stored: string): void => {
     bump();
 };
 
-const indexBans = (list: BanList): Map<string, string> => {
-    const index = new Map<string, string>();
+/**
+ * 밴 목록 → uid 조회 함수 (없으면 undefined). 이유가 여럿이면 ", "로 잇는다.
+ * uid 2만여 개를 Map에 그대로 두면 문자열·칸이 탭마다 1MB쯤 된다. uid를 정렬해 한 문자열로 잇고 시작점과 이유 번호만
+ * 형식화 배열에 두어 절반 아래로 줄인다. 조회는 이진 탐색이다 (uid 하나에 비교 15번쯤).
+ */
+const indexBans = (list: BanList): ((uid: string) => string | undefined) => {
+    const reasonsOf = new Map<string, string>();
     for (const [reason, uids] of Object.entries(list)) {
-        for (const uid of uids) index.set(uid, index.has(uid) ? `${index.get(uid)}, ${reason}` : reason);
+        for (const uid of uids) reasonsOf.set(uid, reasonsOf.has(uid) ? `${reasonsOf.get(uid)}, ${reason}` : reason);
     }
-    return index;
+
+    const uids = [...reasonsOf.keys()].sort();
+    // 이유 조합은 uid보다 훨씬 적다 (갤러리 하나가 대부분). 조합마다 문자열 하나만 두고 번호로 가리킨다.
+    const reasons = [...new Set(reasonsOf.values())];
+    const reasonIndex = new Map(reasons.map((reason, index) => [reason, index]));
+    // uid i는 joined[starts[i] .. starts[i + 1]) 이다. 구분자 없이 이으므로 uid에 어떤 글자가 있어도 된다.
+    const joined = uids.join("");
+    const starts = new Uint32Array(uids.length + 1);
+    const reasonOf = new Uint32Array(uids.length);
+    for (const [index, uid] of uids.entries()) {
+        starts[index + 1] = starts[index]! + uid.length;
+        reasonOf[index] = reasonIndex.get(reasonsOf.get(uid)!)!;
+    }
+
+    return (uid) => {
+        // 정렬(sort)과 비교(<)가 같은 UTF-16 코드 단위 순서라 이진 탐색이 맞다.
+        let low = 0;
+        let high = reasonOf.length - 1;
+        while (low <= high) {
+            const middle = (low + high) >>> 1;
+            const key = joined.slice(starts[middle], starts[middle + 1]);
+            if (key === uid) return reasons[reasonOf[middle]!];
+            if (key < uid) low = middle + 1;
+            else high = middle - 1;
+        }
+        return undefined;
+    };
 };
 
 // 감시는 모듈이 아니라 페이지 단위다 (모듈이 꺼져도 버블이 쓴다). 그래서 콘텐츠 스크립트가 무효화될 때 releaseDatabase로 푼다.
@@ -234,5 +265,5 @@ export const banReasonsOf = (uid: string): string | undefined => {
             console.error(e);
         });
     }
-    return bans?.get(uid);
+    return bans?.(uid);
 };

@@ -275,6 +275,27 @@ describe("banReasonsOf", () => {
         expect(banReasonsOf("c")).toBeUndefined();
     });
 
+    it("많은 uid도 모두 찾고 없는 uid는 찾지 않는다", async () => {
+        // 조회는 정렬해 이은 uid를 이진 탐색한다. 앞뒤 끝, 접두어가 겹치는 uid, 한글·빈 uid도 넣는다.
+        const list: Record<string, string[]> = {갤1: [], 갤2: [], 갤3: ["", "가나", "zz"]};
+        for (let index = 0; index < 500; index++) {
+            const uid = `user${index}`;
+            list[index % 3 === 0 ? "갤1" : "갤2"]!.push(uid);
+            if (index % 7 === 0) list.갤3!.push(uid);
+        }
+        await browser.storage.local.set({[BAN]: JSON.stringify(list)});
+        const {banReasonsOf} = await load();
+        banReasonsOf("user0");
+        await vi.waitFor(() => expect(banReasonsOf("user0")).toBe("갤1, 갤3"));
+
+        for (let index = 0; index < 500; index++) {
+            const expected = [index % 3 === 0 ? "갤1" : "갤2", ...(index % 7 === 0 ? ["갤3"] : [])].join(", ");
+            expect(banReasonsOf(`user${index}`)).toBe(expected);
+        }
+        for (const uid of ["", "가나", "zz"]) expect(banReasonsOf(uid)).toBe("갤3");
+        for (const uid of ["user", "user5000", "user1x", "a", "zzz", "가"]) expect(banReasonsOf(uid)).toBeUndefined();
+    });
+
     it("읽은 뒤에는 저장소의 밴 DB 변경을 따라간다", async () => {
         await browser.storage.local.set({[BAN]: JSON.stringify({갤1: ["a"]})});
         const {banReasonsOf, initDatabase} = await load();
