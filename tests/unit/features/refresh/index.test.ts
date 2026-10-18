@@ -16,6 +16,10 @@ vi.mock("@/core/http/client", async (importOriginal) => ({
     http: {get: (url: string, options?: GetOptions) => ({text: async () => (await get(url, options)).text()})}
 }));
 
+// 목록 비교 해시. jsdom의 crypto에는 subtle이 없고, WebCrypto는 가짜 타이머 밖에서 끝나 주기를 앞당겨도 기다리지 않는다.
+// 같은 목록이면 같은 값만 주면 되므로 받은 글자를 그대로 돌려준다.
+vi.mock("@/utils/hash", () => ({sha256: async (data: Uint8Array) => new TextDecoder().decode(data)}));
+
 const row = (no: string): string => `<tr class="ub-content" data-no="${no}"><td class="gall_num">${no}</td><td class="gall_tit"><a href="/board/view/?id=test&no=${no}">글 ${no}</a></td></tr>`;
 
 const page = (nos: string[], current = 1): string =>

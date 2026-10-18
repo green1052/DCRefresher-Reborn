@@ -6,6 +6,7 @@ import {getModuleApi} from "@/core/module/registry";
 import {ownPreviewEntry} from "@/core/preview/history";
 import {useUiStore} from "@/stores/ui";
 import {smoothScroll, whenDomReady} from "@/utils/dom";
+import {sha256} from "@/utils/hash";
 
 import {isWholeFirstPage, replaceList, syncPaging} from "./list";
 import {LIST_TABLE} from "./markup";
@@ -51,8 +52,9 @@ export default defineModule({
         let scrollAfter: string | null = null;
         // 진행 중인 목록 요청. 주소가 바뀌면 끊는다.
         let inflight: AbortController | null = null;
-        // 지난번 갈아끼운 목록의 tbody HTML. 받은 것이 같으면 파싱·교체를 건너뛴다.
-        let lastListHtml = "";
+        // 지난번 갈아끼운 목록 tbody HTML의 SHA-256. 받은 것이 같으면 파싱·교체를 건너뛴다.
+        // HTML을 그대로 들고 있으면 목록 탭마다 비교용으로만 150KB(UTF-16)쯤을 붙잡는다.
+        let lastListHash = "";
         const unseen = createUnseenCounter(ctx);
         const gallery = pageGallery ?? "";
 
@@ -156,8 +158,6 @@ export default defineModule({
                     totalTimeout: LIST_TIMEOUT,
                     ...(force ? {} : {retry: 0})
                 }).text();
-                // 그사이 주소가 바뀌었으면 지난 주소의 목록이라 버린다. finally에서 새 주소로 다시 받는다.
-                if (target !== originalLocation) return false;
 
                 // 목록이 그대로면 파싱·교체를 건너뛴다. 응답 전체는 요청마다 바뀌는 값(s_key)이 있어 목록 표의 tbody만 비교한다.
                 const table = response.indexOf(LIST_TABLE);
@@ -166,12 +166,15 @@ export default defineModule({
                 const end = start === -1 ? -1 : response.indexOf("</tbody>", start);
                 // 표가 없거나 잘린 응답(</tbody> 없음)은 비교·부분 파싱 없이 문서 전체를 파싱한다. slice(start, -1)은 문서 끝까지를 준다.
                 const listHtml = end === -1 ? "" : response.slice(start, end);
-                if (!customURL && listHtml && listHtml === lastListHtml) {
+                const listHash = listHtml && await sha256(new TextEncoder().encode(listHtml));
+                // 그사이 주소가 바뀌었으면 지난 주소의 목록이라 버린다. finally에서 새 주소로 다시 받는다.
+                if (target !== originalLocation) return false;
+                if (!customURL && listHash && listHash === lastListHash) {
                     failures = 0;
                     unseen.count([]);
                     return true;
                 }
-                // 응답을 기다리는 동안 커서를 올리거나 체크했으면 버린다. lastListHtml을 아직 바꾸지 않아야 다음 주기에 이 목록이 들어간다.
+                // 응답을 기다리는 동안 커서를 올리거나 체크했으면 버린다. lastListHash를 아직 바꾸지 않아야 다음 주기에 이 목록이 들어간다.
                 if (holdList(customURL, force)) return false;
 
                 // 자동 새로고침은 목록 표만 파싱한다(문서의 1/3). 강제·이동 로드, 검색 결과(검색 모듈이 페이징을 보고 다시 잇는다),
@@ -197,8 +200,7 @@ export default defineModule({
                     // 빠진 글이 곧 지워진 글인 목록에서만 한다.
                     keepDeleted: getModuleApi("preview")?.archiveArticle() === true && isWholeFirstPage(target)
                 });
-                // 복사해 둔다. slice한 문자열은 응답 전체(수백 KB)를 붙잡아 다음 교체까지 남는다.
-                lastListHtml = structuredClone(listHtml);
+                lastListHash = listHash;
                 // 수만 고쳤으면 차단·메모 표시를 다시 걸 행이 없으니 알리지 않는다. 알리면 주기마다 배경 왕복·페이지 주입이 생긴다.
                 if (changed) {
                     notifyListReplaced(gallery);
