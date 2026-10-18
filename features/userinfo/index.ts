@@ -263,12 +263,12 @@ export default defineModule({
             (element) => process(ctx, element)
         );
 
-        const unsubscribeMemos = useMemosStore.subscribe((state, previous) => {
+        ctx.addCleanup(useMemosStore.subscribe((state, previous) => {
             if (state.memos !== previous.memos) rebuildAll(ctx);
-        });
+        }));
 
         // IP DB가 갱신되거나 갱차 목록을 다 읽으면 다시 그린다.
-        const unwatchDatabase = onDatabaseChange(() => rebuildAll(ctx));
+        ctx.addCleanup(onDatabaseChange(() => rebuildAll(ctx)));
 
         // 받은 글댓비를 이 탭에는 바로 그리고, 저장은 모아서 한다 (RATIO_SAVE_DELAY).
         const storeRatios = (entries: (readonly [string, GallogActivity])[]): void => {
@@ -282,9 +282,9 @@ export default defineModule({
         };
 
         // 미리보기·버블·새 글 조회가 갤로그에서 새로 받은 값을 모두 저장한다. 이미 받은 사람을 다시 묻지 않는다.
-        const unwatchGallog = onGallogActivity((uid, activity) => {
+        ctx.addCleanup(onGallogActivity((uid, activity) => {
             if (ctx.settings.checkRatio) storeRatios([[uid, activity]]);
-        });
+        }));
 
         // 조회 중인 uid. 응답이 새로고침 주기보다 늦어도 다음 새로고침이 같은 요청을 또 보내지 않게 한다.
         const pending = new Set<string>();
@@ -312,12 +312,6 @@ export default defineModule({
                 for (const uid of stale) pending.delete(uid);
             });
         };
-
-        ctx.addCleanup(() => {
-            unsubscribeMemos();
-            unwatchDatabase();
-            unwatchGallog();
-        });
 
         return {checkNewPosts};
     },
