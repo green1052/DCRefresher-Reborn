@@ -1,3 +1,4 @@
+import QuickLRU from "quick-lru";
 import {describe, expect, it, vi} from "vitest";
 
 import {getEntry, postKey, restoreArchive, setEntry} from "@/core/preview/cache";
@@ -38,6 +39,21 @@ describe("setEntry", () => {
         expect(getEntry(pre)).toBeDefined();
         vi.advanceTimersByTime(1_000);
         expect(getEntry(pre)).toBeUndefined();
+    });
+
+    it("다시 열지 않아도 수명이 끝나면 메모리에서 지운다", () => {
+        vi.useFakeTimers();
+        // 꺼내면 어차피 지워지므로 꺼내지 않고 quick-lru가 지우는지만 본다.
+        const remove = vi.spyOn(QuickLRU.prototype, "delete");
+        const pre = nextPost();
+        setEntry(pre, {fetchedAt: 1});
+        vi.advanceTimersByTime(30_000);
+        setEntry(pre, {commentsAt: 2});
+        vi.advanceTimersByTime(60_000);
+        expect(remove).not.toHaveBeenCalledWith(postKey(pre));
+        vi.advanceTimersByTime(1_000);
+        expect(remove).toHaveBeenCalledWith(postKey(pre));
+        remove.mockRestore();
     });
 });
 
