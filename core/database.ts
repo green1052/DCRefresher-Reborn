@@ -4,7 +4,7 @@ import {createIpLookup, type IpCandidate, IP_FORMAT, parseIpData, parseStoredIpD
 import {storage} from "wxt/utils/storage";
 import {createStore} from "zustand/vanilla";
 
-import {DB_KEYS, DB_META_KEY, dbStorage, writeDatabase} from "@/core/storage/items";
+import {DB_KEYS, DB_META_KEY, dbMetaStorage, writeDatabase} from "@/core/storage/items";
 import {watchStorage} from "@/core/storage/sync";
 import type {BanList, DatabaseMeta} from "@/core/storage/types";
 import {onBfcacheRestore} from "@/utils/dom";
@@ -25,10 +25,10 @@ const get = (url: string): Promise<string> => http.get(url, {retry: 0, cache: "n
  * force: 사용자가 누른 "지금 갱신". 같은 버전이어도 다시 받는다.
  */
 export const updateDatabase = async (force = false): Promise<void> => {
-    const [version, meta] = await Promise.all([get(urls.database.version).then((text) => text.trim()), dbStorage.meta.getValue()]);
+    const [version, meta] = await Promise.all([get(urls.database.version).then((text) => text.trim()), dbMetaStorage().getValue()]);
     // 저장 형식이 바뀌었으면(확장 업데이트) 같은 버전이어도 새 형식으로 다시 받는다.
     if (!force && version && version === meta.version.trim() && meta.format === IP_FORMAT) {
-        await dbStorage.meta.setValue({...meta, lastUpdate: Date.now()});
+        await dbMetaStorage().setValue({...meta, lastUpdate: Date.now()});
         return;
     }
 

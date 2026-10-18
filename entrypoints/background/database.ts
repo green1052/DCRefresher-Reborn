@@ -1,6 +1,6 @@
 import {updateDatabase} from "@/core/database";
 import {IP_FORMAT} from "@/core/ipdb";
-import {dbStorage} from "@/core/storage/items";
+import {dbMetaStorage} from "@/core/storage/items";
 
 const DATABASE_UPDATE_INTERVAL = 604_800_000; // 7일
 /**
@@ -41,7 +41,7 @@ export const startDatabaseUpdates = (): ((force?: boolean) => Promise<void>) => 
     browser.alarms.onAlarm.addListener((alarm) => {
         if (alarm.name !== DATABASE_ALARM) return;
         // 시계가 앞서 있을 때 저장된 lastUpdate는 미래라 차이가 음수로 남는다. 그때도 받아 지금 시계로 다시 적는다.
-        void dbStorage.meta.getValue().then(({lastUpdate, format}) =>
+        void dbMetaStorage().getValue().then(({lastUpdate, format}) =>
             (format !== IP_FORMAT || lastUpdate > Date.now() || Date.now() - lastUpdate > DATABASE_UPDATE_INTERVAL ? update() : undefined));
     });
 

@@ -110,12 +110,7 @@ export const isBlockListKey = (key: string): boolean => /^refresher:block:[A-Z]+
  * meta를 읽기만 하는 콘텐츠 스크립트(core/database.ts의 initDatabase)는 항목 대신 DB_META_KEY로 읽는다.
  */
 export const DB_META_KEY = "local:refresher:db:meta";
-const dbMeta = lazyItem<DatabaseMeta>(DB_META_KEY, {version: "", lastUpdate: 0});
-export const dbStorage = {
-    get meta() {
-        return dbMeta();
-    }
-};
+export const dbMetaStorage = lazyItem<DatabaseMeta>(DB_META_KEY, {version: "", lastUpdate: 0});
 
 /**
  * ip·ban 키. 항목으로 만들면 만드는 순간 수백 KB를 읽으므로(lazyItem 참고) 쓰는 곳(core/database.ts)에서 키로 다룬다.
@@ -130,42 +125,28 @@ export const DB_KEYS = {
 /** 세 키를 한 번에 써서 읽는 쪽이 새 meta와 옛 ip를 섞어 보지 않게 한다. */
 export const writeDatabase = (meta: DatabaseMeta, ip: string, ban: string): Promise<void> =>
     storage.setItems([
-        {item: dbStorage.meta, value: meta},
+        {item: dbMetaStorage(), value: meta},
         {key: DB_KEYS.ip, value: ip},
         {key: DB_KEYS.ban, value: ban}
     ]);
 
 /** 클라우드 백업 상태. refresher:backup:* 키는 백업 대상에서 빠진다 (core/backup.ts). 백업 시각은 클라우드의 메타에서 읽는다. */
-const backupAuto = lazyItem<boolean>("local:refresher:backup:auto", false);
-const backupError = lazyItem<string>("local:refresher:backup:error", "");
-const backupPending = lazyItem<boolean>("local:refresher:backup:pending", false);
-const backupUndo = lazyItem<{ data: Record<string, unknown>; createdAt: number } | null>("local:refresher:backup:undo", null);
-let backupDeviceItem: WxtStorageItem<string, {}> | undefined;
-const backupDevice = () => (backupDeviceItem ??= storage.defineItem<string>("local:refresher:backup:device", {init: () => crypto.randomUUID()}));
+let backupDevice: WxtStorageItem<string, {}> | undefined;
 export const backupStorage = {
     /** 설정이 바뀌면 잠시 뒤 자동으로 백업. */
-    get auto() {
-        return backupAuto();
-    },
+    auto: lazyItem<boolean>("local:refresher:backup:auto", false),
     /** 마지막 백업이 실패했으면 이유 (성공하면 빈 문자열). */
-    get error() {
-        return backupError();
-    },
+    error: lazyItem<string>("local:refresher:backup:error", ""),
     /** 자동 백업 알람이 걸려 있고 아직 울리지 않았다. 브라우저를 끄면 알람이 사라질 수 있어 다음 시작 때 이 값을 보고 다시 건다. */
-    get pending() {
-        return backupPending();
-    },
+    pending: lazyItem<boolean>("local:refresher:backup:pending", false),
     /**
      * 마지막 초기화·복원·가져오기(core/settings-transfer.ts의 writeSettings) 직전의 백업 대상 값과 그 시각. 데이터 탭의 되돌리기가 쓴다.
      * 이 기기에만 둔다. 클라우드 자동 백업이 1분 뒤 바뀐 값으로 덮여도 이것으로 돌아갈 수 있다.
      */
-    get undo() {
-        return backupUndo();
-    },
+    undo: lazyItem<{ data: Record<string, unknown>; createdAt: number } | null>("local:refresher:backup:undo", null),
     /** 이 기기의 id. 처음 읽을 때 만든다. 클라우드 백업 메타에 남겨 다른 기기가 올린 백업을 덮기 전에 묻는다. */
-    get device() {
-        return backupDevice();
-    }
+    device: (): WxtStorageItem<string, {}> =>
+        (backupDevice ??= storage.defineItem<string>("local:refresher:backup:device", {init: () => crypto.randomUUID()}))
 };
 
 /**

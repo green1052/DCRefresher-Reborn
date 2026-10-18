@@ -83,7 +83,7 @@ export const writeSettings = async (data: Record<string, unknown>, mode: "replac
     // refresher:backup:* 키라 자동 백업을 깨우지 않는다. 남기지 못해도 쓰기는 이미 끝났으므로 실패로 알리지 않는다.
     const createdAt = Date.now();
     try {
-        await backupStorage.undo.setValue({data: previous, createdAt});
+        await backupStorage.undo().setValue({data: previous, createdAt});
         return createdAt;
     } catch (e) {
         console.error(e);

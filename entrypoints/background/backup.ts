@@ -16,16 +16,16 @@ export const startAutoBackup = (): void => {
         if (!Object.keys(changes).some(isBackupTarget)) return;
         edits++;
 
-        void backupStorage.auto.getValue().then((auto) => {
+        void backupStorage.auto().getValue().then((auto) => {
             if (!auto) return;
             void arm().catch(console.error);
-            void backupStorage.pending.setValue(true);
+            void backupStorage.pending().setValue(true);
         });
     });
 
     // 알람은 브라우저를 끄거나(파이어폭스는 항상) 확장을 업데이트하면 사라질 수 있어, 대기 중인 백업은 다음 시작·업데이트 때 다시 건다.
     // 워커가 깰 때마다 하면 안 된다. 크롬은 울린 알람을 지운 뒤 워커를 깨우므로 방금 울린 알람을 또 걸어 백업이 두 번 돈다.
-    const rearm = (): void => void Promise.all([backupStorage.pending.getValue(), browser.alarms.get(AUTO_BACKUP_ALARM)])
+    const rearm = (): void => void Promise.all([backupStorage.pending().getValue(), browser.alarms.get(AUTO_BACKUP_ALARM)])
         .then(([pending, alarm]) => (pending && !alarm ? arm() : undefined))
         .catch(console.error);
     // 파이어폭스는 확장을 껐다 켜면 onStartup/onInstalled 없이 배경만 다시 뜨고 알람은 지워진다.
@@ -43,10 +43,10 @@ export const startAutoBackup = (): void => {
         // 대기 표시는 백업이 되고, 그사이 설정이 또 바뀌지 않았을 때만 지운다. 남겨 두면 rearm이 다음 시작 때 다시 건다.
         // 알람 유무로 판단하면 변경이 alarms.get 응답과 엇갈릴 때 알람은 걸렸는데 대기 표시가 지워진다.
         const seen = edits;
-        void backupStorage.auto.getValue()
+        void backupStorage.auto().getValue()
             .then(async (auto) => {
                 if (auto) await runBackup("auto");
-                if (edits === seen) await backupStorage.pending.setValue(false);
+                if (edits === seen) await backupStorage.pending().setValue(false);
             })
             .catch(() => {});
     });

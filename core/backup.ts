@@ -115,7 +115,7 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
     const chunks: string[] = [];
     for (let at = 0; at < encoded.length; at += CHUNK_CHARS) chunks.push(encoded.slice(at, at + CHUNK_CHARS));
 
-    const meta: BackupMeta = {format: FORMAT, chunks: chunks.length, hash: await sha256(bytes), size: encoded.length, createdAt: Date.now(), device: await backupStorage.device.getValue()};
+    const meta: BackupMeta = {format: FORMAT, chunks: chunks.length, hash: await sha256(bytes), size: encoded.length, createdAt: Date.now(), device: await backupStorage.device().getValue()};
     const items: Record<string, unknown> = {
         ...Object.fromEntries(chunks.map((chunk, index) => [chunkKey(slot, index), chunk])),
         [SLOT_KEYS[slot]]: meta
@@ -143,7 +143,7 @@ export interface CloudBackupStatus {
 /** 클라우드 백업 상태. 다른 기기가 올린 백업도 메타로 알 수 있다. */
 export const readCloudBackupStatus = async (): Promise<CloudBackupStatus> => {
     const all = await browser.storage.sync.get(null);
-    const device = await backupStorage.device.getValue();
+    const device = await backupStorage.device().getValue();
     const slotStatus = (slot: BackupSlot): SlotStatus | undefined => {
         const meta = all[SLOT_KEYS[slot]];
         return isMeta(meta) ? {createdAt: meta.createdAt, size: meta.size, other: meta.device !== device} : undefined;
@@ -195,10 +195,10 @@ export const readCloudBackup = async (slot: BackupSlot): Promise<CloudBackup | n
 export const runBackup = async (slot: BackupSlot): Promise<void> => {
     try {
         await backupToCloud(slot);
-        await backupStorage.error.setValue("");
+        await backupStorage.error().setValue("");
     } catch (e) {
         console.error("백업하지 못했습니다.", e);
-        await backupStorage.error.setValue(friendlyMessage(e));
+        await backupStorage.error().setValue(friendlyMessage(e));
         throw e;
     }
 };

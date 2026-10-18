@@ -175,7 +175,7 @@ describe("writeSettings", () => {
         await writeSettings({[NICK]: [entry("b")]}, "merge");
         const at = await writeSettings({}, "replace");
 
-        const undo = await backupStorage.undo.getValue();
+        const undo = await backupStorage.undo().getValue();
         expect(undo).toEqual({data: {[MODULES]: {a: true}, [NICK]: [entry("b")], [SETTINGS]: {width: 900}}, createdAt: at});
         await writeSettings(undo?.data ?? {}, "replace");
         expect(await settings()).toEqual({[MODULES]: {a: true}, [NICK]: [entry("b")], [SETTINGS]: {width: 900}});

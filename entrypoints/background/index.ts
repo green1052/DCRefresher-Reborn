@@ -1,7 +1,7 @@
 import {onMessage, sendMessage} from "@/core/messaging/protocol";
 import {type BackgroundModule, startBackgroundModules} from "@/core/module/background";
 import {CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES} from "@/core/pages";
-import {dbStorage} from "@/core/storage/items";
+import {dbMetaStorage} from "@/core/storage/items";
 import {recordUsage, syncUsage} from "@/core/usage";
 import {friendlyMessage} from "@/utils/error";
 
@@ -66,7 +66,7 @@ export default defineBackground(() => {
         await fillMissingBlockIds();
 
         // 개발 빌드는 DB가 없을 때만 받는다.
-        if (import.meta.env.PROD || !(await dbStorage.meta.getValue()).version) {
+        if (import.meta.env.PROD || !(await dbMetaStorage().getValue()).version) {
             await updateDatabase();
         }
     });

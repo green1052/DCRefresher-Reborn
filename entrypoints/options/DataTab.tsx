@@ -11,7 +11,7 @@ import {focusPanel, panelOf} from "@/components/useReturnFocus";
 import {type BackupSlot, clearCloudBackups, type CloudBackupStatus, collectLocalData, readBackupTargets, readCloudBackup, readCloudBackupStatus, runBackup} from "@/core/backup";
 import {sendMessage} from "@/core/messaging/protocol";
 import {mergeBackup, parseImport, writeSettings} from "@/core/settings-transfer";
-import {backupStorage, dbStorage} from "@/core/storage/items";
+import {backupStorage, dbMetaStorage} from "@/core/storage/items";
 import {friendlyMessage} from "@/utils/error";
 import {arrayIncludes, objectKeys} from "@/utils/typed";
 
@@ -26,10 +26,10 @@ const RESTORE_DESCRIPTIONS: Record<RestoreMode, string> = {
 };
 
 export function DataTab() {
-    const {version, lastUpdate} = useStorageItem(dbStorage.meta);
-    const backupError = useStorageItem(backupStorage.error);
-    const autoBackup = useStorageItem(backupStorage.auto);
-    const undo = useStorageItem(backupStorage.undo);
+    const {version, lastUpdate} = useStorageItem(dbMetaStorage());
+    const backupError = useStorageItem(backupStorage.error());
+    const autoBackup = useStorageItem(backupStorage.auto());
+    const undo = useStorageItem(backupStorage.undo());
     // 처음 읽기 전(null)에는 덮기 전 확인을 할 수 없으므로 백업 버튼과 자동 백업 스위치를 막는다.
     const [cloud, setCloud] = useState<CloudBackupStatus | null>(null);
     const [restoreOpen, setRestoreOpen] = useState(false);
@@ -90,8 +90,8 @@ export function DataTab() {
 
     // 빈 설정을 쓰기 전에 자동 백업을 끈다. 켜 두면 1분 뒤 빈 설정이 클라우드 자동 백업을 덮는다.
     const pauseAutoForEmpty = async (data: Record<string, unknown>): Promise<boolean> => {
-        if (Object.keys(data).length > 0 || !(await backupStorage.auto.getValue())) return false;
-        await backupStorage.auto.setValue(false);
+        if (Object.keys(data).length > 0 || !(await backupStorage.auto().getValue())) return false;
+        await backupStorage.auto().setValue(false);
         return true;
     };
 
@@ -101,12 +101,12 @@ export function DataTab() {
     // 탭의 되돌리기는 켜지 않는다. 한참 뒤에 확인 없이 켜면 그사이 다른 기기가 올린 자동 백업을 덮는다.
     const revert = (at?: number, auto = false) =>
         run(async () => {
-            const before = await backupStorage.undo.getValue();
+            const before = await backupStorage.undo().getValue();
             if (!before) return "되돌릴 데이터가 없습니다.";
             if (at !== undefined && before.createdAt !== at) return "그 뒤에 다른 작업이 있어 이 알림으로는 되돌릴 수 없습니다.";
             const off = await pauseAutoForEmpty(before.data);
             await writeSettings(before.data, "replace");
-            if (auto) await backupStorage.auto.setValue(true);
+            if (auto) await backupStorage.auto().setValue(true);
             return `${formatTime(before.createdAt)} 직전 상태로 되돌렸습니다.${auto ? " 자동 백업도 다시 켰습니다." : off ? " 클라우드 백업을 지키려고 자동 백업을 껐습니다." : ""}`;
         }, "되돌리지 못했습니다.");
 
@@ -127,7 +127,7 @@ export function DataTab() {
 
     const toggleAutoBackup = async (on: boolean): Promise<void> => {
         try {
-            await backupStorage.auto.setValue(on);
+            await backupStorage.auto().setValue(on);
         } catch (e) {
             console.error(e);
             notify(`자동 백업 설정을 저장하지 못했습니다. ${friendlyMessage(e)}`);
@@ -161,8 +161,8 @@ export function DataTab() {
     const clearCloud = () =>
         run(async () => {
             // 자동 백업이 켜져 있으면 다음 설정 변경 때 다시 올라가므로 끈다.
-            const wasAuto = await backupStorage.auto.getValue();
-            if (wasAuto) await backupStorage.auto.setValue(false);
+            const wasAuto = await backupStorage.auto().getValue();
+            if (wasAuto) await backupStorage.auto().setValue(false);
 
             await clearCloudBackups();
             return `클라우드 백업을 지웠습니다.${wasAuto ? " 자동 백업도 껐습니다." : ""}`;

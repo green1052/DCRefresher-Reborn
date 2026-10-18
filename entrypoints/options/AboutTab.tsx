@@ -4,7 +4,7 @@ import {useEffect, useState} from "react";
 import {Badge} from "@/components/ui/badge";
 import {Button} from "@/components/ui/button";
 import {CLOUD_QUOTA} from "@/core/backup";
-import {dbStorage} from "@/core/storage/items";
+import {dbMetaStorage} from "@/core/storage/items";
 import features from "@/features/meta";
 import {useBlocksStore} from "@/stores/blocks";
 import {useMemosStore} from "@/stores/memos";
@@ -56,7 +56,7 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
     const enabledNames = features.filter((feature) => enables[feature.id]).map((feature) => feature.name);
 
     const copyDiagnostics = async (): Promise<void> => {
-        const db = await dbStorage.meta.getValue().catch(() => null);
+        const db = await dbMetaStorage().getValue().catch(() => null);
         const lines = [
             `DCRefresher Reborn v${version} (${import.meta.env.BROWSER})`,
             `브라우저: ${navigator.userAgent}`,
