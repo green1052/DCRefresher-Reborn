@@ -21,6 +21,8 @@ const keepFormatting = (node: HTMLElement | SVGElement): void => {
     for (const name of [...style]) {
         const dropped = !KEPT_STYLE.test(name)
             || (name === "height" && autoHeight(node))
+            // 디시 투표(pollFrame)는 width·height 0으로 와서 페이지 스크립트가 내용 크기로 늘린다. 미리보기엔 그 스크립트가 없어 0이면 지워 width·height 속성 크기로 보인다.
+            || ((name === "width" || name === "height") && node.nodeName === "IFRAME" && Number.parseFloat(style.getPropertyValue(name)) === 0)
             || (name.startsWith("margin") && style.getPropertyValue(name).includes("-"));
         if (dropped) style.removeProperty(name);
     }

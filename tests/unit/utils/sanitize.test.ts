@@ -59,6 +59,14 @@ describe("sanitizeHtml", () => {
         expect(root.querySelector("iframe")?.hasAttribute("style")).toBe(false);
     });
 
+    it("크기 0으로 온 투표 iframe은 그 크기를 지워 width·height 속성 크기로 보인다", () => {
+        const root = parse("<iframe id=\"pollFrame\" width=\"459\" height=\"437\" src=\"https://gall.dcinside.com/board/poll/vote?no=1\" style=\"width: 0px; height: 0px;\"></iframe><iframe src=\"https://a.example\" style=\"width: 300px\"></iframe>");
+        const [poll, other] = root.querySelectorAll("iframe");
+        expect(poll?.hasAttribute("style")).toBe(false);
+        expect(poll?.getAttribute("width")).toBe("459");
+        expect(other?.style.width).toBe("300px");
+    });
+
     it("남은 서식이 없으면 style 속성을 뗀다", () => {
         expect(parse("<p style=\"position: absolute\">a</p>").querySelector("p")?.hasAttribute("style")).toBe(false);
     });
