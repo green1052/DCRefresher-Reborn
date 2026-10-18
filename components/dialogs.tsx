@@ -144,7 +144,8 @@ export const ConfirmDialog = ({title, confirmLabel = "확인", cancelLabel = "�
         <AlertDialog {...modal.root} onOpenChange={(next) => !next && modal.close()}>
             {/* 생김새는 다른 창(DialogContent·DialogTitle)과 맞춘다. */}
             <AlertDialogContent {...modal.popup} className="text-sm data-[size=default]:max-w-[calc(100%-2rem)] data-[size=default]:sm:max-w-[440px]">
-                <AlertDialogTitle className="text-sm leading-none">{title}</AlertDialogTitle>
+                {/* 이미지 해시처럼 띄어쓰기 없는 긴 값도 창 안에서 줄을 바꾼다. */}
+                <AlertDialogTitle className="text-sm leading-snug wrap-anywhere">{title}</AlertDialogTitle>
                 <AlertDialogFooter>
                     {cancelLabel !== null && <AlertDialogCancel>{cancelLabel}</AlertDialogCancel>}
                     <AlertDialogAction variant={danger ? "destructive" : "default"} onClick={onConfirm}>{confirmLabel}</AlertDialogAction>
