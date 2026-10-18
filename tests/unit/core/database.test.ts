@@ -145,7 +145,7 @@ describe("updateDatabase", () => {
 
 describe("ipInfoOf", () => {
     const setup = async (prefixes: [string, IpCandidate[]][]): Promise<typeof import("@/core/database")> => {
-        await browser.storage.local.set({[IP]: ipJson(prefixes)});
+        await browser.storage.local.set({[META]: {version: "v1", lastUpdate: 1, format: IP_FORMAT}, [IP]: ipJson(prefixes)});
         const database = await load();
         await database.initDatabase();
         return database;
@@ -185,7 +185,7 @@ describe("ipInfoOf", () => {
         expect(ipInfoOf("9.9")).toBeUndefined();
 
         vi.spyOn(console, "error").mockImplementation(() => {});
-        await browser.storage.local.set({[IP]: "{"});
+        await browser.storage.local.set({[META]: {version: "v1", lastUpdate: 1, format: IP_FORMAT}, [IP]: "{"});
         const broken = await load();
         await expect(broken.initDatabase()).resolves.toBeUndefined();
         expect(broken.ipInfoOf("1.2")).toBeUndefined();
@@ -234,8 +234,15 @@ describe("ipInfoOf", () => {
         expect([reads(IP), reads(META)]).toEqual([1, 1]);
     });
 
+    it("저장된 DB가 옛 저장 형식이면 읽지 않고 IP 정보 없이 둔다", async () => {
+        await browser.storage.local.set({[META]: {version: "v1", lastUpdate: 1}, [IP]: ipJson([["1.2", [{org: "KT", vpn: false}]]])});
+        const {initDatabase, ipInfoOf} = await load();
+        await initDatabase();
+        expect(ipInfoOf("1.2")).toBeUndefined();
+    });
+
     it("구독하면 DB를 읽기 시작한다", async () => {
-        await browser.storage.local.set({[IP]: ipJson([["1.2", [{org: "KT", vpn: false}]]])});
+        await browser.storage.local.set({[META]: {version: "v1", lastUpdate: 1, format: IP_FORMAT}, [IP]: ipJson([["1.2", [{org: "KT", vpn: false}]]])});
         const {subscribeDatabase, ipInfoOf} = await load();
         const listener = vi.fn();
         subscribeDatabase(listener);

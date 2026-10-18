@@ -114,6 +114,12 @@ export const parseIpData = (text: string): CompactIpData | null => {
 };
 
 /**
+ * 배경이 모양을 검사하고 저장한 문자열 → 저장 형식. 페이지마다 다시 검사하지 않는다 (탭마다 수 ms). 저장 형식 번호는 부르는 쪽이 본다.
+ * JSON이 깨졌으면 던진다.
+ */
+export const parseStoredIpData = (text: string): CompactIpData => JSON.parse(text);
+
+/**
  * 모양까지 본다. 받은 파일은 그대로 저장되고 페이지마다 읽히므로, 필드 하나만 틀려도 배지·미리보기가 깨진다.
  * 번호가 범위를 벗어나면 다른 기관·국가가 조용히 보이므로 meta·lists의 번호도 본다.
  */

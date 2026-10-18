@@ -1,6 +1,6 @@
 import {http} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
-import {createIpLookup, type IpCandidate, IP_FORMAT, parseIpData} from "@/core/ipdb";
+import {createIpLookup, type IpCandidate, IP_FORMAT, parseIpData, parseStoredIpData} from "@/core/ipdb";
 import {storage} from "wxt/utils/storage";
 import {createStore} from "zustand/vanilla";
 
@@ -106,11 +106,11 @@ export const onDatabaseChange = (listener: () => void): (() => void) => versionS
 const bump = (): void => versionStore.setState((version) => version + 1);
 
 // 깨진 값이어도 던지지 않고 IP 정보 없이 둔다. 던지면 initDatabase가 실패해 그것을 기다리는 userinfo 모듈의 setup까지 실패한다.
-const loadIp = (stored: string): void => {
+// format은 저장된 DB의 저장 형식이다. 옛 형식이면 다음 갱신이 새로 받을 때까지 IP 정보 없이 둔다.
+const loadIp = (stored: string, format: number | undefined): void => {
     lookupIp = null;
     try {
-        const ip = parseIpData(stored);
-        lookupIp = ip ? createIpLookup(ip) : null;
+        lookupIp = stored && format === IP_FORMAT ? createIpLookup(parseStoredIpData(stored)) : null;
     } catch (e) {
         console.error("IP DB를 읽지 못했습니다.", e);
     }
@@ -154,7 +154,8 @@ export const initDatabase = once(async () => {
     watchStorage<string>(DB_KEYS.ip, (next) => {
         updated = true;
         loadedStamp = "";
-        loadIp(next ?? "");
+        // 이 확장의 배경이 방금 검사하고 쓴 값이다.
+        loadIp(next ?? "", IP_FORMAT);
     }, signal);
     const [ip, meta] = await Promise.all([storage.getItem<string>(DB_KEYS.ip, {fallback: ""}), storage.getItem<DatabaseMeta>(DB_META_KEY)]).catch((e: unknown) => {
         attempt.abort();
@@ -162,7 +163,7 @@ export const initDatabase = once(async () => {
     });
     if (!updated) {
         loadedStamp = stampOf(meta);
-        loadIp(ip);
+        loadIp(ip, meta?.format);
     }
     // 밴은 한 번이라도 읽었을 때만 새 값을 따라간다.
     watchStorage<string>(DB_KEYS.ban, (next) => {
@@ -172,11 +173,12 @@ export const initDatabase = once(async () => {
     }, signal);
     // bfcache에 있는 동안 받은 DB 갱신은 watch로 오지 않는다. 버전이 그대로면(대부분) 작은 meta만 읽고 끝낸다.
     onBfcacheRestore(async () => {
-        const stamp = stampOf(await storage.getItem<DatabaseMeta>(DB_META_KEY));
+        const meta = await storage.getItem<DatabaseMeta>(DB_META_KEY);
+        const stamp = stampOf(meta);
         if (stamp === loadedStamp) return;
         const [ip, ban] = await Promise.all([storage.getItem<string>(DB_KEYS.ip, {fallback: ""}), bansRequested ? storage.getItem<string>(DB_KEYS.ban, {fallback: ""}) : null]);
         loadedStamp = stamp;
-        loadIp(ip);
+        loadIp(ip, meta?.format);
         if (ban !== null) loadBans(ban);
     }, signal);
 });
