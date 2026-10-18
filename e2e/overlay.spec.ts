@@ -40,7 +40,7 @@ test.describe("유저 버블", () => {
         const {bubble} = listPage;
         await expect(bubble.getByRole("button", {name: "닉네임 ㅇㅇ 차단 해제"})).toBeVisible();
         // 허용 목록(고닉만 보기)의 항목을 지우면 이 사람은 그대로 막히고 고닉까지 막힌다.
-        await expect(bubble.getByText("허용 목록에 없음")).toBeVisible();
+        await expect(bubble.getByText("닉네임 허용 목록(1개)에 없음")).toBeVisible();
         await expect(bubble.getByRole("button", {name: "닉네임 고닉 차단 해제"})).toHaveCount(0);
     });
 

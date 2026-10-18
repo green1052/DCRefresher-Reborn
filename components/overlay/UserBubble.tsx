@@ -57,38 +57,46 @@ const unblock = async (type: BlockType, {id, ...fields}: BlockEntry): Promise<vo
     });
 };
 
+type BlockRule = { type: BlockType; entry: BlockEntry };
+
 /**
  * 이 대상을 막고 있는 차단 규칙 목록. 왜 가려졌는지 보여 주고 그 자리에서 풀 수 있게 한다.
  * 허용 목록(불일치·불포함)은 이 대상이 어느 항목에도 맞지 않아 막힌 것이라, 항목을 지워도 풀리지 않고 지운 항목의 사람까지 막히므로 해제를 두지 않는다.
+ * 허용 목록은 맞지 않은 항목 전부가 넘어오므로 유형마다 한 줄로 줄인다. 항목마다 그리면 버블이 화면을 넘고(스크롤하면 닫힌다) 해제 버튼이 밀려난다.
  */
-const BlockRules = ({rules, defaults}: { rules: { type: BlockType; entry: BlockEntry }[]; defaults: Record<BlockType, DetectMode> }) => (
-    <>
-        <Separator/>
-        <p className="text-xs text-muted-foreground">걸린 차단 규칙</p>
-        <div className="flex flex-col gap-1">
-            {rules.map(({type, entry}) => {
-                const name = type === "DCCON" ? entry.extra || entry.content : entry.content;
-                const allowList = (entry.mode ?? defaults[type]).startsWith("NOT_");
-                return (
-                    <div key={entry.id} className="flex items-center justify-between gap-2">
-                        <span className="truncate text-xs" title={entry.isRegex ? "정규식 — 풀면 이 규칙에 걸린 다른 대상도 함께 풀립니다." : undefined}>
-                            <span className="text-muted-foreground">{TYPE_NAMES[type]}</span> {name}
-                            {entry.isRegex && <span className="text-muted-foreground"> (정규식)</span>}
-                            {entry.gallery && <span className="text-muted-foreground"> (이 갤러리만)</span>}
-                        </span>
-                        {allowList ? (
-                            <span className="shrink-0 text-xs text-muted-foreground">허용 목록에 없음</span>
-                        ) : (
+const BlockRules = ({rules, defaults}: { rules: BlockRule[]; defaults: Record<BlockType, DetectMode> }) => {
+    const isAllowList = ({type, entry}: BlockRule): boolean => (entry.mode ?? defaults[type]).startsWith("NOT_");
+    const hits = rules.filter((rule) => !isAllowList(rule));
+    const allowLists = Map.groupBy(rules.filter(isAllowList), ({type}) => type);
+    return (
+        <>
+            <Separator/>
+            <p className="text-xs text-muted-foreground">걸린 차단 규칙</p>
+            <div className="flex flex-col gap-1">
+                {hits.map(({type, entry}) => {
+                    const name = type === "DCCON" ? entry.extra || entry.content : entry.content;
+                    return (
+                        <div key={entry.id} className="flex items-center justify-between gap-2">
+                            <span className="truncate text-xs" title={entry.isRegex ? "정규식 — 풀면 이 규칙에 걸린 다른 대상도 함께 풀립니다." : undefined}>
+                                <span className="text-muted-foreground">{TYPE_NAMES[type]}</span> {name}
+                                {entry.isRegex && <span className="text-muted-foreground"> (정규식)</span>}
+                                {entry.gallery && <span className="text-muted-foreground"> (이 갤러리만)</span>}
+                            </span>
                             <Button size="xs" variant="ghost" className="shrink-0 text-destructive"
                                     aria-label={`${TYPE_NAMES[type]} ${name} 차단 해제`}
                                     onClick={() => void unblock(type, entry)}>해제</Button>
-                        )}
-                    </div>
-                );
-            })}
-        </div>
-    </>
-);
+                        </div>
+                    );
+                })}
+                {Array.from(allowLists, ([type, entries]) => (
+                    <span key={type} className="text-xs">
+                        <span className="text-muted-foreground">{TYPE_NAMES[type]}</span> 허용 목록({entries.length}개)에 없음
+                    </span>
+                ))}
+            </div>
+        </>
+    );
+};
 
 /** 디시콘 패키지 전체를 어떻게 차단할지 고른다. 취소하면 아무것도 차단하지 않는다. */
 export const DcconPackageDialog = ({target, onClose}: { target: SelectedUser; onClose: () => void }) => {
