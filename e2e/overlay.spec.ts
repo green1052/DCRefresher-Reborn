@@ -1,4 +1,4 @@
-import type {Page} from "@playwright/test";
+import type {Locator, Page} from "@playwright/test";
 
 import {DCCON, fakeComment} from "./dcinside";
 import {expect, test} from "./fixtures";
@@ -193,12 +193,20 @@ test.describe("글 페이지 댓글", () => {
         await expect(viewPage(page).headBadges).toHaveText("(user3)");
     });
 
+    // 차단 모듈이 우클릭 처리기를 걸기 전에 누르면 브라우저 메뉴만 뜬다. 버블이 뜰 때까지 다시 누른다.
+    const openDcconBubble = async (page: Page, dccon: Locator): Promise<Locator> => {
+        const bubble = page.getByLabel("디시콘 메뉴");
+        await expect(async () => {
+            await dccon.click({button: "right"});
+            await expect(bubble).toBeVisible({timeout: 500});
+        }).toPass();
+        return bubble;
+    };
+
     test("디시콘을 우클릭하면 버블에 패키지 이름과 설명이 보이고, 누르면 정보 창이 열린다", async ({page, site}) => {
         site.pageComments = [fakeComment(20, {memo: `<img class="written_dccon" src="${DCCON.list_img}" alt="${DCCON.title}">`})];
         await openView(page);
-        await page.locator("img.written_dccon").first().click({button: "right"});
-
-        const bubble = page.getByLabel("디시콘 메뉴");
+        const bubble = await openDcconBubble(page, page.locator("img.written_dccon").first());
         const summary = bubble.getByTitle("디시콘 정보 보기");
         await expect(summary).toHaveText("테스트콘웃는 얼굴 모음");
 
@@ -215,7 +223,7 @@ test.describe("글 페이지 댓글", () => {
         const dccons = page.locator("img.written_dccon");
         const summary = page.getByLabel("디시콘 메뉴").getByTitle("디시콘 정보 보기");
 
-        await dccons.nth(0).click({button: "right"});
+        await openDcconBubble(page, dccons.nth(0));
         await expect(summary).toHaveText("테스트콘웃는 얼굴 모음");
         // 첫 버블이 아래 댓글을 덮을 수 있어 우클릭 이벤트를 그 디시콘에 바로 보낸다.
         await dccons.nth(1).dispatchEvent("contextmenu", {button: 2, bubbles: true});
