@@ -34,7 +34,7 @@ type SettingValueOf<T extends SettingSchema> =
                     : string;
 
 /** 스키마로 만든 설정값 타입 (ctx.settings). defineModule에 스키마를 리터럴로 적으면 키마다 정확한 타입이 된다. */
-type SettingValues<S extends SettingsSchema> = { readonly [K in keyof S]: SettingValueOf<S[K]> };
+export type SettingValues<S extends SettingsSchema> = { readonly [K in keyof S]: SettingValueOf<S[K]> };
 
 export interface ModuleContext<S extends SettingsSchema = SettingsSchema> {
     /** 현재 설정값 (읽기 전용). 레지스트리가 같은 객체를 갱신하므로 늘 최신이다. */
@@ -61,6 +61,9 @@ interface PageToggleMeta<Id extends string = string> {
     id: Id;
     label: string;
 }
+
+/** 메타의 설정 스키마. 설정이 없으면 {}다. */
+export type SchemaOf<M extends AnyModuleMeta> = NonNullable<M["settings"]>;
 
 /** 메타의 팝업 토글 id. 토글이 없으면 never다. */
 export type ToggleKeyOf<M extends AnyModuleMeta> = NonNullable<M["toggles"]>[number]["id"];

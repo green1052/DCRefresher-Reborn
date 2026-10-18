@@ -9,7 +9,7 @@ import {imageFingerprints} from "@/utils/imageFingerprint";
 import {isWholeMp4} from "@/utils/mp4";
 import {isRecord} from "@/utils/record";
 
-import {BLOCK_SETTINGS} from "./settings";
+import meta from "./meta";
 
 const IMAGE_MENU = "block:image";
 
@@ -142,10 +142,7 @@ const syncImageFilter = async (): Promise<void> => {
 };
 
 /** 우클릭한 이미지·움짤(<video>)을 차단한다. 해시는 그 탭이 구한다 (stores/blockRequest.ts의 blockImage). */
-export default defineBackgroundModule({
-    id: "block",
-    settings: BLOCK_SETTINGS,
-
+export default defineBackgroundModule(meta, {
     listen() {
         browser.contextMenus.onClicked.addListener((info, tab) => {
             if (info.menuItemId !== IMAGE_MENU || !info.srcUrl || tab?.id === undefined || tab.id < 0) return;
@@ -181,7 +178,7 @@ export default defineBackgroundModule({
 
         if (import.meta.env.BROWSER === "firefox") {
             filterEnabled = enabled;
-            similarSetting = settings.similarImages === true;
+            similarSetting = settings.similarImages;
             await syncImageFilter();
         } else {
             await browser.declarativeNetRequest.updateSessionRules({removeRuleIds: [CORS_RULE.id], addRules: enabled ? [CORS_RULE] : []});

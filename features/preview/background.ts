@@ -5,6 +5,8 @@ import {defineBackgroundModule, hasTab, runInPage} from "@/core/module/backgroun
 import {COMMENT_SITE_KEYS, ICON_SITE_KEY} from "@/core/preview/dcinside-js";
 import {moduleDataKey} from "@/core/storage/items";
 
+import meta from "./meta";
+
 /** api.js가 막히면(광고 차단 등) 끝나지 않으므로 이 시간까지만 기다린다. */
 const GRECAPTCHA_TIMEOUT = 15_000;
 
@@ -44,10 +46,7 @@ const executeGrecaptcha = async (siteKey: string, action: string): Promise<strin
 };
 
 /** 미리보기: 댓글·디시콘 작성과 댓글 삭제에 쓸 reCAPTCHA 토큰을 탭의 페이지(MAIN world)에서 받아 온다. */
-export default defineBackgroundModule({
-    // meta.ts는 아이콘(lucide·Preact)을 불러오므로 id만 같게 적는다.
-    id: "preview",
-
+export default defineBackgroundModule(meta, {
     listen() {
         // 6.2 이전의 미리보기로 읽은 글 기록(지금은 :visited로 표시)을 지운다. 6.3에서 뺀다.
         browser.runtime.onInstalled.addListener(() => void storage.removeItem(moduleDataKey("preview")));

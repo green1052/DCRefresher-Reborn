@@ -3,16 +3,15 @@ import {storage} from "wxt/utils/storage";
 import pLimit from "p-limit";
 
 import {MODULES_KEY, moduleSettingsKey} from "@/core/storage/items";
-import type {SettingValue} from "@/core/storage/types";
 
 import {isModuleEnabled, readModuleStorage, settingsOf} from "./settings";
-import type {ModuleDefinition} from "./types";
+import type {AnyModuleMeta, SchemaOf, SettingValues, SettingsSchema} from "./types";
 
 /**
- * 모듈의 배경 쪽. features/<id>/background.ts가 default로 내보내면 배경 스크립트가 glob으로 모아 돌린다.
- * 배경 번들에 Preact가 딸려 가지 않도록 모듈 파일(index.ts)은 import하지 않는다. 설정 스키마는 UI(Preact·lucide 아이콘)를 불러오지 않는 파일에 두고 양쪽이 같이 쓴다.
+ * 모듈의 배경 쪽 동작. S는 메타의 설정 스키마라 apply가 받는 설정이 키마다 타입을 가진다.
+ * 배경 번들에 Preact가 딸려 가지 않도록 모듈 파일(index.ts)은 import하지 않는다. meta.ts는 UI를 불러오지 않아 그대로 쓴다.
  */
-export interface BackgroundModule extends Pick<ModuleDefinition, "id" | "defaultEnable" | "settings"> {
+interface BackgroundImpl<S extends SettingsSchema> {
     /**
      * 배경이 뜰 때마다 동기로 부른다. 서비스 워커를 깨우는 이벤트 리스너는 첫 실행 중에 걸어야 하므로 여기서 건다.
      * 모듈이 꺼져 있어도 부른다.
@@ -23,10 +22,15 @@ export interface BackgroundModule extends Pick<ModuleDefinition, "id" | "default
      * 켜기/끄기·설정 변경·설치·브라우저 시작 때 그 시점의 상태에 맞춘다. 모듈마다 앞의 호출이 끝난 뒤에 다음을 부른다.
      * 맞출 상태가 없는(listen만 하는) 모듈은 apply를 두지 않는다.
      */
-    apply?(state: { enabled: boolean; settings: Record<string, SettingValue> }): Promise<void> | void;
+    apply?(state: { enabled: boolean; settings: SettingValues<S> }): Promise<void> | void;
 }
 
-export const defineBackgroundModule = (module: BackgroundModule): BackgroundModule => module;
+/** 배경 스크립트가 모아 돌리는 모듈. on/off·설정은 메타의 id·defaultEnable·settings로 읽는다. */
+export interface BackgroundModule extends Pick<AnyModuleMeta, "id" | "defaultEnable" | "settings">, BackgroundImpl<SettingsSchema> {}
+
+/** 모듈의 배경 쪽. features/<id>/background.ts가 default로 내보내면 배경 스크립트가 glob으로 모아 돌린다. */
+export const defineBackgroundModule = <M extends AnyModuleMeta>(meta: M, impl: BackgroundImpl<SchemaOf<M>>): BackgroundModule =>
+    ({id: meta.id, defaultEnable: meta.defaultEnable, settings: meta.settings, ...impl});
 
 /** 탭에서 온 메시지의 보낸 쪽. 팝업·옵션 같은 확장 페이지는 tab이 없다. */
 type TabSender = Browser.runtime.MessageSender & { tab: { id: number } };
