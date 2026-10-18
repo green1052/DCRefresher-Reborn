@@ -1,15 +1,9 @@
-import {useEffect, useRef} from "react";
+import {useRef} from "react";
 
-import {similarImageThreshold} from "@/core/block";
-import {useRunningModuleSettings} from "@/core/module/useModuleSettings";
-import {useBlocksStore} from "@/stores/blocks";
-
-import {markBlockedDccons, markBlockedImages} from "./blockedDccons";
-import {fitMovies} from "./fitMovies";
-import {watchGifVideos} from "./gifVideos";
 import {cn} from "cn";
 
 import {hoverMini, MINI_HEIGHT, MINI_WIDTH, usePreviewStore} from "./previewStore";
+import {usePreviewMedia} from "./usePreviewMedia";
 
 /**
  * 미니 미리보기 (툴팁). 기본은 커서를 따라다니며 포인터를 통과시킨다. 포인터를 받으면 카드에 올라서는 순간
@@ -20,20 +14,8 @@ export const Mini = () => {
     const mini = usePreviewStore((s) => s.mini);
     const contents = useRef<HTMLDivElement>(null);
 
-    // 전체 미리보기(Frame.tsx)처럼 깨진 움짤·디시콘 mp4를 gif로 바꾸고 디시 동영상 iframe 크기를 맞춘다.
-    useEffect(() => (contents.current ? watchGifVideos(contents.current) : undefined), [mini?.contents]);
-    useEffect(() => (contents.current ? fitMovies(contents.current) : undefined), [mini?.contents]);
-
-    // 본문의 차단 디시콘·이미지를 가린다. 마우스를 올려 흐림을 걷을 수 없으니 흐리게 처리여도 숨긴다.
-    const block = useRunningModuleSettings("block");
-    const blockEntries = useBlocksStore((s) => s.entries);
-    const blockDefaults = useBlocksStore((s) => s.defaults);
-    useEffect(() => {
-        if (!contents.current) return;
-        const mode = block ? "hide" : undefined;
-        markBlockedDccons(contents.current, mini?.gallery, mode);
-        return markBlockedImages(contents.current, mini?.gallery, mode, block ? similarImageThreshold(block) : undefined);
-    }, [mini?.contents, mini?.gallery, block, blockEntries, blockDefaults]);
+    // 전체 미리보기(Frame.tsx)처럼 본문을 손본다. 마우스를 올려 흐림을 걷을 수 없으니 차단은 흐리게 처리여도 숨긴다.
+    usePreviewMedia(contents, mini?.contents, mini?.gallery, true);
 
     if (!mini) return null;
 

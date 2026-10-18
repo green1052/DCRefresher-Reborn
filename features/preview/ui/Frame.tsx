@@ -9,10 +9,9 @@ import {Separator} from "@/components/ui/separator";
 import {Spinner} from "@/components/ui/spinner";
 import {TooltipButton} from "@/components/WithTooltip";
 import {focusedElement} from "@/components/useReturnFocus";
-import {BLOCKED_TEXT, similarImageThreshold} from "@/core/block";
+import {BLOCKED_TEXT} from "@/core/block";
 import {useContentModuleSettings, useRunningModuleSettings} from "@/core/module/useModuleSettings";
 import {postKey as keyOfPost} from "@/core/preview/cache";
-import {useBlocksStore} from "@/stores/blocks";
 import {useUiStore} from "@/stores/ui";
 import {smoothScroll} from "@/utils/dom";
 import {isTyping} from "@/utils/event";
@@ -25,11 +24,9 @@ import {CommentList, CommentOrder, CommentSummary, threadParents} from "./Commen
 import {clickContents, markPressable, pressContents} from "./contentsClick";
 import {CountDown} from "./CountDown";
 import {ErrorBlock} from "./ErrorBlock";
-import {fitMovies} from "./fitMovies";
-import {watchGifVideos} from "./gifVideos";
-import {markBlockedDccons, markBlockedImages} from "./blockedDccons";
 import {AdminPanel} from "./Popups";
 import {postTitle, usePreviewStore} from "./previewStore";
+import {usePreviewMedia} from "./usePreviewMedia";
 import {useWheelGesture} from "./useWheelGesture";
 import {Votes} from "./Votes";
 import {WriteComment} from "./WriteComment";
@@ -88,26 +85,14 @@ const PostContents = () => {
     const imageBlocked = usePreviewStore((s) => s.imageBlocked);
     const gallery = usePreviewStore((s) => s.preData?.gallery);
     const {imageViewer} = useContentModuleSettings("preview");
-    const block = useRunningModuleSettings("block");
     const revealed = useUiStore((s) => s.blockRevealed);
-    const blockEntries = useBlocksStore((s) => s.entries);
-    const blockDefaults = useBlocksStore((s) => s.defaults);
     const contentsBox = useRef<HTMLDivElement>(null);
     // 숨김 차단된 본문은 안내 문구로 바꾸고, '가린 내용 보기' 동안만 원문을 흐리게 보인다 (features/preview/overlay.css의 data-blocked).
     const hideText = post?.textBlocked === "hide" && !revealed;
     const html = hideText ? BLOCKED_TEXT : post?.contents ?? "";
 
-    // 본문이 새로 들어오면 동영상 크기를 다시 맞춘다. hideText가 풀려도 동영상이 새로 들어온다.
-    useEffect(() => (contentsBox.current ? fitMovies(contentsBox.current) : undefined), [html]);
-    // 본문에 든 차단 디시콘·이미지는 페이지 글 보기처럼 그것만 가린다. 차단 목록이나 설정이 바뀌면 다시 본다.
-    useEffect(() => {
-        if (!contentsBox.current) return;
-        const mode = block ? (block.blur ? "blur" : "hide") : undefined;
-        markBlockedDccons(contentsBox.current, gallery, mode);
-        return markBlockedImages(contentsBox.current, gallery, mode, block ? similarImageThreshold(block) : undefined);
-    }, [html, block, blockEntries, blockDefaults, gallery]);
-    // 깨진 움짤·디시콘 mp4는 디시처럼 gif로 바꾼다.
-    useEffect(() => (contentsBox.current ? watchGifVideos(contentsBox.current) : undefined), [html]);
+    // 본문이 새로 들어오면 다시 본다. hideText가 풀려도 동영상·이미지가 새로 들어온다.
+    usePreviewMedia(contentsBox, html, gallery);
     // 이미지 크게 보기와 디시콘 정보 창을 키보드로도 연다 (pressContents).
     useEffect(() => {
         if (contentsBox.current) markPressable(contentsBox.current, imageViewer);
