@@ -106,7 +106,7 @@ export const adminDeleteComments = (preData: GalleryPreData, commentIds: string[
  */
 export const userDeleteComment = async (
     preData: GalleryPreData,
-    postInfo: Pick<PostInfo, "commentId" | "v_cur_t">,
+    postInfo: Pick<PostInfo, "commentId" | "v_cur_t" | "commentDeleteFields">,
     commentId: string,
     password: string,
     rcKey: CommentRcKey,
@@ -125,6 +125,8 @@ export const userDeleteComment = async (
         rc_key: rcKey,
         c_k_v: "dzc"
     });
+    // 디시 comment.js의 비밀번호 삭제는 #_cmt_del_form_의 숨은 값도 함께 보낸다. 회원 삭제는 보내지 않는다.
+    if (password) for (const [name, value] of postInfo.commentDeleteFields ?? []) body.append(name, value);
 
     return submitResult(await ajax.post(urls.comment_remove, {body}).text());
 };

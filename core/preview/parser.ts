@@ -155,7 +155,8 @@ export const parsePostInfo = (html: string): PostInfo | undefined => {
         esno: dom.querySelector<HTMLInputElement>("#e_s_n_o")?.value,
         recommendCode: dom.querySelector<HTMLInputElement>("input[name=code_recommend]")?.value,
         writeText,
-        commentForm: parseCommentForm(dom)
+        commentForm: parseCommentForm(dom),
+        commentDeleteFields: Array.from(dom.querySelectorAll<HTMLInputElement>("#_cmt_del_form_ > input"), (input): [string, string] => [input.name, input.value])
     };
 
     // <video>·<audio>가 든 문서는 크롬에서 해제되지 않는다 (재생 관련 보류 작업이 문서를 붙잡는다). 값을 다 꺼냈으니 떼어 낸다.

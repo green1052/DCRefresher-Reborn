@@ -28,6 +28,7 @@ const page = ({head = "", body = "<div class=\"write_div\">본문</div>", tail =
 </form></div>
 <input type="hidden" id="check_6" value="c6"><input type="hidden" id="check_7" value="c7">
 <input type="checkbox" id="use_gall_nick">
+<form id="_cmt_del_form_" name="_cmt_del_form_"><input type="hidden" name="del_rand" value="dv"/></form>
 <script id="reply-setting-tmpl" type="text/x-jquery-tmpl"></script><script>_d('DVAL');</script>
 <script>$(document).data('comment_id', 'cid'); $(document).data('comment_no', '42');</script>
 ${tail}
@@ -82,6 +83,10 @@ describe("parsePostInfo", () => {
             checks: {check_6: "c6", check_7: "c7", check_8: ""},
             gallNickName: "갤닉"
         });
+    });
+
+    it("비밀번호 댓글 삭제 폼의 숨은 값을 꺼낸다", () => {
+        expect(parse(page()).commentDeleteFields).toEqual([["del_rand", "dv"]]);
     });
 
     it("갤닉 입력칸이 없으면 gallNickName이 없다", () => {

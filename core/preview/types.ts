@@ -70,6 +70,8 @@ export interface PostInfo {
     writeText?: string;
     /** 댓글·글자콘 쓰기에 보내는 그 글의 폼 값. */
     commentForm: CommentForm;
+    /** 비밀번호 댓글 삭제 폼(#_cmt_del_form_)의 숨은 input들. [이름, 값]. 이름·값 모두 글마다 무작위다. */
+    commentDeleteFields?: [string, string][];
 }
 
 
