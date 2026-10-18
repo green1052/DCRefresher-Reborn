@@ -315,7 +315,6 @@
     }
 
     .note-btn:has(#chk_html) {
-        top: 6px !important;
         right: 3px !important;
         left: auto !important;
     }
