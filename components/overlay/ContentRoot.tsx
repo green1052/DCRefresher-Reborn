@@ -1,13 +1,15 @@
-import {useState} from "react";
+import {type ComponentType, useState} from "react";
 
 import {TooltipProvider} from "@/components/ui/tooltip";
-import {PreviewHost} from "@/features/preview/ui/PreviewHost";
 import {usePreviewStore} from "@/features/preview/ui/previewStore";
 import type {SelectedUser} from "@/stores/ui";
 
 import {MemoDialog} from "./MemoDialog";
 import {ToastHost} from "./Toasts";
 import {BubbleHost, DcconPackageDialog} from "./UserBubble";
+
+// 기능별 오버레이 호스트 (features/<id>/overlay.tsx의 default). 스타일(feature-styles.ts)처럼 모아 그린다.
+const featureHosts = Object.entries(import.meta.glob<{ default: ComponentType }>("../../features/*/overlay.tsx", {eager: true}));
 
 export const ContentRoot = () => {
     // 버블은 누르면 닫히므로 패키지 차단 다이얼로그의 대상은 여기에 둔다.
@@ -20,7 +22,7 @@ export const ContentRoot = () => {
             <BubbleHost onBlockPackage={setPackageTarget} onDcconInfo={(code) => usePreviewStore.setState({dcconInfo: code})}/>
             {packageTarget && <DcconPackageDialog target={packageTarget} onClose={() => setPackageTarget(null)}/>}
             <MemoDialog/>
-            <PreviewHost/>
+            {featureHosts.map(([path, {default: Host}]) => <Host key={path}/>)}
         </TooltipProvider>
     );
 };
