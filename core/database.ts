@@ -200,7 +200,8 @@ export const ipInfoOf = (ip: string): IpInfo | undefined => {
     const first = candidates?.[0];
     if (!candidates || !first) return undefined;
 
-    const orgs = [...new Set(candidates.map((candidate) => candidate.org).filter((org): org is string => Boolean(org)))];
+    // 첫 후보에 조직이 없으면 다른 후보의 조직에 첫 후보의 국가가 붙어 틀린 표시가 되므로 국가만 보인다. 조직은 툴팁에 남는다.
+    const orgs = !first.org ? [] : [...new Set(candidates.map((candidate) => candidate.org).filter((org): org is string => Boolean(org)))];
     const shown = orgs.slice(0, MAX_ORGS).join(", ") + (orgs.length > MAX_ORGS ? ` 외 ${orgs.length - MAX_ORGS}` : "");
 
     return {
