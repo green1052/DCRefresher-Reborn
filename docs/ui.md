@@ -11,7 +11,7 @@
 - 오버레이의 Tailwind는 `overlay.css`가 `tailwind.css`를 불러와 만듭니다. 이때 옵션·팝업 폴더와 옵션·팝업만 쓰는 부품(`@source not` 목록)은 스캔하지 않아 오버레이 CSS가 작아집니다. 오버레이에서 그 부품을 쓰게 되면 목록에서 뺍니다. 빼지 않으면 `tests/unit/assets/styles/overlay.test.ts`가 실패합니다.
 - 페이지·오버레이는 서로 다른 문서라 같은 규칙(차단 흐림, 스텔스 디시콘 가림)을 `assets/styles/shared.css`의 Tailwind 유틸리티(`@utility`)로 맞춥니다. 쓰는 CSS가 `@reference`로 가져와 `@apply`합니다. 부모 선택자 목록에 중첩하면 `:is()`로 감싸져 명시도가 달라집니다. 명시도가 중요한 곳은 규칙을 나눠 씁니다.
 - 우리가 그리는 UI는 Tailwind 클래스로 꾸밉니다. CSS 파일에 남는 것은 디시 HTML(미리보기 본문·댓글의 `.refresher-html`, 디시 페이지)처럼 클래스를 달 수 없는 곳의 규칙뿐입니다. Tailwind는 소스에 적힌 클래스 이름만 만들므로 클래스 이름을 이어 붙여 만들지 않습니다.
-- 오버레이에는 Tailwind 리셋(preflight)이 들어갑니다. 디시 본문·댓글 HTML(`.refresher-html`)만은 `tailwind.css`가 `all: revert-layer`로 리셋을 되돌립니다.
+- 오버레이에는 Tailwind 리셋(preflight)이 들어갑니다. 디시 본문·댓글 HTML(`.refresher-html`)만은 `overlay.css`가 `all: revert-layer`로 리셋을 되돌립니다.
 - 다크모드는 조상의 `dark` 클래스로 바꿉니다(`utils/appearance.ts`). 옵션·팝업은 시스템 설정을, 오버레이는 디시 다크모드를 오버레이 최상위 요소(shadow 안의 컨테이너)에 옮기고 `color-scheme`도 같이 정합니다.
 - 강조색 글자(링크 등)는 `text-link`(`--link`)로 칠합니다. 다크모드의 `--primary`는 흰 글자를 얹는 버튼 배경색이라 글자에 쓰면 어두운 배경에 묻힙니다.
 - 설정값을 오버레이 CSS에 넘길 때는 `<html>`에 CSS 변수를 둡니다. 커스텀 속성은 shadow 경계를 넘어 상속됩니다. 폰트 교체의 `--refresher-preview-font-size`가 예입니다.
@@ -27,5 +27,5 @@
 - 다이얼로그는 `components/dialogs.tsx`의 `ModalDialog`(열 때만 마운트), `ConfirmDialog`, `Notice`, `DialogActions`, `SubmitForm`을 씁니다. `onClose`는 닫힘 애니메이션이 끝나 포커스가 돌아간 뒤에 불립니다. 일을 마친 창이 스스로 닫을 때는 `actionsRef.current.close()`를 씁니다.
 - 포커스: 트리거 없이 여는 창(다이얼로그·버블)은 `useReturnFocus`(`components/useReturnFocus.ts`)가 연 요소에 포커스를 돌려줍니다. 오버레이(shadow DOM) 안에서는 Base UI의 포커스 가두기가 끝을 알아보지 못해 모달 창(`ModalDialog`·`ConfirmDialog`·`Notice`, 이미지 크게 보기)이 `keepTabInside`로 Tab을 직접 돌립니다.
 - 툴팁은 `components/WithTooltip.tsx`를 씁니다. 수천 줄을 그리는 목록(차단 목록 줄·댓글)에는 브라우저 기본(`title`)을 씁니다.
-- 옵션의 설정 검색은 맞는 글자를 CSS Custom Highlight API(`CSS.highlights`, `tailwind.css`의 `::highlight(refresher-search)`)로 칠합니다(`entrypoints/options/GeneralTab.tsx`). 그린 글자 위에 범위만 얹으므로 이름·설명에 `<mark>`를 넣지 않습니다.
+- 옵션의 설정 검색은 맞는 글자를 CSS Custom Highlight API(`CSS.highlights`, `pages.css`의 `::highlight(refresher-search)`)로 칠합니다(`entrypoints/options/GeneralTab.tsx`). 그린 글자 위에 범위만 얹으므로 이름·설명에 `<mark>`를 넣지 않습니다.
 - 단축키는 `utils/event.ts`의 `isTyping`이 모달 다이얼로그 배경(`[data-slot=dialog-overlay]`·`[data-slot=alert-dialog-overlay]`)이 떠 있으면 막습니다. 미리보기 창의 Esc 전달(`features/preview/ui/Frame.tsx`)은 같은 배경 선택자에 팝오버(`[data-slot=popover-content]`)를 더해 위에 뜬 창을 알아봅니다. 미리보기 안에서 연 창은 Base UI가 배경을 그리지 않으므로 `useModal`이 늘 `forceRender`로 그립니다. 배경을 바꾸면 이 선택자들도 맞춥니다.

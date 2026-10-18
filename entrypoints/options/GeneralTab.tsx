@@ -120,7 +120,7 @@ const ModuleCard = ({feature, shown, searching}: { feature: AnyModuleMeta; shown
 };
 
 /**
- * 검색어(소문자)가 든 글자를 칠한다 (CSS Custom Highlight API, tailwind.css의 ::highlight).
+ * 검색어(소문자)가 든 글자를 칠한다 (CSS Custom Highlight API, assets/styles/pages.css의 ::highlight).
  * DOM을 바꾸지 않아 이름·설명을 <mark>로 쪼개 그리지 않아도 된다.
  */
 const useSearchHighlight = (root: RefObject<HTMLElement | null>, needle: string): void => {

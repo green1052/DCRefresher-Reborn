@@ -32,7 +32,9 @@ export default defineConfig({
                 // 한글이 한 글자라도 있으면 V8이 스크립트 소스 전체를 2바이트 문자열로 둔다 (content.js는 탭마다 1MB쯤).
                 // \uXXXX로 바꿔 ASCII만 내보내면 1바이트 문자열이 되어 탭마다 0.5MB 준다. 파일은 20KB쯤 커진다.
                 output: {minify: {compress: true, mangle: true, codegen: {asciiOnly: true}}}
-            }
+            },
+            // 최소 버전(Chrome 140·Firefox 144)은 modulepreload를 지원해 Vite의 polyfill이 필요 없다.
+            modulePreload: {polyfill: false}
         }
     }),
     hooks: {
