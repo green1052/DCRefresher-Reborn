@@ -13,8 +13,8 @@ export default defineConfig({
         ]
     }),
     hooks: {
-        // 우리 코드는 components·utils를 직접 import한다. 자동 import 스캔은 제네릭 타입 인자(V 등)를 export로 잘못 읽어 경고만 낸다.
-        // WXT API(defineContentScript·browser 등)의 자동 import는 그대로 둔다. imports.dirs는 기본값과 합쳐지므로 여기서 비운다.
+        // components·utils 자동 import 스캔은 제네릭 타입 인자(V 등)를 export로 잘못 읽어 경고만 낸다. 직접 import하므로 끈다.
+        // imports.dirs는 기본값과 합쳐지므로 여기서 비운다. WXT API(defineContentScript·browser 등) 자동 import는 남는다.
         "config:resolved": (wxt) => {
             if (wxt.config.imports) wxt.config.imports.dirs = [];
         }
@@ -44,8 +44,8 @@ export default defineConfig({
                 }
             }
             : {minimum_chrome_version: "140"}),
-        // 이미지 차단(features/block/background.ts)이 본문 이미지를 다시 받지 않고 읽는 데 쓴다. 크롬은 CORS 헤더를 붙이는 규칙,
-        // 파이어폭스는 페이지가 받는 응답을 흘려보내며 읽는 필터다. 둘 다 설치·업데이트 때 묻지 않는 권한이다.
+        // 이미지 차단(features/block/background.ts)이 본문 이미지를 다시 받지 않고 읽는 데 쓴다.
+        // 크롬은 CORS 헤더를 붙이는 규칙, 파이어폭스는 응답 스트림 필터다. 둘 다 설치·업데이트 때 묻지 않는 권한이다.
         permissions: ["alarms", "contextMenus", "storage", "scripting", "unlimitedStorage",
                       ...(browser === "firefox" ? ["webRequest", "webRequestBlocking"] : ["declarativeNetRequestWithHostAccess"])],
         host_permissions: ["https://*.dcinside.com/*"],

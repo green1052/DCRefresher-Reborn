@@ -23,7 +23,7 @@ export const startAutoBackup = (): void => {
         });
     });
 
-    // 알람은 브라우저를 끄거나(파이어폭스는 항상) 확장을 업데이트하면 사라질 수 있다. 변경 후 1분 안에 그러면 백업이 빠지므로 다음 시작·업데이트 때 다시 건다.
+    // 알람은 브라우저를 끄거나(파이어폭스는 항상) 확장을 업데이트하면 사라질 수 있어, 대기 중인 백업은 다음 시작·업데이트 때 다시 건다.
     // 워커가 깰 때마다 하면 안 된다. 크롬은 울린 알람을 지운 뒤 워커를 깨우므로 방금 울린 알람을 또 걸어 백업이 두 번 돈다.
     const rearm = (): void => void Promise.all([backupStorage.pending.getValue(), browser.alarms.get(AUTO_BACKUP_ALARM)])
         .then(([pending, alarm]) => (pending && !alarm ? arm() : undefined))
@@ -39,10 +39,9 @@ export const startAutoBackup = (): void => {
 
     browser.alarms.onAlarm.addListener((alarm) => {
         if (alarm.name !== AUTO_BACKUP_ALARM) return;
-        // 자동 백업을 끈 직후(초기화 전 끄기 등) 남은 알람이 울릴 수 있으므로 울린 시점에 설정을 다시 확인한다.
-        // 대기 표시는 백업이 된 뒤에 지운다. 실패(오프라인·쓰기 한도 등)하면 남겨 다음 시작 때(rearm) 다시 한다.
-        // 울린 뒤 설정이 또 바뀌었으면 대기 표시를 둔다. 지우면 새 알람이 브라우저를 끌 때 사라져도 다시 걸지 않는다.
-        // 알람이 있는지로 보면 안 된다. 변경이 alarms.get 응답과 엇갈리면 알람은 걸렸는데 대기 표시가 지워진다.
+        // 자동 백업을 끈 직후에도 남은 알람이 울릴 수 있어 설정을 다시 확인한다.
+        // 대기 표시는 백업이 되고, 그사이 설정이 또 바뀌지 않았을 때만 지운다. 남겨 두면 rearm이 다음 시작 때 다시 건다.
+        // 알람 유무로 판단하면 변경이 alarms.get 응답과 엇갈릴 때 알람은 걸렸는데 대기 표시가 지워진다.
         const seen = edits;
         void backupStorage.auto.getValue()
             .then(async (auto) => {

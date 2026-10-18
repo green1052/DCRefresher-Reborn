@@ -292,7 +292,6 @@ export const SettingItem = ({schema, value, compact, takenKeys, onChange}: Setti
                 <WithTooltip tip={`기본값으로 되돌리기 (${formatDefault(schema)})`}
                              trigger={<Button variant="ghost" size="icon-xs" aria-label={`${schema.name} 기본값으로 되돌리기`} onClick={() => {
                                  onChange(defaultValue(schema));
-                                 // 이 버튼은 다시 그리며 사라진다.
                                  requestAnimationFrame(() => refocus(control.current));
                              }}/>}>
                     <Undo2/>

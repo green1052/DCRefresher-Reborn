@@ -175,7 +175,6 @@ export function DataTab() {
             return undoable(`데이터를 초기화했습니다.${wasAuto ? " 클라우드 백업을 지키려고 자동 백업을 껐습니다." : ""}`, at, wasAuto);
         }, "초기화하지 못했습니다.");
 
-    // 떠 있는 확인 창의 문구와 할 일.
     const confirmed = confirm && {
         reset: {title: "모든 설정과 차단/메모 데이터를 초기화할까요?", label: "초기화", run: clearData},
         manual: {

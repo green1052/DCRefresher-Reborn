@@ -26,8 +26,8 @@ export const dcconImage = (entry: BlockEntry): string => {
 };
 
 /**
- * 이미지 차단이 쓰는 이미지 호스트 권한이 있는지와 그 권한을 묻는 함수. 우클릭 차단이 처음 물어보지만,
- * 백업 복원·가져오기로 들어온 이미지 항목은 권한 없이는 가리지 못한다. 옵션을 열 때와, 옵션을 연 채 우클릭 차단·브라우저 설정에서 권한이 바뀔 때 확인한다.
+ * 이미지 호스트 권한이 있는지와 그 권한을 묻는 함수. 우클릭 차단이 처음 묻지만,
+ * 백업 복원·가져오기로 들어온 이미지 항목은 권한 없이 가리지 못하므로 여기서도 확인한다.
  */
 const useImageHostAccess = (): [granted: boolean | undefined, request: () => void] => {
     const [granted, setGranted] = useState<boolean>();
@@ -65,11 +65,9 @@ export function BlockTab() {
     const modeDescId = useId();
 
     const importBlocks = async (parsed: Record<string, unknown>): Promise<number> => {
-        // 유효한 차단 항목이 하나도 없으면(0 반환) 메모/설정 등 다른 데이터나 항목이 모두 틀린 JSON을 붙여넣은 것이다.
-        // 모드가 '기본값'인 항목은 내보낸 기기의 기본 모드로 검사됐다. 이 기기와 다르면 그 모드를 적어 검사 방식을 지킨다 (데이터 탭 가져오기와 같다).
-        // JSON에 기본 모드가 없으면 내보낸 기기가 기본값을 쓴 것으로 본다.
+        // 모드가 '기본값'인 항목은 내보낸 기기의 기본 모드(JSON에 없으면 기본값)로 검사됐다.
+        // 이 기기와 다르면 그 모드를 적어 검사 방식을 지킨다 (데이터 탭 가져오기와 같다).
         const source = normalizeDefaults(parsed.defaults);
-        // 기존 목록에 덧붙인다. 같은 content+gallery는 가져온 항목으로 바꿔 뒤로 보내고, id는 새로 준다.
         let count = 0;
         for (const type of BLOCK_TYPES) {
             const list = normalizeBlockList(parsed[type]);

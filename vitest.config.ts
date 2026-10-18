@@ -7,7 +7,7 @@ import {WxtVitest} from "wxt/testing/vitest-plugin";
  * 확장 API(browser.*)를 @webext-core/fake-browser(인메모리 storage 등)로 바꾼다. E2E는 playwright.config.ts다.
  */
 export default defineConfig({
-    // WxtVitest는 wxt.config.ts의 vite 플러그인을 불러오지 않는다. 빌드처럼 react를 preact/compat으로 바꿔야 컴포넌트 테스트가 진짜 React로 돌지 않는다.
+    // WxtVitest는 wxt.config.ts의 vite 플러그인을 불러오지 않는다. 빌드처럼 react를 preact/compat으로 바꾸려고 preact를 직접 넣는다.
     plugins: [WxtVitest(), preact({prefreshEnabled: false, devToolsEnabled: false})],
     test: {
         include: ["tests/unit/**/*.test.{ts,tsx}"],

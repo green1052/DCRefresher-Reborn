@@ -8,8 +8,7 @@ export const overlayDraft = (host: Element | null): string | undefined => host?.
 
 /**
  * 파이어폭스는 확장을 업데이트하거나 다시 켤 때 이전 스크립트를 정리 없이 없애고 새로 주입한다.
- * 죽은 인스턴스가 남긴 오버레이와 스크롤·클릭 잠금을 걷어 낸다.
- * 죽은 인스턴스가 없으면 아무것도 하지 않는다. 걷어 낸 오버레이에 입력하던 글이 있으면 돌려준다.
+ * 죽은 인스턴스가 남긴 오버레이와 스크롤·클릭 잠금을 걷어 내고, 그 오버레이에 입력하던 글이 있으면 돌려준다.
  */
 export const cleanUpStaleInstance = (): string | undefined => {
     const stale = document.querySelector("refresher-root");

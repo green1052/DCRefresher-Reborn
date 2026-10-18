@@ -16,7 +16,6 @@ export const useOptionsStore = create<OptionsState>()((set) => ({
     rain: 0,
     notice: null,
 
-    // 동작 줄이기(prefers-reduced-motion)를 켰으면 비를 내리지 않는다.
     startRain: () => {
         if (!matchMedia("(prefers-reduced-motion: reduce)").matches) set({rain: Date.now()});
     },

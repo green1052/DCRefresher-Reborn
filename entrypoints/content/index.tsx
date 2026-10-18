@@ -56,7 +56,6 @@ export default defineContentScript({
             showInvalidatedNote(draft);
         });
         // WXT는 ctx.isValid를 읽을 때만 무효화를 알아채므로 빈 interval로 5초마다 검사하게 한다.
-        // 업데이트 전에 열린 탭은 새로고침할 때까지 기능이 멈춘다.
         ctx.setInterval(() => {}, 5_000);
 
         // 옵션 페이지는 저장소에 직접 쓰고, 모듈 레지스트리가 저장소를 감시해 반영한다 (메시징 없음).
@@ -77,9 +76,8 @@ export default defineContentScript({
         warnWhenBlocked();
 
         // ===== 모듈 부트스트랩 =====
-        // 차단·메모는 글 목록·본문(features의 urls와 같은 BOARD_PAGE)에서만 쓴다. 메인·검색 등에서는 저장소를 읽지 않는다.
-        // 가장 큰 IP/밴 DB는 여기서 읽지 않는다. 유저 정보 모듈의 setup이 모듈 설정 뒤에 읽고(IP 정보 표시나 갱차 조회를
-        // 쓸 때만, userinfo의 needsDatabase), 그 밖에는 버블이 IP 정보를 처음 그릴 때 읽는다 (core/database의 subscribeDatabase).
+        // 차단·메모는 글 목록·본문(BOARD_PAGE)에서만 읽는다.
+        // 가장 큰 IP/밴 DB는 여기서 읽지 않는다. 필요할 때 유저 정보 모듈(needsDatabase)이나 버블이 처음 그릴 때 읽는다 (core/database의 subscribeDatabase).
         const board = BOARD_PAGE.test(documentUrl.pathname);
         await loadAll(features, ctx.signal, board ? Promise.all([initBlocksStore(ctx.signal), initMemosStore(ctx.signal)]) : undefined);
     }

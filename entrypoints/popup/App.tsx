@@ -20,7 +20,7 @@ const VERSION = browser.runtime.getManifest().version;
 interface Page {
     tabId: number;
     gallery: string;
-    /** 처음 물었을 때의 탭 상태. 콘텐츠 스크립트가 없으면 null이다. */
+    /** 처음 물었을 때의 탭 상태. 콘텐츠 스크립트가 없으면(설치·업데이트 전에 열린 탭 등) null이다. */
     state: PageState | null;
 }
 
@@ -31,7 +31,6 @@ const findPage = async (): Promise<Page | null> => {
     const gallery = url?.hostname === "gall.dcinside.com" ? url.searchParams.get("id") : null;
     if (tab?.id === undefined || !gallery) return null;
 
-    // 설치 전에 열린 탭 등 콘텐츠 스크립트가 없으면 토글 없이 보여 준다.
     const state = await sendMessage("refresher:pageState", undefined, tab.id).catch(() => null);
     return {tabId: tab.id, gallery, state};
 };
@@ -116,7 +115,6 @@ function PageSection({tabId, gallery, state: initial, toggled}: Page & { toggled
                 현재 페이지
             </SectionTitle>
 
-            {/* 확장을 업데이트하기 전에 열린 탭 등 콘텐츠 스크립트가 없으면 토글을 받을 수 없다. */}
             {state === null && <p className="text-center text-xs text-muted-foreground">페이지를 새로고침하면 이 페이지 설정이 나옵니다.</p>}
             {/* 켜져 있는데 setup이 던진 모듈. 모듈 타일은 켜짐으로만 보여 왜 안 되는지 알 수 없다. */}
             {failed.length > 0 && (
@@ -124,7 +122,6 @@ function PageSection({tabId, gallery, state: initial, toggled}: Page & { toggled
                     이 페이지에서 시작하지 못한 모듈: {failed.join(", ")}. 페이지를 새로고침해 보세요.
                 </p>
             )}
-            {/* 이 페이지에서 바꿀 수 있는 것이 없어도 빈 칸으로 두지 않는다. */}
             {state?.toggles.length === 0 && <p className="text-center text-xs text-muted-foreground">이 페이지에서 바꿀 수 있는 설정이 없습니다.</p>}
             {state && state.toggles.length > 0 && (
                 <Card className="py-3">
@@ -155,7 +152,6 @@ function ModulesSection({onToggled}: { onToggled: () => void }) {
                     const Icon = feature.icon;
 
                     return (
-                        // 모듈 타일 — 누르면 켜고 끈다. 켜진 타일은 오른쪽 점이 강조색이다.
                         <Toggle key={feature.id} variant="outline" className="min-w-0 justify-start font-normal"
                                 title={feature.description} pressed={enabled}
                                 onPressedChange={(next) => void toggle(feature.id, next).then(() => {
@@ -184,7 +180,7 @@ export function App() {
         void Promise.all([
             findPage().catch(() => null),
             // 자동 백업은 배경에서 돌아 실패해도 데이터 탭을 열기 전에는 모른다. 켜져 있을 때만 팝업에서 한 줄로 알린다.
-            // 오류는 백업이 성공해야 지워지므로, 한도 초과로 자동 백업을 끈 뒤에도 알리면 경고가 사라지지 않는다 (지난 실패는 데이터 탭에 남는다).
+            // 오류는 백업이 성공해야 지워지므로 꺼진 뒤에도 알리면 경고가 사라지지 않는다 (지난 실패는 데이터 탭에 남는다).
             Promise.all([backupStorage.auto.getValue(), backupStorage.error.getValue()]).then(([auto, error]) => (auto ? error : "")).catch(() => ""),
             initBlocksStore().catch(console.error),
             initMemosStore().catch(console.error),

@@ -1,17 +1,14 @@
 import {defineConfig, devices} from "@playwright/test";
 
 /**
- * E2E 테스트. 빌드한 확장을 브라우저에 올려 옵션·팝업·콘텐츠 스크립트를 실제로 돌린다.
- * bun run e2e는 크로미엄(.output/chrome-mv3), bun run e2e:firefox는 파이어폭스(.output/firefox-mv2)다.
- * WXT의 Playwright 예제(wxt-dev/examples의 playwright-e2e-testing)와 같은 구성이다: e2e/fixtures.ts가 확장을 올리고, e2e/pages/가 페이지별 조작을 모은다.
- * 디시에는 요청을 보내지 않는다. e2e/fixtures.ts가 dcinside.com 주소를 가짜 페이지로 응답한다.
- * bun run e2e:live(e2e/live/)만 실제 디시에 읽기 요청을 보낸다. 디시 마크업·API가 바뀌었는지 본다. 쓰기 요청은 픽스처가 끊는다.
+ * E2E 테스트. 빌드한 확장(bun run e2e는 .output/chrome-mv3, e2e:firefox는 .output/firefox-mv2)을 브라우저에 올려 돌린다.
+ * e2e/fixtures.ts가 확장을 올리고 dcinside.com 주소를 가짜 페이지로 응답한다. e2e/pages/는 페이지별 조작을 모은다.
+ * e2e:live(e2e/live/)만 실제 디시에 읽기 요청을 보내 마크업·API 변화를 본다. 쓰기 요청은 픽스처가 끊는다.
  * 테스트마다 확장을 새로 올린 브라우저 컨텍스트를 쓰므로 한 번에 하나씩 돈다.
  */
 export default defineConfig<{ live: boolean }>({
     testDir: "e2e",
     timeout: 60_000,
-    // test.only를 두고 올리면 CI가 실패한다.
     forbidOnly: Boolean(process.env.CI),
     retries: process.env.CI ? 1 : 0,
     workers: 1,

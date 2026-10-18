@@ -23,8 +23,7 @@ export const mountOverlayWhenNeeded = (ctx: ContentScriptContext): void => {
             name: "refresher-root",
             position: "inline",
             anchor: "body",
-            // WXT 기본 리셋(:host{all:initial !important})은 pointer-events까지 되돌려 페이지 클릭을 막는다.
-            // 그래서 끄고 overlay.css의 :host 리셋을 쓴다.
+            // WXT 기본 리셋(:host{all:initial !important})은 pointer-events까지 되돌려 페이지 클릭을 막으므로 끄고 overlay.css의 :host 리셋을 쓴다.
             inheritStyles: true,
             // index.tsx가 불러온 CSS는 WXT가 content-scripts/content.css로 묶어 두었다가 여기서 shadow에 넣는다 (:root → :host 포함).
             onMount(container) {

@@ -40,8 +40,7 @@ export const formatBytes = (bytes: number): string =>
     bytes < 1024 ? `${bytes}B` : bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)}KB` : `${(bytes / 1024 / 1024).toFixed(2)}MB`;
 
 /**
- * 페이지를 열고 지운 항목의 기록을 이미 정리한 종류. 탭을 옮기면 탭이 다시 마운트되지만 삭제 알림의 되돌리기는 20초 남으므로
- * 마운트가 아니라 페이지에 한 번만 정리한다.
+ * 지운 항목의 기록을 이미 정리한 종류. 탭을 옮겨 다시 마운트돼도 삭제 알림의 되돌리기(20초)는 남으므로 페이지당 한 번만 정리한다.
  */
 const pruned = new Set<UsageKind>();
 

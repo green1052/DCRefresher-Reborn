@@ -177,8 +177,7 @@ export function MemoTab() {
         }
         try {
             for (const type of ["UID", "IP"] as const) {
-                // 새 메모의 색은 밖에서 한 번 정한다. updateMemos의 change는 스토어와 저장소 값에 두 번 불려, 안에서 고르면 두 색이 달라
-                // 저장소 값이 돌아올 때 화면의 색이 한 번 바뀐다.
+                // 새 메모의 색은 밖에서 정한다. updateMemos의 change는 두 번(스토어·저장소 값) 불려, 안에서 고르면 저장 뒤 색이 한 번 바뀐다.
                 const colors = new Map(Object.keys(parsed[type]).map((target) => [target, randomColor()]));
                 const added = Date.now();
                 await updateMemos(type, (current) => {
@@ -217,7 +216,6 @@ export function MemoTab() {
             const imported = normalizeMemoMap(parsed[type]);
             const size = Object.keys(imported).length;
             if (size === 0) continue;
-            // 기존 메모에 합치고, 같은 대상은 가져온 메모로 덮는다.
             await updateMemos(type, (current) => ({...current, ...imported}));
             count += size;
         }
@@ -237,7 +235,6 @@ export function MemoTab() {
                 importData={importMemos}
                 onClear={(type) => updateMemos(type, () => ({}))}
                 onAdd={(type) => setForm({type, user: "", text: "", color: randomColor(), gallery: ""})}
-                // 공앱(디시인사이드 모바일 앱) 메모는 한 줄에 하나씩 "아이디-메모" 글이다.
                 toolbar={() => (
                     <div className="flex flex-wrap gap-2">
                         <Button variant="secondary" onClick={() => setAppImport(true)}>

@@ -4,7 +4,6 @@ import {hasTab, runInPage} from "@/core/module/background";
 /**
  * 탭의 페이지 컨텍스트에서 실행된다(직렬화되므로 바깥 변수를 쓰지 않는다).
  * 디시는 자체 차단(block-disable)과 이용자 메모 배지를 목록을 처음 그릴 때만 적용하므로 교체한 행에 다시 건다.
- * 해당 함수가 없는 페이지면 건너뛴다.
  */
 const rerunListScripts = (gallery: string): void => {
     const scope = window as Window & {
@@ -22,7 +21,6 @@ const rerunListScripts = (gallery: string): void => {
 
 /** 콘텐츠 스크립트가 요청하면 그 탭의 페이지(MAIN world)에서 대신 실행한다. */
 export const listenPageMessages = (): void => {
-    // 목록 교체: 갈아끼운 행에 디시의 자체 차단·메모 표시를 다시 건다.
     onMessage("refresher:listReplaced", async ({data: gallery, sender}) => {
         if (!hasTab(sender)) return;
 
