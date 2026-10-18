@@ -172,14 +172,7 @@ export default defineModule({
         };
 
         // 처음 목록은 페이징까지 읽은 뒤에, 그 뒤로는 새로고침 모듈이 갈아끼운 목록마다.
-        const fillCurrent = (): void => {
-            const list = document.querySelector<HTMLElement>(LIST_SELECTOR);
-            if (list) void fill(list);
-        };
-        whenDomReady(fillCurrent, ctx.signal);
-        ctx.addFilter(LIST_SELECTOR, (list) => {
-            if (document.readyState !== "loading") void fill(list);
-        });
+        whenDomReady(() => ctx.addFilter(LIST_SELECTOR, (list) => void fill(list)), ctx.signal);
         return api;
     },
 
