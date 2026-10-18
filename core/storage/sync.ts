@@ -82,6 +82,9 @@ export const storageSync = <K extends StorageItemKey>(keys: readonly K[], onChan
 const canonical = (value: unknown): string =>
     JSON.stringify(value, (_key, item: unknown) => (isRecord(item) ? Object.fromEntries(Object.keys(item).sort().map((key) => [key, item[key]])) : item));
 
+/** 항목 수. 수가 다르면 직렬화해 볼 것도 없이 다른 값이다 (목록이 수천 개면 canonical이 탭마다 몇 ms 걸린다). */
+const sizeOf = (value: unknown): number | undefined => (Array.isArray(value) ? value.length : isRecord(value) ? Object.keys(value).length : undefined);
+
 /**
  * 유형마다 키 하나에 저장하는 목록(차단 목록·메모)을 스토어와 양방향으로 맞춘다.
  * - update: 스토어에 먼저 반영하고 저장한다. 실패하면 저장소 값으로 되돌리고 던진다 (saveOrReload).
@@ -116,7 +119,7 @@ export const typedListSync = <T extends string, V>(options: {
         }
         const next = normalize(value);
         const lists = get();
-        if (canonical(lists[type]) !== canonical(next)) set({...lists, [type]: next});
+        if (sizeOf(lists[type]) !== sizeOf(next) || canonical(lists[type]) !== canonical(next)) set({...lists, [type]: next});
     });
 
     // 쓰기를 한 줄로 세운다. update는 잠금 안에서 저장소를 다시 읽어 다른 창이 쓴 값을 덮지 않고 합친다.
