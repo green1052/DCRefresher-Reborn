@@ -123,6 +123,13 @@
         }
     }
 
+    /* 디시 메인은 이 두 상자의 좌우 여백이 0이라서 최대 폭만 지정하면 왼쪽으로 정렬된다. */
+    .visit_bookmark,
+    .dcwrap > #container {
+        margin-right: auto !important;
+        margin-left: auto !important;
+    }
+
     /* 1160px 등으로 고정된 상자들. */
     .visit_bookmark,
     .newvisit_history,
