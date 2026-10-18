@@ -8,6 +8,9 @@
     /* 머리글, 최근 방문 줄, 본문이 같이 쓰는 최대 폭. */
     --refresher-compact-width: 1000px;
 
+    /* 스크롤바가 없는 짧은 페이지도 긴 페이지와 가운데 위치가 같아지게 한다. */
+    scrollbar-gutter: stable;
+
     /* 갤 메인 계열 페이지는 분류 상자가 1050px로 고정되어 있어서 디시의 본문 폭을 사용한다. */
     &:has(.dcwrap > #container > .category_listwrap) {
         --refresher-compact-width: 1050px;
@@ -27,11 +30,6 @@
 
     .dcwrap {
         width: auto !important;
-    }
-
-    /* 스크롤바가 없는 짧은 페이지도 긴 페이지와 가운데 위치가 같아지게 한다. */
-    & {
-        scrollbar-gutter: stable;
     }
 
     /* 머리글: 로고·파란 메뉴줄을 빼고 오른쪽 위 링크 한 줄과 통합검색 창만. */
