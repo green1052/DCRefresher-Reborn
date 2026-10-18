@@ -14,11 +14,25 @@ export const WRITER_ROW_SELECTOR = ".ub-content, .search_comment";
 /** 글 목록의 글 행. 글 보기 머리·댓글과 댓글 검색 결과의 댓글 행(.search_comment)은 들지 않는다. */
 export const LIST_ROW_SELECTOR = ".gall_list .ub-content";
 
+// 숨은 탭에서 미뤄 둔 알림이 있는지. 다시 보일 때 한 번만 보낸다.
+let deferred = false;
+
 /**
  * 목록 행을 갈아끼우거나 붙인 뒤 부른다. 디시는 자체 차단·이용자 메모 표시를 로드 때만 걸므로, 배경이 페이지(MAIN world)에서 다시 건다
  * (콘텐츠 스크립트에선 디시 함수를 부를 수 없다). 실패해도(확장이 멈춤 등) 목록은 그대로라 넘긴다.
  */
 export const notifyListReplaced = (gallery: string): void => {
+    // 숨은 탭은 다시 보일 때 한 번만 알린다. 숨은 탭 새로고침 주기(30초~)는 서비스 워커가 잠드는 30초보다 길어
+    // 바뀔 때마다 보내면 잠든 워커를 매번 다시 띄운다. 숨은 동안엔 차단·메모 표시가 늦게 붙어도 보는 사람이 없다.
+    if (document.hidden) {
+        if (deferred) return;
+        deferred = true;
+        document.addEventListener("visibilitychange", () => {
+            deferred = false;
+            notifyListReplaced(gallery);
+        }, {once: true});
+        return;
+    }
     void sendMessage("refresher:listReplaced", gallery).catch(() => {});
 };
 
