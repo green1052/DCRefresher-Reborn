@@ -25,25 +25,6 @@
 /* '여기까지 읽음' 구분선 (refresh 모듈의 titleCount) — 탭을 떠날 때 맨 위에 있던 글. */
 .refresherReadMark > td {
     border-top: 2px solid #e8645f !important;
-
-    &:last-child {
-        position: relative;
-    }
-
-    &:last-child::before {
-        content: "여기까지 읽음";
-        position: absolute;
-        top: -1px;
-        right: 0;
-        transform: translateY(-50%);
-        padding: 0 6px;
-        border-radius: 3px;
-        background-color: #e8645f;
-        color: #fff;
-        font-size: 11px;
-        line-height: 16px;
-        white-space: nowrap;
-    }
 }
 
 /* 방문 링크 색 끄기 (refresh 모듈의 doNotColorVisited). */
