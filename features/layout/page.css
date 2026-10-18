@@ -116,6 +116,12 @@
         padding-left: 12px !important;
     }
 
+    /* 디시 메인의 본문(.main_content)은 1000px로 고정되어 있어서, 여백을 더하면 1000px 창에서 가로로 넘친다. */
+    .dcwrap > #container:has(> .main_content) {
+        padding-right: 0 !important;
+        padding-left: 0 !important;
+    }
+
     /* 위 12px만큼 디시의 안쪽 여백 68px을 줄여야 닉네임, 비밀번호, 자동입력 방지 칸이 한 줄에 표시된다. */
     @media (max-width: 1023px) {
         #write_wrap {
