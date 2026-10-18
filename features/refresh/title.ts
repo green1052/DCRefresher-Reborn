@@ -2,6 +2,7 @@ import {BLURRED_ROW_SELECTOR} from "@/core/block";
 import {rowPostNo} from "@/core/http/urls";
 import {LIST_SELECTOR} from "@/core/list";
 
+import {NOTICE_ICON} from "./markup";
 import type {Ctx} from "./meta";
 
 /** 탭 제목 앞의 새 글 수 "(3) ". */
@@ -32,7 +33,7 @@ const READ_MARK_CLASS = "refresherReadMark";
 const topPostNo = (): string | undefined => {
     for (const row of document.querySelectorAll<HTMLElement>(`${LIST_SELECTOR} > tr`)) {
         const no = rowPostNo(row);
-        if (no && !row.querySelector("em[class*=icon_notice]") && row.checkVisibility()) return no;
+        if (no && !row.querySelector(NOTICE_ICON) && row.checkVisibility()) return no;
     }
     return undefined;
 };

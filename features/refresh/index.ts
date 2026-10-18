@@ -9,7 +9,7 @@ import {smoothScroll, whenDomReady} from "@/utils/dom";
 import {hasModifier} from "@/utils/event";
 import {sha256} from "@/utils/hash";
 
-import {isWholeFirstPage, replaceList, syncPaging} from "./list";
+import {clearNewPost, isWholeFirstPage, replaceList, syncPaging} from "./list";
 import {LIST_TABLE} from "./markup";
 import meta, {type Ctx, PAUSE_TOGGLE} from "./meta";
 import {createUnseenCounter} from "./title";
@@ -422,9 +422,6 @@ export default defineModule({
         document.documentElement.classList.remove("refresherDoNotColorVisited");
         // 남긴 삭제된 글 행은 서버 목록에 없다. 모듈을 끄면 목록을 다시 받는 쪽이 없어 페이지를 새로고침할 때까지 남는다.
         for (const row of document.querySelectorAll(".refresherDeleted")) row.remove();
-        for (const row of document.querySelectorAll<HTMLElement>(".refresherNewPost")) {
-            row.classList.remove("refresherNewPost");
-            row.style.removeProperty("animation-delay");
-        }
+        for (const row of document.querySelectorAll<HTMLElement>(".refresherNewPost")) clearNewPost(row);
     }
 });

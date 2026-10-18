@@ -6,6 +6,9 @@
 /** 목록 표의 여는 태그 앞부분. 응답에서 이 뒤의 첫 tbody를 목록으로 자른다. */
 export const LIST_TABLE = "<table class=\"gall_list";
 
+/** 공지 행의 아이콘. 공지는 새 글·맨 위 글로 세지 않는다. */
+export const NOTICE_ICON = "em[class*=icon_notice]";
+
 /** 조회수·추천수·댓글 수 칸. 폴링마다 위쪽 행 여럿에서 바뀐다. */
 export const COUNT_CELLS = ".gall_count, .gall_recommend, .reply_num";
 

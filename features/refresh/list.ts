@@ -2,9 +2,15 @@ import {isViewPage, pagePostNo, rowPostNo} from "@/core/http/urls";
 import {checkboxFiller, highlightSearchResults, PAGING_SELECTOR} from "@/core/list";
 import {writerFilter} from "@/features/search/writer";
 
-import {COUNT_CELLS, COUNT_TEXT} from "./markup";
+import {COUNT_CELLS, COUNT_TEXT, NOTICE_ICON} from "./markup";
 
 // 받아온 목록을 지금 목록 자리에 넣는 일. 요청·주기와 상관없이 DOM만 다룬다.
+
+/** 새 글 등장 효과(refresherNewPost와 그 지연)를 뗀다. */
+export const clearNewPost = (row: HTMLElement): void => {
+    row.classList.remove("refresherNewPost");
+    row.style.removeProperty("animation-delay");
+};
 
 /** 새 글 판정용 행 키. 번호 없는 행(설문·AD, 다른 갤러리 공지)은 번호 칸 글자로 구분한다. */
 const rowKey = (row: HTMLElement): string => rowPostNo(row) ?? row.querySelector(".gall_num")?.textContent ?? "";
@@ -43,14 +49,13 @@ const keepDeletedRows = (oldRows: HTMLTableRowElement[], newKeys: Set<string>, n
         const row = oldRows[index]!;
         const no = rowPostNo(row);
         // 번호 없는 행(설문·AD)과 공지는 늘 새로 받는다. 공지에서 내린 글은 지워진 것이 아니다.
-        if (!no || row.querySelector("em[class*=icon_notice]") || newKeys.has(no) || index >= oldRows.length - newPostCount) {
+        if (!no || row.querySelector(NOTICE_ICON) || newKeys.has(no) || index >= oldRows.length - newPostCount) {
             next = newRows.get(rowKey(row)) ?? next;
             continue;
         }
 
         // 떼었다 붙인 요소는 애니메이션이 다시 돈다. 새 글 등장 효과를 떼어 새로고침마다 다시 나타나지 않게 한다.
-        row.classList.remove("refresherNewPost");
-        row.style.removeProperty("animation-delay");
+        clearNewPost(row);
         row.classList.add("refresherDeleted");
         const copy = row.cloneNode(true) as HTMLTableRowElement;
         const frame = rowFrames.get(row);
