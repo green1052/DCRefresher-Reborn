@@ -157,4 +157,19 @@ describe("본문 이미지 차단", () => {
         setBlockLists({IMAGE: [file, entry("또 다른 파일", {similar: NEAR})]});
         await vi.waitFor(() => expect(image.classList.contains("refresherBlocked")).toBe(true), {timeout: 500});
     });
+
+    it("지문을 기다리는 사이 비슷한 이미지 차단을 끄면 늦게 나온 지문으로 가리지 않는다", async () => {
+        const fingerprint = Promise.withResolvers<[string, string][]>();
+        vi.mocked(imageFingerprints).mockReturnValue(fingerprint.promise);
+        setBlockLists({IMAGE: [entry("다른 파일", {similar: NEAR})]});
+        const image = bodyImage(imageUrl());
+        const {change} = await start({similarImages: true});
+        await vi.waitFor(() => expect(imageFingerprints).toHaveBeenCalled());
+
+        change({similarImages: false});
+        fingerprint.resolve([["0".repeat(32), "f".repeat(32)]]);
+        await tick();
+        await tick();
+        expect(image.classList.contains("refresherBlocked")).toBe(false);
+    });
 });

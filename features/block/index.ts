@@ -117,8 +117,10 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
                 element.addEventListener(type, () => checkImage(element), {signal: ctx.signal});
             }
         }
-        void isImageBlocked(element, gallery, similarImageThreshold(ctx.settings)).then((blocked) => {
-            if (blocked && !ctx.signal.aborted) hide(element);
+        // 지문은 한 번에 하나씩 구해 늦게 끝난다. 그사이 비슷한 이미지 설정이 바뀌면 recheck가 새 기준으로 다시 보므로 옛 기준의 결과는 버린다.
+        const threshold = similarImageThreshold(ctx.settings);
+        void isImageBlocked(element, gallery, threshold).then((blocked) => {
+            if (blocked && !ctx.signal.aborted && similarImageThreshold(ctx.settings) === threshold) hide(element);
         });
     };
 
