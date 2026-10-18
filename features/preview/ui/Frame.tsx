@@ -282,17 +282,14 @@ export const Frame = () => {
                         usePreviewStore.getState().requestClose();
                     }}
                 >
-                {/* 너비는 설정(previewWidth)을 --refresher-frame-width로 받되 둘레에 배경이 보이게 화면의 90%까지만 쓴다.
+                {/* 너비는 설정(previewWidth)을 쓰되 둘레에 배경이 보이게 화면의 90%까지만 쓴다.
                     관리 패널(150px)이 있으면 양옆에 그 폭을 비운다 (최소 480px). 둥근 모서리 밖으로 댓글 배경이 나가지 않게 자르는데,
                     hidden이면 스크롤 칸이 되어 맨 위로 버튼(sticky)이 붙지 않으므로 clip이다. */}
                 <div
-                    className={cn("refresher-frame m-auto flex min-h-[min(800px,90vh)] flex-col overflow-clip rounded-2xl bg-background text-sm shadow-2xl ring-1 ring-foreground/10",
-                                  adminVisible
-                                      ? "w-[min(var(--refresher-frame-width,1200px),90vw,max(480px,calc(100vw_-_2_*_(150px_+_12px))))]"
-                                      : "w-[min(var(--refresher-frame-width,1200px),90vw)]")}
+                    className="refresher-frame m-auto flex min-h-[min(800px,90vh)] flex-col overflow-clip rounded-2xl bg-background text-sm shadow-2xl ring-1 ring-foreground/10"
                     data-blur-reveal={block?.blurReveal || undefined}
                     data-block-revealed={revealed || undefined}
-                    style={{"--refresher-frame-width": `${frameWidth}px`}}
+                    style={{width: adminVisible ? `min(${frameWidth}px, 90vw, max(480px, calc(100vw - 2 * (150px + 12px))))` : `min(${frameWidth}px, 90vw)`}}
                 >
                     {/* 글마다 새로 마운트한다. 안 그러면 캐시 hit일 때 한 번에 렌더돼 쓰던 댓글이 다음 글로 넘어간다. */}
                     <Fragment key={postKey}>

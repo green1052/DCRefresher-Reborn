@@ -49,18 +49,20 @@ export const DcconRain = () => {
     }, []);
     // 위치·크기·지연·회전은 처음 한 번만 정한다. 렌더마다 정하면 부모(App)가 다시 그릴 때 떨어지던 이미지가 튄다.
     const [drops] = useState(() =>
-        Array.from({length: COUNT}, (): CSSProperties => ({
-            left: `${Math.random() * 95}%`,
-            width: `${60 + Math.random() * 50}px`,
-            animationDelay: `${Math.random() * MAX_DELAY}s`,
-            animationDuration: `${DURATION}s`,
-            "--spin": `${(Math.random() - 0.5) * 720}deg`
+        Array.from({length: COUNT}, (): { style: CSSProperties; spin: string } => ({
+            style: {
+                left: `${Math.random() * 95}%`,
+                width: `${60 + Math.random() * 50}px`,
+                animationDelay: `${Math.random() * MAX_DELAY}s`,
+                animationDuration: `${DURATION}s`
+            },
+            spin: `${(Math.random() - 0.5) * 720}deg`
         }))
     );
 
     return (
         <div className="pointer-events-none fixed inset-0 z-100 overflow-hidden">
-            {drops.map((style, index) => (
+            {drops.map(({style, spin}, index) => (
                 <img
                     key={index}
                     src={`https://image.dcinside.com/dccon.php?no=${DCCONS[index % DCCONS.length]}`}
@@ -68,6 +70,8 @@ export const DcconRain = () => {
                     className="absolute top-0 animate-dccon-fall rounded-lg"
                     onError={(ev) => ev.currentTarget.remove()}
                     style={style}
+                    // 회전각은 keyframes(tailwind.css의 dccon-fall)가 읽는 CSS 변수라 style 객체가 아니라 setProperty로 넣는다.
+                    ref={(element) => element?.style.setProperty("--spin", spin)}
                 />
             ))}
         </div>
