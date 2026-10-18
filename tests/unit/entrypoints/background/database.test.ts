@@ -106,4 +106,12 @@ describe("startDatabaseUpdates", () => {
         await ring();
         expect(updateDatabase).toHaveBeenCalledTimes(1);
     });
+
+    it("저장된 갱신 시각이 미래면(시계가 앞서 있었으면) 바로 받는다", async () => {
+        startDatabaseUpdates();
+
+        await fakeBrowser.storage.local.set({"refresher:db:meta": {version: "1", lastUpdate: Date.now() + 30 * 86_400_000, format: IP_FORMAT}});
+        await ring();
+        expect(updateDatabase).toHaveBeenCalledTimes(1);
+    });
 });
