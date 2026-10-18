@@ -11,9 +11,12 @@ const HIDE_STYLE_ID = "refresher-layout-hide";
 let widthQuery: MediaQueryList | null = null;
 let widthWatch: AbortController | null = null;
 
+// 디시콘 샵은 본문 영역이 .right_content라서 컴팩트 규칙이 사이드바로 판단해 숨긴다.
+const isDcconShop = location.hostname === "dccon.dcinside.com";
+
 const applyCompact = (ctx: Ctx): void => {
     const compact = widthQuery?.matches === true || ctx.settings.forceCompact;
-    const useCompact = compact && (!isViewPage || ctx.settings.useCompactModeOnView);
+    const useCompact = compact && !isDcconShop && (!isViewPage || ctx.settings.useCompactModeOnView);
 
     document.documentElement.classList.toggle("refresherCompact", useCompact);
 };
