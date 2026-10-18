@@ -50,6 +50,32 @@ describe("같은 댓글 접기", () => {
         expect(list.querySelector(".refresherDuplicateBadge")?.textContent).toBe("같은 댓글 ×2");
         expect(scans.mock.calls.filter(([selector]) => selector === "li.ub-content")).toHaveLength(1);
     });
+
+    it("접은 댓글의 답글 칸도 같이 접는다", async () => {
+        // 디시는 댓글의 답글을 다음 형제 <li>의 .reply 안에 그린다.
+        const replies = "<li id=\"replies\"><div class=\"reply show\"><ul class=\"reply_list\">" + comment("도배 그만") + "</ul></div></li>";
+        document.body.innerHTML = `<ul class="cmt_list">${comment("도배 글")}${comment("다른 글")}${comment("도배 글")}${replies}</ul>`;
+        const {change} = await start({foldDuplicate: true, duplicateCount: 2, duplicateMinLength: 1});
+        await tick();
+        const container = document.querySelector("#replies")!;
+        expect(container.classList.contains("refresherDuplicate")).toBe(true);
+
+        change({foldDuplicate: false});
+        expect(container.classList.contains("refresherDuplicate")).toBe(false);
+    });
+
+    it("같이 접힌 답글은 세지 않아 다른 댓글의 같은 답글을 남긴다", async () => {
+        const replies = (id: string): string => `<li id="${id}"><div class="reply show"><ul class="reply_list">${comment("도배 그만")}</ul></div></li>`;
+        document.body.innerHTML = `<ul class="cmt_list">${comment("도배 글")}${comment("도배 글")}${replies("folded")}${comment("다른 글")}${replies("kept")}</ul>`;
+        await start({foldDuplicate: true, duplicateCount: 2, duplicateMinLength: 1});
+        await tick();
+
+        expect(document.querySelector("#folded")!.classList.contains("refresherDuplicate")).toBe(true);
+        const kept = document.querySelector("#kept li")!;
+        expect(kept.classList.contains("refresherDuplicate")).toBe(false);
+        expect(kept.closest(".refresherDuplicate")).toBeNull();
+        expect(document.querySelector("#folded .refresherDuplicateBadge")).toBeNull();
+    });
 });
 
 describe("본문 차단", () => {

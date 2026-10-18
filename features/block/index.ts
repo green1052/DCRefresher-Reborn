@@ -56,15 +56,17 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
     // 숨김도 클래스로만 건다 (assets/styles/content.css). 풀 때 디시가 건 인라인 display를 건드리지 않는다.
     const hide = (element: HTMLElement): void => element.classList.add(ctx.settings.blur ? "refresherBlur" : "refresherBlocked");
 
+    /** 댓글의 답글 칸. 디시는 답글을 댓글 다음 형제 <li>의 .reply 안에 그린다. */
+    const replyBoxOf = (target: HTMLElement): HTMLElement | null => {
+        const next = target.nextElementSibling;
+        return next instanceof HTMLElement && !next.classList.contains("ub-content") && next.querySelector(":scope > .reply") ? next : null;
+    };
+
     const hideWithReply = (target: HTMLElement): void => {
         hide(target);
 
-        if (!ctx.settings.replyRemove) return;
-
-        const next = target.nextElementSibling;
-        if (next instanceof HTMLElement && !next.classList.contains("ub-content") && next.querySelector(":scope > .reply")) {
-            hide(next);
-        }
+        const replies = ctx.settings.replyRemove ? replyBoxOf(target) : null;
+        if (replies) hide(replies);
     };
 
     // 유저/제목/말머리/댓글 차단.
@@ -154,10 +156,21 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
         // 글자콘 댓글은 .usertxt 없이 .txtcon_txt에 글이 있다 (checkWriter의 COMMENT와 같다). 미리보기도 글자콘 글로 묶는다.
         const textOf = (item: HTMLElement): string => item.querySelector(".usertxt, .txtcon_txt")?.textContent ?? "";
         const all = [...list.querySelectorAll<HTMLElement>("li.ub-content")];
-        const groups = groupDuplicates(all.filter((item) => !item.closest(HIDDEN_ROW_SELECTOR)), textOf, duplicate);
+        const shown = all.filter((item) => !item.closest(HIDDEN_ROW_SELECTOR));
+        // 접힌 댓글의 답글 칸을 남기면 그 답글이 위 댓글의 답글처럼 보여, 대댓글 삭제 설정과 상관없이 같이 접는다.
+        // 접을 답글 칸은 답글을 빼고 댓글끼리만 묶어 정하고, 그 칸의 답글은 세지 않는다. 세면 같이 접힐 답글이 배지를 가져간다.
+        // 답글을 더해 세도 이 댓글들은 계속 접히므로, 답글 덕에 새로 접히는 댓글의 답글 칸만 남는다.
+        const foldedBoxes = new Set<HTMLElement>();
+        for (const [item, repeats] of groupDuplicates(shown.filter((item) => !item.closest(".reply")), textOf, duplicate)) {
+            const box = repeats === 0 ? replyBoxOf(item) : null;
+            if (box) foldedBoxes.add(box);
+        }
+        const groups = groupDuplicates(shown.filter((item) => ![...foldedBoxes].some((box) => box.contains(item))), textOf, duplicate);
         for (const item of all) {
             const repeats = groups.get(item);
             item.classList.toggle("refresherDuplicate", repeats === 0);
+            const box = replyBoxOf(item);
+            box?.classList.toggle("refresherDuplicate", foldedBoxes.has(box));
 
             const text = repeats ? `같은 댓글 ×${repeats}` : undefined;
             const existing = item.querySelector(".refresherDuplicateBadge");
