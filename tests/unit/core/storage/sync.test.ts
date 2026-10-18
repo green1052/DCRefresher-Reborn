@@ -198,6 +198,31 @@ describe("typedListSync", () => {
         expect(await stored("list:X")).toEqual(["a", "b"]);
     });
 
+    it("앞 update의 값이 돌아와도 뒤 update를 반영한 스토어를 되돌리지 않는다", async () => {
+        const {sync, set, lists} = create();
+        await sync.start(contextSignal());
+
+        await Promise.all([sync.update("X", (current) => [...current, "a"]), sync.update("X", (current) => [...current, "b"])]);
+        await tick();
+
+        expect(set.mock.calls.map(([next]) => next.X)).toEqual([["a"], ["a", "b"]]);
+        expect(lists().X).toEqual(["a", "b"]);
+    });
+
+    it("update하는 사이 다른 창이 쓴 값은 쓰기가 끝난 뒤 읽어 넣는다", async () => {
+        const {sync, lists} = create();
+        await sync.start(contextSignal());
+        const original = fakeBrowser.storage.local.set.bind(fakeBrowser.storage.local);
+        vi.spyOn(fakeBrowser.storage.local, "set").mockImplementationOnce(async (items) => {
+            await original({"list:Y": ["other"]});
+            await original(items);
+        });
+
+        await sync.update("X", () => ["a"]);
+
+        expect(lists()).toEqual({X: ["a"], Y: ["other"]});
+    });
+
     it("파이어폭스 콘텐츠 스크립트는 잠그지 않고도 탭 안의 update를 차례로 쓴다", async () => {
         vi.stubEnv("BROWSER", "firefox");
         const request = vi.spyOn(navigator.locks, "request");

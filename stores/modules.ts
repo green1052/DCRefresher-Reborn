@@ -8,7 +8,6 @@ import {MODULES_KEY, moduleDataKey, moduleKeyModule, moduleSettingsKey, moduleSe
 import {storageSync} from "@/core/storage/sync";
 import type {SettingValue} from "@/core/storage/types";
 import features from "@/features/meta";
-import {saveOrReload} from "@/utils/error";
 import {once} from "@/utils/once";
 import {isRecord} from "@/utils/record";
 
@@ -132,7 +131,7 @@ const sync = storageSync([MODULES_KEY, ...[...withSettings.values()].map((featur
     if (feature) setValues(feature, value);
     else setEnables(value);
 });
-const persist = (write: () => Promise<void>): Promise<void> => saveOrReload(enqueue(write), sync.load, "모듈 설정을 저장하지 못했습니다.");
+const persist = (write: () => Promise<void>): Promise<void> => sync.save(() => enqueue(write), "모듈 설정을 저장하지 못했습니다.");
 
 /** 옵션·팝업에서 저장소 값을 읽고 변경을 감시한다. 여러 번 불러도 한 번만 한다. */
 export const initModulesStore = once(async () => {

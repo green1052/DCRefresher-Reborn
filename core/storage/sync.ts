@@ -29,8 +29,16 @@ export const watchStorage = <T>(key: StorageItemKey, callback: (next: T | null, 
  * - load: 다시 읽는다 (저장 실패 뒤 되돌리기 등).
  * - start: 감시를 걸고 읽는다. 여러 번 불러도 한 번만 한다. 옛 값으로 쓰면 다른 탭의 변경을 덮으므로 bfcache에서 돌아오면 다시 읽는다.
  *   signal(콘텐츠 스크립트 컨텍스트의 것)이 끝나면 감시를 푼다.
+ * - save: 스토어에 먼저 반영해 둔 쓰기를 저장한다. 실패하면 다시 읽고 던진다 (saveOrReload).
+ *   쓰기가 남아 있는 동안은 apply하지 않는다. 앞 쓰기의 값이 돌아오면 뒤 쓰기를 미리 반영해 둔 스토어를 앞 값으로 되돌려
+ *   화면이 잠깐 튄다. 남은 쓰기가 끝나면 한 번 읽어 그사이 다른 탭이 쓴 값까지 맞춘다.
  */
-export const storageSync = <K extends StorageItemKey>(keys: readonly K[], apply: (key: K, value: unknown) => void) => {
+export const storageSync = <K extends StorageItemKey>(keys: readonly K[], onChange: (key: K, value: unknown) => void) => {
+    let pending = 0;
+    const apply = (key: K, value: unknown): void => {
+        if (pending === 0) onChange(key, value);
+    };
+
     // getItems는 받은 키로 값을 돌려준다. 순서에 기대지 않고 키로 짝짓는다.
     const read = async (): Promise<Map<StorageItemKey, unknown>> => new Map((await storage.getItems([...keys])).map(({key, value}) => [key, value]));
 
@@ -58,7 +66,15 @@ export const storageSync = <K extends StorageItemKey>(keys: readonly K[], apply:
         onBfcacheRestore(load, signal);
     });
 
-    return {load, start};
+    const save = async (write: () => Promise<void>, failure: string): Promise<void> => {
+        pending++;
+        // 줄이고 나서 되돌린다. 남은 쓰기가 없어야 되돌린 값이 들어간다.
+        await saveOrReload(write().finally(() => pending--), load, failure);
+        // 저장은 됐다. 다시 읽지 못해도 스토어는 이미 저장한 값을 들고 있다.
+        if (pending === 0) await load().catch(console.error);
+    };
+
+    return {load, start, save};
 };
 
 /** 객체 키를 정렬해 직렬화한다. 크롬 저장소는 키를 정렬해 돌려주므로, 그대로 비교하면 이 탭이 쓴 값이 돌아올 때 다른 값이 된다. */
@@ -70,7 +86,7 @@ const canonical = (value: unknown): string =>
  * - update: 스토어에 먼저 반영하고 저장한다. 실패하면 저장소 값으로 되돌리고 던진다 (saveOrReload).
  * - 저장소가 바뀌면(다른 탭·옵션 페이지, 이 탭의 쓰기도 돌아온다) normalize한 값을 넣는다. 값이 같으면 스토어를 건드리지 않아 구독자를 깨우지 않는다.
  * - extra: 같은 읽기·감시에 함께 묶을 다른 키 (차단의 기본 모드 등).
- * load·start는 storageSync와 같다.
+ * load·start는 storageSync와 같다. 이 탭의 쓰기가 남아 있는 동안 돌아오는 값은 넣지 않는다 (storageSync의 save).
  */
 export const typedListSync = <T extends string, V>(options: {
     types: readonly T[];
@@ -115,10 +131,10 @@ export const typedListSync = <T extends string, V>(options: {
      */
     const update = async (type: T, change: (current: V) => V): Promise<void> => {
         set({...get(), [type]: change(get()[type])});
-        await saveOrReload(enqueue(async () => {
+        await sync.save(() => enqueue(async () => {
             const next = change(normalize(await storage.getItem(keyOf(type))));
             await storage.setItem(keyOf(type), next);
-        }), sync.load, failure);
+        }), failure);
     };
 
     return {...sync, update};
