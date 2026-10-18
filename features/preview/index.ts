@@ -6,7 +6,7 @@ import {BlockedError, isAbortError} from "@/core/http/client";
 import {defineModule} from "@/core/module/define";
 import {getModuleApi, moduleSettingsStore, runningModuleSettings, runningModulesStore} from "@/core/module/registry";
 import type {ModuleSettings} from "@/core/module/types";
-import type {ProcessedComment} from "@/core/preview/comments";
+import type {ProcessedComment, processComments} from "@/core/preview/comments";
 import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
 import {useBlocksStore} from "@/stores/blocks";
 import {lowActivityOf, useUiStore} from "@/stores/ui";
@@ -165,12 +165,13 @@ const controller = (ctx: Ctx) => {
     ctx.addCleanup(() => window.clearTimeout(freshTimer));
 
     /**
+     * 댓글을 지금 차단 설정·글댓비로 가공한다. processComments는 처음 쓸 때 불러온 것을 받는다.
      * 새로 가공한 댓글 중 지금 그린 것과 같은 댓글은 그린 객체를 그대로 쓴다. 자동 새로고침으로 하나만 늘어도 전부 새 객체면 댓글 전부를 다시 그린다.
      * 음성 댓글은 voice가 매번 새 객체라 다시 그린다.
      */
-    const keepUnchanged = (next: ProcessedComment[]): ProcessedComment[] => {
+    const processKeepingUnchanged = (process: typeof processComments, source: DcinsideComment[], preData: GalleryPreData): ProcessedComment[] => {
         const before = new Map(store.getState().comments?.map((comment) => [comment.no, comment]));
-        return next.map((comment) => {
+        return process(source, preData, runningModuleSettings("block"), useUiStore.getState().ratios).map((comment) => {
             const old = before.get(comment.no);
             return old && shallow(old, comment) ? old : comment;
         });
@@ -224,7 +225,7 @@ const controller = (ctx: Ctx) => {
             const before = shown?.signal === mySignal && ctx.settings.highlightNewComments ? new Set(shown.source.map((comment) => comment.no)) : null;
             const added = before ? source.filter((comment) => !before.has(comment.no) && comment.is_delete !== "1").map((comment) => comment.no) : [];
             shown = {signal: mySignal, source, raw};
-            store.setState({comments: keepUnchanged(processComments(source, preData, runningModuleSettings("block"), useUiStore.getState().ratios)), allowReply, freshComments: added.length > 0 ? new Set(added) : NO_FRESH});
+            store.setState({comments: processKeepingUnchanged(processComments, source, preData), allowReply, freshComments: added.length > 0 ? new Set(added) : NO_FRESH});
             // 강조(3초)가 끝나면 지운다. 남겨 두면 답글을 접었다 펴는 등 다시 그릴 때마다 강조가 되풀이된다.
             window.clearTimeout(freshTimer);
             if (added.length > 0) {
@@ -246,7 +247,7 @@ const controller = (ctx: Ctx) => {
         const {processComments} = await import("@/core/preview/comments");
         store.setState((s) => (s.signalId !== signalId ? {} : {
             post: s.post && {...s.post, textBlocked: textBlockOf(preData, s.post)},
-            comments: shown?.signal === signalId ? keepUnchanged(processComments(shown.source, preData, runningModuleSettings("block"), useUiStore.getState().ratios)) : s.comments
+            comments: shown?.signal === signalId ? processKeepingUnchanged(processComments, shown.source, preData) : s.comments
         }));
         dropStaleReply();
     };
