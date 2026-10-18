@@ -85,10 +85,11 @@
         }
     }
 
+    /* 파란 검색 상자는 364px로 고정되어 있어서 500px 바깥 상자 안에서 왼쪽으로 정렬된다. */
     .wrap_search {
         position: relative !important;
         inset: auto !important;
-        width: auto !important;
+        width: fit-content !important;
         max-width: 500px !important;
         margin: 8px auto 0 !important;
     }
