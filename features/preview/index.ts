@@ -29,7 +29,6 @@ import {bindRows} from "./rows-input";
 import {adjacentPreData, isTextPost} from "./rows";
 import {type ErrorState, MANAGE_LABELS, type ManageKind, NO_FRESH, NO_HOOKS, NO_REPLY, usePreviewStore} from "./ui/previewStore";
 
-// status는 ky의 HTTPError에서 읽는다 (삭제된 글은 404).
 // 성인 인증 안내 페이지면 parsePostInfo가 Error(ADULT_ERROR)를, 미니 갤러리 비밀글이면 Error(SECRET_ERROR)를 던진다.
 const errorOf = (error: unknown): ErrorState => ({
     detail: messageOf(error),
@@ -46,8 +45,8 @@ const galName = (): string => document.querySelector(".page_head h2 a")?.firstCh
 // 원문은 지우지 않아 '가린 내용 보기'로 다시 볼 수 있다 (Frame.tsx).
 const textBlockOf = (preData: GalleryPreData, postInfo: PostInfo): PostInfo["textBlocked"] => {
     const block = runningModuleSettings("block");
-    // block 모듈 checkText처럼 .write_div의 글자(writeText)로 검사한다. 본문 HTML을 풀어 쓰면 디시 스크립트 글자가 섞이고,
-    // 태그 자리가 공백이 돼 '<b>광</b>고' 같은 글이 빠져나간다.
+    // block 모듈 checkText처럼 .write_div의 글자(writeText)로 검사한다. 본문 HTML을 풀면 디시 스크립트 글자가 섞이고
+    // '<b>광</b>고'처럼 태그로 쪼갠 글이 빠져나간다.
     return block && postInfo.writeText !== undefined && isBlocked("TEXT", postInfo.writeText, preData.gallery) ? (block.blur ? "blur" : "hide") : undefined;
 };
 
@@ -65,7 +64,6 @@ const cachedPost = (preData: GalleryPreData): { post: PostInfo; age: number } | 
  */
 const COMMENTS_REUSE = 10_000;
 
-/** COMMENTS_REUSE 안에 받은 캐시 댓글 목록. */
 const recentComments = (preData: GalleryPreData): CommentListResponse | undefined => {
     const entry = getEntry(preData);
     return entry?.comments && Date.now() - (entry.commentsAt ?? 0) < COMMENTS_REUSE ? entry.comments : undefined;
@@ -84,14 +82,12 @@ const controller = (ctx: Ctx) => {
     let abort: AbortController | null = null;
     let savedHistory: SavedHistory | null = null;
     let refreshTimer = 0;
-    // 관리 단축키 두 번 누르기 확인. 같은 키를 1초 안에 다시 누르면 실행한다.
     let confirmPress = createDoublePress(1000);
-    // 받는 중인 본문 요청 하나. 우클릭 누름·미니·열기·미리 받기가 같이 쓴다.
-    // 다른 글을 받으면 앞 요청은 끊어, 연타해도 요청이 쌓이지 않는다.
+    // 우클릭 누름·미니·열기·미리 받기가 같이 쓰는 본문 요청 하나. 다른 글을 받으면 앞 요청을 끊어 연타해도 쌓이지 않는다.
     let pending: { key: string; ctrl: AbortController; post: Promise<PostInfo> } | null = null;
 
-    // 정화한 본문 (받은 글 객체마다). 캐시의 같은 글을 다시 열거나 미니로 다시 볼 때 큰 본문을 다시 정화하지 않는다.
-    // 추천 등으로 글이 바뀌면 캐시에 새 객체가 들어가 다시 정화한다.
+    // 받은 글 객체마다 정화한 본문. 같은 글을 다시 열거나 미니로 볼 때 큰 본문을 다시 정화하지 않는다.
+    // 글이 바뀌면(추천 등) 캐시에 새 객체가 들어가 다시 정화된다.
     const sanitized = new WeakMap<PostInfo, string>();
     const sanitizedStripped = new WeakMap<PostInfo, string>();
     const processContents = async (preData: GalleryPreData, postInfo: PostInfo, stripMedia = false): Promise<PostInfo> => {
@@ -119,8 +115,7 @@ const controller = (ctx: Ctx) => {
         const slot = {key, ctrl, post};
         pending = slot;
 
-        // 끝나면 pending을 비운다 (받은 본문은 캐시에 있다). catch는 아무도 기다리지 않는 미리 받기가 실패해도
-        // unhandled rejection이 나지 않게 붙인다.
+        // catch는 아무도 기다리지 않는 미리 받기가 실패해도 unhandled rejection이 나지 않게 붙인다.
         void post.catch(() => undefined).finally(() => {
             if (pending === slot) pending = null;
         });
@@ -152,7 +147,6 @@ const controller = (ctx: Ctx) => {
         }
     };
 
-    // 미니 미리보기 (제목 호버 카드). 본문 요청·캐시를 같이 쓴다.
     const mini = createMini(ctx, getPost, processContents);
 
     // 보낸 순번과 그린 순번. 먼저 보낸 요청이 늦게 도착해 새 응답을 덮으면
@@ -164,8 +158,8 @@ const controller = (ctx: Ctx) => {
     // 마지막으로 그린 댓글 원본 (보존 처리까지 마친 것). 차단 목록·방식이 바뀌면 다시 받지 않고 이것으로 다시 가린다.
     // raw는 source를 만든 받은 목록이다. 같은 목록을 다시 받으면 다시 그리지 않는다.
     let shown: { signal: number; source: DcinsideComment[]; raw: DcinsideComment[] } | null = null;
-    // 갤러리마다 마지막으로 받은 댓글 허용(멤버만 댓글이면 false). 댓글 0개 글은 댓글을 받지 않으므로 이 값을 쓴다.
-    // 글을 열 때 스토어 값은 기본값(true)으로 돌아가 있어, 모르면 멤버만 댓글 갤러리에서도 입력칸을 보인다.
+    // 갤러리마다 마지막으로 받은 댓글 허용(멤버만 댓글이면 false). 댓글 0개 글은 댓글을 받지 않아 이 값을 쓴다.
+    // 없으면 스토어 기본값(true) 때문에 멤버만 댓글 갤러리에서도 입력칸이 보인다.
     const allowReplies = new Map<string, boolean>();
     let freshTimer = 0;
     ctx.addCleanup(() => window.clearTimeout(freshTimer));
@@ -192,9 +186,9 @@ const controller = (ctx: Ctx) => {
 
     /**
      * 댓글을 받아 가공해 그린다. skip이면 받지 않고 빈 목록으로 처리한다 (보존해 둔 댓글은 삭제된 것으로 나온다).
-     * given이 있으면 그 목록을 그린다 (미리 받은 목록, 캐시의 지난 목록). 미리 받는 중이면 여기서 기다려야 순번·pulling이 지금 잡혀,
-     * 그사이 새로고침한 새 목록을 늦게 온 옛 목록이 덮지 않는다. 미리 받기가 비었거나 실패하면 다시 받는다.
-     * cached: given이 캐시의 지난 목록이다 (받은 시각을 갱신하지 않는다).
+     * given(미리 받은 목록·캐시의 지난 목록)이 있으면 그것을 그리고, 미리 받기가 비었거나 실패하면 다시 받는다.
+     * 미리 받기도 여기서 기다려야 순번·pulling이 지금 잡혀, 늦게 온 옛 목록이 그사이 새로고침한 목록을 덮지 않는다.
+     * cached: given이 캐시의 지난 목록이라 받은 시각을 갱신하지 않는다.
      */
     const pullComments = async (
         preData: GalleryPreData, post: PostInfo, mySignal: number, skip = false,
@@ -330,8 +324,8 @@ const controller = (ctx: Ctx) => {
         let fresh: boolean;
         let archived: boolean;
 
-        // 받아야 하는 글이 목록에 댓글이 보이면 댓글도 본문과 함께 요청한다. 토큰(e_s_n_o)은 갤러리마다 같아 이 페이지의 값을 쓰고,
-        // 본문을 읽은 뒤 그 글의 값과 맞을 때만 쓴다. PageUp/Down·스크롤로 넘길 때는 하지 않는다 (연달아 넘기면 지나가는 글마다 요청이 나간다).
+        // 본문을 받아야 하고 목록에 댓글이 보이는 글이면 댓글도 함께 요청한다. e_s_n_o는 갤러리마다 같아 이 페이지 값을 쓰고,
+        // 본문의 값과 맞을 때만 결과를 쓴다. PageUp/Down·스크롤로 넘길 때는 지나가는 글마다 요청이 나가므로 하지 않는다.
         const esno = document.querySelector<HTMLInputElement>("#e_s_n_o")?.value;
         // 방금 받은 댓글(COMMENTS_REUSE)은 그대로 쓰고 다시 받지 않는다. 캐시를 끄면 늘 받는다.
         const recent = ctx.settings.disableCache ? undefined : recentComments(preData);
@@ -462,13 +456,13 @@ const controller = (ctx: Ctx) => {
                 if (depth > 40) history.replaceState(state, newTitle, preData.link);
                 else history.pushState(state, newTitle, preData.link);
             }
-            // 히스토리로 다시 열 때도 바꾼다. popstate는 제목을 되돌리지 않는다.
+            // 히스토리로 다시 열 때도 바꾼다 (popstate는 제목을 되돌리지 않는다).
             document.title = newTitle;
         }
 
-        // 설정이 꺼져 있어도 타이머는 둔다. 열린 사이 설정(켜고 끄기·간격)을 바꾸면 다음 차례부터 따른다.
-        // 실패(임시 차단 등)가 이어지면 목록 새로고침(features/refresh)처럼 주기를 두 배씩 늘린다 (최대 1분). 계속 같은 주기로 보내면 차단이 길어진다.
-        // 다음 타이머는 요청이 끝난 뒤 잡는다. 그사이 다른 글로 넘어갔거나 닫았으면 그쪽이 타이머를 잡았거나 지웠으므로 잡지 않는다.
+        // 설정이 꺼져 있어도 타이머는 돌려, 열린 사이 바꾼 설정(켜고 끄기·간격)을 다음 차례부터 따른다.
+        // 실패(임시 차단 등)가 이어지면 목록 새로고침처럼 주기를 두 배씩 늘린다 (최대 1분). 같은 주기로 보내면 차단이 길어진다.
+        // 다음 타이머는 요청이 끝난 뒤, 같은 글이 열려 있을 때만 잡는다.
         let failures = 0;
         const scheduleRefresh = (): void => {
             const interval = ctx.settings.commentRefreshInterval;
@@ -506,7 +500,6 @@ const controller = (ctx: Ctx) => {
 
         const failure = "처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
         try {
-            // 공지·개념글 표시는 성공했을 때만 바꾼다.
             if (kind === "notice" || kind === "recommend") {
                 const on = target[kind];
                 const request = kind === "notice" ? setNotice(target, !on) : setRecommend(target, !on);
@@ -587,10 +580,8 @@ const controller = (ctx: Ctx) => {
         if (store.getState().visible) close(true);
     };
 
-    // 목록 키보드 이동 (keyboard.ts).
     bindListKeys(ctx, (preData) => open(preData));
 
-    // 목록 행·제목 칸의 마우스 입력 (rows-input.ts).
     bindRows(ctx, {
         open: (preData, commentsOnly) => open(preData, commentsOnly),
         // 캐시를 끄면 열 때 캐시를 보지 않는다. 떼기 전에 다 받으면 한 번 더 받게 되므로 미리 받지 않는다.

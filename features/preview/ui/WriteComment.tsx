@@ -68,7 +68,6 @@ export const WriteComment = () => {
     const [password, setPassword] = useState(() => saved.pw || randomPassword());
     const pwSaved = Boolean(saved.pw);
     // 저장된 비밀번호는 입력칸에 넣지 않는다. 오버레이 섀도 루트가 open이라 페이지 스크립트가 값을 읽을 수 있다.
-    // 사용자가 직접 고친 뒤에만 입력칸에 값이 보인다.
     const [passwordEdited, setPasswordEdited] = useState(false);
     // 고른 디시콘(더블콘이면 둘)과 대왕콘 여부. 같이 고르고 같이 비운다.
     const [{list: dccons, big: bigDccon}, setDccon] = useState(NO_DCCON);
@@ -127,7 +126,6 @@ export const WriteComment = () => {
         setSending(true);
         sendingKeys.add(key);
         const {preData, post, reply: sentReply} = st;
-        // 끝나면(성공·실패·캡차 취소 모두) 정리한다.
         try {
             let code: string | undefined;
             if (post.requireCommentCaptcha) {

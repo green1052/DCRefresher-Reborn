@@ -7,8 +7,8 @@ import {openDcconInfo} from "./DcconInfoPopup";
 import {usePreviewStore} from "./previewStore";
 
 /**
- * 받다가 깨진 이미지. 받기 전(loading=lazy로 미룬 것)이거나 받는 중인 이미지는 크게 보기의 <img>가 직접 받으므로 깨진 것으로 치지 않는다.
- * src가 없는 이미지도 complete이고 naturalWidth가 0이라 깨진 것으로 친다.
+ * 받다가 깨진 이미지. lazy로 미뤘거나 받는 중인 이미지는 크게 보기의 <img>가 직접 받으므로 치지 않는다.
+ * src가 없는 이미지는 complete이고 naturalWidth가 0이라 깨진 것으로 친다.
  */
 const isBroken = (image: HTMLImageElement): boolean => image.complete && image.naturalWidth === 0;
 
@@ -27,7 +27,6 @@ export const clickContents = (ev: MouseEvent<HTMLElement>, imageViewer: boolean)
     if (openDcconInfo(ev)) return;
     const target = ev.target instanceof Element ? ev.target : null;
 
-    // 이미지를 누르면 크게 본다 (링크로 감싼 이미지는 링크로 연다).
     const clicked = target?.closest("img");
     if (clicked && imageViewer && isViewable(clicked)) {
         const images = [...ev.currentTarget.querySelectorAll("img")].filter(isViewable);
@@ -63,7 +62,7 @@ export const clickContents = (ev: MouseEvent<HTMLElement>, imageViewer: boolean)
 
 /**
  * 누르면 여는 본문 미디어를 키보드로도 고를 수 있게 버튼으로 알린다. 디시콘은 정보 창, 링크로 감싸지 않은 이미지는 크게 보기(imageViewer)나 원본 보기(data-pop)다.
- * 링크로 감싼 이미지는 링크로 둔다. 숨긴 미디어(관리자 가림·이미지 차단·숨김 차단)는 display: none이라 Tab이 건너뛴다.
+ * 숨긴 미디어(관리자 가림·이미지 차단·숨김 차단)는 display: none이라 Tab이 건너뛴다.
  * 깨진 이미지는 clickContents처럼 크게 보지 않고, 원본 보기가 있으면 그것만 연다. 나중에 깨지면 Frame이 다시 부른다.
  * 손가락 커서도 이 버튼 표시를 따른다 (overlay.css).
  */

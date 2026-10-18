@@ -18,7 +18,7 @@ import {previewGallery, usePreviewStore} from "./previewStore";
  * op: 글쓴이가 단 댓글. v5처럼 작성자 칸을 파랗게 칠한다. 닉네임만 칩 색으로, 배지(아이디·IP·글댓비·갱차·메모)는 설정한 색 그대로 둔다.
  */
 export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: boolean; op?: boolean }) => {
-    // 배지 순서·표시 조건·색은 페이지와 같게 userinfo 설정을 따른다. 모듈이 꺼져 있으면 기본값이고 색이 없다. 회원은 UID, 유동만 IP 정보를 단다.
+    // 배지 순서·표시 조건·색은 페이지와 같게 userinfo 설정을 따른다. 모듈이 꺼져 있으면 기본값이고 색이 없다.
     const userinfo = useRunningModuleSettings("userinfo");
     const view = userinfo ? badgeViewOf(userinfo) : DEFAULT_BADGE_VIEW;
     // DB를 읽을 때마다 오르는 번호를 구독해 다시 그린다. 0이면 아직 읽지 않아 IP·밴을 찾지 않는다.
@@ -32,9 +32,8 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
     const uidColor = userinfo?.uidColor;
     const gallery = usePreviewStore((s) => s.preData?.gallery);
     const memo = useUserMemo({uid: user.id, ip: user.ip, nick: user.nick}, gallery);
-    // 글댓비는 이 사람 것만 구독한다. 캐시 전체를 구독하면 누구 것이든 저장될 때마다 모든 댓글의 작성자가 다시 그려진다.
-    // hasOwn은 아이디가 constructor 같은 프로토타입 키일 때 캐시로 잘못 잡히지 않게 한다.
-    // 1시간이 지난 값도 페이지처럼 보이고, 글쓴이(fetchRatio)만 새로 받아 받는 대로 바꾼다.
+    // 글댓비는 이 사람 것만 구독한다. 캐시 전체를 구독하면 누구 것이 저장되든 모든 댓글 작성자가 다시 그려진다.
+    // hasOwn은 constructor 같은 프로토타입 키 아이디를 거른다. 1시간이 지난 값도 페이지처럼 보이고, 글쓴이(fetchRatio)만 새로 받는다.
     const showsRatio = useUiStore((state) => state.ratios !== null);
     const alarm = useUiStore((state) => state.ratios?.alarm ?? 0);
     const action = useUiStore((state) => state.ratios?.action);

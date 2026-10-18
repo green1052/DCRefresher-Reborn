@@ -138,7 +138,6 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
                 <DialogTitle>자동입력 방지 코드</DialogTitle>
             </DialogHeader>
             <img src={captcha.url} alt="자동입력 방지 코드" className="block w-full rounded-lg"/>
-            {/* Enter로 보낸다 (SubmitForm). */}
             <SubmitForm onSubmit={send} className="flex flex-col gap-4">
                 <Input
                     ref={input}
@@ -217,7 +216,6 @@ export const AdminPanel = () => {
                 {actions.map((action) => (
                     <Button
                         key={action.id}
-                        // 상태는 색으로 보인다: 위험한 동작은 빨강, 켜진 공지·개념글은 강조색.
                         variant={action.danger ? "destructive" : action.active ? "default" : "secondary"}
                         className="justify-start"
                         // 눌러도 포커스를 가져가지 않는다. 첫 클릭 뒤 스페이스로 스크롤하면 포커스된 버튼이 눌려 두 번째 확인이 된다.

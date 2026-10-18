@@ -18,7 +18,6 @@ const close = (): void => usePreviewStore.setState({dcconInfo: null});
 
 /**
  * 본문·댓글에서 누른 디시콘의 정보 창을 연다. 디시콘을 눌렀으면 true.
- * 본문·댓글은 HTML 문자열로 그려 디시콘이 컴포넌트가 그린 요소가 아니라서 감싼 상자의 클릭에서 찾는다.
  * 차단으로 가린 디시콘은 '가린 내용 보기' 동안이거나 흐림이 풀려 있는 동안(blurReveal)만 연다 (isBlockedHidden, 큰 이미지와 같은 기준).
  */
 export const openDcconInfo = (ev: MouseEvent<HTMLElement>): boolean => {
@@ -111,7 +110,6 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
                 <DialogCloseButton/>
             </div>
 
-            {/* 디시 '디시콘 보기' 창처럼 위에 패키지 정보, 아래에 든 디시콘. */}
             <div className="flex gap-4 rounded-lg bg-muted/50 p-4">
                 {info ? <img src={urls.dccon.image + info.main_img_path} alt={info.title} className="size-30 flex-none object-contain"/> : <Skeleton className="size-30 flex-none"/>}
 
@@ -150,9 +148,8 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
                 </div>
             </div>
 
-            {/* 우클릭하면 차단 버블이 뜬다 (openBlockBubble). 댓글 작성자 칸과 같다.
-                정보 창 목록은 최대 높이만 있어, 불러오는 동안 그 높이로 잡아 두어야 다 불러왔을 때 창이 커지지 않는다.
-                불러오는 동안은 스켈레톤을 넘치도록 깔아 꽉 찬 목록처럼 보이고, 넘친 스켈레톤에 스크롤바가 생기지 않게 자른다. */}
+            {/* 우클릭하면 차단 버블이 뜬다 (openBlockBubble). 목록은 최대 높이만 있어 불러오는 동안 그 높이로 잡아 두어야
+                다 불러왔을 때 창이 커지지 않는다. 스켈레톤은 넘치도록 깔고 스크롤바가 생기지 않게 자른다. */}
             <div className="grid max-h-[420px] grid-cols-[repeat(auto-fill,minmax(96px,1fr))] content-start gap-2 overflow-y-auto aria-busy:h-[420px] aria-busy:overflow-hidden"
                  aria-busy={!dccon} onContextMenu={openBlockBubble}>
                 {dccon

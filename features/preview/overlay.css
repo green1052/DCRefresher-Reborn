@@ -15,9 +15,8 @@
        상자 안에 가둬 창 머리·버튼·댓글을 덮는 가짜 창을 만들지 못하게 한다. 댓글은 content-visibility가 이미 가둔다. */
     contain: layout paint;
 
-    /* 디시 다크모드는 본문 상자를 통째로 반전 필터로 뒤집는다 (dark.css의 .darkmode .write_div) — 필터는 캐스케이드를
-       무시해 글쓴이가 넣은 인라인 color:#000000도 뒤집는다. 미리보기는 페이지 CSS가 안 닿으니 여기서 똑같이 뒤집는다.
-       아니면 그 인라인 검은 글자가 확장 프레임의 검은 배경 위에 그대로 남는다 (#275). */
+    /* 디시 다크모드는 본문 상자를 통째로 반전 필터로 뒤집어 글쓴이의 인라인 color:#000000까지 뒤집는다 (dark.css의 .darkmode .write_div).
+       페이지 CSS가 안 닿는 미리보기도 똑같이 뒤집어야 그 검은 글자가 검은 배경 위에 남지 않는다 (#275). */
     .dark & {
         /* 테마 글자색(밝음)을 물려받으면 뒤집혀 검어진다. 검정을 넣어 뒤집히면 흰 글자가 된다. */
         color: #000;
@@ -297,7 +296,7 @@
     }
 }
 
-/* ===== 댓글 ===== */
+/* ===== 차단 표시 ===== */
 
 /* 차단 — 페이지와 같은 차단 모듈 설정 (Frame의 data-*). 블러 강도 변수는 <html>에서 shadow 안으로 이어받는다. */
 .refresher-frame {
@@ -343,12 +342,12 @@
 
 /* ===== 미니 미리보기 ===== */
 
-/* 본문에 든 차단 디시콘·이미지 (Mini의 markBlockedDccons·markBlockedImages). */
 /* 미니 미리보기의 스크롤바(Mini.tsx) — 다크 모드에서는 상자가 뒤집히므로(.refresher-html) 미리 뒤집는다. 내용이 더 있다는 유일한 표시다. */
 .dark .refresher-mini-contents {
     scrollbar-color: rgb(from var(--border) calc(255 - r) calc(255 - g) calc(255 - b)) transparent;
 }
 
+/* 본문에 든 차단 디시콘·이미지 (Mini의 markBlockedDccons·markBlockedImages). */
 .refresher-mini-contents :is(.written_dccon, img, video)[data-blocked] {
     display: none;
 }

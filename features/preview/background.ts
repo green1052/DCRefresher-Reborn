@@ -36,7 +36,7 @@ const executeGrecaptcha = async (siteKey: string, action: string): Promise<strin
         return await grecaptcha.execute(siteKey, {action});
     } catch {
         // api.js가 이미 다른 키로 떠 있으면(디시 comment.js나 앞선 디시콘 재전송) 그 키만 실행할 수 있어 던진다.
-        // 이 키로 보이지 않는 위젯을 따로 그려 실행한다. 키마다 한 번만 그려 두고 다시 쓴다 — 매번 그리면 위젯과 배지가 쌓인다.
+        // 이 키로 보이지 않는 위젯을 키마다 한 번만 그려 다시 쓴다. 매번 그리면 위젯과 배지가 쌓인다.
         const widgets = (scope.refresherRecaptchaWidgets ??= {});
         widgets[siteKey] ??= grecaptcha.render(document.body.appendChild(document.createElement("div")), {sitekey: siteKey, size: "invisible"});
         return grecaptcha.execute(widgets[siteKey], {action});
@@ -49,10 +49,10 @@ export default defineBackgroundModule({
     id: "preview",
 
     listen() {
-        // 예전에 미리보기로 읽은 글 기록. 이제 브라우저 방문 기록(:visited)으로 표시해 쓰지 않는다. 6.2로 업데이트할 때 지우므로 6.3에서 뺀다.
+        // 6.2 이전의 미리보기로 읽은 글 기록(지금은 :visited로 표시)을 지운다. 6.3에서 뺀다.
         browser.runtime.onInstalled.addListener(() => void storage.removeItem(moduleDataKey("preview")));
 
-        // reCAPTCHA: 디시가 v3 토큰을 요구할 때만 받아 온다. 토큰은 디시 도메인에서 실행해야 유효하다. 상주 스크립트 없이 필요할 때 한 번만 주입한다.
+        // 토큰은 디시 도메인에서 실행해야 유효하다. 상주 스크립트 없이 디시가 v3 토큰을 요구할 때만 주입한다.
         onMessage("refresher:grecaptchaToken", async ({data, sender}) => {
             if (!hasTab(sender)) return undefined;
 

@@ -38,7 +38,7 @@ export const bindRows = (ctx: Ctx, {open, prefetch, mini}: RowHandlers): void =>
         if (!resolved) return;
         prefetch(resolved.preData);
         // 오버레이도 처음 쓸 때 띄우므로(수십 ms) 떼기를 기다리는 동안 미리 띄운다.
-        // 다음 task에서 한다. 여기서 띄우면 오버레이 모듈 초기화가 마이크로태스크로 먼저 돌아 본문 요청이 그만큼 늦게 나간다.
+        // 다음 task로 미뤄야 오버레이 초기화 마이크로태스크가 본문 요청보다 먼저 돌지 않는다.
         if (!usePreviewStore.getState().warm) window.setTimeout(() => usePreviewStore.setState({warm: true}));
     };
 
@@ -55,7 +55,6 @@ export const bindRows = (ctx: Ctx, {open, prefetch, mini}: RowHandlers): void =>
     const resolveTarget = (ev: MouseEvent): { preData: GalleryPreData; commentsOnly: boolean; link: string } | null => {
         const target = ev.target;
         if (!(target instanceof Element)) return null;
-        // 제목 칸 안이면 제목 칸이, 아니면 행이 대상이다.
         const element = target.closest<HTMLElement>(WORD) ?? target.closest<HTMLElement>(LIST_ROW_SELECTOR);
         if (!element) return null;
 
@@ -107,8 +106,8 @@ export const bindRows = (ctx: Ctx, {open, prefetch, mini}: RowHandlers): void =>
         open(resolved.preData, resolved.commentsOnly);
     };
 
-    // 행마다 붙이지 않고 문서에서 받는다. 목록이 수십 행이고 새로고침마다 행이 바뀌므로, 행마다 붙이면 리스너 수백 개를 다시 붙인다.
-    // 캡처 단계에서 받아 디시 스크립트가 행에서 전파를 멈춰도 놓치지 않는다.
+    // 문서에서 받는다. 행마다 붙이면 새로고침으로 행이 바뀔 때마다 리스너 수백 개를 다시 붙인다.
+    // 캡처 단계라 디시 스크립트가 행에서 전파를 멈춰도 놓치지 않는다.
     const options = {capture: true, signal: ctx.signal};
     document.addEventListener("mousedown", onMouseDown, options);
     document.addEventListener("mouseup", onMouseUp, options);

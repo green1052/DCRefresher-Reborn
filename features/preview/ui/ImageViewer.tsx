@@ -34,7 +34,6 @@ export const ImageViewer = ({images, index}: { images: ViewerImage[]; index: num
     // 디시 원본 보기 주소(imgPop)만 연다.
     const original = dcinsideHref(image.pop);
 
-    // 어두운 배경 위라 밝은 글자·아이콘을 쓴다.
     const onDark = "text-white/85 hover:bg-white/10 hover:text-white";
 
     return (

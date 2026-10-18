@@ -53,8 +53,8 @@ interface CommentProps {
 }
 
 /**
- * memo로 감싼다. 목록이 다시 그려질 때 그대로인 댓글(keepUnchanged가 객체를 유지한 것)은 건너뛴다.
- * 감싸지 않으면 부모가 그릴 때마다 댓글 전부를 다시 그린다 (자동 새로고침·추천·차단 목록 변경).
+ * memo로 감싸 keepUnchanged가 객체를 유지한 댓글은 다시 그리지 않는다.
+ * 감싸지 않으면 자동 새로고침·추천·차단 목록 변경마다 댓글 전부를 다시 그린다.
  */
 export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply, isAdmin}: CommentProps) => {
     // reply 객체째 구독하면 답글 버튼 하나에 모든 댓글이 다시 그려지므로, 이 댓글이 대상인지만 구독한다.
@@ -88,13 +88,13 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
         !isDeleted && (comment.del_btn === "Y" || comment.my_cmt === "Y" || isAdmin || (!comment.user_id && Boolean(comment.ip)));
 
     // 요청 중에는 X를 막는다. 다시 누르면 같은 삭제가 또 나가 성공 알림 뒤에 실패 알림이 뜬다.
-    // 이 댓글이 요청 중인지만 구독한다 (selected와 같은 까닭).
+    // 이 댓글이 요청 중인지만 구독한다 (replying과 같은 까닭).
     const deleting = usePreviewStore((s) => s.deletingComments.has(comment.no));
 
     // 디시콘(img/video)과 글자콘. 답글이면 앞에 멘션이 붙어 오므로 ^로 고정하지 않고 찾는다.
     const isDccon = /<(img|video) class=|<div class="coment_dccon_txt/.test(comment.memo);
-    // 정화한 HTML(core/preview/comments.ts)을 그대로 넣는다. 줄바꿈을 <br>로 바꾸는 등 정화 뒤에 고치면 브라우저가 정화한 것과 다른 트리로 읽을 수 있다.
-    // 글 댓글의 줄바꿈은 CSS(whitespace-pre-line)로 보인다. 디시콘 HTML의 줄바꿈은 보이지 않는다. 붙어 온 디시콘 태그는 splitDccons가 이미 나눠 두었다.
+    // 정화한 HTML(core/preview/comments.ts)을 그대로 넣는다. 정화 뒤에 고치면(줄바꿈을 <br>로 등) 브라우저가 다른 트리로 읽을 수 있어
+    // 글 댓글의 줄바꿈은 CSS(whitespace-pre-line)로 보인다. 붙어 온 디시콘 태그는 splitDccons가 이미 나눴다.
     const html = comment.memo;
 
     // 글자콘 크기는 그려진 뒤에 잰다. html이 바뀌면 Preact가 내용을 새로 넣으므로 다시 잰다. 글만 있는 댓글(대부분)은 훑지 않는다.
@@ -111,9 +111,8 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
     }, [html, isDccon]);
 
     return (
-        // 화면 밖 댓글은 레이아웃·스타일 계산을 건너뛴다 (댓글 수백 개인 글을 열 때 레이아웃이 크게 준다).
-        // 아직 그리지 않은 댓글은 가장 흔한 한 줄 댓글 높이(48px)로 어림한다. 크게 잡으면 답글을 펼칠 때 어림값으로 높이를 재
-        // 펼치는 동안 실제보다 늘었다가 줄고, 그리지 않은 댓글이 많은 글은 스크롤 길이도 부풀었다가 줄어든다.
+        // 화면 밖 댓글은 레이아웃·스타일 계산을 건너뛴다 (댓글 수백 개인 글을 열 때 크게 준다).
+        // 그리지 않은 댓글은 가장 흔한 한 줄 댓글 높이(48px)로 어림한다. 크게 잡으면 답글을 펼칠 때 높이와 스크롤 길이가 부풀었다가 줄어든다.
         <div className={cn("refresher-comment relative px-8 py-2 [contain-intrinsic-size:auto_48px] [content-visibility:auto] hover:bg-muted/50",
                            // 자동 새로고침으로 새로 들어온 댓글 (previewStore의 freshComments). 강조색으로 깔았다가 걷는다.
                            fresh && "animate-fresh-comment",
@@ -164,7 +163,6 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
                 </div>
             </div>
 
-            {/* 음성 댓글만 본문 위에 플레이어가 붙는다. */}
             {comment.voice && (
                 <div className="mt-1">
                     {comment.voice.iframe ? (
@@ -198,7 +196,6 @@ const removeComment = async (no: string, isAdmin: boolean, password: string): Pr
     const signal = st.signalId;
 
     setDeleting(no, true);
-    // 비밀번호가 틀려도 HTTP 200('false||메시지')이 오므로 결과를 확인해 알려야 한다.
     const request = isAdmin ? adminDeleteComments(st.preData, [no]) : deleteOwnComment(st.preData, st.post, no, password);
     const deleted = await notifyManage(request, "댓글을 삭제했습니다.", "댓글을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.");
     // 그새 다른 글로 넘어갔으면 그 글의 상태는 건드리지 않는다 (글을 열면 freshPost가 비운다).
@@ -247,7 +244,7 @@ export const CommentDeletePrompt = ({comments, isAdmin}: { comments: ProcessedCo
 
 /**
  * 유동 댓글을 지울 비밀번호를 묻는다. 미리보기에서 쓴 댓글은 저장해 둔 비밀번호를 썼으므로 비워 두면 그것을 쓴다.
- * 저장된 비밀번호는 칸에 채우지 않는다 (WriteComment와 같다). 채우면 화면에 그대로 보인다.
+ * 저장된 비밀번호는 칸에 채우지 않는다 (WriteComment와 같은 까닭).
  */
 const PasswordDialog = ({warning, onSubmit, onClose}: { warning?: string; onSubmit: (password: string) => void; onClose: () => void }) => {
     const [saved] = useState(() => savedNonmember().pw);

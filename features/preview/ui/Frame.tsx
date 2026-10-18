@@ -148,11 +148,10 @@ export const Frame = () => {
     const listTitle = usePreviewStore((s) => s.preData?.title);
     const scroller = useRef<HTMLDivElement>(null);
     const commentsSection = useRef<HTMLDivElement>(null);
-    // 창은 비모달이라(아래 Dialog.Root) 포커스를 가두지 않는다. 연 동안 뒤 페이지를 inert로 막아 Tab·스크린 리더가 가려진 목록으로 나가지 않게 한다.
-    // 오버레이(refresher-root)는 남긴다. 버블·토스트·관리 패널이 거기 있다. body에 직접 붙인 확장 UI(스텔스 버튼 등)도 data-refresher-ui로 남긴다.
-    // 키보드로 열었으면(연 요소에 포커스 링이 보이면) 닫을 때 그 요소(목록의 제목 링크 등)로 포커스를 돌려준다. 글을 넘길 때는 visible이 그대로라 처음 연 요소가 남는다.
-    // 마우스로 연 창까지 돌려주면 Esc로 닫을 때 제목 링크에 포커스 링이 생겨 새로고침 모듈이 자동 갱신을 멈춘다.
-    // 연 요소는 스크롤 칸에 포커스를 주는 아래 효과보다 먼저 읽어야 해서 이 효과를 앞에 둔다.
+    // 창은 비모달이라(아래 Dialog.Root) 포커스를 가두지 않는다. 연 동안 뒤 페이지를 inert로 막아 Tab·스크린 리더가 목록으로 나가지 않게 한다.
+    // 오버레이(refresher-root: 버블·토스트·관리 패널)와 body에 붙인 확장 UI(data-refresher-ui)는 남긴다.
+    // 키보드로 열었을 때(:focus-visible)만 닫으며 연 요소로 포커스를 돌려준다. 마우스로 연 창까지 돌려주면 Esc로 닫을 때
+    // 제목 링크에 포커스 링이 생겨 새로고침 모듈이 자동 갱신을 멈춘다. 연 요소는 아래 스크롤 칸 포커스 효과보다 먼저 읽어야 한다.
     useEffect(() => {
         if (!visible) return;
 
@@ -236,8 +235,7 @@ export const Frame = () => {
                     details.allowPropagation();
                     return;
                 }
-                // Esc는 위에 뜬 것(유저 버블·다이얼로그)부터 닫는다. 그것들은 미리보기와 따로 그려져 Base UI가 미리보기를 맨 위로 보므로,
-                // 위에 뭔가 떠 있으면 미리보기는 닫지 않는다.
+                // Esc는 위에 뜬 것(유저 버블·다이얼로그)부터 닫는다. 그것들은 따로 그려져 Base UI는 미리보기를 맨 위로 본다.
                 // 버블은 여기서 닫는다. Base UI는 Esc 리스너를 effect로 거는데 Preact는 effect를 그린 뒤에 돌려, 막 뜬 버블은 아직 Esc를 받지 못한다.
                 if (details.reason === "escape-key" && useUiStore.getState().bubble) {
                     details.cancel();
@@ -254,13 +252,11 @@ export const Frame = () => {
             }}
         >
             <Dialog.Portal container={overlay.portal}>
-                {/* 바깥 배경과 스크롤 칸은 같이 나타나고 같이 사라진다. */}
                 <div className={cn("fixed inset-0 bg-black/40 duration-150 animate-in fade-in data-fading:pointer-events-none data-fading:animate-out data-fading:fade-out data-fading:fill-mode-forwards",
                                    backgroundBlur && "backdrop-blur-[5px]")}
                      data-fading={fading || undefined}/>
-                {/* v5처럼 화면 전체가 스크롤 칸이고 창은 그 안에서 내용만큼 길어진다. 창 안이든 양옆이든 같은 브라우저 기본 스크롤이다.
-                    짧은 글은 창이 가운데 오고(margin: auto), 긴 글은 위아래에 5vh씩 띄운다. 스크롤바 폭을 양쪽에 비워 둔다.
-                    안 그러면 긴 글에서만 창이 왼쪽으로 밀려 짧은 글과 오갈 때 옆으로 흔들린다. 키보드 스크롤용 포커스(tabIndex -1)라 테두리는 그리지 않는다. */}
+                {/* v5처럼 화면 전체가 스크롤 칸이고 창은 내용만큼 길어진다. 짧은 글은 가운데(margin: auto), 긴 글은 위아래 5vh를 띄운다.
+                    스크롤바 폭을 양쪽에 비워야 긴 글과 짧은 글을 오갈 때 창이 옆으로 흔들리지 않는다. 키보드 스크롤용 포커스(tabIndex -1)라 테두리는 그리지 않는다. */}
                 <Dialog.Popup
                     className="refresher-frame-scroll fixed inset-0 flex overflow-y-auto overscroll-contain py-[5vh] outline-none duration-150 animate-in fade-in [scrollbar-color:var(--border)_transparent] [scrollbar-gutter:stable_both-edges] [scrollbar-width:thin] data-fading:pointer-events-none data-fading:animate-out data-fading:fade-out data-fading:fill-mode-forwards"
                     ref={scroller}
@@ -286,10 +282,9 @@ export const Frame = () => {
                         usePreviewStore.getState().requestClose();
                     }}
                 >
-                {/* 너비는 설정(previewWidth)이 --refresher-frame-width로 넘긴다. 작은 창에서도 둘레에 배경이 보이게 화면의 90%까지만.
-                    관리 패널(150px)이 있으면 겹치지 않게 양옆에 그 폭만큼 비운다 (너무 좁은 창에선 480px은 유지).
-                    짧은 글에서도 납작해 보이지 않게 최소 높이를 둔다. 둥근 모서리 밖으로 댓글 배경이 나가지 않게 자른다.
-                    hidden이면 스크롤 칸이 되어 맨 위로 버튼(sticky)이 화면에 붙지 않으므로 clip이다. */}
+                {/* 너비는 설정(previewWidth)을 --refresher-frame-width로 받되 둘레에 배경이 보이게 화면의 90%까지만 쓴다.
+                    관리 패널(150px)이 있으면 양옆에 그 폭을 비운다 (최소 480px). 둥근 모서리 밖으로 댓글 배경이 나가지 않게 자르는데,
+                    hidden이면 스크롤 칸이 되어 맨 위로 버튼(sticky)이 붙지 않으므로 clip이다. */}
                 <div
                     className={cn("refresher-frame m-auto flex min-h-[min(800px,90vh)] flex-col overflow-clip rounded-2xl bg-background text-sm shadow-2xl ring-1 ring-foreground/10",
                                   adminVisible

@@ -77,7 +77,6 @@ export const postComment = async (
 
 /**
  * 본인 댓글 삭제 (비밀번호·회원). 'false||captcha||v3'가 오면 작성처럼 v3 토큰을 붙여 한 번 더 보낸다 (디시 comment.js의 비밀번호 삭제).
- * v2 체크박스나 재전송도 막히면 원문에서만 풀 수 있어 그렇게 안내한다.
  */
 export const deleteOwnComment = async (preData: GalleryPreData, post: PostInfo, commentNo: string, password: string): Promise<ManageResult> => {
     const rcKey = pickRcKey();
