@@ -1,5 +1,6 @@
 import {sendMessage} from "@/core/messaging/protocol";
 import {defineModule} from "@/core/module/define";
+import type {ModuleSettings} from "@/core/module/types";
 import {WRITE_PAGE} from "@/core/pages";
 
 import {type ImageOptions, UPLOAD_OPTIONS_KEY} from "./images";
@@ -25,12 +26,7 @@ const EDITED_KEY = "refresherEdited";
 /**
  * hookUploads가 읽을 설정을 둔다. 켜진 설정이 있으면 배경에 hookUploads를 넣어 달라고 한다 (페이지마다 한 번만 걸린다).
  */
-const publishImageOptions = ({webpConvert: webp, webpQuality, webpConcurrency: concurrency, obfuscateName: rename}: {
-    webpConvert: boolean;
-    webpQuality: number;
-    webpConcurrency: number;
-    obfuscateName: boolean;
-}): void => {
+const publishImageOptions = ({webpConvert: webp, webpQuality, webpConcurrency: concurrency, obfuscateName: rename}: ModuleSettings["write"]): void => {
     if (!webp && !rename) {
         delete document.documentElement.dataset[UPLOAD_OPTIONS_KEY];
         return;
