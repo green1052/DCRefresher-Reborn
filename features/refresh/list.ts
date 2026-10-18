@@ -128,6 +128,8 @@ export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigat
         const no = newKeys[index]!;
         rowFrames.set(element, frameOf(element.outerHTML));
         fillCheckbox(element);
+        // 받아온 목록의 썸네일은 즉시 받기라, 글 보기 아래 목록(디시는 lazy)을 갈아끼우면 화면 밖 썸네일까지 한꺼번에 받는다.
+        for (const img of element.querySelectorAll("img")) img.loading = "lazy";
 
         if (isViewPage && no === pagePostNo) {
             element.classList.add("crt");

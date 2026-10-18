@@ -104,6 +104,12 @@ describe("replaceList", () => {
         expect(list.children[0]).not.toBe(original);
     });
 
+    it("받아온 행의 이미지는 화면에 올 때 받는다", () => {
+        const list = mount([row("1")]);
+        replaceList(list, tbody([row("2").replace("</td>", "<img src=\"https://example.com/a.gif\"></td>"), row("1")]), OPTIONS);
+        expect(list.querySelector("img")?.loading).toBe("lazy");
+    });
+
     it("위 글이 지워져 아래에서 올라온 행은 새 글이 아니다", () => {
         const list = mount([row("5"), row("4"), row("3")]);
         const {added} = replaceList(list, tbody([row("6"), row("5"), row("3"), row("2")]), OPTIONS);
