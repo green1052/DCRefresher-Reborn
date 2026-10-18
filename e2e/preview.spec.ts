@@ -280,6 +280,23 @@ test.describe("미리보기", () => {
         expect(await viewer.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
     });
 
+    test("창 안의 Tab은 끝에서 처음으로 돌아가 창 밖으로 나가지 않는다", async ({listPage}) => {
+        const {page} = listPage;
+        const frame = await listPage.openPreview();
+        const scroll = listPage.overlay.locator(".refresher-frame-scroll");
+        await expect(scroll).toBeFocused();
+        const focusInside = () => scroll.evaluate((el) => el.contains((el.getRootNode() as ShadowRoot).activeElement));
+
+        // 창 안 마지막 Tab 정지점(댓글로)에서 Tab을 누르면 창 안 첫 정지점(글쓴이 닉네임)으로 간다.
+        const last = frame.getByRole("button", {name: "댓글로", exact: true});
+        await last.focus();
+        await page.keyboard.press("Tab");
+        await expect(frame.locator(".refresher-user button").first()).toBeFocused();
+        expect(await focusInside()).toBe(true);
+        await page.keyboard.press("Shift+Tab");
+        await expect(last).toBeFocused();
+    });
+
     test("스크롤 끝에서 굴리면 안내만 띄우고, 새로 한 번 더 굴려야 다음 글로 넘어간다", async ({listPage}) => {
         const {page} = listPage;
         await listPage.openPreview(1);

@@ -148,7 +148,7 @@ export const Frame = () => {
     const listTitle = usePreviewStore((s) => s.preData?.title);
     const scroller = useRef<HTMLDivElement>(null);
     const commentsSection = useRef<HTMLDivElement>(null);
-    // 창은 비모달이라(아래 Dialog.Root) 포커스를 가두지 않는다. 연 동안 뒤 페이지를 inert로 막아 Tab·스크린 리더가 목록으로 나가지 않게 한다.
+    // 창은 포커스만 가두고(아래 Dialog.Root의 trap-focus) 스크롤 잠금·바깥 클릭은 직접 다룬다. 연 동안 뒤 페이지를 inert로 막아 마우스·스크린 리더가 목록에 닿지 않게 한다.
     // 오버레이(refresher-root: 버블·토스트·관리 패널)와 body에 붙인 확장 UI(data-refresher-ui)는 남긴다.
     // 키보드로 열었을 때(:focus-visible)만 닫으며 연 요소로 포커스를 돌려준다. 마우스로 연 창까지 돌려주면 Esc로 닫을 때
     // 제목 링크에 포커스 링이 생겨 새로고침 모듈이 자동 갱신을 멈춘다. 연 요소는 아래 스크롤 칸 포커스 효과보다 먼저 읽어야 한다.
@@ -222,10 +222,12 @@ export const Frame = () => {
     const hasComments = comments !== undefined || (post !== undefined && visible);
 
     return (
-        // 비모달 창이다. 스크롤 잠금과 PageUp/Down 이동은 직접 처리한다. 바깥 클릭 닫기는 아래 click이 맡는다(위에 뜬 팝업·버블을 눌러도 닫히지 않게).
+        // 포커스만 가둔다(trap-focus). 스크롤 잠금과 PageUp/Down 이동은 직접 처리한다. 바깥 클릭 닫기는 아래 click이 맡는다(위에 뜬 팝업·버블을 눌러도 닫히지 않게).
+        // 비모달(false)로 두면 Base UI 포털이 포커스가 창 밖(디시콘 창·버블 등)으로 나갈 때마다 창 안의 Tab 정지점을 모두 훑어 막고 풀어,
+        // 댓글이 천 개인 글에서 디시콘 창의 패키지를 바꿀 때마다 수백 ms씩 멈췄다.
         <Dialog.Root
             open
-            modal={false}
+            modal="trap-focus"
             disablePointerDismissal
             onOpenChange={(open, details) => {
                 if (open) return;
@@ -263,7 +265,7 @@ export const Frame = () => {
                     tabIndex={-1}
                     data-fading={fading || undefined}
                     aria-busy={busy}
-                    // 비모달이지만 연 동안 뒤 페이지를 inert로 막으므로 보조 기술에는 모달로 알린다.
+                    // 포커스를 가두고 뒤 페이지를 inert로 막으므로 보조 기술에는 모달로 알린다.
                     aria-modal
                     // 포커스는 위 효과가 스크롤 칸에 주고, 닫을 때는 연 요소로 직접 돌려준다.
                     initialFocus={false}
