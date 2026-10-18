@@ -1,4 +1,4 @@
-import {Ban, ExternalLink, PackageX, Search, StickyNote, UserX} from "lucide-react";
+import {Ban, ExternalLink, NotebookPen, Search} from "lucide-react";
 import {type ComponentProps, useEffect, useRef, useState, useSyncExternalStore} from "react";
 
 import {DialogActions, ModalDialog} from "@/components/dialogs";
@@ -281,7 +281,7 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
                                           close();
                                           onBlockPackage(selected);
                                       }}>
-                                <PackageX/> 전체 차단
+                                <Ban/> 전체 차단
                             </MenuItem>
                         </div>
                     </>
@@ -297,7 +297,7 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
                         </div>
                         <Separator/>
                         <div className="flex flex-col">
-                            <MenuItem danger onClick={() => requestBlock({target: "user"})}><UserX/> 유저 차단</MenuItem>
+                            <MenuItem danger onClick={() => requestBlock({target: "user"})}><Ban/> 유저 차단</MenuItem>
                             {gallery && (
                                 <MenuItem danger title={`${gallery} 갤러리에서만 가립니다.`} onClick={() => requestBlock({target: "user", gallery})}>
                                     <Ban/> 이 갤러리에서만 차단
@@ -310,7 +310,7 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
                                 focus.returnFocus();
                                 useUiStore.getState().openMemo(selected);
                             }}>
-                                <StickyNote/> 메모
+                                <NotebookPen/> 메모
                             </MenuItem>
                             {selected.uid && (
                                 <MenuItem nativeButton={false}
