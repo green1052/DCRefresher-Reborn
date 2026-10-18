@@ -1,7 +1,7 @@
 import QuickLRU from "quick-lru";
 
 import {http} from "@/core/http/client";
-import {documentUrl, pageGallery, queryString} from "@/core/http/urls";
+import {documentUrl, pageGallery, queryString, type WriterFilter, writerFilter} from "@/core/http/urls";
 import {checkboxFiller, highlightSearchResults, LIST_SELECTOR, notifyListReplaced, PAGING_SELECTOR} from "@/core/list";
 import {sendMessage} from "@/core/messaging/protocol";
 import {defineModule} from "@/core/module/define";
@@ -12,7 +12,7 @@ import {whenDomReady, writeStyle} from "@/utils/dom";
 import {isBlockedError} from "@/utils/error";
 
 import meta from "./meta";
-import {addWriterTypes, keepWriterFilter, removeWriterTypes, type WriterFilter, writerFilter, writerSearchUrl, writerSelector} from "./writer";
+import {addWriterTypes, keepWriterFilter, removeWriterTypes, writerSearchUrl, writerSelector} from "./writer";
 
 /**
  * 검색 결과 행: 글(data-no)과 그 아래 댓글 검색 행(data-cmt). 설문·AD 행은 뺀다.

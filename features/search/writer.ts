@@ -1,34 +1,15 @@
-import {listUrl} from "@/core/http/urls";
+import {listUrl, WRITER_PARAMS, type WriterFilter, type WriterKind} from "@/core/http/urls";
 
-/**
- * 아이디·IP로 작성자 글 찾기. 디시 글쓴이 검색(search_name)은 닉네임만 찾고 아이디·IP로는 아무것도 나오지 않는다.
- * 그래서 목록 주소에 이 값을 얹어 두고 그 작성자가 아닌 행을 숨긴다. 닉네임을 알면 글쓴이 검색으로 범위를 넓히고, 모르면 목록을 넘기며 거른다.
- */
-const PARAMS = {uid: "rf_uid", ip: "rf_ip"} as const;
-
-type WriterKind = keyof typeof PARAMS;
-
-export interface WriterFilter {
-    kind: WriterKind;
-    value: string;
-}
-
-/** 주소의 작성자 거르기. 없으면 null. */
-export const writerFilter = (href = location.href): WriterFilter | null => {
-    const params = new URL(href).searchParams;
-    for (const kind of ["uid", "ip"] as const) {
-        const value = params.get(PARAMS[kind]);
-        if (value) return {kind, value};
-    }
-    return null;
-};
+// 아이디·IP로 작성자 글 찾기. 디시 글쓴이 검색(search_name)은 닉네임만 찾고 아이디·IP로는 아무것도 나오지 않는다.
+// 그래서 목록 주소에 이 값(core/http/urls.ts의 WRITER_PARAMS)을 얹어 두고 그 작성자가 아닌 행을 숨긴다.
+// 닉네임을 알면 글쓴이 검색으로 범위를 넓히고, 모르면 목록을 넘기며 거른다.
 
 /** 그 작성자의 작성자 칸 (디시 목록의 td.ub-writer[data-uid|data-ip]). */
 export const writerSelector = ({kind, value}: WriterFilter): string => `.ub-writer[data-${kind}="${CSS.escape(value)}"]`;
 
 const withFilter = (href: string, filter: WriterFilter): string => {
     const url = new URL(href);
-    url.searchParams.set(PARAMS[filter.kind], filter.value);
+    url.searchParams.set(WRITER_PARAMS[filter.kind], filter.value);
     return url.href;
 };
 

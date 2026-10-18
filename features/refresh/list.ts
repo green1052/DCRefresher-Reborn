@@ -1,6 +1,5 @@
-import {isViewPage, pagePostNo, rowPostNo} from "@/core/http/urls";
+import {isViewPage, pagePostNo, rowPostNo, writerFilter} from "@/core/http/urls";
 import {checkboxFiller, highlightSearchResults, PAGING_SELECTOR} from "@/core/list";
-import {writerFilter} from "@/features/search/writer";
 
 import {COUNT_CELLS, COUNT_TEXT, NOTICE_ICON} from "./markup";
 

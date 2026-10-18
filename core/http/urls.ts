@@ -88,6 +88,29 @@ export const mergeParamURL = (origin: string, from: string): string => {
 export const postSearchUrl = (query: string): string =>
     `https://search.dcinside.com/post/sort/latest/q/${Array.from(new TextEncoder().encode(query), (byte) => `.${byte.toString(16).padStart(2, "0").toUpperCase()}`).join("")}`;
 
+/**
+ * 검색 모듈의 작성자 거르기(features/search/writer.ts)가 목록 주소에 얹는 쿼리 이름. 디시 글쓴이 검색(search_name)은 닉네임만 찾아,
+ * 아이디·IP는 이 값으로 얹어 두고 그 작성자가 아닌 행을 숨긴다. 새로고침 모듈도 거르는 목록인지 볼 때 읽는다.
+ */
+export const WRITER_PARAMS = {uid: "rf_uid", ip: "rf_ip"} as const;
+
+export type WriterKind = keyof typeof WRITER_PARAMS;
+
+export interface WriterFilter {
+    kind: WriterKind;
+    value: string;
+}
+
+/** 주소의 작성자 거르기. 없으면 null. */
+export const writerFilter = (href = location.href): WriterFilter | null => {
+    const params = new URL(href).searchParams;
+    for (const kind of ["uid", "ip"] as const) {
+        const value = params.get(WRITER_PARAMS[kind]);
+        if (value) return {kind, value};
+    }
+    return null;
+};
+
 /** 지금 주소의 쿼리 값. 이 문서의 갤러리 id는 pageGallery를 쓴다. */
 export const queryString = (name: string): string | null => new URLSearchParams(location.search).get(name);
 
