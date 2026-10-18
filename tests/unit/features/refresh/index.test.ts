@@ -142,6 +142,16 @@ describe("직접 새로고침", () => {
         expect(listed()).toEqual(["2", "1"]);
     });
 
+    it("관리자가 글을 고르는 중이면 갈아끼우지 않고 그렇다고 알린다", async () => {
+        document.querySelector("tbody > tr")!.insertAdjacentHTML("afterbegin", "<td><input type=\"checkbox\" class=\"article_chkbox\" checked></td>");
+        respond(["3", "2", "1"]);
+        const {api} = await start();
+        await api.refreshLists();
+        expect(get).not.toHaveBeenCalled();
+        expect(listed()).toEqual(["2", "1"]);
+        expect(toasts().at(-1)).toBe("고른 글이나 열린 유저 메뉴가 있어 글 목록을 새로고침하지 않았습니다.");
+    });
+
     it("목록 없는 응답도 실패다", async () => {
         get.mockImplementation(async () => new Response("<html><body>차단</body></html>"));
         const {api} = await start();

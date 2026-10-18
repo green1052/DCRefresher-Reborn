@@ -99,7 +99,10 @@ export default defineModule({
             // 관리자가 체크박스로 글을 고르는 중이거나 목록 행에 디시 유저 메뉴(작성자 좌클릭)가 열려 있으면 목록을 갈아끼우지 않는다.
             // 댓글의 체크박스·유저 메뉴는 목록과 상관없다. 문서 전체에서 찾으면 댓글 작성자 메뉴를 연 채로 두는 동안 새로고침이 멈춘다.
             // 사용자가 직접 한 이동(페이지 전환/뒤로 가기)은 막으면 주소와 목록이 어긋나므로 거르지 않는다.
-            return !customURL && document.querySelector(".gall_list:not([id]) :is(.article_chkbox:checked, .user_data.add)") !== null;
+            const held = !customURL && document.querySelector(".gall_list:not([id]) :is(.article_chkbox:checked, .user_data.add)") !== null;
+            // 강제 로드(Alt+R·미리보기 관리 동작 뒤)는 다시 시도하지 않아 말없이 버리면 지운 글이 목록에 남은 채 아무 반응이 없다.
+            if (held && force) useUiStore.getState().showToast("고른 글이나 열린 유저 메뉴가 있어 글 목록을 새로고침하지 않았습니다.", "warning");
+            return held;
         };
 
         // ===== load =====
