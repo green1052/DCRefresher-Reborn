@@ -11,7 +11,7 @@ vi.mock("@/core/http/client", async (importOriginal) => ({
     http: {get: (url: string) => ({text: async () => (await get(url)).text()})}
 }));
 // 목록 비교 해시 (index.test.ts와 같은 까닭).
-vi.mock("@/utils/hash", () => ({sha256: async (data: Uint8Array) => new TextDecoder().decode(data)}));
+vi.mock("@/utils/hash", async (importOriginal) => ({...await importOriginal(), sha256: async (data: Uint8Array) => new TextDecoder().decode(data)}));
 
 const LIST = "<table class=\"gall_list\"><tbody><tr class=\"ub-content\" data-no=\"1\"><td class=\"gall_tit\"><a>글 1</a></td></tr></tbody></table>";
 

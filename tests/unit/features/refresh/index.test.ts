@@ -18,7 +18,7 @@ vi.mock("@/core/http/client", async (importOriginal) => ({
 
 // 목록 비교 해시. jsdom의 crypto에는 subtle이 없고, WebCrypto는 가짜 타이머 밖에서 끝나 주기를 앞당겨도 기다리지 않는다.
 // 같은 목록이면 같은 값만 주면 되므로 받은 글자를 그대로 돌려준다.
-vi.mock("@/utils/hash", () => ({sha256: async (data: Uint8Array) => new TextDecoder().decode(data)}));
+vi.mock("@/utils/hash", async (importOriginal) => ({...await importOriginal(), sha256: async (data: Uint8Array) => new TextDecoder().decode(data)}));
 
 // 미리보기 모듈은 띄우지 않고 창이 열려 있는지만 바꿔 답한다.
 const preview = vi.hoisted(() => ({open: false}));

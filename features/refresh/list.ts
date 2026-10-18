@@ -1,5 +1,6 @@
 import {isViewPage, pagePostNo, rowPostNo, writerFilter} from "@/core/http/urls";
 import {checkboxFiller, highlightSearchResults, PAGING_SELECTOR} from "@/core/list";
+import {hash53} from "@/utils/hash";
 
 import {COUNT_CELLS, COUNT_TEXT, NOTICE_ICON} from "./markup";
 
@@ -17,9 +18,10 @@ const rowKey = (row: HTMLElement): string => rowPostNo(row) ?? row.querySelector
 /**
  * 받아온 행의 원래 HTML(체크박스 칸·강조·효과를 입히기 전)에서 수 칸 글자를 비운 틀. 틀이 같은 행은 갈아끼우지 않고 수만 고친다.
  * 갈아끼우면 필터·차단 검사·배지·리스너가 다시 돌고 hover가 풀린다. 정규식이 못 비우면 달라 보여 갈아끼울 뿐이다.
+ * 틀은 해시로만 둔다. HTML을 그대로 두면 목록 탭마다 행 HTML(약 150KB)을 계속 들고 있는다.
  */
-const rowFrames = new WeakMap<Element, string>();
-const frameOf = (html: string): string => html.replace(COUNT_TEXT, "$1");
+const rowFrames = new WeakMap<Element, number>();
+const frameOf = (html: string): number => hash53(html.replace(COUNT_TEXT, "$1"));
 
 const syncCounts = (target: Element, source: Element): void => {
     const sources = source.querySelectorAll(COUNT_CELLS);
@@ -187,7 +189,7 @@ export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigat
             if (index >= at && index < at + count) continue;
             const old = oldRows[index < at ? index : index - count]!;
             // 페이지가 처음 그린 행은 틀이 없다(다른 모듈이 이미 고쳐 원래 HTML을 모른다). 제목·작성자가 같으면 받아온 행의 틀을 물려준다.
-            if (!rowFrames.has(old) && sameRow(old, row)) rowFrames.set(old, rowFrames.get(row) ?? "");
+            if (!rowFrames.has(old) && sameRow(old, row)) rowFrames.set(old, rowFrames.get(row) ?? -1);
             if (rowFrames.get(old) === rowFrames.get(row)) {
                 // 남긴 행은 원래 행과 틀이 같아 그대로 둔다. 지웠던 글이 다시 받아지면 붉은 표시를 받아온 행에 맞춰 뗀다.
                 old.classList.toggle("refresherDeleted", row.classList.contains("refresherDeleted"));
