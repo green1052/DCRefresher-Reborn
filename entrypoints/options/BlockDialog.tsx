@@ -34,7 +34,7 @@ interface BlockDialogProps {
 /** 차단 항목 추가/수정 다이얼로그. 입력 초기값을 마운트 시점의 initial에서 잡으므로 열 때만 마운트한다. */
 export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps) => {
     const [content, setContent] = useState(initial?.content ?? "");
-    const [isRegex, setIsRegex] = useState(initial?.isRegex ?? false);
+    const [isRegex, setIsRegex] = useState(type !== "IMAGE" && (initial?.isRegex ?? false));
     const [gallery, setGallery] = useState(initial?.gallery ?? "");
     const [mode, setMode] = useState<DetectMode | "">(initial?.mode ?? "");
     const [error, setError] = useState("");
@@ -105,10 +105,13 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                                onChange={(ev) => setContent(ev.target.value)}/>
                     </Field>
 
-                    <Field orientation="horizontal">
-                        <Checkbox id={`${id}-regex`} checked={isRegex} onCheckedChange={setIsRegex}/>
-                        <FieldLabel htmlFor={`${id}-regex`}>정규식</FieldLabel>
-                    </Field>
+                    {/* 이미지 값은 파일 해시라 정규식으로 고를 게 없다. 짧은 식은 아무 이미지나 걸린다. */}
+                    {type !== "IMAGE" && (
+                        <Field orientation="horizontal">
+                            <Checkbox id={`${id}-regex`} checked={isRegex} onCheckedChange={setIsRegex}/>
+                            <FieldLabel htmlFor={`${id}-regex`}>정규식</FieldLabel>
+                        </Field>
+                    )}
 
                     <Field>
                         <FieldLabel htmlFor={`${id}-gallery`}>특정 갤러리 차단 (선택)</FieldLabel>
