@@ -28,7 +28,7 @@ describe("friendlyMessage", () => {
     });
 
     it("시간 제한 DOMException은 응답 없음이다", () => {
-        // ky 2.2.0에서 ky의 isTimeoutError가 DOMException을 거짓으로 보게 바뀌어 일반 문구로 나간 적이 있다.
+        // ky 2.2.0부터 ky의 isTimeoutError는 DOMException을 거짓으로 본다.
         expect(friendlyMessage(new DOMException("signal timed out", "TimeoutError"))).toContain("응답이 없습니다");
     });
 

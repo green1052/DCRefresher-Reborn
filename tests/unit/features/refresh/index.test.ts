@@ -332,7 +332,7 @@ describe("자동 새로고침", () => {
         await vi.advanceTimersByTimeAsync(5500);
         expect(get).toHaveBeenCalledTimes(1);
         await vi.advanceTimersByTimeAsync(30_000);
-        // 실패로 쳐서 주기를 두 배(10초)로 늘려 다시 받는다.
+        // 두 배로 늘어난 주기(10초 + 0.5초) 뒤에 받는다.
         await vi.advanceTimersByTimeAsync(10_500);
         expect(get).toHaveBeenCalledTimes(2);
     });

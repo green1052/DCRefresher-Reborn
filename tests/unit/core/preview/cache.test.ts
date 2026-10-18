@@ -62,7 +62,6 @@ describe("restoreArchive", () => {
         restoreArchive(pre, [comment(1, {memo: "원문"})]);
         const changed = comment(1, {memo: "삭제된 댓글입니다.", is_delete: "1"});
         expect(restoreArchive(pre, [changed])).toEqual([comment(1, {memo: "원문", is_delete: "1"})]);
-        // 원문을 바뀐 내용으로 덮지 않는다.
         expect(restoreArchive(pre, [changed])[0]?.memo).toBe("원문");
     });
 

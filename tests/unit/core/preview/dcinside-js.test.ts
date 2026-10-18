@@ -6,7 +6,7 @@ describe("decodeD", () => {
     // 실제 디시 글 페이지의 _d('…') 값과 디시 _d()가 푼 결과다.
     it("디시 _d()처럼 섞은 base64를 푼다", () => {
         expect(decodeD("Q+y6PM0Gdou4dgQtQ+UGPM0Ed4uERM=tQFyvPM05dTw5PM=ERTuHQSKK")).toBe("207,266,253,256,217,181,304,255.5,119,91");
-        // 디시 common.js의 표는 'l'(42번째)과 '1'(59번째)이 이 자리다. 둘을 바꿔 옮기면 'aazaa{'로 풀린다.
+        // 디시 common.js 표에서 'l'은 42번째, '1'은 59번째다. 둘을 바꿔 옮기면 'aazaa{'로 풀린다.
         expect(decodeD("WVzlWVz7")).toBe("aajaa{");
     });
 

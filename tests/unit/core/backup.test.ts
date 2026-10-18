@@ -193,7 +193,6 @@ describe("readCloudBackupStatus", () => {
         await patchManualMeta({device: undefined});
         expect((await readCloudBackupStatus()).manual?.other).toBe(true);
 
-        // 이 기기가 다시 올리면 이 기기 것이 된다.
         await runBackup("manual");
         expect((await readCloudBackupStatus()).manual?.other).toBe(false);
     });

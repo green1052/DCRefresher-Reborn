@@ -359,7 +359,6 @@ describe("글댓비·깡계", () => {
         stop();
         running = undefined;
         await vi.waitFor(async () => expect(await stored(RATIO_KEY)).toEqual({ratio: {seen: {article: 7, comment: 8, date: expect.any(Number)}}}));
-        // 끈 뒤에는 듣지 않는다.
         expect(gallog.listeners.size).toBe(0);
     });
 

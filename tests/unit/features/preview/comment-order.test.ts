@@ -8,7 +8,7 @@ import {usePreviewStore} from "@/features/preview/ui/previewStore";
 import {dcComment, preData as makePreData} from "../../../helpers";
 import {type Running, runModule} from "../module";
 
-// 본문은 바로 주고, 댓글 요청은 테스트가 reply를 부를 때 응답한다 (끊어도 응답한다: 이미 받은 응답이 늦게 처리되는 경우).
+// 본문은 바로 주고, 댓글은 reply를 부를 때 응답한다. 끊어도 응답해 이미 받은 응답이 늦게 처리되는 경우를 흉내 낸다.
 const net = vi.hoisted(() => ({
     comments: [] as { id: string; reply: (nos: string[]) => void }[]
 }));

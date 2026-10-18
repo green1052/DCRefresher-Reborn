@@ -29,7 +29,7 @@ if (typeof window !== "undefined") {
     style[Symbol.iterator] ??= function* (this: CSSStyleDeclaration) {
         for (let index = 0; index < this.length; index++) yield this.item(index);
     };
-    // utils/dom의 smoothScroll이 동작 줄이기 설정을 읽고 그 값으로 스크롤한다. 설정은 꺼진 것으로, 스크롤은 하지 않는 것으로 둔다.
+    // utils/dom의 smoothScroll이 쓴다. 동작 줄이기는 꺼진 것으로, 스크롤은 하지 않는 것으로 둔다.
     window.matchMedia ??= (query: string) => ({
         matches: false, media: query, onchange: null, dispatchEvent: () => false,
         addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}

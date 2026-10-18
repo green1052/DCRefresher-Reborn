@@ -38,7 +38,6 @@ describe("normalizeSetting", () => {
         const text = setting({type: "text", default: "d"});
         expect(normalizeSetting(text, "")).toBe("");
         expect(normalizeSetting(text, 1)).toBe("d");
-        // maxLength가 있으면 가져온 긴 값을 그 길이로 자른다.
         expect(normalizeSetting(setting({type: "text", default: "", maxLength: 3}), "가나다라")).toBe("가나다");
         expect(normalizeSetting(text, "가나다라")).toBe("가나다라");
     });

@@ -24,7 +24,7 @@ describe("threadParents", () => {
     });
 
     it("답글순이면 답글이 많은 스레드부터, 같으면 등록순으로 세운다", () => {
-        // 6의 답글 셋이 1의 답글 둘보다 많다. 부모를 받지 못한 5는 답글이 없는 셈이고, 0개인 5와 10은 등록순이다.
+        // 6(답글 3)이 1(답글 2)보다 앞이다. 부모를 받지 못한 5는 답글 0개로 쳐 10과 등록순이다.
         const replied = [...comments, comment(7, {c_no: "6", depth: 1}), comment(8, {c_no: "6", depth: 1}), comment(9, {c_no: "6", depth: 1}), comment(10)];
         expect(nos(threadParents(replied, "replies"))).toEqual(["6", "1", "5", "10"]);
     });
