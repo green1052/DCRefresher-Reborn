@@ -1,4 +1,5 @@
-import {useEffect, useRef, useSyncExternalStore} from "react";
+import {Ban, ExternalLink, Info, PackageX, StickyNote, UserX} from "lucide-react";
+import {type ComponentProps, useEffect, useRef, useSyncExternalStore} from "react";
 
 import {DialogActions, ModalDialog} from "@/components/dialogs";
 import {Button} from "@/components/ui/button";
@@ -16,16 +17,23 @@ import {useUserMemo} from "@/stores/memos";
 import {type SelectedUser, selectedGallery, useUiStore} from "@/stores/ui";
 import {SAVE_FAILED} from "@/utils/error";
 import {type ActivityState, useGallogActivity} from "@/components/overlay/gallogActivity";
+import {cn} from "cn";
 
 import {overlay} from "./shadow";
 
-/** 클릭하면 복사되는 값 한 줄. */
+/** 버블 메뉴 한 줄. 우클릭 메뉴처럼 왼쪽에 맞춰 세로로 쌓는다. danger는 차단처럼 되돌리기 번거로운 동작이다. */
+const MenuItem = ({danger, className, ...props}: ComponentProps<typeof Button> & { danger?: boolean }) => (
+    <Button variant="ghost" size="sm"
+            className={cn("w-full cursor-pointer justify-start font-normal", danger && "text-destructive hover:bg-destructive/10 hover:text-destructive", className)}
+            {...props}/>
+);
+
+/** 클릭하면 복사되는 값 한 줄. 라벨 폭을 맞춰 값이 한 줄로 늘어서게 한다. */
 const CopyRow = ({label, value, onCopy}: { label: string; value: string; onCopy: (value: string) => void }) => (
-    <Button variant="ghost" size="sm" className="w-full cursor-pointer justify-start font-normal" title="클릭하면 복사됩니다." onClick={() => onCopy(value)}>
-        <span className="truncate">
-            <span className="text-muted-foreground">{label}</span> <strong>{value}</strong>
-        </span>
-    </Button>
+    <MenuItem title="클릭하면 복사됩니다." onClick={() => onCopy(value)}>
+        <span className="w-18 shrink-0 text-left text-muted-foreground">{label}</span>{" "}
+        <strong className="min-w-0 truncate">{value}</strong>
+    </MenuItem>
 );
 
 const formatActivity = (activity: ActivityState): string | undefined => {
@@ -119,14 +127,20 @@ export const DcconPackageDialog = ({target, onClose}: { target: SelectedUser; on
     );
 };
 
-interface BubbleProps {
+/** 버블이 여는 창. 창은 버블 밖(ContentRoot)에 그려 버블이 닫혀도 남는다. */
+interface BubbleActions {
+    onBlockPackage: (target: SelectedUser) => void;
+    /** 디시콘 코드로 디시콘 정보 창(미리보기의 DcconInfoPopup)을 연다. */
+    onDcconInfo: (code: string) => void;
+}
+
+interface BubbleProps extends BubbleActions {
     bubble: { x: number; y: number };
     selected: SelectedUser;
-    onBlockPackage: (target: SelectedUser) => void;
 }
 
 /** 유저 버블. 열 때 마운트되어 연 요소(닉네임 버튼 등)를 기억했다가 닫을 때 그리로 포커스를 돌려준다. */
-const Bubble = ({bubble, selected, onBlockPackage}: BubbleProps) => {
+const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) => {
     const popup = useRef<HTMLDivElement>(null);
     const focus = useReturnFocus(popup);
     const activityState = useGallogActivity(selected.dccon ? undefined : selected.uid);
@@ -189,21 +203,30 @@ const Bubble = ({bubble, selected, onBlockPackage}: BubbleProps) => {
                             aria-label={selected.dccon ? "디시콘 메뉴" : `${selected.nick || identity || "사용자"} 메뉴`}>
                 {/* 여기서 여는 창(메모·패키지 차단)은 연 요소로 포커스를 먼저 옮겨 둔다. 그래야 그 창이 닫힐 때 사라진 버블 대신 그리로 돌아간다. */}
                 {selected.dccon ? (
-                    // 유저 버블의 차단 버튼(유저 차단·이 갤러리에서만 차단)과 같은 모양을 쓴다.
-                    <div className="flex flex-wrap gap-2">
-                        <Button size="sm" variant="destructive" onClick={() => requestBlock({target: "dccon"})}>이 디시콘 차단</Button>
-                        <Button size="sm" variant="outline" className="text-destructive" title="이 디시콘이 든 패키지를 모두 가립니다."
-                                onClick={() => {
-                                    focus.returnFocus();
-                                    close();
-                                    onBlockPackage(selected);
-                                }}>
-                            패키지 전체 차단
-                        </Button>
-                    </div>
+                    <>
+                        <MenuItem onClick={() => {
+                            focus.returnFocus();
+                            close();
+                            onDcconInfo(selected.dccon!);
+                        }}>
+                            <Info/> 디시콘 정보
+                        </MenuItem>
+                        <Separator/>
+                        <div className="flex flex-col">
+                            <MenuItem danger onClick={() => requestBlock({target: "dccon"})}><Ban/> 이 디시콘 차단</MenuItem>
+                            <MenuItem danger title="이 디시콘이 든 패키지를 모두 가립니다."
+                                      onClick={() => {
+                                          focus.returnFocus();
+                                          close();
+                                          onBlockPackage(selected);
+                                      }}>
+                                <PackageX/> 전체 차단
+                            </MenuItem>
+                        </div>
+                    </>
                 ) : (
                     <>
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col">
                             {selected.nick && <CopyRow label="닉네임" value={selected.nick} onCopy={copy}/>}
                             {identity && <CopyRow label="아이디/IP" value={identity} onCopy={copy}/>}
                             {ipLabel && <CopyRow label="IP 정보" value={ipLabel} onCopy={copy}/>}
@@ -212,28 +235,27 @@ const Bubble = ({bubble, selected, onBlockPackage}: BubbleProps) => {
                             {memo && <CopyRow label="메모" value={memo.text} onCopy={copy}/>}
                         </div>
                         <Separator/>
-                        <div className="flex flex-wrap gap-2">
-                            <Button size="sm" variant="destructive" onClick={() => requestBlock({target: "user"})}>
-                                유저 차단
-                            </Button>
+                        <div className="flex flex-col">
+                            <MenuItem danger onClick={() => requestBlock({target: "user"})}><UserX/> 유저 차단</MenuItem>
                             {gallery && (
-                                <Button size="sm" variant="outline" className="text-destructive" title={`${gallery} 갤러리에서만 가립니다.`}
-                                        onClick={() => requestBlock({target: "user", gallery})}>
-                                    이 갤러리에서만 차단
-                                </Button>
+                                <MenuItem danger title={`${gallery} 갤러리에서만 가립니다.`} onClick={() => requestBlock({target: "user", gallery})}>
+                                    <Ban/> 이 갤러리에서만 차단
+                                </MenuItem>
                             )}
-                            <Button size="sm" variant="secondary"
-                                    onClick={() => {
-                                        focus.returnFocus();
-                                        useUiStore.getState().openMemo(selected);
-                                    }}>
-                                메모
-                            </Button>
+                        </div>
+                        <Separator/>
+                        <div className="flex flex-col">
+                            <MenuItem onClick={() => {
+                                focus.returnFocus();
+                                useUiStore.getState().openMemo(selected);
+                            }}>
+                                <StickyNote/> 메모
+                            </MenuItem>
                             {selected.uid && (
-                                <Button size="sm" variant="secondary" nativeButton={false}
-                                        render={<a href={`https://gallog.dcinside.com/${selected.uid}`} target="_blank" rel="noreferrer" onClick={close}/>}>
-                                    갤로그
-                                </Button>
+                                <MenuItem nativeButton={false}
+                                          render={<a href={`https://gallog.dcinside.com/${selected.uid}`} target="_blank" rel="noreferrer" onClick={close}/>}>
+                                    <ExternalLink/> 갤로그
+                                </MenuItem>
                             )}
                         </div>
                     </>
@@ -245,8 +267,8 @@ const Bubble = ({bubble, selected, onBlockPackage}: BubbleProps) => {
 };
 
 /** 작성자를 우클릭하면 뜨는 유저 버블 (메모·차단·갤로그). */
-export const BubbleHost = ({onBlockPackage}: { onBlockPackage: (target: SelectedUser) => void }) => {
+export const BubbleHost = (actions: BubbleActions) => {
     const bubble = useUiStore((s) => s.bubble);
     const selected = useUiStore((s) => s.selected);
-    return bubble && selected ? <Bubble bubble={bubble} selected={selected} onBlockPackage={onBlockPackage}/> : null;
+    return bubble && selected ? <Bubble bubble={bubble} selected={selected} {...actions}/> : null;
 };
