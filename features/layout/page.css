@@ -313,9 +313,18 @@
     }
 
     /* 글쓰기: float된 닉네임·비밀번호 칸 아래로 내린다. 아니면 제목 안내 문구가 닉네임 칸을 덮는다. */
+    /* 디시가 728px로 고정해 두어서 좁은 글쓰기 상자 밖으로 나가고 페이지가 가로로 넘친다. 넓을 때는 원래 폭을 지킨다. */
     .input_write_tit {
         float: none !important;
         clear: both !important;
+        width: auto !important;
+        max-width: 728px !important;
+    }
+
+    /* 입력칸도 702px(+좌우 여백 12px)로 고정되어 있어서, 감싼 상자만 줄이면 그 안에서 그대로 넘친다. */
+    #subject {
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     /* 디시가 HTML 체크박스를 도구줄 왼쪽에서 940px 떨어진 위치에 고정해 두어서, 폭이 좁은 편집기에서는 편집기 영역을 벗어난다. */
