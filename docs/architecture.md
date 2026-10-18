@@ -47,7 +47,7 @@ scripts/                IP DB 빌드 스크립트
 
 배경은 뜰 때마다 리스너를 동기로 겁니다. Chrome은 서비스 워커라 언제든 멈췄다 다시 뜨니 전역 변수에 상태를 두지 말고 저장소에 둡니다.
 
-- `page.ts`: 콘텐츠 스크립트 대신 탭의 페이지(MAIN world)에서 실행합니다. 갈아끼운 목록에 디시 스크립트 다시 걸기를 맡습니다. 모듈 하나만 쓰는 것은 그 모듈의 `background.ts`가 같은 도우미(`core/module/background.ts`의 `runInPage`)로 합니다(미리보기 reCAPTCHA 토큰). import가 필요한 코드는 직렬화해 넘길 수 없어 `entrypoints/`에 unlisted script로 따로 번들하고 `runFileInPage`로 넣습니다(글쓰기 이미지 변환).
+- `page.ts`: 콘텐츠 스크립트 대신 탭의 페이지(MAIN world)에서 실행합니다. 갈아끼운 목록에 디시 스크립트를 다시 거는 다리를 페이지마다 한 번 겁니다. 그 뒤로 콘텐츠 스크립트는 `LIST_REPLACED_EVENT` 이벤트만 보내 배경을 깨우지 않습니다. 모듈 하나만 쓰는 것은 그 모듈의 `background.ts`가 같은 도우미(`core/module/background.ts`의 `runInPage`)로 합니다(미리보기 reCAPTCHA 토큰). import가 필요한 코드는 직렬화해 넘길 수 없어 `entrypoints/`에 unlisted script로 따로 번들하고 `runFileInPage`로 넣습니다(글쓰기 이미지 변환).
 - `database.ts`: IP·밴 DB를 하루마다 확인해 7일이 지났거나 저장 형식이 옛것이거나 저장 시각이 미래(시계가 앞섰을 때)면 받습니다. 알람은 배포 빌드에서만 만듭니다. 설치·업데이트 때도 받고 개발 빌드는 DB가 없을 때만 받습니다. 옵션의 "지금 갱신"도 직접 받지 않고 배경에 메시지(`refresher:updateDatabase`)를 보내 진행 중인 갱신과 겹치지 않게 합니다.
 - 디시 통합검색과 갤로그는 CORS를 열지 않아 배경이 대신 받습니다. 관리 모듈의 같은 제목 찾기(`refresher:searchPosts`)와 검색 모듈의 아이디로 닉네임 찾기(`refresher:gallogPage`)입니다.
 - 이미지 차단(`features/block/background.ts`)은 본문 이미지에 우클릭 메뉴(이 이미지 차단)를 걸고, 메뉴를 누를 때 본문 이미지 호스트의 선택 권한(`core/pages.ts`의 `IMAGE_HOST_ORIGINS`, `wxt.config.ts`의 `optional_host_permissions`)을 묻습니다. Chrome은 모듈이 켜져 있는 동안 viewimage.php 요청에 CORS 헤더를 붙이는 세션 규칙을 걸고, 권한이 없으면(`*.dcinside.co.kr` 이미지) 이 규칙을 건너뜁니다. Firefox는 `filterResponseData`로 해시를 구해 둡니다([기능별 구조](features.md#이미지-차단)).

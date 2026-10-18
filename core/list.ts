@@ -1,5 +1,5 @@
 // 디시 글 목록 DOM 도우미. 목록을 갈아끼우거나 이어 붙이는 refresh·search 모듈과 행을 찾는 모듈이 같이 쓴다.
-import {sendMessage} from "@/core/messaging/protocol";
+import {LIST_REPLACED_EVENT, sendMessage} from "@/core/messaging/protocol";
 
 /** 갈아끼울 글 목록 tbody. 검색 페이지 아래쪽 통합검색 목록(#kakao_seach_list)은 id가 있어 :not([id])로 빠진다. */
 export const LIST_SELECTOR = ".gall_list:not([id]) tbody";
@@ -17,9 +17,18 @@ export const LIST_ROW_SELECTOR = ".gall_list .ub-content";
 // 숨은 탭에서 미뤄 둔 알림이 있는지. 다시 보일 때 한 번만 보낸다.
 let deferred = false;
 
+// 페이지에 건 목록 다리. 페이지마다 한 번만 배경에 요청하고, 실패하면 다음에 다시 요청한다.
+let bridge: Promise<void> | undefined;
+
+const installBridge = (): Promise<void> => bridge ??= sendMessage("refresher:installListBridge").catch((e: unknown) => {
+    bridge = undefined;
+    throw e;
+});
+
 /**
- * 목록 행을 갈아끼우거나 붙인 뒤 부른다. 디시는 자체 차단·이용자 메모 표시를 로드 때만 걸므로, 배경이 페이지(MAIN world)에서 다시 건다
- * (콘텐츠 스크립트에선 디시 함수를 부를 수 없다). 실패해도(확장이 멈춤 등) 목록은 그대로라 넘긴다.
+ * 목록 행을 갈아끼우거나 붙인 뒤 부른다. 디시는 자체 차단·이용자 메모 표시를 로드 때만 걸므로, 배경이 페이지(MAIN world)에 건 다리가 다시 건다
+ * (콘텐츠 스크립트에선 디시 함수를 부를 수 없다). 다리를 건 뒤로는 이벤트만 보내 배경을 깨우지 않는다.
+ * 실패해도(확장이 멈춤 등) 목록은 그대로라 넘긴다.
  */
 export const notifyListReplaced = (gallery: string): void => {
     // 숨은 탭은 다시 보일 때 한 번만 알린다. 숨은 탭 새로고침 주기(30초~)는 서비스 워커가 잠드는 30초보다 길어
@@ -33,7 +42,7 @@ export const notifyListReplaced = (gallery: string): void => {
         }, {once: true});
         return;
     }
-    void sendMessage("refresher:listReplaced", gallery).catch(() => {});
+    void installBridge().then(() => document.dispatchEvent(new CustomEvent(LIST_REPLACED_EVENT, {detail: gallery})), () => {});
 };
 
 /**

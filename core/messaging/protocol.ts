@@ -4,6 +4,12 @@ import type {UsageData, UsageKind} from "@/core/usage";
 import type {Sample} from "@/utils/imageFingerprint";
 
 /**
+ * 콘텐츠 스크립트가 목록을 바꾼 뒤 페이지(MAIN world)에 보내는 CustomEvent 이름 (refresher:installListBridge가 건 다리가 받는다).
+ * detail은 갤러리 id 문자열이다. 파이어폭스에서 콘텐츠 스크립트의 객체는 페이지가 읽지 못하므로 원시값만 넘긴다.
+ */
+export const LIST_REPLACED_EVENT = "refresher:list-replaced";
+
+/**
  * 팝업 '현재 페이지'의 토글 하나. 이 페이지에서 도는 모듈의 pageToggles만 담긴다.
  * 아이콘은 컴포넌트라 메시지로 보낼 수 없어 팝업이 모듈 정의에서 찾는다.
  */
@@ -49,10 +55,10 @@ interface ProtocolMap {
     "refresher:grecaptchaToken"(data: GrecaptchaRequest): string | undefined;
 
     /**
-     * 탭 → 배경: refresh·search가 목록 행을 갈아끼우거나 이어 붙였다. 배경이 그 탭의 MAIN world에서 디시 자체 차단·이용자 메모 표시를 다시 적용한다.
-     * 인자는 갤러리 id다.
+     * 탭 → 배경: 그 탭의 MAIN world에 목록 다리를 건다. 페이지마다 한 번.
+     * 다리는 refresh·search가 목록 행을 갈아끼우거나 이어 붙일 때 보내는 LIST_REPLACED_EVENT를 받아 디시 자체 차단·이용자 메모 표시를 다시 적용한다.
      */
-    "refresher:listReplaced"(gallery: string): void;
+    "refresher:installListBridge"(): void;
 
     /** 탭 → 배경: 글쓰기 모듈이 그 탭의 MAIN world에 이미지 변환(entrypoints/upload-hook.ts)을 넣는다. 페이지마다 한 번. */
     "refresher:hookUploads"(): void;
