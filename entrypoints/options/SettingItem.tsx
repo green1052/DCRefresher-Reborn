@@ -124,16 +124,17 @@ const KeyControl = ({schema, value, takenKeys = [], descId, onChange}: NarrowPro
     const [taken, setTaken] = useState("");
     // 스크린 리더에 화면 글자와 같은 내용을 준다. 이름만 주면 '키 입력…'·'이미 사용 중'이 들리지 않는다.
     const shown = taken ? `${taken.toUpperCase()}: 이미 사용 중` : listening ? "키 입력…" : value.toUpperCase();
+    const stop = (): void => {
+        setListening(false);
+        setTaken("");
+    };
 
     return (
         <Button variant={taken ? "destructive" : listening ? "default" : "secondary"} className="min-w-18"
                 aria-label={`${schema.name}: ${shown}`}
                 aria-describedby={descId}
                 onClick={() => setListening(true)}
-                onBlur={() => {
-                    setListening(false);
-                    setTaken("");
-                }}
+                onBlur={stop}
                 onKeyDown={(ev) => {
                     if (!listening) return;
                     // Tab은 막지 않고 녹음을 끝낸다. 막으면 키보드로 이 칸을 빠져나갈 수 없다.
@@ -146,8 +147,7 @@ const KeyControl = ({schema, value, takenKeys = [], descId, onChange}: NarrowPro
                         return;
                     }
                     if (valid) onChange(key);
-                    setListening(false);
-                    setTaken("");
+                    stop();
                 }}>
             {taken || listening ? shown : <Kbd>{shown}</Kbd>}
         </Button>
@@ -171,11 +171,11 @@ const RangeControl = ({schema, value, descId, onChange}: NarrowProps<"range">) =
                 // 이름·설명·읽는 값은 손잡이(role=slider)에 달아야 읽힌다. 그대로 두면 이름 없이 저장값(ms)만 읽힌다.
                 thumbProps={{"aria-label": schema.name, "aria-describedby": descId, getAriaValueText: () => text}}
                 onValueChange={(next) => {
-                    const [first] = typeof next === "number" ? [next] : next;
+                    const [first] = [next].flat();
                     if (first !== undefined) setDraft(first);
                 }}
                 onValueCommitted={(next) => {
-                    const [first] = typeof next === "number" ? [next] : next;
+                    const [first] = [next].flat();
                     if (first !== undefined && first !== value) onChange(first);
                 }}
             />

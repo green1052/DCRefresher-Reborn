@@ -39,6 +39,7 @@ const MemoFormDialog = ({
     onSubmit: (state: MemoFormState) => Promise<void>;
 }) => {
     const [state, setState] = useState<MemoFormState>(initial);
+    const set = (patch: Partial<MemoFormState>): void => setState((prev) => ({...prev, ...patch}));
     const [error, setError] = useState("");
     const id = useId();
     const userInput = useRef<HTMLInputElement>(null);
@@ -87,7 +88,7 @@ const MemoFormDialog = ({
                             value={state.type}
                             disabled={editing}
                             aria-label="종류"
-                            onChange={(type) => setState((prev) => ({...prev, type}))}
+                            onChange={(type) => set({type})}
                             options={MEMO_TYPE_NAMES}
                         />
                     </Field>
@@ -101,7 +102,7 @@ const MemoFormDialog = ({
                             ref={userInput}
                             disabled={editing}
                             // 입력 중에 trim하면 닉네임 가운데 공백을 칠 수 없으므로 저장할 때 trim한다.
-                            onChange={(ev) => setState((prev) => ({...prev, user: ev.target.value}))}
+                            onChange={(ev) => set({user: ev.target.value})}
                         />
                     </Field>
 
@@ -113,7 +114,7 @@ const MemoFormDialog = ({
                             placeholder="메모를 입력해 주세요 (160자 제한)"
                             value={state.text}
                             ref={textInput}
-                            onChange={(ev) => setState((prev) => ({...prev, text: ev.target.value}))}
+                            onChange={(ev) => set({text: ev.target.value})}
                         />
                     </Field>
 
@@ -123,7 +124,7 @@ const MemoFormDialog = ({
                             id={`${id}-gallery`}
                             placeholder="갤러리 ID (비우면 모든 갤러리)"
                             value={state.gallery}
-                            onChange={(ev) => setState((prev) => ({...prev, gallery: ev.target.value.trim()}))}
+                            onChange={(ev) => set({gallery: ev.target.value.trim()})}
                         />
                     </Field>
 
@@ -133,9 +134,9 @@ const MemoFormDialog = ({
                             <ColorInput
                                 aria-label="메모 색상"
                                 value={state.color}
-                                onChange={(ev) => setState((prev) => ({...prev, color: ev.target.value}))}
+                                onChange={(ev) => set({color: ev.target.value})}
                             />
-                            <Button type="button" variant="secondary" onClick={() => setState((prev) => ({...prev, color: randomColor()}))}>
+                            <Button type="button" variant="secondary" onClick={() => set({color: randomColor()})}>
                                 랜덤
                             </Button>
                         </div>
