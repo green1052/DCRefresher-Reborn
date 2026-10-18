@@ -6,6 +6,7 @@ import {getModuleApi} from "@/core/module/registry";
 import {ownPreviewEntry} from "@/core/preview/history";
 import {useUiStore} from "@/stores/ui";
 import {smoothScroll, whenDomReady} from "@/utils/dom";
+import {hasModifier} from "@/utils/event";
 import {sha256} from "@/utils/hash";
 
 import {isWholeFirstPage, replaceList, syncPaging} from "./list";
@@ -357,7 +358,7 @@ export default defineModule({
         // 문서에 리스너 하나만 위임한다. 앵커마다 붙이며 표시 속성을 남기면 페이징 박스 비교가 늘 어긋나 매번 갈아끼운다.
         const onPagingClick = (ev: MouseEvent): void => {
             // 수정키 클릭은 새 탭/창으로 열려는 것이라 가로채지 않는다.
-            if (ev.button !== 0 || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
+            if (ev.button !== 0 || hasModifier(ev)) return;
             if (!ctx.settings.useBetterBrowse) return;
 
             const anchor = ev.target instanceof Element ? ev.target.closest<HTMLAnchorElement>(`${PAGING_SELECTOR} a`) : null;

@@ -14,7 +14,7 @@ import {useContentModuleSettings, useRunningModuleSettings} from "@/core/module/
 import {postKey as keyOfPost} from "@/core/preview/cache";
 import {useUiStore} from "@/stores/ui";
 import {smoothScroll} from "@/utils/dom";
-import {isTyping} from "@/utils/event";
+import {hasModifier, isTyping} from "@/utils/event";
 import {cn} from "cn";
 
 import {adjacentPreData} from "../rows";
@@ -177,7 +177,7 @@ export const Frame = () => {
 
         const onKey = (ev: KeyboardEvent): void => {
             // Ctrl+PageUp/Down(탭 전환) 같은 조합키는 브라우저에 맡긴다.
-            if (ev.ctrlKey || ev.altKey || ev.metaKey || ev.shiftKey || isTyping(ev)) return;
+            if (hasModifier(ev) || isTyping(ev)) return;
             // 디시콘 정보 창·크게 보기가 떠 있으면 그 창이 키를 받는다. 옆 글로 넘어가면 창이 닫힌다.
             if (usePreviewStore.getState().dcconInfo || usePreviewStore.getState().viewer) return;
             // 누른 버튼이 로딩으로 막히거나 사라져 포커스가 body로 빠졌으면 스크롤 칸으로 되돌린다 (Tab은 브라우저의 이어가기 위치에 맡긴다).

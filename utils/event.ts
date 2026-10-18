@@ -3,6 +3,10 @@ import {overlay} from "@/components/overlay/shadow";
 /** 실제 이벤트 대상. document/window 리스너에서는 shadow DOM 안 요소가 shadow host로 재지정되므로 composedPath로 되찾는다. */
 export const eventTarget = (ev: Event): EventTarget | null => ev.composedPath()[0] ?? ev.target;
 
+/** 조합키(Ctrl·Alt·Meta·Shift)를 같이 눌렀는지. 조합키를 쓴 키·클릭은 브라우저 몫(탭 전환, 새 탭으로 열기 등)이라 가로채지 않는다. */
+export const hasModifier = (ev: Pick<KeyboardEvent, "ctrlKey" | "altKey" | "metaKey" | "shiftKey">): boolean =>
+    ev.ctrlKey || ev.altKey || ev.metaKey || ev.shiftKey;
+
 /**
  * 누른 키(소문자). 한글 입력 상태에서는 ev.key가 'ㅇ'·'Process'가 되므로 영문·숫자는 물리 키(code)로 읽는다.
  * 옵션 화면이 키를 저장할 때와 미리보기가 비교할 때 모두 이 함수를 써야 단축키가 어긋나지 않는다.

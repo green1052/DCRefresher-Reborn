@@ -6,6 +6,7 @@ import {keepTabInside} from "@/components/dialogs";
 import {overlay} from "@/components/overlay/shadow";
 import {Button} from "@/components/ui/button";
 import {dcinsideHref} from "@/core/http/urls";
+import {hasModifier} from "@/utils/event";
 import {cn} from "cn";
 
 import {usePreviewStore, type ViewerImage} from "./previewStore";
@@ -47,7 +48,7 @@ export const ImageViewer = ({images, index}: { images: ViewerImage[]; index: num
                         keepTabInside(ev);
                         if (images.length < 2 || (ev.key !== "ArrowLeft" && ev.key !== "ArrowRight")) return;
                         // 조합키는 브라우저 몫이다 (Alt+←는 뒤로 가기). 다른 미리보기 단축키처럼 넘기지 않는다.
-                        if (ev.ctrlKey || ev.altKey || ev.metaKey || ev.shiftKey) return;
+                        if (hasModifier(ev)) return;
                         ev.preventDefault();
                         go(ev.key === "ArrowLeft" ? -1 : 1);
                     }}

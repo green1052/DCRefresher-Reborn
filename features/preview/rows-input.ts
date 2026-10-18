@@ -1,6 +1,7 @@
 import {dcinsideHref} from "@/core/http/urls";
 import {LIST_ROW_SELECTOR} from "@/core/list";
 import type {GalleryPreData} from "@/core/preview/types";
+import {hasModifier} from "@/utils/event";
 
 import type {Ctx} from "./meta";
 import type {createMini} from "./mini";
@@ -95,7 +96,7 @@ export const bindRows = (ctx: Ctx, {open, prefetch, mini}: RowHandlers): void =>
 
     const onClick = (ev: MouseEvent) => {
         // 수정키 클릭(새 탭·창으로 열기, manage 모듈의 Ctrl+클릭 삭제)은 가로채지 않는다.
-        if (ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
+        if (hasModifier(ev)) return;
 
         // 좌클릭은 키 반전일 때만 미리보기다. 아니면 제목·댓글 수 모두 원래대로 링크를 연다.
         if (!ctx.settings.reversePreviewKey) return;
