@@ -189,15 +189,16 @@ const Bubble = ({bubble, selected, onBlockPackage}: BubbleProps) => {
                             aria-label={selected.dccon ? "디시콘 메뉴" : `${selected.nick || identity || "사용자"} 메뉴`}>
                 {/* 여기서 여는 창(메모·패키지 차단)은 연 요소로 포커스를 먼저 옮겨 둔다. 그래야 그 창이 닫힐 때 사라진 버블 대신 그리로 돌아간다. */}
                 {selected.dccon ? (
-                    <div className="flex gap-2">
-                        <Button size="sm" onClick={() => requestBlock({target: "dccon"})}>디시콘 차단</Button>
-                        <Button size="sm" variant="secondary"
+                    // 유저 버블의 차단 버튼(유저 차단·이 갤러리에서만 차단)과 같은 모양을 쓴다.
+                    <div className="flex flex-wrap gap-2">
+                        <Button size="sm" variant="destructive" onClick={() => requestBlock({target: "dccon"})}>이 디시콘 차단</Button>
+                        <Button size="sm" variant="outline" className="text-destructive" title="이 디시콘이 든 패키지를 모두 가립니다."
                                 onClick={() => {
                                     focus.returnFocus();
                                     close();
                                     onBlockPackage(selected);
                                 }}>
-                            디시콘 전체 차단
+                            패키지 전체 차단
                         </Button>
                     </div>
                 ) : (
