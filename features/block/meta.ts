@@ -1,7 +1,5 @@
-import {Ban, Eye} from "lucide-react";
-
 import {defineModuleMeta} from "@/core/module/define";
-import type {ModuleContext, ModuleIcons} from "@/core/module/types";
+import type {ModuleContext} from "@/core/module/types";
 import {BOARD_PAGE} from "@/core/pages";
 
 import {BLOCK_SETTINGS} from "./settings";
@@ -23,6 +21,3 @@ export default defineModuleMeta({
         blockReveal: {description: "이 페이지에서 가린 내용 보기"}
     }
 });
-
-/** 옵션·팝업이 그리는 아이콘. 콘텐츠 번들에 딸려 가지 않게 기본 export와 따로 둔다 (ModuleIcons). */
-export const icons = {module: Ban, toggles: {reveal: Eye}} satisfies ModuleIcons<typeof REVEAL_TOGGLE.id>;

@@ -1,3 +1,6 @@
+import {existsSync, readFileSync, statSync} from "node:fs";
+import {dirname, join} from "node:path";
+
 import {describe, expect, it} from "vitest";
 
 import type {BackgroundModule} from "@/core/module/background";
@@ -94,21 +97,38 @@ describe("팝업 토글", () => {
 });
 
 describe("아이콘", () => {
-    it("모듈마다 아이콘이 있고, 토글 아이콘은 메타의 토글과 같은 id다", () => {
-        for (const meta of metas) {
-            expect(meta.icons.module, meta.id).toBeDefined();
-            expect(Object.keys(meta.icons.toggles ?? {}).sort(), meta.id).toEqual((meta.toggles ?? []).map((toggle) => toggle.id).sort());
-        }
+    it("모듈마다 icons.ts가 있다", () => {
+        // 토글마다 아이콘이 있는지는 icons.ts의 satisfies IconsOf가 본다. 파일이 없으면 features/meta.ts가 기본 아이콘을 쓴다.
+        const icons = Object.keys(import.meta.glob("/features/*/icons.ts")).map((path) => path.replace(/icons\.ts$/, "meta.ts"));
+        expect(icons).toEqual(Object.keys(import.meta.glob("/features/*/meta.ts")));
     });
 
-    it("콘텐츠 스크립트가 펼치는 메타(기본 export)에는 아이콘이 없다", () => {
-        // 아이콘이 들어가면 lucide 아이콘이 content.js에 딸려 간다.
-        for (const module of features) {
-            expect(module, module.id).not.toHaveProperty("icons");
-            expect(module, module.id).not.toHaveProperty("icon");
-            for (const toggle of module.toggles ?? []) expect(toggle, `${module.id}.${toggle.id}`).not.toHaveProperty("icon");
-        }
+    it("meta.ts는 UI(lucide·Preact·React)를 불러오지 않는다", () => {
+        // 배경·콘텐츠 번들이 meta.ts를 불러온다. 거기서 UI로 이어지면 lucide·Preact가 배경 번들에 딸려 간다.
+        // 값으로 불러오는 것(import type 제외)을 프로젝트 안에서 따라가며 본다.
+        const root = process.cwd();
+        const resolveImport = (from: string, specifier: string): string | undefined => {
+            const base = specifier.startsWith("@/") ? join(root, specifier.slice(2)) : specifier.startsWith(".") ? join(dirname(from), specifier) : undefined;
+            return base && ["", ".ts", ".tsx", "/index.ts"].map((ext) => base + ext).find((file) => existsSync(file) && statSync(file).isFile());
+        };
+        const reachesUi = (file: string, seen: Set<string>): string | undefined => {
+            if (seen.has(file)) return undefined;
+            seen.add(file);
+            for (const [, specifier = ""] of readFileSync(file, "utf8").matchAll(/^(?:import|export)\s+(?!type\b)(?:[^;]*?\bfrom\s+)?"([^"]+)"/gm)) {
+                // zustand 기본 진입점은 React 훅(create)이라 Preact를 끌고 온다. zustand/vanilla는 괜찮다.
+                if (/^(?:lucide-react|preact|react|react-dom)(?:\/|$)|^zustand$/.test(specifier)) return `${file} → ${specifier}`;
+                const next = resolveImport(file, specifier);
+                const found = next && reachesUi(next, seen);
+                if (found) return found;
+            }
+            return undefined;
+        };
+
+        const files = Object.keys(import.meta.glob("/features/*/meta.ts"));
+        expect(files.length).toBeGreaterThan(0);
+        for (const file of files) expect(reachesUi(join(root, file), new Set())).toBeUndefined();
     });
+
 });
 
 describe("설정 스키마", () => {

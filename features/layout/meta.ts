@@ -1,7 +1,5 @@
-import {LayoutPanelTop} from "lucide-react";
-
 import {defineModuleMeta} from "@/core/module/define";
-import type {ModuleContext, ModuleIcons, SettingSchema, SettingsSchema} from "@/core/module/types";
+import type {ModuleContext, SettingSchema, SettingsSchema} from "@/core/module/types";
 import {objectKeys} from "@/utils/typed";
 
 /** 체크하면 숨기는 영역. 설정과 <style> 규칙을 모두 여기서 만드므로 새 항목은 한 줄만 추가하면 된다. */
@@ -74,6 +72,3 @@ export default defineModuleMeta({
 
     settings
 });
-
-/** 옵션·팝업이 그리는 아이콘. 콘텐츠 번들에 딸려 가지 않게 기본 export와 따로 둔다 (ModuleIcons). */
-export const icons = {module: LayoutPanelTop} satisfies ModuleIcons;

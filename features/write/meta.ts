@@ -1,7 +1,4 @@
-import {PenLine} from "lucide-react";
-
 import {defineModuleMeta} from "@/core/module/define";
-import type {ModuleIcons} from "@/core/module/types";
 import {WRITE_PAGE} from "@/core/pages";
 
 // 글쓰기의 이미지 버튼이 여는 이미지 올리기 팝업.
@@ -56,6 +53,3 @@ export default defineModuleMeta({
         }
     }
 });
-
-/** 옵션·팝업이 그리는 아이콘. 콘텐츠 번들에 딸려 가지 않게 기본 export와 따로 둔다 (ModuleIcons). */
-export const icons = {module: PenLine} satisfies ModuleIcons;

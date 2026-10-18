@@ -41,7 +41,7 @@ const openOptions = async (): Promise<void> => {
     window.close();
 };
 
-/** 토글 아이콘(컴포넌트)은 메시지로 보낼 수 없어 팝업이 모듈 아이콘(meta.ts의 icons.toggles)에서 찾는다. */
+/** 토글 아이콘(컴포넌트)은 메시지로 보낼 수 없어 팝업이 모듈 아이콘(features/<id>/icons.ts의 toggles)에서 찾는다. */
 const toggleIcon = ({module, id}: PageAction): LucideIcon =>
     features.find((feature) => feature.id === module)?.icons.toggles?.[id] ?? Puzzle;
 

@@ -1,8 +1,6 @@
-import {UserRound} from "lucide-react";
-
 import type {IpCategory, IpInfoFilter} from "@/core/database";
 import {defineModuleMeta} from "@/core/module/define";
-import type {ModuleContext, ModuleIcons, SettingGroup, SettingSchema, SettingsSchema} from "@/core/module/types";
+import type {ModuleContext, SettingGroup, SettingSchema, SettingsSchema} from "@/core/module/types";
 import {BOARD_PAGE} from "@/core/pages";
 
 /** 배지 색 기본값. 키마다 `${key}Color` 설정이 하나씩 생기고 옵션 화면에선 한 그룹으로 묶인다. IP 배지는 분류(korea…vpn)가 키다. */
@@ -105,6 +103,3 @@ export default defineModuleMeta({
     urls: [BOARD_PAGE],
     settings
 });
-
-/** 옵션·팝업이 그리는 아이콘. 콘텐츠 번들에 딸려 가지 않게 기본 export와 따로 둔다 (ModuleIcons). */
-export const icons = {module: UserRound} satisfies ModuleIcons;

@@ -1,7 +1,4 @@
-import {Search} from "lucide-react";
-
 import {defineModuleMeta} from "@/core/module/define";
-import type {ModuleIcons} from "@/core/module/types";
 import {LIST_PAGE, VIEW_PAGE} from "@/core/pages";
 
 export default defineModuleMeta({
@@ -25,6 +22,3 @@ export default defineModuleMeta({
         }
     }
 });
-
-/** 옵션·팝업이 그리는 아이콘. 콘텐츠 번들에 딸려 가지 않게 기본 export와 따로 둔다 (ModuleIcons). */
-export const icons = {module: Search} satisfies ModuleIcons;

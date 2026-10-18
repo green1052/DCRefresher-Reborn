@@ -1,7 +1,5 @@
-import {Pause, RefreshCw} from "lucide-react";
-
 import {defineModuleMeta} from "@/core/module/define";
-import type {ModuleContext, ModuleIcons, SettingGroup, SettingsSchema} from "@/core/module/types";
+import type {ModuleContext, SettingGroup, SettingsSchema} from "@/core/module/types";
 import {BOARD_PAGE} from "@/core/pages";
 
 const BACKGROUND_GROUP: SettingGroup = {name: "숨은 탭", desc: "다른 탭을 보는 동안의 새로고침입니다."};
@@ -90,6 +88,3 @@ export default defineModuleMeta({
         refreshPause: {description: "자동 새로고침 일시정지", key: "Alt+S"}
     }
 });
-
-/** 옵션·팝업이 그리는 아이콘. 콘텐츠 번들에 딸려 가지 않게 기본 export와 따로 둔다 (ModuleIcons). */
-export const icons = {module: RefreshCw, toggles: {pause: Pause}} satisfies ModuleIcons<typeof PAUSE_TOGGLE.id>;

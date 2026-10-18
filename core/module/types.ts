@@ -56,19 +56,21 @@ export interface ModuleContext<S extends SettingsSchema = SettingsSchema> {
     onSettingsChanged(listener: (keys: ReadonlySet<keyof S & string>) => void): void;
 }
 
-/** 팝업 '현재 페이지' 토글의 표시 정보 (features/<id>/meta.ts). 동작은 index.ts의 PageToggle이 잇고, 아이콘은 meta.ts의 icons.toggles가 id로 찾는다. */
-interface PageToggleMeta {
-    id: string;
+/** 팝업 '현재 페이지' 토글의 표시 정보 (features/<id>/meta.ts). 동작은 index.ts의 PageToggle이 잇고, 아이콘은 icons.ts의 toggles가 id로 찾는다. */
+interface PageToggleMeta<Id extends string = string> {
+    id: Id;
     label: string;
 }
 
+/** 메타의 팝업 토글 id. 토글이 없으면 never다. */
+export type ToggleKeyOf<M extends AnyModuleMeta> = NonNullable<M["toggles"]>[number]["id"];
+
 /**
- * 옵션·팝업이 그리는 아이콘 (features/<id>/meta.ts의 named export icons). ToggleId는 메타 toggles의 id다.
- * 메타 기본 export에 두면 index.ts가 메타를 펼칠 때 lucide 아이콘(과 Preact)이 콘텐츠·배경 번들에 딸려 가므로 따로 내보낸다.
- * features/meta.ts(옵션·팝업)만 이것을 모은다.
+ * 옵션·팝업이 그리는 아이콘 (features/<id>/icons.ts의 default). 토글이 있으면 메타 toggles의 id마다 하나씩 둔다.
+ * meta.ts는 배경·콘텐츠 번들에도 들어가므로 lucide 아이콘(과 Preact)을 meta.ts에 두지 않는다. features/meta.ts(옵션·팝업)만 이것을 모은다.
  */
-export type ModuleIcons<ToggleId extends string = never> = { module: LucideIcon } &
-    ([ToggleId] extends [never] ? { toggles?: never } : { toggles: Record<ToggleId, LucideIcon> });
+export type IconsOf<M extends AnyModuleMeta> = { module: LucideIcon } &
+    ([ToggleKeyOf<M>] extends [never] ? { toggles?: never } : { toggles: Record<ToggleKeyOf<M>, LucideIcon> });
 
 /** 옵션·팝업이 모듈 아이콘을 모아 다룰 때의 타입. 토글이 없는 모듈은 toggles도 없다. */
 export interface AnyModuleIcons {
@@ -90,7 +92,7 @@ interface PageToggle<Api = unknown> extends PageToggleMeta {
  * 옵션·팝업이 그리는 데 필요한 모듈 정보. features/<id>/meta.ts에 두고 index.ts가 setup 등과 합친다(defineModule({...meta, setup})).
  * 옵션·팝업은 meta.ts만 불러와, 모듈의 setup이 쓰는 HTTP 클라이언트·캐시·DOM 코드가 그 번들에 딸려 가지 않게 한다.
  */
-export interface ModuleMeta<S extends SettingsSchema = SettingsSchema> {
+export interface ModuleMeta<S extends SettingsSchema = SettingsSchema, T extends string = string, C extends string = string> {
     /** 아스키 id. storage 키(refresher:module:<id>:…)와 저장값의 키로 쓰인다. */
     id: string;
     /** 표시명 (한글). */
@@ -103,14 +105,14 @@ export interface ModuleMeta<S extends SettingsSchema = SettingsSchema> {
     /** 설정 스키마 (옵션 페이지가 그린다). */
     settings?: S;
     /** 팝업 '현재 페이지' 토글의 표시 정보. index.ts의 pageToggles가 같은 객체를 펼쳐 동작을 붙인다. */
-    toggles?: readonly PageToggleMeta[];
+    toggles?: readonly PageToggleMeta<T>[];
 
     /**
      * 브라우저 단축키 (manifest commands). 키는 명령 이름이고 index.ts의 shortcuts가 같은 이름으로 동작을 붙인다.
      * 빌드할 때 modules/commands.ts가 모아 manifest에 넣는다. 설명은 "모듈 이름: description"으로 보인다.
      * key는 처음 설치할 때의 기본 키다 (브라우저 단축키 설정에서 바꾼다). 없으면 사용자가 정해야 쓴다.
      */
-    commands?: Record<string, { description: string; key?: string }>;
+    commands?: Record<C, { description: string; key?: string }>;
 
     /** 모듈이 켜져 있을 때 확장 페이지(옵션·팝업)의 <html>에 넣을 CSS 변수 (폰트 교체 등). 디시 페이지에는 setup이 따로 적용한다. */
     extensionPageVars?(settings: SettingValues<S>): Record<`--${string}`, string>;

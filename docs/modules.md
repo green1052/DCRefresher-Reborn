@@ -8,7 +8,7 @@
 
 | 하려는 것 | 고치는 곳 |
 |---|---|
-| 새 모듈 | `features/<id>/meta.ts`, `index.ts` |
+| 새 모듈 | `features/<id>/meta.ts`, `icons.ts`, `index.ts` |
 | 설정 | `meta.ts`의 `settings`. 페이지 코드는 `ctx.settings`, 오버레이 컴포넌트는 `useContentModuleSettings(id)`로 읽는다(옵션·팝업과 같이 쓰는 컴포넌트는 `useModuleSettings(id)`). 바뀔 때 할 일은 setup의 `ctx.onSettingsChanged` |
 | 단축키 | `meta.ts`의 `commands`와 `index.ts`의 `shortcuts` |
 | 팝업 '현재 페이지' 토글 | `meta.ts`의 `toggles`와 `index.ts`의 `pageToggles` |
@@ -22,7 +22,7 @@
 옵션·팝업이 그리는 데 필요한 정보는 `features/<id>/meta.ts`에서 `defineModuleMeta`로, 페이지에서 하는 일은 `features/<id>/index.ts`에서 메타를 펼쳐 `defineModule`로 정의해 각각 default로 내보냅니다. 가장 작은 예는 `features/requests`입니다.
 
 ```ts
-// meta.ts — 옵션·팝업·콘텐츠가 모두 불러오므로 가벼운 것만 둔다
+// meta.ts — 옵션·팝업·콘텐츠·배경이 모두 불러오므로 가벼운 것만 둔다. UI(lucide·Preact)는 불러오지 않는다 (단위 테스트가 확인한다)
 export default defineModuleMeta({
     id: "requests",            // 저장소 키에 쓰인다. 바꾸면 사용자 설정이 끊긴다
     name: "요청 제한",          // 옵션·팝업에 보이는 이름
@@ -35,9 +35,9 @@ export default defineModuleMeta({
     }
 });
 
-// 옵션·팝업이 그리는 lucide 아이콘. 기본 export에 넣으면 index.ts가 펼칠 때 content.js에 딸려 가므로 따로 내보낸다.
-// 토글이 있으면 토글 id마다 하나씩: {module: Ban, toggles: {reveal: Eye}} satisfies ModuleIcons<typeof REVEAL_TOGGLE.id>
-export const icons = {module: Gauge} satisfies ModuleIcons;
+// icons.ts — 옵션·팝업이 그리는 lucide 아이콘. meta.ts는 배경·콘텐츠 번들에도 들어가므로 따로 둔다
+// 토글이 있으면 토글 id마다 하나씩: {module: Ban, toggles: {reveal: Eye}}
+export default {module: Gauge} satisfies IconsOf<typeof meta>;
 
 // index.ts — 콘텐츠 스크립트만 불러온다
 export default defineModule({
@@ -105,7 +105,7 @@ const apply = (ctx: Ctx): void => { … ctx.settings.bodyFontSize … }; // numb
 
 - **commands** (meta.ts): `{명령 이름: {description, key?}}`. 빌드할 때 `modules/commands.ts`가 모든 모듈의 것을 모아 manifest `commands`로 넣습니다. `key`는 처음 설치할 때의 기본 키입니다. 크롬은 기본 키가 있는 명령을 4개까지만 받고 dev 빌드의 다시 불러오기(Alt+Shift+R)가 한 자리를 쓰므로, 모듈의 기본 키는 모두 합쳐 3개까지입니다. 넘으면 단위 테스트(`tests/unit/features/meta.test.ts`)와 dev 빌드가 실패합니다.
 - **shortcuts** (index.ts): `{명령 이름: (ctx, api) => …}`. 메타의 `commands`와 이름이 같아야 합니다(`tests/unit/features/meta.test.ts`가 확인합니다). setup이 끝난 모듈에만 전달됩니다.
-- **pageToggles**: 팝업의 "현재 페이지"에 나오는 이 페이지 한정 토글입니다. 표시 정보(`id`, `label`)는 `meta.ts`의 `toggles`에 두고(id가 리터럴 타입이 되게 `as const`로 적습니다. 팝업은 같은 id로 `icons.toggles`에서 아이콘을 찾습니다), `index.ts`의 `pageToggles`가 같은 객체를 펼쳐 `desc`(문자열 또는 `(api) => string`), `isOn(api)`, `toggle(api)`를 붙입니다. setup이 끝난 모듈의 토글만 보입니다.
+- **pageToggles**: 팝업의 "현재 페이지"에 나오는 이 페이지 한정 토글입니다. 표시 정보(`id`, `label`)는 `meta.ts`의 `toggles`에 두고(id가 리터럴 타입이 되게 `as const`로 적습니다. 팝업은 같은 id로 `icons.ts`의 `toggles`에서 아이콘을 찾습니다), `index.ts`의 `pageToggles`가 같은 객체를 펼쳐 `desc`(문자열 또는 `(api) => string`), `isOn(api)`, `toggle(api)`를 붙입니다. setup이 끝난 모듈의 토글만 보입니다.
 
 ## 모듈 간 api
 

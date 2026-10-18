@@ -1,7 +1,5 @@
-import {Type} from "lucide-react";
-
 import {defineModuleMeta} from "@/core/module/define";
-import type {ModuleContext, ModuleIcons, SettingsSchema} from "@/core/module/types";
+import type {ModuleContext, SettingsSchema} from "@/core/module/types";
 
 const DEFAULT_FONTS = "Noto Sans CJK KR, NanumGothic";
 
@@ -69,6 +67,3 @@ export default defineModuleMeta({
     // 옵션·팝업도 같은 폰트로 (assets/styles/tailwind.css의 --font-sans가 --refresher-font를 쓴다).
     extensionPageVars: (settings) => ({"--refresher-font": fontFamilyOf(settings.customFonts)})
 });
-
-/** 옵션·팝업이 그리는 아이콘. 콘텐츠 번들에 딸려 가지 않게 기본 export와 따로 둔다 (ModuleIcons). */
-export const icons = {module: Type} satisfies ModuleIcons;
