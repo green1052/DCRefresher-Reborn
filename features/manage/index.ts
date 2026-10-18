@@ -74,8 +74,7 @@ export default defineModule({
                     // 작성자는 누를 때 읽는다. 처음 볼 때 읽으면 문서를 읽는 중이라 작성자 칸이 아직 없는 행이 있다.
                     const {uid, ip, nick} = element.closest<HTMLElement>(CHECKBOX_ROW)?.querySelector<HTMLElement>(":scope > .ub-writer")?.dataset ?? {};
                     if (ctx.settings.checkAllTargetUser && ev.shiftKey && (uid || ip || nick)) {
-                        // 유동은 data-uid=""다. key와 값을 같은 기준으로 골라야 한다.
-                        // 값만 ??로 고르면 [data-ip=""]가 되어 회원 글이 전부 잡힌다.
+                        // 유동은 data-uid=""라 key와 값을 같은 기준으로 고른다. 값만 ??로 고르면 [data-ip=""]가 되어 회원 글이 전부 잡힌다.
                         const [key, value] = uid ? ["uid", uid] : ip ? ["ip", ip] : ["nick", nick!];
 
                         for (const other of document.querySelectorAll<HTMLElement>(`.ub-writer[data-${key}="${CSS.escape(value)}"]`)) {

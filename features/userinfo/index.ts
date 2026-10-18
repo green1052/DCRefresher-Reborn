@@ -74,8 +74,8 @@ const LOW_ACTIVITY_CLASS_LIST = Object.values(LOW_ACTIVITY_CLASSES);
 const LOW_ACTIVITY_SELECTOR = LOW_ACTIVITY_CLASS_LIST.map((name) => `.${name}`).join(",");
 
 /**
- * 깡계 숨김·흐림을 바꿨다고 알린다. 차단 모듈이 같은 댓글을 다시 접는다 (가린 댓글은 세지 않는다).
- * 차단 모듈의 접기는 이 모듈이 DB를 읽기 전에 먼저 돈다. 작성자마다 부르므로 한 번에 모아 보낸다.
+ * 깡계 숨김·흐림이 바뀌었다고 알려 차단 모듈이 같은 댓글을 다시 접게 한다. 그 접기는 이 모듈이 DB를 읽기 전에 먼저 돈다.
+ * 작성자마다 불리므로 한 번에 모아 보낸다.
  */
 let notifyQueued = false;
 const notifyRowsHidden = (): void => {
@@ -209,8 +209,8 @@ export default defineModule({
         // await 뒤마다 확인해, 그사이 모듈이 꺼졌으면 revoke가 지운 배지·글댓비를 다시 그리지 않는다.
         const {signal} = ctx;
 
-        // 글댓비 캐시. 다른 탭의 쓰기도 watch로 받는다. moduleDataStorage 키라 백업·내보내기에서 빠진다.
-        // 읽기·감시는 키로 하고, 항목은 처음 저장할 때 만든다: defineItem은 만드는 순간 값을 읽으므로, 미리 만들면 같은 캐시를 두 번 읽는다.
+        // 글댓비 캐시. moduleDataStorage 키라 백업·내보내기에서 빠진다.
+        // 읽기·감시는 키로 하고 항목은 처음 저장할 때 만든다. defineItem은 만드는 순간 값을 읽어, 미리 만들면 같은 캐시를 두 번 읽는다.
         const ratioKey = moduleDataKey("userinfo");
         let ratioStorage: WxtStorageItem<RatioData, {}> | undefined;
 
@@ -243,16 +243,14 @@ export default defineModule({
         // bfcache에 있는 동안 받은 저장은 감시로 오지 않는다. 돌아올 때 다시 읽는다.
         onBfcacheRestore(async () => applyStored(await storage.getItem<RatioData>(ratioKey)), signal);
 
-        // IP/밴 DB는 모듈 설정을 읽은 뒤 여기서 처음 읽는다 (이 모듈이 꺼져 있으면 버블의 subscribeDatabase가 읽는다).
-        // 읽기가 끝난 뒤 필터를 걸어야 첫 배지부터 IP 정보가 붙는다.
+        // IP/밴 DB는 모듈 설정을 읽은 뒤 여기서 처음 읽는다. 읽기가 끝난 뒤 필터를 걸어야 첫 배지부터 IP 정보가 붙는다.
         const [stored] = await Promise.all([storage.getItem<RatioData>(ratioKey), needsDatabase() ? initDatabase() : null]);
         if (signal.aborted) return;
         loading = false;
         ratios = (early === undefined ? stored : early)?.ratio ?? {};
         publishRatios(ctx);
-        // 모아서 한 번에 쓴다 (batchedSave). 페이지를 떠날 때도 쓰도록 저장소 호출은 한 번이다. ratios는 위 감시가 다른 탭이 저장한 값과 합쳐 두었다.
-        // 쓰기가 끝난 뒤에 unsaved를 비워, 그사이 다른 탭의 저장이 와도 이 탭의 값이 남는다.
-        // batch는 복사해 둔다. 쓰는 사이 받은 글댓비는 unsaved에 그대로 들어가므로, 같은 객체면 그것까지 지운다.
+        // 페이지를 떠날 때도 끝나도록 저장소 호출은 한 번이다. ratios에는 위 감시가 다른 탭의 저장을 이미 합쳐 두었다.
+        // unsaved는 쓰기가 끝난 뒤 비워야 그사이 온 다른 탭의 저장에도 이 탭의 값이 남는다. 쓰는 사이 받은 글댓비는 남기도록 batch에 든 것만 지운다.
         const saver = batchedSave(ctx, RATIO_SAVE_DELAY, async () => {
             const batch = {...unsaved};
             if (Object.keys(batch).length === 0) return;
@@ -269,7 +267,7 @@ export default defineModule({
             if (state.memos !== previous.memos) rebuildAll(ctx);
         });
 
-        // IP DB가 갱신되거나 갱차 목록을 다 읽으면 다시 그린다. 갱차 목록은 banReasonsOf를 처음 부를 때 읽기 시작한다.
+        // IP DB가 갱신되거나 갱차 목록을 다 읽으면 다시 그린다.
         const unwatchDatabase = onDatabaseChange(() => rebuildAll(ctx));
 
         // 받은 글댓비를 이 탭에는 바로 그리고, 저장은 모아서 한다 (RATIO_SAVE_DELAY).
