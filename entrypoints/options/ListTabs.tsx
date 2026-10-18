@@ -1,4 +1,4 @@
-import {ClipboardCopy, FileDown, Plus, Search, Trash2, Upload} from "lucide-react";
+import {ClipboardCopy, FileDown, Plus, Trash2, Upload} from "lucide-react";
 import {type ReactNode, useRef, useState} from "react";
 
 import {ConfirmDialog} from "@/components/dialogs";
@@ -7,22 +7,14 @@ import {focusPanel} from "@/components/useReturnFocus";
 import {Badge} from "@/components/ui/badge";
 import {Button} from "@/components/ui/button";
 import {Card, CardContent} from "@/components/ui/card";
-import {Empty, EmptyDescription} from "@/components/ui/empty";
-import {InputGroup, InputGroupAddon, InputGroupInput} from "@/components/ui/input-group";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {friendlyMessage, SAVE_FAILED} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 
-import {downloadJson, ImportDialog} from "./Layout";
+import {downloadJson, EmptyList, ImportDialog, SearchInput} from "./Layout";
 import {notify, notifyDone} from "./optionsStore";
 import {RefresherSelect} from "./RefresherSelect";
-
-const EmptyList = ({children}: { children: ReactNode }) => (
-    <Empty>
-        <EmptyDescription>{children}</EmptyDescription>
-    </Empty>
-);
 
 
 /** 오래 안 쓴 항목 거르기. 쓰인 시각은 이 기기에서 걸리거나(차단) 보인(메모) 때다. */
@@ -305,16 +297,11 @@ export const ListTabs = <T extends string, I>({
                                 <div className="flex flex-wrap items-center justify-between gap-3 py-4">
                                     {toolbar(type)}
                                     <div className="ml-auto flex flex-wrap gap-2">
-                                        <InputGroup className="w-[180px]">
-                                            <InputGroupAddon>
-                                                <Search/>
-                                            </InputGroupAddon>
-                                            <InputGroupInput type="search" placeholder="검색" aria-label={`${label} 검색`} value={query}
-                                                             onChange={(ev) => {
-                                                                 setQuery(ev.target.value);
-                                                                 setLimit(PAGE);
-                                                             }}/>
-                                        </InputGroup>
+                                        <SearchInput className="w-[180px]" placeholder="검색" aria-label={`${label} 검색`} value={query}
+                                                     onChange={(ev) => {
+                                                         setQuery(ev.target.value);
+                                                         setLimit(PAGE);
+                                                     }}/>
                                         {/* 검색 중에도 걸러진 것만이 아니라 이 종류 전부를 지우므로 확인 문구에 전체 개수를 적는다. */}
                                         <WithTooltip tip="전체 삭제" trigger={<Button variant="destructive" size="icon" aria-label="전체 삭제" disabled={total === 0}
                                                                                    onClick={() => setConfirm({kind: "clear", type})}/>}>

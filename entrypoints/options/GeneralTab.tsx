@@ -1,10 +1,7 @@
-import {Search} from "lucide-react";
 import {Fragment, type RefObject, useEffect, useRef, useState} from "react";
 
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Collapsible, CollapsibleContent} from "@/components/ui/collapsible";
-import {Empty, EmptyDescription} from "@/components/ui/empty";
-import {InputGroup, InputGroupAddon, InputGroupInput} from "@/components/ui/input-group";
 import {Separator} from "@/components/ui/separator";
 import {Switch} from "@/components/ui/switch";
 import {defaultValue} from "@/core/module/settings";
@@ -13,6 +10,7 @@ import features from "@/features/meta";
 import {useModulesStore} from "@/stores/modules";
 import {SAVE_FAILED} from "@/utils/error";
 
+import {EmptyList, SearchInput} from "./Layout";
 import {notify} from "./optionsStore";
 import {SettingItem} from "./SettingItem";
 
@@ -155,18 +153,9 @@ export function GeneralTab() {
 
     return (
         <div ref={root} className="flex flex-col gap-4">
-            <InputGroup>
-                <InputGroupAddon>
-                    <Search/>
-                </InputGroupAddon>
-                <InputGroupInput type="search" placeholder="설정 검색" aria-label="설정 검색" value={query} onChange={(ev) => setQuery(ev.target.value)}/>
-            </InputGroup>
+            <SearchInput placeholder="설정 검색" aria-label="설정 검색" value={query} onChange={(ev) => setQuery(ev.target.value)}/>
             {matched.map(({feature, shown}) => <ModuleCard key={feature.id} feature={feature} shown={shown} searching={Boolean(needle)}/>)}
-            {matched.length === 0 && (
-                <Empty>
-                    <EmptyDescription>"{query.trim()}" 검색 결과 없음</EmptyDescription>
-                </Empty>
-            )}
+            {matched.length === 0 && <EmptyList>"{query.trim()}" 검색 결과 없음</EmptyList>}
         </div>
     );
 }

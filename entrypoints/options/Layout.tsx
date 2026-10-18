@@ -1,12 +1,14 @@
 import type {Dialog as DialogPrimitive} from "@base-ui/react/dialog";
-import {FileUp} from "lucide-react";
-import {type ReactNode, useEffect, useRef, useState} from "react";
+import {FileUp, Search} from "lucide-react";
+import {type ComponentProps, type ReactNode, useEffect, useRef, useState} from "react";
 import {storage, type WxtStorageItem} from "wxt/utils/storage";
 
 import {DialogActions, ModalDialog} from "@/components/dialogs";
 import {Button} from "@/components/ui/button";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dialog";
+import {Empty, EmptyDescription} from "@/components/ui/empty";
+import {InputGroup, InputGroupAddon, InputGroupInput} from "@/components/ui/input-group";
 import {Spinner} from "@/components/ui/spinner";
 import {Textarea} from "@/components/ui/textarea";
 import {sendMessage} from "@/core/messaging/protocol";
@@ -102,6 +104,23 @@ export const Section = ({title, desc, actions, children}: {
         )}
         {children && <CardContent>{children}</CardContent>}
     </Card>
+);
+
+/** 돋보기가 붙은 검색 입력. className은 감싸는 InputGroup에 붙는다. */
+export const SearchInput = ({className, ...props}: ComponentProps<typeof InputGroupInput>) => (
+    <InputGroup className={className}>
+        <InputGroupAddon>
+            <Search/>
+        </InputGroupAddon>
+        <InputGroupInput type="search" {...props}/>
+    </InputGroup>
+);
+
+/** 빈 목록·검색 결과 없음 안내. */
+export const EmptyList = ({children}: { children: ReactNode }) => (
+    <Empty>
+        <EmptyDescription>{children}</EmptyDescription>
+    </Empty>
 );
 
 /**
