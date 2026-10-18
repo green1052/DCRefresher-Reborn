@@ -180,6 +180,9 @@ test.describe("실제 디시", () => {
         expect(dValue, "reply-setting-tmpl 다음 스크립트에 _d('…')가 있다").toBeDefined();
         expect(decodeD(dValue ?? "")).toMatch(/^\d+(\.\d+)?(,\d+(\.\d+)?)*$/);
         expect(view).toMatch(/name="service_code" value="[^"]{10,}"/);
+
+        // comment.js는 글 페이지가 window._TS_CMT_를 주면 댓글에 Turnstile 값을 붙인다. 미리보기(core/preview/submit.ts)는 그 값을 보내지 않으므로 켜지면 알아야 한다.
+        expect(view, "디시가 댓글 Turnstile을 켰다").not.toContain("_TS_CMT_");
     });
 
     // 목록·글·검색 결과·글쓰기 페이지를 한 번씩 GET으로 받아(요청 4개) 디시 스크립트를 뺀 채 빈 페이지에 그리고 선택자를 센다.
