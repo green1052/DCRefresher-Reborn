@@ -1,9 +1,17 @@
+import QuickLRU from "quick-lru";
+
 import {ajax} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
 import {csrfBody} from "@/core/http/cookie";
 import {isRecord} from "@/utils/record";
 
 import type {DcinsideDcconDetail, DcinsideDcconDetailList, DcinsideDcconPackage} from "./types";
+
+/**
+ * 디시콘 코드별 패키지 정보. 같은 디시콘을 다시 눌러도 받지 않는다 (디시콘 목록 캐시처럼 10분). 정보 창과 디시콘 버블이 같이 쓴다.
+ * 디시콘을 추가하면 가진 여부(residual)가 바뀌므로 비운다. 같은 패키지의 다른 디시콘도 코드가 달라 따로 담기기 때문이다.
+ */
+export const dcconPackages = new QuickLRU<string, DcinsideDcconPackage>({maxSize: 100, maxAge: 10 * 60_000});
 
 const isDcconPackage = (value: unknown): value is DcinsideDcconPackage =>
     isRecord(value) && isRecord(value.info) && Array.isArray(value.detail) && Array.isArray(value.tags);

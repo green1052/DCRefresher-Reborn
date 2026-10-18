@@ -1,14 +1,16 @@
-import {Ban, ExternalLink, Info, PackageX, StickyNote, UserX} from "lucide-react";
-import {type ComponentProps, useEffect, useRef, useSyncExternalStore} from "react";
+import {Ban, ExternalLink, PackageX, StickyNote, UserX} from "lucide-react";
+import {type ComponentProps, useEffect, useRef, useState, useSyncExternalStore} from "react";
 
 import {DialogActions, ModalDialog} from "@/components/dialogs";
 import {Button} from "@/components/ui/button";
 import {DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import {Popover, PopoverContent} from "@/components/ui/popover";
 import {Separator} from "@/components/ui/separator";
+import {Skeleton} from "@/components/ui/skeleton";
 import {useReturnFocus} from "@/components/useReturnFocus";
 import {blockingEntries} from "@/core/block";
 import {banReasonsOf, databaseVersion, ipInfoOf, onDatabaseChange, subscribeDatabase} from "@/core/database";
+import {dcconPackages, fetchDcconPackage} from "@/core/preview/request";
 import {TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {type BlockRequestOptions, handleBlockRequest} from "@/stores/blockRequest";
@@ -27,6 +29,45 @@ const MenuItem = ({danger, className, ...props}: ComponentProps<typeof Button> &
             className={cn("w-full cursor-pointer justify-start font-normal", danger && "text-destructive hover:bg-destructive/10 hover:text-destructive", className)}
             {...props}/>
 );
+
+/**
+ * 디시콘 버블 맨 위의 이름·패키지·설명. 누르면 디시콘 정보 창을 연다.
+ * 정보 창과 같은 캐시(dcconPackages)를 써 이어서 열어도 다시 받지 않는다. 받지 못하면 이름 없이 열기만 둔다.
+ */
+const DcconSummary = ({code, onOpen}: { code: string; onOpen: () => void }) => {
+    const [dccon, setDccon] = useState(() => dcconPackages.get(code) ?? null);
+    const [failed, setFailed] = useState(false);
+
+    useEffect(() => {
+        if (dccon) return;
+        const controller = new AbortController();
+        void fetchDcconPackage(code, controller.signal).then((result) => {
+            dcconPackages.set(code, result);
+            if (!controller.signal.aborted) setDccon(result);
+        }, () => !controller.signal.aborted && setFailed(true));
+        return () => controller.abort();
+    }, [code]);
+
+    const name = dccon?.detail.find((item) => item.path === code)?.title;
+    return (
+        <MenuItem title="디시콘 정보 보기" className="h-auto flex-col items-start gap-0.5 py-1.5 whitespace-normal" onClick={onOpen}>
+            {dccon ? (
+                <>
+                    <strong>{name || dccon.info.title}</strong>
+                    {name && <span className="text-xs text-muted-foreground">{dccon.info.title}</span>}
+                    {dccon.info.description && <span className="line-clamp-2 text-left text-xs text-muted-foreground">{dccon.info.description}</span>}
+                </>
+            ) : failed ? (
+                <span>디시콘 정보</span>
+            ) : (
+                <>
+                    <Skeleton className="h-4 w-24"/>
+                    <Skeleton className="h-3 w-40"/>
+                </>
+            )}
+        </MenuItem>
+    );
+};
 
 /** 클릭하면 복사되는 값 한 줄. 라벨 폭을 맞춰 값이 한 줄로 늘어서게 한다. */
 const CopyRow = ({label, value, onCopy}: { label: string; value: string; onCopy: (value: string) => void }) => (
@@ -204,13 +245,11 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
                 {/* 여기서 여는 창(메모·패키지 차단)은 연 요소로 포커스를 먼저 옮겨 둔다. 그래야 그 창이 닫힐 때 사라진 버블 대신 그리로 돌아간다. */}
                 {selected.dccon ? (
                     <>
-                        <MenuItem onClick={() => {
+                        <DcconSummary code={selected.dccon} onOpen={() => {
                             focus.returnFocus();
                             close();
                             onDcconInfo(selected.dccon!);
-                        }}>
-                            <Info/> 디시콘 정보
-                        </MenuItem>
+                        }}/>
                         <Separator/>
                         <div className="flex flex-col">
                             <MenuItem danger onClick={() => requestBlock({target: "dccon"})}><Ban/> 이 디시콘 차단</MenuItem>

@@ -1,4 +1,3 @@
-import QuickLRU from "quick-lru";
 import {type MouseEvent, useEffect, useState} from "react";
 
 import {ConfirmDialog, DialogCloseButton, ModalDialog} from "@/components/dialogs";
@@ -9,18 +8,11 @@ import {Skeleton} from "@/components/ui/skeleton";
 import {Spinner} from "@/components/ui/spinner";
 import {dcconCode, isBlockedHidden} from "@/core/block";
 import {urls} from "@/core/http/urls";
-import {addDcconPackage, fetchDcconPackage} from "@/core/preview/request";
-import type {DcinsideDcconPackage} from "@/core/preview/types";
+import {addDcconPackage, dcconPackages, fetchDcconPackage} from "@/core/preview/request";
 import {useUiStore} from "@/stores/ui";
 
 import {clearDcconListCache} from "./DcconPopup";
 import {previewGallery, usePreviewStore} from "./previewStore";
-
-/**
- * 디시콘 코드별 패키지 정보. 같은 디시콘을 다시 눌러도 받지 않는다 (디시콘 목록 캐시처럼 10분).
- * 디시콘을 추가하면 가진 여부(residual)가 바뀌므로 비운다. 같은 패키지의 다른 디시콘도 코드가 달라 따로 담기기 때문이다.
- */
-const packageCache = new QuickLRU<string, DcinsideDcconPackage>({maxSize: 100, maxAge: 10 * 60_000});
 
 const close = (): void => usePreviewStore.setState({dcconInfo: null});
 
@@ -61,7 +53,7 @@ const ShopLink = ({href, children}: { href: string; children: string }) => (
 
 /** 댓글·본문의 디시콘을 눌렀을 때 그 디시콘이 든 패키지 정보를 보여 준다 (디시 '디시콘 보기' 창). */
 export const DcconInfoPopup = ({code}: { code: string }) => {
-    const [dccon, setDccon] = useState(() => packageCache.get(code) ?? null);
+    const [dccon, setDccon] = useState(() => dcconPackages.get(code) ?? null);
     const [sending, setSending] = useState(false);
     const [added, setAdded] = useState(false);
     const [confirming, setConfirming] = useState(false);
@@ -80,7 +72,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
 
         if (result === "ok") {
             clearDcconListCache();
-            packageCache.clear();
+            dcconPackages.clear();
             setAdded(true);
             showToast("디시콘을 추가했습니다.");
         } else if (result === "not_login") {
@@ -98,7 +90,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
         const {signal} = controller;
 
         void fetchDcconPackage(code, signal).then((result) => {
-            packageCache.set(code, result);
+            dcconPackages.set(code, result);
             if (!signal.aborted) setDccon(result);
         }, () => {
             if (signal.aborted) return;

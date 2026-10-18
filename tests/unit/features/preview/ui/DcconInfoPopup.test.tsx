@@ -27,7 +27,7 @@ vi.mock("@/components/ui/dialog", () => ({DialogTitle: ({children}: { children?:
 vi.mock("@/components/ui/skeleton", () => ({Skeleton: () => null}));
 vi.mock("@/components/ui/spinner", () => ({Spinner: () => null}));
 vi.mock("@/features/preview/ui/DcconPopup", () => ({clearDcconListCache: vi.fn()}));
-vi.mock("@/core/preview/request", () => ({addDcconPackage: vi.fn(), fetchDcconPackage: vi.fn()}));
+vi.mock("@/core/preview/request", () => ({addDcconPackage: vi.fn(), dcconPackages: new Map(), fetchDcconPackage: vi.fn()}));
 
 const pack = (title: string): DcinsideDcconPackage => ({
     info: {package_idx: 9, code: "", title, description: "", seller_name: "판매자", reg_date_short: "", main_img_path: "", register: false, residual: false},

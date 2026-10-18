@@ -1,6 +1,6 @@
 import type {Page} from "@playwright/test";
 
-import {fakeComment} from "./dcinside";
+import {DCCON, fakeComment} from "./dcinside";
 import {expect, test} from "./fixtures";
 import {viewPage} from "./pages/gallery";
 
@@ -191,5 +191,20 @@ test.describe("글 페이지 댓글", () => {
     test("글 머리의 작성자에도 유저 정보 배지를 붙인다", async ({page}) => {
         await openView(page);
         await expect(viewPage(page).headBadges).toHaveText("(user3)");
+    });
+
+    test("디시콘을 우클릭하면 버블에 디시콘 이름과 패키지 설명이 보이고, 누르면 정보 창이 열린다", async ({page, site}) => {
+        site.pageComments = [fakeComment(20, {memo: `<img class="written_dccon" src="${DCCON.list_img}" alt="${DCCON.title}">`})];
+        await openView(page);
+        await page.locator("img.written_dccon").first().click({button: "right"});
+
+        const bubble = page.getByLabel("디시콘 메뉴");
+        const summary = bubble.getByTitle("디시콘 정보 보기");
+        await expect(summary).toContainText(DCCON.title);
+        await expect(summary).toContainText("테스트콘");
+        await expect(summary).toContainText("웃는 얼굴 모음");
+
+        await summary.click();
+        await expect(page.getByRole("dialog", {name: "디시콘 정보"})).toBeVisible();
     });
 });
