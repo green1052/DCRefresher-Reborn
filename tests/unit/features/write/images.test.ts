@@ -21,11 +21,14 @@ class FakeDragEvent extends Event {
 
 /** 캔버스가 만들 WebP 크기 (바이트). */
 let webpSize = 1;
+/** 파이어폭스 resistFingerprinting처럼 인코딩할 때마다 다른 바이트를 줄지. */
+let noisyCanvas = false;
+let encodes = 0;
 const createImageBitmap = vi.fn(async () => ({width: 1, height: 1, close: () => {}}));
 
 class FakeOffscreenCanvas {
-    getContext = () => ({drawImage: () => {}});
-    convertToBlob = async () => new Blob([new Uint8Array(webpSize)], {type: "image/webp"});
+    getContext = () => ({drawImage: () => {}, fillRect: () => {}});
+    convertToBlob = async () => new Blob([new Uint8Array(webpSize).fill(noisyCanvas ? ++encodes : 0)], {type: "image/webp"});
 }
 
 beforeAll(() => {
@@ -71,6 +74,7 @@ const choose = (files: File[]): void => {
 
 beforeEach(() => {
     webpSize = 1;
+    noisyCanvas = false;
     received = [];
     input = document.body.appendChild(Object.assign(document.createElement("input"), {type: "file"}));
     input.addEventListener("change", () => received.push([...(input.files ?? [])]));
@@ -115,6 +119,20 @@ describe("파일 선택칸", () => {
         choose([file]);
         await vi.waitFor(() => expect(received).toHaveLength(1));
         expect(received[0]?.[0]).toBe(file);
+    });
+
+    it("캔버스 출력이 무작위면 WebP로 바꾸지 않고 이름만 숨긴다", async () => {
+        noisyCanvas = true;
+        setOptions({webp: true, quality: 0.5, rename: false, concurrency: 2});
+        const file = png("사진.png", ["IHDR", "IDAT"]);
+        choose([file]);
+        await vi.waitFor(() => expect(received).toHaveLength(1));
+        expect(received[0]?.[0]).toBe(file);
+
+        setOptions({webp: true, quality: 0.5, rename: true, concurrency: 2});
+        choose([png("사진.png", ["IHDR", "IDAT"])]);
+        await vi.waitFor(() => expect(received).toHaveLength(2));
+        expect(received[1]?.[0]?.name).toMatch(/^[0-9a-f-]{36}\.png$/);
     });
 
     it("움직이는 PNG는 WebP로 바꾸지 않는다", async () => {

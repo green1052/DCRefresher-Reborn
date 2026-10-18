@@ -97,10 +97,32 @@ export const hookUploads = (): void => {
         return options.rename ? named(file, file, ext.toLowerCase(), true) : file;
     };
 
+    // 파이어폭스 resistFingerprinting(LibreWolf·토르 등)은 캔버스를 읽을 때마다 무작위 잡음을 준다. 잡음 WebP는 작아서 원본 대신 올라간다.
+    // 같은 그림을 두 번 인코딩해 바이트가 같은지 본다. 업로드마다 보므로 사이트에 캔버스 읽기를 허락하면 다음부터 바뀐다.
+    const canvasReliable = async (): Promise<boolean> => {
+        const encode = async (): Promise<string> => {
+            const canvas = new OffscreenCanvas(1, 1);
+            const context = canvas.getContext("2d");
+            if (context) {
+                context.fillStyle = "#f00";
+                context.fillRect(0, 0, 1, 1);
+            }
+            return new Uint8Array(await (await canvas.convertToBlob({type: "image/webp"})).arrayBuffer()).join();
+        };
+        try {
+            return await encode() === await encode();
+        } catch (e) {
+            console.error(e);
+            return false;
+        }
+    };
+
     const convertAll = async (files: File[], options: ImageOptions): Promise<DataTransfer> => {
         const transfer = new DataTransfer();
+        // 캔버스를 믿을 수 없으면 WebP 변환만 끄고 이름 숨기기는 그대로 한다.
+        const settings = options.webp && !(await canvasReliable()) ? {...options, webp: false} : options;
         // 큰 사진 여러 장을 한꺼번에 바꾸면 원본 크기 캔버스가 장수만큼 메모리에 쌓인다. 결과는 고른 순서대로 온다.
-        for (const file of await pLimit(options.concurrency).map(files, (file) => convert(file, options))) {
+        for (const file of await pLimit(settings.concurrency).map(files, (file) => convert(file, settings))) {
             done.add(file);
             transfer.items.add(file);
         }
