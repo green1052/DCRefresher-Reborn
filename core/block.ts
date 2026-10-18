@@ -317,17 +317,14 @@ export const isBlockedHidden = (element: Element): boolean => {
 };
 
 /**
- * 막히는지 판정하고, 맞은 항목(막은 SAME/CONTAIN, 허용한 NOT_*)은 모두 쓰였다고 적는다 (옵션의 오래 안 쓰인 항목 거르기).
+ * 내용이 차단 대상인지 (갤러리 한정 항목은 그 갤러리에서만).
+ * 맞은 항목(막은 SAME/CONTAIN, 허용한 NOT_*)은 모두 쓰였다고 적는다 (옵션의 오래 안 쓰인 항목 거르기).
  * 첫 항목에서 멈추면 같은 대상을 함께 막는 다른 항목(닉네임과 아이디로 같이 막은 유저 등)이 안 쓰인 것으로 보여 지워질 수 있다.
  */
-const isBlockedIn = (lists: BlockLists, type: BlockType, content: string, gallery?: string): boolean =>
-    scan(lists, type, content, gallery, (entry, kind) => {
+export const isBlocked = (type: BlockType, content: string, gallery?: string): boolean =>
+    content !== "" && scan(useBlocksStore.getState(), type, content, gallery, (entry, kind) => {
         if (kind !== "miss") markUsed("block", entry.id);
     });
-
-/** 내용이 차단 대상인지 (갤러리 한정 항목은 그 갤러리에서만). */
-export const isBlocked = (type: BlockType, content: string, gallery?: string): boolean =>
-    content !== "" && isBlockedIn(useBlocksStore.getState(), type, content, gallery);
 
 /** 값 중 하나라도 차단 대상인지. 막힌 유형에서 멈추지 않고 모든 유형을 본다. */
 export const isAnyBlocked = (values: BlockValues, gallery?: string): boolean =>
