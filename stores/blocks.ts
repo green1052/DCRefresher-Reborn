@@ -51,6 +51,9 @@ export const composeExtra = (fields: { isRegex: boolean; gallery?: string; mode?
         .filter(Boolean)
         .join(" ");
 
+/** 항목을 사람에게 보일 이름. 디시콘은 코드 대신 이름(extra)을 쓴다. */
+export const blockLabel = (type: BlockType, entry: BlockEntry): string => (type === "DCCON" ? entry.extra || entry.content : entry.content);
+
 /**
  * 저장소·가져오기 값에서 유효한 항목만 남긴다. id가 없거나 겹치면 새로 준다 (겹친 id는 삭제·수정이 그 항목 모두에 걸린다).
  * known: id 없는 항목(백업·내보내기는 id를 뺀다)이 같은 content+gallery 항목의 id를 이어받을 목록. 새 id면 그 항목의 사용 기록(core/usage.ts)이 사라진다.

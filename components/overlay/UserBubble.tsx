@@ -16,7 +16,7 @@ import {dcconPackages, fetchDcconPackage} from "@/core/preview/request";
 import {TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {type BlockRequestOptions, handleBlockRequest} from "@/stores/blockRequest";
-import {useBlocksStore} from "@/stores/blocks";
+import {blockLabel, useBlocksStore} from "@/stores/blocks";
 import {useUserMemo} from "@/stores/memos";
 import {copyWithToast, type SelectedUser, selectedGallery, useUiStore} from "@/stores/ui";
 import {SAVE_FAILED} from "@/utils/error";
@@ -135,7 +135,7 @@ const BlockRules = ({rules, defaults}: { rules: BlockRule[]; defaults: Record<Bl
             <p className="text-xs text-muted-foreground">걸린 차단 규칙</p>
             <div className="flex flex-col gap-1">
                 {hits.map(({type, entry}) => {
-                    const name = type === "DCCON" ? entry.extra || entry.content : entry.content;
+                    const name = blockLabel(type, entry);
                     return (
                         <div key={entry.id} className="flex items-center justify-between gap-2">
                             <span className="truncate text-xs" title={entry.isRegex ? "정규식 — 풀면 이 규칙에 걸린 다른 대상도 함께 풀립니다." : undefined}>
