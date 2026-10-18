@@ -1,5 +1,5 @@
 import {Ban, type LucideIcon, NotebookPen, Puzzle, Settings} from "lucide-react";
-import {type ReactNode, useEffect, useId, useState} from "react";
+import {type ReactNode, useEffect, useId, useLayoutEffect, useState} from "react";
 
 import {Badge} from "@/components/ui/badge";
 import {Button} from "@/components/ui/button";
@@ -176,7 +176,8 @@ export function App() {
 
     // 한 번에 그려야 팝업 크기가 여러 번 바뀌지 않는다. 모두 로컬 읽기라 금방 끝난다.
     // 하나가 실패해도 빈 팝업으로 남지 않게 기본값으로 그린다.
-    useEffect(() => {
+    // useEffect는 한 프레임 뒤에 돌아 읽기가 그만큼 늦게 시작하므로 그리기 전에 시작한다.
+    useLayoutEffect(() => {
         void Promise.all([
             findPage().catch(() => null),
             // 자동 백업은 배경에서 돌아 실패해도 데이터 탭을 열기 전에는 모른다. 켜져 있을 때만 팝업에서 한 줄로 알린다.
