@@ -2,10 +2,13 @@
  * Tailwind + shadcn 토큰. 색은 shadcn 테마 값 그대로다 (base-vega, 기본색 zinc, 테마 indigo. https://ui.shadcn.com/init?base=base&style=vega&baseColor=zinc&theme=indigo&only=theme의 cssVars). 손으로 고치지 않는다.
  * 오버레이 shadow에서도 쓰도록 :root와 :host에 같이 건다. 다크 모드는 조상의 .dark 클래스가 정한다 (utils/appearance.ts).
  */
-@import "tailwindcss";
+@import "tailwindcss" source(none);
 @import "tw-animate-css";
 /* shadcn 부품이 쓰는 variant(data-horizontal·data-open 등, Base UI 데이터 속성에 맞춘 것)와 유틸리티. */
 @import "shadcn/tailwind.css";
+/* 클래스를 찾을 폴더를 직접 정한다. 자동 탐색은 .gitignore에 기대는데, 파이어폭스 심사용 소스 zip에는 .gitignore와 테스트 파일이 없다.
+   그러면 심사 쪽 빌드가 .output·tests·e2e를 다르게 읽어 CSS와 그 해시가 붙은 파일 이름이 우리가 올린 빌드와 달라진다. */
+@source "../../{components,core,entrypoints,features,stores,utils}";
 
 @custom-variant dark (&:is(.dark *));
 
