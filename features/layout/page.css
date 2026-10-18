@@ -99,6 +99,20 @@
         max-width: var(--refresher-compact-width) !important;
     }
 
+    /* 목록의 .wrap_inner와 같은 좌우 여백 12px을 지정한다. */
+    .dcwrap > #container {
+        padding-right: 12px !important;
+        padding-left: 12px !important;
+    }
+
+    /* 위 12px만큼 디시의 안쪽 여백 68px을 줄여야 닉네임, 비밀번호, 자동입력 방지 칸이 한 줄에 표시된다. */
+    @media (max-width: 1023px) {
+        #write_wrap {
+            padding-right: 56px !important;
+            padding-left: 56px !important;
+        }
+    }
+
     /* 1160px 등으로 고정된 상자들. */
     .visit_bookmark,
     .newvisit_history,
