@@ -1,11 +1,12 @@
 import QuickLRU from "quick-lru";
 
-import {BlockedError, http} from "@/core/http/client";
+import {http} from "@/core/http/client";
 import {documentUrl, pageGallery, queryString} from "@/core/http/urls";
 import {checkboxFiller, highlightSearchResults, LIST_SELECTOR, notifyListReplaced, PAGING_SELECTOR} from "@/core/list";
 import {sendMessage} from "@/core/messaging/protocol";
 import {defineModule} from "@/core/module/define";
 import {LIST_PAGE} from "@/core/pages";
+import {reportFailure} from "@/stores/notify";
 import {type SelectedUser, useUiStore} from "@/stores/ui";
 import {whenDomReady, writeStyle} from "@/utils/dom";
 
@@ -161,10 +162,7 @@ export default defineModule({
                     if (searching && !isLastPage(paging)) break;
                 }
             } catch (e) {
-                // 임시 차단은 HTTP 클라이언트가 이미 알렸다. 오류 토스트로 그 안내를 덮지 않는다.
-                if (signal.aborted || e instanceof BlockedError) return;
-                console.error("Search continuation failed:", e);
-                useUiStore.getState().showToast("다음 검색 결과를 불러오지 못했습니다.", "error");
+                if (!signal.aborted) reportFailure(e, "Search continuation failed:", "다음 검색 결과를 불러오지 못했습니다.");
             } finally {
                 status.remove();
                 if (added > 0) notifyListReplaced(gallery);
