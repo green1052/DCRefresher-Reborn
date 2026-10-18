@@ -1,7 +1,7 @@
 import ky, {NetworkError, TimeoutError as KyTimeoutError} from "ky";
 import {describe, expect, it} from "vitest";
 
-import {friendlyMessage, isTimeoutError} from "@/utils/error";
+import {friendlyMessage, isAbortError, isTimeoutError} from "@/utils/error";
 
 /** ky가 직접 만든 HTTPError. fetch를 바꿔 요청은 나가지 않는다. */
 const httpError = (status: number): Promise<unknown> =>
@@ -16,6 +16,18 @@ describe("isTimeoutError", () => {
         expect(isTimeoutError(new KyTimeoutError(new Request("https://gall.dcinside.com/")))).toBe(true);
         expect(isTimeoutError(new DOMException("", "AbortError"))).toBe(false);
         expect(isTimeoutError(null)).toBe(false);
+    });
+});
+
+describe("isAbortError", () => {
+    it("이름으로만 본다", () => {
+        expect(isAbortError(new DOMException("", "AbortError"))).toBe(true);
+        // 파이어폭스 content.fetch의 오류는 다른 영역 객체라 instanceof Error가 틀릴 수 있다.
+        expect(isAbortError({name: "AbortError"})).toBe(true);
+        expect(isAbortError(new DOMException("", "TimeoutError"))).toBe(false);
+        expect(isAbortError(new Error("AbortError"))).toBe(false);
+        expect(isAbortError(null)).toBe(false);
+        expect(isAbortError("AbortError")).toBe(false);
     });
 });
 

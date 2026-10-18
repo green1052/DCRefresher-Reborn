@@ -94,7 +94,6 @@ export const http: KyInstance = ky.create({
 export const formBody = (fields: Record<string, string | null | undefined | false>): URLSearchParams =>
     new URLSearchParams(Object.entries(fields).filter((entry): entry is [string, string] => typeof entry[1] === "string"));
 
-/** 끊은 요청(AbortController)의 오류인지. 파이어폭스 content.fetch의 오류는 다른 영역 객체라 instanceof Error가 틀릴 수 있어 이름으로 본다. */
-export const isAbortError = (e: unknown): boolean => typeof e === "object" && e !== null && "name" in e && e.name === "AbortError";
+export {isAbortError} from "@/utils/error";
 
 export const ajax: KyInstance = http.extend({headers: {"X-Requested-With": "XMLHttpRequest"}});

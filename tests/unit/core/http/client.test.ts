@@ -1,7 +1,8 @@
 // @vitest-environment node
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import {ajax, BlockedError, formBody, http, isAbortError, setBlockedHandler, setRequestConcurrency} from "@/core/http/client";
+import {ajax, BlockedError, formBody, http, setBlockedHandler, setRequestConcurrency} from "@/core/http/client";
+import {isAbortError} from "@/utils/error";
 
 /** 클라이언트가 불러올 때 fetch를 잡아 두므로 그 전에 바꾼다. 응답은 테스트가 정한다. */
 const network = vi.hoisted(() => {
@@ -158,17 +159,5 @@ describe("ajax", () => {
 describe("formBody", () => {
     it("null·undefined·false는 빼고 빈 문자열은 넣는다", () => {
         expect(formBody({a: "1", b: "", c: null, d: undefined, e: false}).toString()).toBe("a=1&b=");
-    });
-});
-
-describe("isAbortError", () => {
-    it("이름으로만 본다", () => {
-        expect(isAbortError(new DOMException("", "AbortError"))).toBe(true);
-        // 파이어폭스 content.fetch의 오류는 다른 영역 객체라 instanceof Error가 틀릴 수 있다.
-        expect(isAbortError({name: "AbortError"})).toBe(true);
-        expect(isAbortError(new DOMException("", "TimeoutError"))).toBe(false);
-        expect(isAbortError(new Error("AbortError"))).toBe(false);
-        expect(isAbortError(null)).toBe(false);
-        expect(isAbortError("AbortError")).toBe(false);
     });
 });
