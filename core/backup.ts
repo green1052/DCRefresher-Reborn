@@ -155,11 +155,11 @@ export const readCloudBackupStatus = async (): Promise<CloudBackupStatus> => {
     };
 };
 
-/** 두 칸의 백업을 메타·조각까지 모두 지운다. */
-export const clearCloudBackups = async (): Promise<void> => {
-    const keys = Object.keys(await browser.storage.sync.get(null)).filter((key) => isSlotKey("manual", key) || isSlotKey("auto", key));
-    if (keys.length > 0) await browser.storage.sync.remove(keys);
-};
+/**
+ * 두 칸의 백업을 메타·조각까지 모두 지운다. sync에는 백업 칸만 쓰므로 통째로 비운다.
+ * v5가 sync에 통째로 올려 둔 키(최대 100KB)도 같이 지워져, 그 때문에 한도를 넘어 실패하던 백업을 여기서 풀 수 있다.
+ */
+export const clearCloudBackups = (): Promise<void> => browser.storage.sync.clear();
 
 interface CloudBackup {
     data: Record<string, unknown>;

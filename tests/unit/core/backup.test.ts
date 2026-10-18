@@ -200,15 +200,15 @@ describe("readCloudBackupStatus", () => {
 });
 
 describe("clearCloudBackups", () => {
-    it("두 칸의 메타와 조각을 모두 지우고 다른 sync 키는 둔다", async () => {
+    it("두 칸의 메타와 조각, v5가 남긴 키까지 모두 지운다", async () => {
         await browser.storage.local.set({"refresher:modules": {a: true}});
         await runBackup("manual");
         await runBackup("auto");
-        await browser.storage.sync.set({other: 1});
+        await browser.storage.sync.set({"refresher:block:NICK": "[]"});
 
         await clearCloudBackups();
 
-        expect(await browser.storage.sync.get(null)).toEqual({other: 1});
+        expect(await browser.storage.sync.get(null)).toEqual({});
         expect(await readCloudBackupStatus()).toEqual({manual: undefined, auto: undefined});
     });
 });
