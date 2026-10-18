@@ -28,10 +28,6 @@
         min-width: 0 !important;
     }
 
-    .dcwrap {
-        width: auto !important;
-    }
-
     /* 머리글: 로고·파란 메뉴줄을 빼고 오른쪽 위 링크 한 줄과 통합검색 창만. */
     .dchead {
         width: auto !important;
@@ -40,9 +36,22 @@
         padding: 8px 12px !important;
     }
 
+    /* 숨기는 것: 머리글 로고·파란 메뉴줄, 목록 위아래 상자, 창 폭에 맞춰 줄지 않는 광고. 날개 광고는 파일 끝에서 숨긴다. */
     .dc_logo,
     .gnb_bar,
-    .dc_all {
+    .dc_all,
+    .gall_exposure,
+    .minor_ranking_box,
+    .issue_contentbox,
+    .ad_bottom_list,
+    /* 더보기 버튼이 여는 상자는 마이너·미니 갤에선 이 목록으로 숨고, 일반 갤에선 컴팩트 폭에서 항목이 겹친다. */
+    .page_head button[onclick^="gt_toggle_issue"],
+    ins.adsbygoogle,
+    /* 글 보기 파워링크 광고 (min-width 970px). */
+    .power_link,
+    /* 목록 위 840px 배너와 그 닫기 버튼 (창 폭에 맞춰 줄지 않는다). */
+    #ad-layer,
+    #ad-layer-closer {
         display: none !important;
     }
 
@@ -50,7 +59,6 @@
     /* 상자만 static으로 내리면 목록이 왼쪽에 붙어 창 폭에 따라 떠다니므로 (#267) flex로 오른쪽에 붙인다. */
     .area_links {
         position: static !important;
-        inset: auto !important;
         display: flex !important;
         flex-wrap: wrap !important;
         justify-content: flex-end !important;
@@ -108,32 +116,29 @@
 
     /* 목록의 .wrap_inner와 같은 좌우 여백 12px을 지정한다. */
     .dcwrap > #container {
-        padding-right: 12px !important;
-        padding-left: 12px !important;
+        padding-inline: 12px !important;
     }
 
     /* 디시 메인의 본문(.main_content)은 1000px로 고정되어 있어서 여백을 더하면 1000px 창에서 가로로 넘친다. */
     .dcwrap > #container:has(> .main_content) {
-        padding-right: 0 !important;
-        padding-left: 0 !important;
+        padding-inline: 0 !important;
     }
 
     /* 위 12px만큼 디시의 안쪽 여백 68px을 줄여야 닉네임, 비밀번호, 자동입력 방지 칸이 한 줄에 표시된다. */
     @media (max-width: 1023px) {
         #write_wrap {
-            padding-right: 56px !important;
-            padding-left: 56px !important;
+            padding-inline: 56px !important;
         }
     }
 
     /* 디시 메인은 이 두 상자의 좌우 여백이 0이라서 최대 폭만 지정하면 왼쪽으로 정렬된다. */
     .visit_bookmark,
     .dcwrap > #container {
-        margin-right: auto !important;
-        margin-left: auto !important;
+        margin-inline: auto !important;
     }
 
     /* 1160px 등으로 고정된 상자들. */
+    .dcwrap,
     .visit_bookmark,
     .newvisit_history,
     .info_policy,
@@ -175,17 +180,6 @@
         z-index: 10000 !important;
     }
 
-    .gall_exposure,
-    .minor_ranking_box,
-    .issue_contentbox,
-    .ad_bottom_list,
-    /* 목록 양옆 날개 광고 — 목록 상자 가운데에서 780px씩 떨어져 있어 좁은 창에선 밖으로 나간다. */
-    [class*="ad_left_wing"],
-    /* 왼쪽 날개 광고 — setup(document_start) 때는 아직 파싱 전이라 JS로 찾으면 놓친다. */
-    .stickyunit {
-        display: none !important;
-    }
-
     .left_content:not(.minor_uadmin_wrap *, .dcwrap:not(.width1160) *) {
         width: auto !important;
         float: none !important;
@@ -202,11 +196,6 @@
     /* 갤러리 제목 옆 링크(설정·새로고침…)가 좁으면 두 줄이 되는데 머리가 37px 고정이라 밑줄을 덮는다. */
     .page_head {
         height: auto !important;
-    }
-
-    /* 더보기 버튼이 여는 상자는 마이너·미니 갤에선 위 규칙으로 숨고, 일반 갤에선 컴팩트 폭에서 항목이 겹친다. */
-    .page_head button[onclick^="gt_toggle_issue"] {
-        display: none !important;
     }
 
     .gall_issuebox {
@@ -267,21 +256,7 @@
         max-width: 100% !important;
     }
 
-    .write_div img {
-        max-width: 100% !important;
-        height: auto !important;
-    }
-
-    ins.adsbygoogle,
-    /* 글 보기 파워링크 광고 (min-width 970px). */
-    .power_link,
-    /* 목록 위 840px 배너와 그 닫기 버튼 (창 폭에 맞춰 줄지 않는다). */
-    #ad-layer,
-    #ad-layer-closer {
-        display: none !important;
-    }
-
-    .banner_box img {
+    :is(.write_div, .banner_box) img {
         max-width: 100% !important;
         height: auto !important;
     }
@@ -337,14 +312,14 @@
     }
 }
 
+/* 목록 양옆 날개 광고 — 목록 상자 가운데에서 780px씩 떨어져 있어 좁은 창(컴팩트)에선 밖으로 나가고, 목록 상자를 넓히면(본문 영역 확장) 창 밖으로 밀려 가로 스크롤이 생긴다. */
+/* 왼쪽 날개 광고(.stickyunit) — setup(document_start) 때는 아직 파싱 전이라 JS로 찾으면 놓친다. */
+:is(.refresherCompact, .refresherPushToRight) :is(.stickyunit, [class*="ad_left_wing"]) {
+    display: none !important;
+}
+
 /* 본문 영역 전체로 확장 (html.refresherPushToRight — "잡다 링크 숨기기"와 함께 켜졌을 때). */
 .refresherPushToRight {
-    /* 목록 상자를 넓히면 그 가운데 기준으로 붙은 날개 광고가 창 밖으로 밀려 가로 스크롤이 생긴다. */
-    .stickyunit,
-    [class*="ad_left_wing"] {
-        display: none !important;
-    }
-
     .list_array_option,
     .listwrap .left_content,
     .listwrap .issuebox {
