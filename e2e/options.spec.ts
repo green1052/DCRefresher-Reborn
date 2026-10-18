@@ -37,6 +37,8 @@ test.describe("옵션 - 설정 탭", () => {
         await expect(card.getByRole("switch", {name: "검색 이어 보기 사용", exact: true})).not.toBeChecked();
         await expect(slider).toBeVisible();
         await expect(card.getByText("모듈을 켜야 적용됩니다.")).toBeVisible();
+        // 맞은 글자(설정 이름)를 칠한다.
+        await expect.poll(() => page.evaluate(() => [...CSS.highlights.get("refresher-search") ?? []].map(String))).toEqual(["최대 다음 검색"]);
 
         await search.fill("없는 설정");
         await expect(options.cards).toHaveCount(0);

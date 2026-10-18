@@ -1,5 +1,5 @@
 import {Search} from "lucide-react";
-import {Fragment, useState} from "react";
+import {Fragment, type RefObject, useEffect, useRef, useState} from "react";
 
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Collapsible, CollapsibleContent} from "@/components/ui/collapsible";
@@ -120,6 +120,30 @@ const ModuleCard = ({feature, shown, searching}: { feature: AnyModuleMeta; shown
     );
 };
 
+/**
+ * 검색어(소문자)가 든 글자를 칠한다 (CSS Custom Highlight API, tailwind.css의 ::highlight).
+ * DOM을 바꾸지 않아 이름·설명을 <mark>로 쪼개 그리지 않아도 된다.
+ */
+const useSearchHighlight = (root: RefObject<HTMLElement | null>, needle: string): void => {
+    useEffect(() => {
+        if (!needle || !root.current) return;
+
+        const ranges: Range[] = [];
+        const walker = document.createTreeWalker(root.current, NodeFilter.SHOW_TEXT);
+        for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+            const text = (node.nodeValue ?? "").toLowerCase();
+            for (let at = text.indexOf(needle); at !== -1; at = text.indexOf(needle, at + needle.length)) {
+                const range = new Range();
+                range.setStart(node, at);
+                range.setEnd(node, at + needle.length);
+                ranges.push(range);
+            }
+        }
+        CSS.highlights.set("refresher-search", new Highlight(...ranges));
+        return () => void CSS.highlights.delete("refresher-search");
+    }, [root, needle]);
+};
+
 export function GeneralTab() {
     const [query, setQuery] = useState("");
     const needle = query.trim().toLowerCase();
@@ -127,9 +151,11 @@ export function GeneralTab() {
         const shown = matchSettings(feature, needle);
         return shown ? [{feature, shown}] : [];
     });
+    const root = useRef<HTMLDivElement>(null);
+    useSearchHighlight(root, needle);
 
     return (
-        <div className="flex flex-col gap-4">
+        <div ref={root} className="flex flex-col gap-4">
             <InputGroup>
                 <InputGroupAddon>
                     <Search/>
