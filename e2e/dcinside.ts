@@ -183,7 +183,9 @@ const listRow = ({no, title, nick, uid, ip = "", replies}: FakeRow, manager: boo
 
 const paging = (page: string): string => (page === "1" ? "<em>1</em><a href=\"/board/lists/?id=test&page=2\">2</a>" : "<a href=\"/board/lists/?id=test&page=1\">1</a><em>2</em>");
 
-const listPage = (rows: FakeRow[], page: string, manager: boolean): string => `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>테스트 갤러리</title></head><body>
+const listPage = (rows: FakeRow[], page: string, manager: boolean): string => `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>테스트 갤러리</title>
+<script>window.e2eListScripts = []; window.chk_user_block = (id) => window.e2eListScripts.push("block:" + id); window.UserMemo = {renderWriterMemoBadges: () => window.e2eListScripts.push("memo")};</script>
+<script>chk_user_block('test');</script></head><body>
 <div class="page_head"><h2><a href="/board/lists/?id=test">테스트 갤러리</a></h2><div class="gall_issuebox"></div></div>
 <input type="hidden" id="e_s_n_o" value="token">
 <div class="left_content"><article><div class="gall_listwrap">

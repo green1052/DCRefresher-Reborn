@@ -47,6 +47,8 @@ test.describe("글 목록", () => {
         await expect(listPage.row(51)).toContainText("2쪽 첫 글");
         // 페이징 박스도 받은 페이지 것으로 바뀐다.
         await expect(listPage.paging.locator("em")).toHaveText("2");
+        // 바꾼 행에 디시 자체 차단과 메모 배지를 다시 건다 (콘텐츠 스크립트 → 페이지 이벤트). 처음 그릴 때 부른 block:test 뒤에 한 번씩 더 불린다.
+        await expect.poll(() => page.evaluate("window.e2eListScripts.join()")).toBe("block:test,block:test,memo");
 
         await page.goBack();
         await expect(page).toHaveURL(/\/board\/lists\/\?id=test$/);
