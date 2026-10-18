@@ -329,10 +329,6 @@
     .ai_easy_box .ipt_box {
         width: calc(100% - 123px) !important;
     }
-
-    .ai_easy_box .ipt_txt {
-        width: 100% !important;
-    }
 }
 
 /* 본문 영역 전체로 확장 (html.refresherPushToRight — "잡다 링크 숨기기"와 함께 켜졌을 때). */
