@@ -280,6 +280,14 @@ test.describe("미리보기", () => {
         expect(await viewer.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
     });
 
+    test("디시 투표 iframe은 0×0으로 와도 안쪽 투표 칸 크기로 늘린다", async ({listPage, site}) => {
+        site.postExtra = "<iframe name=\"pollFrame\" id=\"pollFrame\" width=\"459\" height=\"437\" src=\"https://gall.dcinside.com/board/poll/vote?no=1\" scrolling=\"no\" style=\"width:0;height:0\"></iframe>";
+        await listPage.openPreview();
+        const poll = listPage.frame.locator("iframe#pollFrame");
+        // 테두리를 뺀 안쪽 크기.
+        await expect.poll(() => poll.evaluate((frame) => [frame.clientWidth, frame.clientHeight])).toEqual([459, 304]);
+    });
+
     test("스크롤 끝에서 굴리면 안내만 띄우고, 새로 한 번 더 굴려야 다음 글로 넘어간다", async ({listPage}) => {
         const {page} = listPage;
         await listPage.openPreview(1);

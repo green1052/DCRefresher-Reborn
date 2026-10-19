@@ -67,6 +67,9 @@ export class FakeSite {
     /** 글 페이지를 직접 열었을 때 디시가 그려 둔 댓글 (.cmt_list). */
     pageComments: FakeComment[] = [];
 
+    /** 글 본문 끝에 덧붙일 HTML (투표 iframe 등). */
+    postExtra = "";
+
     /** 댓글 허용. 0이면 멤버만 댓글을 쓸 수 있는 갤러리다. */
     allowReply: 0 | 1 = 1;
 
@@ -106,7 +109,10 @@ export class FakeSite {
                 return html(listPage(page === "1" ? this.rows : this.page2, page, this.manager));
             }
             case "/board/view/":
-                return html(viewPage(url.searchParams.get("no") ?? "", this.pageComments, this.commentTarget, this.comments.length));
+                return html(viewPage(url.searchParams.get("no") ?? "", this.pageComments, this.commentTarget, this.comments.length, this.postExtra));
+            // 디시 투표 iframe 페이지는 body가 <script>로 시작하고 그 뒤에 459×304 투표 칸이 온다.
+            case "/board/poll/vote":
+                return html("<!DOCTYPE html><html><head><meta charset=\"utf-8\"></head><body style=\"margin:0\"><script></script><div class=\"vote\" style=\"width:459px;height:304px\">투표</div></body></html>");
             case "/mini/management/":
                 return html(MANAGE_PAGE);
             // 글쓰기 페이지는 디시가 요청이 많을 때 주는 임시 차단 페이지(빈 본문)로 응답한다.
@@ -216,7 +222,7 @@ const pageCommentList = (comments: FakeComment[]): string => (comments.length ==
  * 글 페이지. 미리보기가 받아 읽기도 하고(core/preview/parser.ts) 탭에서 직접 열리기도 한다.
  * 직접 열릴 때 아래 인라인 스크립트가 부르는 디시 전역(_d, $)을 빈 함수로 둔다.
  */
-const viewPage = (no: string, comments: FakeComment[], target: { id: string; no: string } | null, commentCount: number): string => `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>글 ${no}</title>
+const viewPage = (no: string, comments: FakeComment[], target: { id: string; no: string } | null, commentCount: number, extra: string): string => `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>글 ${no}</title>
 <script>window._d = () => ""; window.$ = () => ({data() {}});</script></head><body>
 <input type="hidden" id="e_s_n_o" value="token">
 <div class="view_content_wrap"><header><div class="gallview_head clear ub-content">
@@ -226,7 +232,7 @@ const viewPage = (no: string, comments: FakeComment[], target: { id: string; no:
 <div class="fr"><span class="gall_count">조회 10</span><span class="gall_reply_num">추천 1</span><span class="gall_comment">댓글 ${commentCount}</span></div>
 </div>
 </div></header>
-<div class="writing_view_box"><div class="write_div">본문 ${no} 내용입니다. <img src="https://dcimg1.dcinside.com/viewimage.php?id=test&no=${no}" width="40" height="40"></div></div>
+<div class="writing_view_box"><div class="write_div">본문 ${no} 내용입니다. <img src="https://dcimg1.dcinside.com/viewimage.php?id=test&no=${no}" width="40" height="40">${extra}</div></div>
 </div>
 ${pageCommentList(comments)}
 <div class="cmt_write_box"><form id="focus_cmt"><input name="service_code" value="${SERVICE_CODE}"></form></div>
