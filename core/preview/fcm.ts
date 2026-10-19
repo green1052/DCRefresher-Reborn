@@ -13,8 +13,8 @@ const result = <T>(request: IDBRequest<T>): Promise<T> =>
 
 /**
  * 이 브라우저의 디시 웹 푸시(FCM) 토큰. 디시 페이지는 알림을 허용한 브라우저의 토큰을 모든 jQuery ajax 요청에 fcmToken 머리로 붙이고,
- * 서버는 그 브라우저를 댓글 알림 대상에서 뺀다. 미리보기 댓글도 붙여야 자기 글에 단 댓글의 알림이 자기에게 오지 않는다 (#279).
- * 페이지와 같은 출처의 IndexedDB에서 SDK가 저장한 토큰을 읽는다. 알림을 허용하지 않았거나 읽지 못하면 undefined다.
+ * 서버는 그 브라우저를 댓글 알림 대상에서 뺀다. 미리보기 댓글도 붙여야 자기 글에 단 댓글의 알림이 자기에게 오지 않는다.
+ * 페이지와 같은 출처의 IndexedDB에서 SDK가 저장한 토큰을 읽는다. 알림을 허용하지 않았거나 읽지 못하면(저장소가 없어 던지는 것 포함) undefined다.
  */
 export const fcmToken = async (): Promise<string | undefined> => {
     try {
@@ -24,7 +24,6 @@ export const fcmToken = async (): Promise<string | undefined> => {
         open.onupgradeneeded = () => open.transaction?.abort();
         const db = await result(open);
         try {
-            if (!db.objectStoreNames.contains(STORE)) return;
             const details: unknown = await result(db.transaction(STORE).objectStore(STORE).get(APP_ID));
             return isRecord(details) && typeof details.token === "string" && details.token ? details.token : undefined;
         } finally {
