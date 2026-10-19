@@ -76,8 +76,8 @@ export class FakeSite {
     /** 글이 정한 댓글 대상 ($(document).data('comment_id'·'comment_no')). 없으면 그 글이다. */
     commentTarget: { id: string; no: string } | null = null;
 
-    /** 받은 쓰기 요청 (댓글 작성·삭제, 디시콘 댓글, 관리자 글 삭제). */
-    readonly submitted: { path: string; body: URLSearchParams }[] = [];
+    /** 받은 쓰기 요청 (댓글 작성·삭제, 디시콘 댓글, 관리자 글 삭제). fcmToken은 그 머리의 값이다. */
+    readonly submitted: { path: string; body: URLSearchParams; fcmToken?: string }[] = [];
 
     /**
      * 갤러리 관리자로 본다. 목록 머리와 행에 관리 체크박스 열을 그린다 (utils/user.ts의 isGalleryManager).
@@ -97,7 +97,7 @@ export class FakeSite {
         const json = (body: unknown) => route.fulfill({contentType: "application/json", body: JSON.stringify(body)});
         const form = (): URLSearchParams => {
             const body = new URLSearchParams(request.postData() ?? "");
-            this.submitted.push({path: url.pathname, body});
+            this.submitted.push({path: url.pathname, body, fcmToken: request.headers()["fcmtoken"]});
             return body;
         };
 

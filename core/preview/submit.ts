@@ -4,6 +4,7 @@ import {urls} from "@/core/http/urls";
 import type {CommentRcKey} from "@/core/messaging/protocol";
 
 import {decodeD} from "./dcinside-js";
+import {fcmToken} from "./fcm";
 import {type SubmitResult, submitResult} from "./response";
 import type {DcinsideDccon, GalleryPreData, PostInfo} from "./types";
 
@@ -82,5 +83,5 @@ export const submitComment = async (
             })
     });
 
-    return submitResult(await ajax.post(typeof memo === "string" ? urls.comments_submit : urls.dccon_comments_submit, {body: params}).text());
+    return submitResult(await ajax.post(typeof memo === "string" ? urls.comments_submit : urls.dccon_comments_submit, {body: params, headers: {fcmToken: await fcmToken()}}).text());
 };

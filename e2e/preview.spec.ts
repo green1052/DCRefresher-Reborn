@@ -552,6 +552,40 @@ test.describe("댓글 쓰기·지우기", () => {
         expect(body.get("rc_key")).toMatch(/^new3?$/);
     });
 
+    test("알림을 허용한 브라우저는 디시 페이지처럼 Firebase가 저장한 웹 푸시 토큰을 fcmToken 머리로 보낸다", async ({listPage, site, context}) => {
+        await context.grantPermissions(["notifications"], {origin: "https://gall.dcinside.com"});
+        const {page} = listPage;
+        const frame = await listPage.openPreview();
+        const input = frame.getByRole("textbox", {name: "댓글 입력", exact: true});
+        const submit = async (memo: string): Promise<void> => {
+            await input.fill(memo);
+            await frame.getByRole("button", {name: "작성", exact: true}).click();
+            await expect(frame.getByText(memo, {exact: true})).toBeVisible();
+        };
+
+        // 토큰을 받은 적이 없으면 머리를 붙이지 않고, 토큰 DB도 만들지 않는다 (빈 DB가 생기면 SDK가 저장소를 만들지 못한다).
+        await submit("토큰 없이 쓴 댓글");
+        expect(site.submitted.map(({fcmToken}) => fcmToken)).toEqual([undefined]);
+        expect(await page.evaluate(async () => (await indexedDB.databases()).map(({name}) => name))).not.toContain("firebase-messaging-database");
+
+        // 디시 /_js/fcm/app.js의 Firebase SDK가 저장하는 모양 그대로 넣는다.
+        await page.evaluate(() => new Promise<void>((resolve, reject) => {
+            const open = indexedDB.open("firebase-messaging-database", 1);
+            open.onupgradeneeded = () => open.result.createObjectStore("firebase-messaging-store");
+            open.onerror = () => reject(open.error);
+            open.onsuccess = () => {
+                const transaction = open.result.transaction("firebase-messaging-store", "readwrite");
+                transaction.objectStore("firebase-messaging-store").put({token: "fcm-token", createTime: 1}, "1:847263058171:web:f8932168a3b61afbeac85e");
+                transaction.oncomplete = () => {
+                    open.result.close();
+                    resolve();
+                };
+            };
+        }));
+        await submit("토큰과 함께 쓴 댓글");
+        expect(site.submitted.map(({fcmToken}) => fcmToken)).toEqual([undefined, "fcm-token"]);
+    });
+
     test("쓰던 댓글은 글마다 남아 다른 글에 갔다 돌아와도 되살리고, 보내면 그 글의 초안만 지운다", async ({listPage}) => {
         const {page} = listPage;
         const frame = await listPage.openPreview();

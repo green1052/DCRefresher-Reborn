@@ -1,6 +1,7 @@
 import {ajax} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
 
+import {fcmToken} from "./fcm";
 import {dcBody, type SubmitResult, submitResult} from "./response";
 import type {GalleryPreData, PostInfo} from "./types";
 
@@ -110,5 +111,5 @@ export const submitTxtcon = async (
         "g-recaptcha-token": grecaptchaToken || undefined
     });
 
-    return submitResult(await ajax.post(urls.txtcon_submit, {body}).text());
+    return submitResult(await ajax.post(urls.txtcon_submit, {body, headers: {fcmToken: await fcmToken()}}).text());
 };
