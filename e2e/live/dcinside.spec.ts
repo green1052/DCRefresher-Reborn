@@ -71,6 +71,9 @@ const WRITE_MARKUP: Markup[] = [
 ];
 
 test.describe("실제 디시", () => {
+    // 다른 테스트는 나눠 돌지만(fullyParallel) 실제 디시에는 요청이 몰리지 않게 한 작업자가 차례로 돌린다.
+    test.describe.configure({mode: "default"});
+
     test("글 목록에 배지와 새로고침 버튼을 붙이고, 자동 새로고침이 같은 목록을 다시 받는다", async ({page}) => {
         const list = await openListPage(page, LIST_URL);
         await expect(page.locator(POSTS).first()).toBeVisible();
