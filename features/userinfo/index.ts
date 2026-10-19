@@ -109,7 +109,7 @@ const process = (ctx: Ctx, {colors, view, ratios}: BadgeState, element: HTMLElem
         }
 
         const info = ip ? ipInfoOf(ip) : undefined;
-        if (info && passesIpFilter(info, view.ipFilter)) badges.push(buildBadgeSpan(`[${info.label}]`, colors[info.category], info.title));
+        if (info && passesIpFilter(info, view.ipFilter)) badges.push(buildBadgeSpan(`[${info.label}]`, colors[info.category], info.title, "refresherUserData refresherIpInfo"));
     };
 
     for (const key of view.order) {

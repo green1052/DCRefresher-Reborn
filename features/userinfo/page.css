@@ -36,10 +36,22 @@
         overflow: visible;
 
         .addbox {
-            display: block !important;
+            display: flex !important;
+            /* 넘치면 왼쪽부터 채운다. 그냥 center면 양쪽이 잘려 닉네임 앞 글자가 가려진다. */
+            justify-content: safe center;
             position: static;
             overflow: hidden;
-            text-overflow: ellipsis;
+
+            > * {
+                flex-shrink: 0;
+            }
+
+            /* 닉네임은 줄지 않고(조금만 줄어도 …가 붙는다), 칸보다 길 때만 칸 폭에서 자른다. */
+            > .nickname {
+                max-width: 100% !important;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
         }
 
         .user_data.add {
@@ -50,8 +62,8 @@
         }
     }
 
-    /* 글 머리: 칸은 넓지만 후보가 많으면 날짜를 밀어내므로 배지를 줄인다. 전체는 툴팁에 있다. */
-    .gallview_head .refresher-user-badges {
+    /* 글 머리: 칸은 넓지만 IP 후보가 많으면 날짜를 밀어내므로 IP 정보만 줄인다 (뒤의 메모 등은 그대로). 전체는 툴팁에 있다. */
+    .gallview_head .refresherIpInfo {
         display: inline-block;
         max-width: 300px;
         overflow: hidden;
@@ -59,25 +71,40 @@
         vertical-align: bottom;
     }
 
+    /* 댓글 작성자 칸은 폭이 고정이다. 디시가 닉네임 묶음을 줄지 않게 둬서 넘친 배지가 그냥 잘리므로 줄게 한다. */
     .cmt_nickbox {
         display: flex;
 
-        /* 댓글 작성자 칸은 폭이 고정이라, 넘친 배지는 목록처럼 …으로 줄인다. 디시가 닉네임 묶음을 줄지 않게 둬서 그냥 잘린다. */
         .nickname {
             flex-shrink: 1 !important;
             min-width: 0;
 
-            /* 닉네임·IP는 그대로 두고 배지만 줄인다. */
             > * {
                 flex-shrink: 0;
             }
         }
+    }
 
-        .refresher-user-badges {
-            flex-shrink: 1;
-            min-width: 0;
+    /*
+     * 좁은 목록·댓글 작성자 칸: 배지 묶음만 줄고, 그 안에선 IP 정보만 줄어 뒤의 메모 등이 남는다. 전체는 툴팁에 있다.
+     * 다른 배지는 조금만 줄어도 …가 붙으므로 줄지 않게 두고, 묶음보다 길 때만 묶음 폭에서 자른다.
+     */
+    :is(.gall_list td.gall_writer, .cmt_nickbox) .refresher-user-badges {
+        display: flex;
+        flex-shrink: 1;
+        min-width: 0;
+        overflow: hidden;
+
+        > * {
+            flex-shrink: 0;
+            max-width: 100%;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+
+        > .refresherIpInfo {
+            flex-shrink: 1;
+            min-width: 0;
         }
     }
 }
