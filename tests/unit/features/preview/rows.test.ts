@@ -54,7 +54,8 @@ describe("buildPreData", () => {
         "https://evil.com/board/view/?id=test&no=1",
         "javascript:alert(1)",
         "http://m.dcinside.com/board/test/1",
-        "/board/lists/?id=test"
+        "/board/lists/?id=test",
+        "http://"
     ])("%s 링크는 열지 않는다", (href) => {
         expect(buildPreData(listRow({href}))).toBeNull();
     });
