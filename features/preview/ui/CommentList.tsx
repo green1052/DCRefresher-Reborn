@@ -88,6 +88,9 @@ export const CommentOrder = () => {
     );
 };
 
+/** 답글 없는 스레드의 replies. 렌더마다 새 []를 주면 Thread의 memo가 매번 빗나간다. */
+const NO_REPLIES: ProcessedComment[] = [];
+
 /**
  * 스레드 하나(첫 댓글과 접을 수 있는 답글). 접힘은 스레드마다 구독한다. 목록 전체가 구독하면 하나를 접을 때마다 댓글 전부를 다시 그린다.
  * memo로 감싸 목록이 스레드를 더 그릴 때 이미 그린 스레드(Collapsible이 높이를 다시 잰다)는 건너뛴다. replies는 목록이 useMemo로 유지한다.
@@ -246,7 +249,7 @@ export const CommentList = ({comments}: { comments: ProcessedComment[] }) => {
                                 foldable={new Set(parents.filter((parent) => shown.has(parent) && (repliesOf.get(parent.no)?.length ?? 0) > 1).map((parent) => parent.no))}/>
             )}
             {parents.slice(0, count).map((parent) => {
-                const replies = repliesOf.get(parent.no) ?? [];
+                const replies = repliesOf.get(parent.no) ?? NO_REPLIES;
 
                 // 부모를 숨겼으면 답글을 들여쓰지 않고 그 자리에 그린다. 이어 줄 트리 선이 없다.
                 if (!shown.has(parent)) {
