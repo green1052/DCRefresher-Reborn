@@ -64,9 +64,9 @@ const parseBans = (stored: string): BanList => {
 export type IpCategory = "korea" | "japan" | "china" | "foreign" | "vpn";
 
 interface IpInfo {
-    /** "KT, 부산은행" / "SoftBank Corp. (일본)" / "Tencent (VPN)". 조직은 겹치지 않게 모두 쓰고, 한국은 국가를 생략한다. */
+    /** "KT, 부산은행" / "SoftBank Corp. (일본)" / "Tencent (VPN), KT". 후보를 겹치지 않게 모두 쓰고, 한국은 국가를 생략한다. */
     label: string;
-    /** 후보 전체 (툴팁용). */
+    /** label과 같은 후보를 한 줄에 하나씩 (툴팁·유저 버블용). */
     title: string;
     category: IpCategory;
 }
@@ -233,15 +233,10 @@ export const ipInfoOf = (ip: string): IpInfo | undefined => {
     const first = candidates?.[0];
     if (!candidates || !first) return undefined;
 
-    // 첫 후보에 조직이 없으면 다른 후보의 조직에 첫 후보의 국가가 붙어 틀린 표시가 되므로 국가만 보인다. 조직은 툴팁에 남는다.
-    const orgs = !first.org ? [] : [...new Set(candidates.map((candidate) => candidate.org).filter((org): org is string => Boolean(org)))];
+    // 후보마다 자기 국가·VPN을 붙인다. 조직이 없으면 국가·VPN만 보이고, 그것도 없을 때만 미상이라고 쓴다 (빈 칸이 되지 않게).
+    const shown = [...new Set(candidates.map((candidate) => withTag(candidate.org ?? "", tagOf(candidate)) || "조직 미상"))];
 
-    return {
-        label: withTag(orgs.join(", "), tagOf(first)),
-        // 조직이 없으면 국가·VPN만 보이고, 그것도 없을 때만 미상이라고 쓴다 (빈 줄이 되지 않게).
-        title: candidates.map((candidate) => withTag(candidate.org ?? "", tagOf(candidate)) || "조직 미상").join("\n"),
-        category: categoryOf(first)
-    };
+    return {label: shown.join(", "), title: shown.join("\n"), category: categoryOf(first)};
 };
 
 /** IP 정보를 어떤 IP까지 보여 줄지 (userinfo ipInfoFilter). 페이지와 미리보기가 같은 기준을 쓴다. */

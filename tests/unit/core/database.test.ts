@@ -164,17 +164,17 @@ describe("ipInfoOf", () => {
             ["1.4", [{country: "미국", vpn: false}]]
         ]);
         expect(ipInfoOf("1.1")).toMatchObject({label: "SoftBank (일본)", category: "japan"});
-        expect(ipInfoOf("1.2")).toEqual({label: "Tencent, KT (VPN)", title: "Tencent (VPN)\nKT", category: "vpn"});
+        expect(ipInfoOf("1.2")).toEqual({label: "Tencent (VPN), KT", title: "Tencent (VPN)\nKT", category: "vpn"});
         expect(ipInfoOf("1.3")).toMatchObject({category: "china"});
         expect(ipInfoOf("1.4")).toEqual({label: "미국", title: "미국", category: "foreign"});
     });
 
-    it("첫 후보에 조직이 없으면 다른 후보의 조직을 첫 후보의 국가로 표시하지 않는다", async () => {
-        const {ipInfoOf} = await setup([["1.5", [{country: "태국", vpn: false}, {org: "ARTERIA", country: "일본", vpn: false}]]]);
-        expect(ipInfoOf("1.5")).toEqual({label: "태국", title: "태국\nARTERIA (일본)", category: "foreign"});
+    it("후보마다 자기 국가를 붙이고, 조직이 없으면 국가만 보인다", async () => {
+        const {ipInfoOf} = await setup([["1.5", [{country: "태국", vpn: false}, {org: "ARTERIA", country: "일본", vpn: false}, {vpn: false}]]]);
+        expect(ipInfoOf("1.5")).toEqual({label: "태국, ARTERIA (일본), 조직 미상", title: "태국\nARTERIA (일본)\n조직 미상", category: "foreign"});
     });
 
-    it("조직은 겹치지 않게 모두 보인다", async () => {
+    it("후보는 겹치지 않게 모두 보인다", async () => {
         const orgs = ["A", "B", "C", "D", "E", "A"].map((org) => ({org, vpn: false}));
         const {ipInfoOf} = await setup([["1.2", orgs]]);
         expect(ipInfoOf("1.2")?.label).toBe("A, B, C, D, E");
