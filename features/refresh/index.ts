@@ -1,5 +1,5 @@
 import {http} from "@/core/http/client";
-import {isViewPage, listUrl, mergeParamURL, pageGallery, queryString} from "@/core/http/urls";
+import {isViewPage, listUrl, mergeParamURL, pageGallery, queryString, writerFilter} from "@/core/http/urls";
 import {LIST_SELECTOR, notifyListReplaced, PAGING_SELECTOR} from "@/core/list";
 import {defineModule} from "@/core/module/define";
 import {getModuleApi} from "@/core/module/registry";
@@ -204,9 +204,10 @@ export default defineModule(meta, {
                 // 응답을 기다리는 동안 커서를 올리거나 체크했으면 버린다. lastListHash를 아직 바꾸지 않아야 다음 주기에 이 목록이 들어간다.
                 if (holdList(customURL, force)) return false;
 
-                // 자동 새로고침은 목록 표만 파싱한다(문서의 1/3). 강제·이동 로드, 검색 결과(검색 모듈이 페이징을 보고 다시 잇는다),
+                // 자동 새로고침은 목록 표만 파싱한다(문서의 1/3). 강제·이동 로드, 검색 결과·작성자 거르기(검색 모듈이 페이징을 보고 다시 잇는다),
                 // 실패 뒤(페이징이 옛 페이지일 수 있다)에는 문서 전체를 파싱해 페이징도 맞춘다.
-                const partial = !force && failures === 0 && !queryString("s_keyword") && listHtml;
+                const writer = writerFilter(target) !== null;
+                const partial = !force && failures === 0 && !queryString("s_keyword") && !writer && listHtml;
                 const dom = new DOMParser().parseFromString(partial ? `<table class="gall_list">${listHtml}` : response, "text/html");
 
                 const oldList = document.querySelector<HTMLElement>(LIST_SELECTOR);
@@ -220,7 +221,9 @@ export default defineModule(meta, {
 
                 const {added: newPostList, changed} = replaceList(oldList, newList, {
                     navigated: Boolean(customURL),
-                    search: queryString("s_keyword") ? document.querySelector<HTMLInputElement>("#sch_q")?.value ?? "" : undefined,
+                    // 작성자 거르기도 검색 결과처럼 통째로 바꾼다. 제자리에서 고치면 검색 모듈이 이어 붙인 다음 쪽 행이 밀려난 행으로 지워지고,
+                    // tbody가 그대로라 다시 잇지도 않는다.
+                    search: queryString("s_keyword") ? document.querySelector<HTMLInputElement>("#sch_q")?.value ?? "" : writer ? "" : undefined,
                     searchType: new URL(target).searchParams.get("s_type"),
                     fadeIn: ctx.settings.fadeIn,
                     // 삭제된 글 보존은 미리보기의 archiveArticle 설정을 따르고(미리보기를 끄면 같이 꺼진다),

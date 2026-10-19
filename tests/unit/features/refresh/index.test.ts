@@ -275,6 +275,21 @@ describe("자동 새로고침", () => {
         expect(listed()).toEqual(["3", "2", "1"]);
     });
 
+    it("작성자 거르기 목록은 이어 붙인 행을 제자리에서 지우지 않고 tbody를 통째로 바꾼다", async () => {
+        vi.useFakeTimers();
+        history.replaceState(null, "", "/board/lists/?id=test&rf_ip=1.2");
+        // 검색 모듈이 다음 쪽에서 이어 붙인 행. 새 tbody가 들어와야 검색 모듈이 다시 잇는다.
+        const old = document.querySelector(".gall_list tbody")!;
+        old.insertAdjacentHTML("beforeend", row("0"));
+        respond(["2", "1"]);
+        await start();
+        await vi.advanceTimersByTimeAsync(5500);
+        expect(get).toHaveBeenCalled();
+        expect(document.querySelector(".gall_list tbody")).not.toBe(old);
+        expect(old.isConnected).toBe(false);
+        expect(listed()).toEqual(["2", "1"]);
+    });
+
     it("뒤 페이지는 받지 않는다", async () => {
         vi.useFakeTimers();
         history.replaceState(null, "", "/board/lists/?id=test&page=2");
