@@ -119,7 +119,7 @@ labels.ts에서 같은 `group` 객체를 가진 설정은 옵션 화면에서 �
 
 다른 모듈의 api는 `core/module/registry.ts`의 `getModuleApi(id)`로 받습니다. 그 모듈이 이 페이지에서 켜져 있고 setup이 끝났을 때만 값이 있습니다.
 
-`modules/module-types.ts`가 `features/*/index.ts`의 id와 `setup` 리턴 타입을 모아 `.wxt/types/modules.d.ts`의 `ModuleApis`를 채우므로(`wxt prepare`) id와 api 타입은 따로 등록하지 않습니다. 없는 id나 api가 없는 모듈을 넣으면 타입 오류가 납니다. 새 모듈을 만든 직후 자동완성에 안 나오면 `bunx wxt prepare`를 한 번 실행합니다.
+`modules/module-types.ts`가 `features/*/index.ts`의 id와 `setup` 리턴 타입을 모아 `.wxt/types/modules.d.ts`의 `ModuleApis`를 채우므로(`wxt prepare`, 설정 훅이 쓰는 `ModuleSettings`는 `meta.ts`에서 채웁니다) id와 api 타입은 따로 등록하지 않습니다. 없는 id나 api가 없는 모듈을 넣으면 타입 오류가 납니다. 새 모듈을 만든 직후 자동완성에 안 나오면 `bunx wxt prepare`를 한 번 실행합니다.
 
 ```ts
 // features/preview/index.ts — setup이 돌려주는 객체가 곧 api 타입이다
@@ -131,7 +131,7 @@ getModuleApi("preview")?.archiveArticle() === true
 
 ## 확장 페이지 CSS 변수
 
-모듈 설정이 옵션·팝업 화면에도 반영돼야 하면 `extensionPageVars(settings)`로 CSS 변수를 돌려줍니다. 모듈이 켜져 있을 때 옵션·팝업의 `<html>`에 들어가므로(폰트 교체의 `--refresher-font`) 옵션·팝업 코드에는 특정 모듈 이름을 적지 않습니다.
+모듈 설정이 옵션·팝업 화면에도 반영돼야 하면 `meta.ts`의 `extensionPageVars(settings)`로 CSS 변수를 돌려줍니다. 모듈이 켜져 있을 때 옵션·팝업의 `<html>`에 들어가므로(폰트 교체의 `--refresher-font`) 옵션·팝업 코드에는 특정 모듈 이름을 적지 않습니다.
 
 ## 배경 모듈
 
