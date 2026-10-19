@@ -131,7 +131,7 @@ const blockingIn = (lists: BlockLists, type: BlockType, content: string, gallery
  * src 없이 data-src나 <source>만 가진 video 디시콘이 있고, 빈 src 속성도 건너뛰어야 해서 ||를 쓴다.
  */
 export const dcconCode = (element: HTMLElement): string | undefined => {
-    const media = (element as HTMLImageElement).src ? element : (element.querySelector("img, video, source") ?? element);
+    const media = element.getAttribute("src") ? element : (element.querySelector("img, video, source") ?? element);
     const src = media.getAttribute("src") || media.getAttribute("data-src");
     return src ? URL.parse(src, location.href)?.searchParams.get("no") || undefined : undefined;
 };
