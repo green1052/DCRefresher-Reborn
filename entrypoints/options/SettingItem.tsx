@@ -238,7 +238,8 @@ const OrderControl = ({schema, value: order, descId, onChange}: NarrowProps<"ord
                     draggable
                     onDragStart={(ev) => {
                         // Firefox는 dataTransfer에 데이터가 없으면 드래그를 시작하지 않는다.
-                        ev.dataTransfer.setData("text/plain", String(index));
+                        // text/plain이면 입력칸에 떨어뜨렸을 때 번호가 글자로 들어가므로 입력칸이 받지 않는 종류로 둔다.
+                        ev.dataTransfer.setData("application/x-refresher-order", String(index));
                         ev.dataTransfer.effectAllowed = "move";
                         setDragging(index);
                     }}
