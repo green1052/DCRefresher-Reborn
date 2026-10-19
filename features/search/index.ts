@@ -74,6 +74,10 @@ export default defineModule(meta, {
             removeWriterTypes();
             // 모듈을 끄면 목록을 다시 받는 쪽이 없어 이어 붙인 다른 구간 행과 페이징이 새로고침할 때까지 남는다.
             for (const row of document.querySelectorAll(`.${ADDED_ROW}`)) row.remove();
+            for (const table of document.querySelectorAll<HTMLElement>("[data-refresher-search-empty]")) {
+                table.classList.add("empty");
+                delete table.dataset.refresherSearchEmpty;
+            }
             const paging = document.querySelector<HTMLElement>(PAGING_SELECTOR);
             const original = paging?.dataset.refresherSearchPaging;
             if (!paging || original === undefined) return;
@@ -163,6 +167,12 @@ export default defineModule(meta, {
                         // 목록 쪽은 그새 새 글이 올라와 앞 쪽의 행이 다음 쪽에 다시 온다.
                         if (!searching && cached.dataset.no && list.querySelector(`:scope > tr[data-no="${cached.dataset.no}"]`)) continue;
                         const row = document.importNode(cached, true);
+                        // 결과가 없는 구간의 표는 디시가 empty를 붙여 칸을 250px로 키운다. 그대로 두면 이어 붙인 행마다 그 높이가 된다.
+                        const empty = list.closest<HTMLElement>("table.empty");
+                        if (empty) {
+                            empty.classList.remove("empty");
+                            empty.dataset.refresherSearchEmpty = "";
+                        }
                         row.classList.add(ADDED_ROW);
                         fillCheckbox(row);
                         list.append(row);

@@ -95,3 +95,18 @@ it("스크립트가 다시 주입되면 앞 인스턴스가 이어 붙인 목록
     expect(nos(list)).toEqual(["30", "29"]);
     expect(document.querySelector<HTMLAnchorElement>(".search_next")!.search).toContain("search_pos=-10000");
 });
+
+it("결과가 없는 구간의 빈 표(empty)에 이으면 empty를 떼고, 모듈을 끄면 되돌린다", async () => {
+    document.body.innerHTML = `<input id="sch_q" value="abc">${page("", 10000)}`;
+    const table = document.querySelector(".gall_list")!;
+    table.classList.add("empty");
+    running = await runModule(search);
+    const list = document.querySelector(".gall_list tbody")!;
+    await vi.waitFor(() => expect(nos(list)).toEqual(["20", "19", "10", "9"]));
+    expect(table.classList.contains("empty")).toBe(false);
+
+    running.stop();
+    running = undefined;
+    expect(nos(list)).toEqual([]);
+    expect(table.classList.contains("empty")).toBe(true);
+});
