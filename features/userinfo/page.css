@@ -50,6 +50,15 @@
         }
     }
 
+    /* 글 머리: 칸은 넓지만 후보가 많으면 날짜를 밀어내므로 배지를 줄인다. 전체는 툴팁에 있다. */
+    .gallview_head .refresher-user-badges {
+        display: inline-block;
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+
     .cmt_nickbox {
         display: flex;
 
