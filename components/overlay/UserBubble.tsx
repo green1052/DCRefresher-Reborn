@@ -12,6 +12,7 @@ import {blockingEntries} from "@/core/block";
 import {banReasonsOf, databaseVersion, ipInfoOf, onDatabaseChange, subscribeDatabase} from "@/core/database";
 import {urls} from "@/core/http/urls";
 import {getModuleApi} from "@/core/module/registry";
+import {useRunningModuleSettings} from "@/core/module/useModuleSettings";
 import {dcconPackages, fetchDcconPackage} from "@/core/preview/request";
 import {TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
@@ -75,12 +76,20 @@ const DcconSummary = ({code, onOpen}: { code: string; onOpen: () => void }) => {
     );
 };
 
-/** 클릭하면 복사되는 값 한 줄. 라벨 폭을 맞춰 값이 한 줄로 늘어서게 하고, 긴 값(IP 후보 등)은 띄어쓰기에서 다음 줄로 넘긴다. onSearch가 있으면 오른쪽에 그 값으로 글을 찾는 버튼을 둔다. */
-const CopyRow = ({label, value, onCopy, onSearch}: { label: string; value: string; onCopy: (value: string) => void; onSearch?: () => void }) => (
+/** 클릭하면 복사되는 값 한 줄. 라벨 폭을 맞춰 값이 한 줄로 늘어서게 하고, 긴 값(IP 후보 등)은 띄어쓰기에서 다음 줄로 넘긴다. onSearch가 있으면 오른쪽에 그 값으로 글을 찾는 버튼을 둔다.
+ * color·valueClassName은 값을 배지와 같은 색으로 칠한다. */
+const CopyRow = ({label, value, onCopy, onSearch, color, valueClassName}: {
+    label: string;
+    value: string;
+    onCopy: (value: string) => void;
+    onSearch?: () => void;
+    color?: string;
+    valueClassName?: string;
+}) => (
     <div className="flex items-center">
         <MenuItem className="h-auto min-h-8 min-w-0 flex-1 py-1.5 whitespace-normal" title="클릭하면 복사됩니다." onClick={() => onCopy(value)}>
             <span className="w-18 shrink-0 text-left text-muted-foreground">{label}</span>{" "}
-            <strong className="min-w-0 text-left break-keep wrap-anywhere">{value}</strong>
+            <strong className={cn("min-w-0 text-left break-keep wrap-anywhere", valueClassName)} style={{color}}>{value}</strong>
         </MenuItem>
         {onSearch && (
             <Button variant="ghost" size="icon-sm" className="shrink-0 cursor-pointer text-muted-foreground" aria-label={`${label}(으)로 글 검색`} title={`${label}(으)로 글 검색`}
@@ -238,7 +247,10 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
         close();
         searchApi.searchUserPosts(selected, by);
     });
-    const ipLabel = dbVersion > 0 && selected.ip ? ipInfoOf(selected.ip)?.label : undefined;
+    const ipInfo = dbVersion > 0 && selected.ip ? ipInfoOf(selected.ip) : undefined;
+    // 배지와 같은 색. 유저 정보 모듈이 꺼져 있거나 색을 비웠으면 미리보기(features/preview/ui/UserCard.tsx)처럼 파랑이다.
+    const userinfo = useRunningModuleSettings("userinfo");
+    const ipColor = ipInfo ? userinfo?.[`${ipInfo.category}Color`] : undefined;
     const bans = dbVersion > 0 && selected.uid ? banReasonsOf(selected.uid) : undefined;
     const activity = formatActivity(activityState);
 
@@ -286,10 +298,10 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
                         <div className="flex flex-col">
                             {selected.nick && <CopyRow label="닉네임" value={selected.nick} onCopy={copy} onSearch={searchBy("nick")}/>}
                             {identity && <CopyRow label="아이디/IP" value={identity} onCopy={copy} onSearch={searchBy("identity")}/>}
-                            {ipLabel && <CopyRow label="IP 정보" value={ipLabel} onCopy={copy}/>}
+                            {ipInfo && <CopyRow label="IP 정보" value={ipInfo.label} onCopy={copy} color={ipColor} valueClassName={cn(!ipColor && "text-blue-600 dark:text-blue-400")}/>}
                             {activity && <CopyRow label="글/댓글" value={activity} onCopy={copy}/>}
                             {bans && <CopyRow label="갱차 갤러리" value={bans} onCopy={copy}/>}
-                            {memo && <CopyRow label="메모" value={memo.text} onCopy={copy}/>}
+                            {memo && <CopyRow label="메모" value={memo.text} onCopy={copy} color={memo.color || undefined}/>}
                         </div>
                         <Separator/>
                         <div className="flex flex-col">
