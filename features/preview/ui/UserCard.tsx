@@ -63,7 +63,8 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
         UID: user.id
             ? showsUid(view, user.image) && <span className={identityClass} style={{color: uidColor}}>({user.id})</span>
             : ipInfo && passesIpFilter(ipInfo, view.ipFilter) &&
-            <span className={cn("truncate text-xs", !ipColor && "text-blue-600 dark:text-blue-400")} style={{color: ipColor}} title={ipInfo.title}>[{ipInfo.label}]</span>,
+            // 후보가 많으면 길어지므로 글 보기 머리(features/userinfo/page.css)처럼 IP 정보만 줄인다. 전체는 툴팁에 있다.
+            <span className={cn("max-w-[300px] truncate text-xs", !ipColor && "text-blue-600 dark:text-blue-400")} style={{color: ipColor}} title={ipInfo.title}>[{ipInfo.label}]</span>,
         MEMO: memo && <span className="truncate text-xs" style={{color: memo.color || undefined}} title={memo.text}>[{memo.text}]</span>,
         RATIO: ratio && <span className="truncate text-xs" style={{color: ratioColor}} title="글/댓글">[{ratio.article}/{ratio.comment}]</span>,
         PERMBAN: banReasons && banColor && <span className="truncate text-xs" style={{color: banColor}} title={banReasons}>[{banReasons}]</span>

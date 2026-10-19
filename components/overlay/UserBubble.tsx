@@ -75,7 +75,7 @@ const DcconSummary = ({code, onOpen}: { code: string; onOpen: () => void }) => {
     );
 };
 
-/** 클릭하면 복사되는 값 한 줄. 라벨 폭을 맞춰 값이 한 줄로 늘어서게 한다. onSearch가 있으면 오른쪽에 그 값으로 글을 찾는 버튼을 둔다. */
+/** 클릭하면 복사되는 값 한 줄. 라벨 폭을 맞춰 값이 한 줄로 늘어서게 하고, 긴 값과 줄바꿈(IP 후보)은 다음 줄로 넘긴다. onSearch가 있으면 오른쪽에 그 값으로 글을 찾는 버튼을 둔다. */
 const CopyRow = ({label, value, onCopy, onSearch}: { label: string; value: string; onCopy: (value: string) => void; onSearch?: () => void }) => (
     <div className="flex items-center">
         <MenuItem className="h-auto min-h-8 min-w-0 flex-1 py-1.5 whitespace-normal" title="클릭하면 복사됩니다." onClick={() => onCopy(value)}>
@@ -238,7 +238,7 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
         close();
         searchApi.searchUserPosts(selected, by);
     });
-    // 배지(label)는 첫 후보에 조직이 없으면 국가만 쓰므로, 버블은 후보 전체(title)를 한 줄에 하나씩 보인다.
+    // 배지는 칸에 맞춰 줄어드므로, 버블은 후보 전체를 한 줄에 하나씩(title) 보인다.
     const ipCandidates = dbVersion > 0 && selected.ip ? ipInfoOf(selected.ip)?.title : undefined;
     const bans = dbVersion > 0 && selected.uid ? banReasonsOf(selected.uid) : undefined;
     const activity = formatActivity(activityState);
