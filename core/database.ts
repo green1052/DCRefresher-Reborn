@@ -238,7 +238,8 @@ export const ipInfoOf = (ip: string): IpInfo | undefined => {
 
     return {
         label: withTag(orgs.join(", "), tagOf(first)),
-        title: candidates.map((candidate) => withTag(candidate.org ?? "(조직 미상)", tagOf(candidate))).join("\n"),
+        // 조직이 없으면 국가·VPN만 보이고, 그것도 없을 때만 미상이라고 쓴다 (빈 줄이 되지 않게).
+        title: candidates.map((candidate) => withTag(candidate.org ?? "", tagOf(candidate)) || "조직 미상").join("\n"),
         category: categoryOf(first)
     };
 };
