@@ -89,7 +89,7 @@ const TXTCON_CHECKS = ["check_6", "check_7", "check_8"];
 const parseCommentForm = (dom: Document): CommentForm => ({
     fields: Array.from(dom.querySelectorAll<HTMLInputElement>("#focus_cmt > input"), (input): [string, string] => [input.name || input.id || "", input.value]),
     serviceCode: dom.querySelector<HTMLInputElement>("input[name=service_code]")?.value ?? "",
-    dValue: dom.querySelector("#reply-setting-tmpl + script")?.textContent?.match(/_d\('(.*)'\)/)?.[1],
+    dValue: dom.querySelector("#reply-setting-tmpl + script")?.textContent?.match(/_d\('([^']*)'\)/)?.[1],
     checks: Object.fromEntries(TXTCON_CHECKS.map((name) => [name, dom.querySelector<HTMLInputElement>(`#${name}`)?.value ?? ""])),
     gallNickName: dom.querySelector("#use_gall_nick") ? dom.querySelector<HTMLInputElement>("#focus_cmt input[name=gall_nick_name]")?.value ?? "" : undefined
 });
