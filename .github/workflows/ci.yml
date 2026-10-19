@@ -3,6 +3,13 @@ name: CI
 on:
     pull_request:
     workflow_call:
+    # 손으로 돌리면 아래 live 잡(실제 디시 E2E)까지 돈다.
+    workflow_dispatch:
+        inputs:
+            list_url:
+                description: 실제 디시 E2E의 PC 목록 주소 (비우면 미니 갤러리 bjwg64)
+                required: false
+                default: ""
 
 permissions:
     contents: read
@@ -60,6 +67,39 @@ jobs:
                 uses: actions/upload-artifact@v7
                 with:
                     name: playwright-report-${{ matrix.browser }}
+                    path: |
+                        playwright-report
+                        test-results
+                    retention-days: 7
+
+    # 실제 디시 E2E (bun run e2e:live). 디시 마크업·API와 디시 JS에서 옮긴 키(core/preview/dcinside-js.ts)가 바뀌었는지 본다.
+    # 해외 IP인 러너에서 디시가 다르게 응답할 수 있어 손으로 돌릴 때(workflow_dispatch)만 돈다. 읽기 요청만 보낸다 (e2e/fixtures.ts가 쓰기를 끊는다).
+    live:
+        if: github.event_name == 'workflow_dispatch'
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        steps:
+            -   uses: actions/checkout@v7
+                with:
+                    persist-credentials: false
+
+            -   uses: ./.github/actions/setup
+
+            -   name: Install browser
+                timeout-minutes: 3
+                run: bunx playwright install --with-deps chromium
+
+            # e2e:live 스크립트가 먼저 빌드한다.
+            -   name: Live E2E tests
+                env:
+                    DC_LIST_URL: ${{ inputs.list_url }}
+                run: bun run e2e:live
+
+            -   name: Upload E2E report
+                if: failure()
+                uses: actions/upload-artifact@v7
+                with:
+                    name: playwright-report-live
                     path: |
                         playwright-report
                         test-results
