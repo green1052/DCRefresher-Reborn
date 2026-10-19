@@ -22,7 +22,7 @@ export default defineWxtModule((wxt) => {
             tsReference: true
         }, {
             path: "module-ids.ts",
-            text: `// modules/module-types.ts가 만든다. 고치지 않는다.\nexport default ${JSON.stringify(metaFolders)};\n`
+            text: `export default ${JSON.stringify(metaFolders)};\n`
         });
     });
 });

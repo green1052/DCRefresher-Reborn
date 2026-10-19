@@ -13,7 +13,7 @@ export default defineWxtModule((wxt) => {
 
         entries.push({
             path: "page-styles.css",
-            text: `/* modules/feature-styles.ts가 만든다. 고치지 않는다. */\n${folders.map((folder) => `@import "../features/${folder}/page.css";`).join("\n")}\n`
+            text: `${folders.map((folder) => `@import "../features/${folder}/page.css";`).join("\n")}\n`
         });
     });
 });
