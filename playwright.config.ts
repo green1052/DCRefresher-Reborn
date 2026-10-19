@@ -29,7 +29,7 @@ export default defineConfig<{ live: boolean }>({
             testIgnore: ["live/**", "popup.spec.ts", "options.spec.ts"],
             use: {...devices["Desktop Firefox"], viewport: {width: 1280, height: 900}}
         },
-        // 실제 디시. 네트워크·디시 상태에 따라 흔들릴 수 있어 한 번 더 돌린다. 갤러리는 DC_LIST_URL로 바꾼다 (기본 미니 갤러리 bjwg64).
+        // 실제 디시. 네트워크·디시 상태에 따라 흔들릴 수 있어 한 번 더 돌린다. 갤러리는 미니 갤러리 bjwg64다.
         {
             name: "live",
             testMatch: "live/**/*.spec.ts",

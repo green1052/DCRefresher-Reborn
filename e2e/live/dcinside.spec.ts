@@ -7,10 +7,9 @@ import {openListPage} from "../pages/list";
 /**
  * 실제 디시에서 읽기만 한다 (bun run e2e:live). 디시 마크업·API가 바뀌면 여기서 걸린다. 쓰기 요청은 픽스처가 끊는다.
  * 글·댓글은 그때그때 다르므로 개수·내용이 아니라 모양만 본다.
- * 기본은 미니 갤러리 bjwg64다. 콘텐츠 스크립트는 모바일 페이지에서 돌지 않아 PC 주소로 연다. DC_LIST_URL로 다른 갤러리의 PC 목록 주소를 줄 수 있다.
- * 비워 둔 DC_LIST_URL(빈 문자열)도 기본값으로 친다.
+ * 갤러리는 미니 갤러리 bjwg64로 고정이다. 콘텐츠 스크립트는 모바일 페이지에서 돌지 않아 PC 주소로 연다.
  */
-const LIST_URL = process.env.DC_LIST_URL || "https://gall.dcinside.com/mini/board/lists/?id=bjwg64";
+const LIST_URL = "https://gall.dcinside.com/mini/board/lists/?id=bjwg64";
 const {pathname: LIST_PATH, searchParams} = new URL(LIST_URL);
 const GALLERY = searchParams.get("id") ?? "";
 /** 공지·설문·광고가 아닌 글 행. */
