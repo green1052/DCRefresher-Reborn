@@ -80,7 +80,7 @@ const CopyRow = ({label, value, onCopy, onSearch}: { label: string; value: strin
     <div className="flex items-center">
         <MenuItem className="h-auto min-h-8 min-w-0 flex-1 py-1.5 whitespace-normal" title="클릭하면 복사됩니다." onClick={() => onCopy(value)}>
             <span className="w-18 shrink-0 text-left text-muted-foreground">{label}</span>{" "}
-            <strong className="min-w-0 text-left wrap-anywhere">{value}</strong>
+            <strong className="min-w-0 text-left whitespace-pre-line wrap-anywhere">{value}</strong>
         </MenuItem>
         {onSearch && (
             <Button variant="ghost" size="icon-sm" className="shrink-0 cursor-pointer text-muted-foreground" aria-label={`${label}(으)로 글 검색`} title={`${label}(으)로 글 검색`}
@@ -238,7 +238,8 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
         close();
         searchApi.searchUserPosts(selected, by);
     });
-    const ipLabel = dbVersion > 0 && selected.ip ? ipInfoOf(selected.ip)?.label : undefined;
+    // 배지(label)는 첫 후보에 조직이 없으면 국가만 쓰므로, 버블은 후보 전체(title)를 한 줄에 하나씩 보인다.
+    const ipCandidates = dbVersion > 0 && selected.ip ? ipInfoOf(selected.ip)?.title : undefined;
     const bans = dbVersion > 0 && selected.uid ? banReasonsOf(selected.uid) : undefined;
     const activity = formatActivity(activityState);
 
@@ -286,7 +287,7 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
                         <div className="flex flex-col">
                             {selected.nick && <CopyRow label="닉네임" value={selected.nick} onCopy={copy} onSearch={searchBy("nick")}/>}
                             {identity && <CopyRow label="아이디/IP" value={identity} onCopy={copy} onSearch={searchBy("identity")}/>}
-                            {ipLabel && <CopyRow label="IP 정보" value={ipLabel} onCopy={copy}/>}
+                            {ipCandidates && <CopyRow label="IP 정보" value={ipCandidates} onCopy={copy}/>}
                             {activity && <CopyRow label="글/댓글" value={activity} onCopy={copy}/>}
                             {bans && <CopyRow label="갱차 갤러리" value={bans} onCopy={copy}/>}
                             {memo && <CopyRow label="메모" value={memo.text} onCopy={copy}/>}
