@@ -78,9 +78,9 @@ const DcconSummary = ({code, onOpen}: { code: string; onOpen: () => void }) => {
 /** 클릭하면 복사되는 값 한 줄. 라벨 폭을 맞춰 값이 한 줄로 늘어서게 한다. onSearch가 있으면 오른쪽에 그 값으로 글을 찾는 버튼을 둔다. */
 const CopyRow = ({label, value, onCopy, onSearch}: { label: string; value: string; onCopy: (value: string) => void; onSearch?: () => void }) => (
     <div className="flex items-center">
-        <MenuItem className="min-w-0 flex-1" title="클릭하면 복사됩니다." onClick={() => onCopy(value)}>
+        <MenuItem className="h-auto min-h-8 min-w-0 flex-1 py-1.5 whitespace-normal" title="클릭하면 복사됩니다." onClick={() => onCopy(value)}>
             <span className="w-18 shrink-0 text-left text-muted-foreground">{label}</span>{" "}
-            <strong className="min-w-0 truncate">{value}</strong>
+            <strong className="min-w-0 text-left wrap-anywhere">{value}</strong>
         </MenuItem>
         {onSearch && (
             <Button variant="ghost" size="icon-sm" className="shrink-0 cursor-pointer text-muted-foreground" aria-label={`${label}(으)로 글 검색`} title={`${label}(으)로 글 검색`}
