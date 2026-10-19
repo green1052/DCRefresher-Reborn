@@ -58,6 +58,8 @@ export const clickContents = (ev: MouseEvent<HTMLElement>, imageViewer: boolean)
         media.removeAttribute("data-block");
     }
     button.remove();
+    // 가린 동안은 src가 없어 깨진 이미지로 쳤다. 드러낸 이미지를 크게 보기 버튼으로 다시 알린다.
+    markPressable(ev.currentTarget, imageViewer);
 };
 
 /**
