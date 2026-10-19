@@ -3,13 +3,6 @@ name: CI
 on:
     pull_request:
     workflow_call:
-    # 손으로 돌리면 live 잡이 볼 목록 주소를 고를 수 있다.
-    workflow_dispatch:
-        inputs:
-            list_url:
-                description: 실제 디시 E2E의 PC 목록 주소 (비우면 미니 갤러리 bjwg64)
-                required: false
-                default: ""
 
 permissions:
     contents: read
@@ -90,8 +83,6 @@ jobs:
 
             # e2e:live 스크립트가 먼저 빌드한다.
             -   name: Live E2E tests
-                env:
-                    DC_LIST_URL: ${{ inputs.list_url }}
                 run: bun run e2e:live
 
             -   name: Upload E2E report
