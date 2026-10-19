@@ -3,7 +3,7 @@ name: CI
 on:
     pull_request:
     workflow_call:
-    # 손으로 돌리면 아래 live 잡(실제 디시 E2E)까지 돈다.
+    # 손으로 돌리면 live 잡이 볼 목록 주소를 고를 수 있다.
     workflow_dispatch:
         inputs:
             list_url:
@@ -73,9 +73,8 @@ jobs:
                     retention-days: 7
 
     # 실제 디시 E2E (bun run e2e:live). 디시 마크업·API와 디시 JS에서 옮긴 키(core/preview/dcinside-js.ts)가 바뀌었는지 본다.
-    # 해외 IP인 러너에서 디시가 다르게 응답할 수 있어 손으로 돌릴 때(workflow_dispatch)만 돈다. 읽기 요청만 보낸다 (e2e/fixtures.ts가 쓰기를 끊는다).
+    # 읽기 요청만 보낸다 (e2e/fixtures.ts가 쓰기를 끊는다).
     live:
-        if: github.event_name == 'workflow_dispatch'
         runs-on: ubuntu-latest
         timeout-minutes: 15
         steps:
