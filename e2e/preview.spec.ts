@@ -37,27 +37,30 @@ test.describe("미리보기", () => {
         await expect.poll(() => page.evaluate(() => history.state)).toBeNull();
     });
 
-    test("창을 열어 페이지 스크롤을 잠가도 스크롤바 자리를 남겨 뒤 페이지가 옆으로 밀리지 않고, 스크롤바가 없던 페이지에는 자리를 만들지 않는다", async ({listPage, browserName}) => {
-        test.skip(browserName === "firefox", "headless 파이어폭스는 자리를 차지하는 스크롤바를 그리지 않는다.");
-        const {page, frame} = listPage;
-        const layout = () => page.evaluate(() => ({width: document.body.getBoundingClientRect().width, gutter: document.documentElement.style.scrollbarGutter}));
-        const short = await layout();
-        await listPage.openPreview();
-        await expect(frame).toBeVisible();
-        expect(await layout()).toEqual(short);
-        await page.keyboard.press("Escape");
-        await expect(frame).toHaveCount(0);
+    test.describe(() => {
+        test.skip(({browserName}) => browserName === "firefox", "headless 파이어폭스는 자리를 차지하는 스크롤바를 그리지 않는다.");
 
-        // 페이지를 늘려 스크롤바를 세운다 (fixtures에서 크로미엄의 스크롤바 숨김을 끈다).
-        await page.evaluate(() => document.body.style.setProperty("min-height", "300vh"));
-        const long = await layout();
-        expect(long.width).toBeLessThan(short.width);
-        await listPage.openPreview();
-        await expect(frame).toBeVisible();
-        expect(await layout()).toEqual({width: long.width, gutter: "stable"});
-        await page.keyboard.press("Escape");
-        await expect(frame).toHaveCount(0);
-        expect(await layout()).toEqual(long);
+        test("창을 열어 페이지 스크롤을 잠가도 스크롤바 자리를 남겨 뒤 페이지가 옆으로 밀리지 않고, 스크롤바가 없던 페이지에는 자리를 만들지 않는다", async ({listPage}) => {
+            const {page, frame} = listPage;
+            const layout = () => page.evaluate(() => ({width: document.body.getBoundingClientRect().width, gutter: document.documentElement.style.scrollbarGutter}));
+            const short = await layout();
+            await listPage.openPreview();
+            await expect(frame).toBeVisible();
+            expect(await layout()).toEqual(short);
+            await page.keyboard.press("Escape");
+            await expect(frame).toHaveCount(0);
+
+            // 페이지를 늘려 스크롤바를 세운다 (fixtures에서 크로미엄의 스크롤바 숨김을 끈다).
+            await page.evaluate(() => document.body.style.setProperty("min-height", "300vh"));
+            const long = await layout();
+            expect(long.width).toBeLessThan(short.width);
+            await listPage.openPreview();
+            await expect(frame).toBeVisible();
+            expect(await layout()).toEqual({width: long.width, gutter: "stable"});
+            await page.keyboard.press("Escape");
+            await expect(frame).toHaveCount(0);
+            expect(await layout()).toEqual(long);
+        });
     });
 
     test("PageDown·PageUp으로 옆 글로 넘기고, 뒤로 가기는 앞서 본 글을 다시 열며, 닫으면 쌓은 주소를 모두 걷는다", async ({listPage}) => {
@@ -475,6 +478,8 @@ test.describe("미리보기 댓글", () => {
         site.comments = Array.from({length: 1000}, (_, index) => fakeComment(100 + index));
         await listPage.openPreview();
         await expect(listPage.overlay.locator(".refresher-frame-scroll")).toBeFocused();
+        // 스크롤 칸은 댓글을 받기 전에 포커스를 받는다. 목록이 그려져 End를 받을 준비가 된 뒤에 누른다.
+        await expect(listPage.comments.first()).toBeAttached();
         expect(await listPage.comments.count()).toBeLessThan(1000);
         await listPage.page.keyboard.press("End");
         // 키를 받는 그 자리에서 다 그린다. 늦게 그리면 End가 그때까지 그린 끝에 멈춘다.
@@ -492,24 +497,28 @@ test.describe("미리보기 댓글", () => {
         await expect(input).toBeInViewport();
     });
 
-    test("댓글마다 되풀이되는 버튼은 클릭 리스너 하나만 단다", async ({listPage, browserName}) => {
-        test.skip(browserName === "firefox", "요소의 리스너는 크로미움 CDP로만 센다.");
-        await listPage.openPreview();
-        const reply = listPage.comments.first().getByRole("button", {name: "고닉 댓글에 답글", exact: true});
-        await expect(reply).toBeVisible();
-        // 리스너는 콘텐츠 스크립트의 격리된 world에서 붙으므로 그 world에서 요소를 잡아야 보인다.
-        const cdp = await listPage.page.context().newCDPSession(listPage.page);
-        const contexts: number[] = [];
-        cdp.on("Runtime.executionContextCreated", ({context}) => {
-            if (context.auxData?.type === "isolated") contexts.push(context.id);
+    test.describe(() => {
+        test.skip(({browserName}) => browserName === "firefox", "요소의 리스너는 크로미움 CDP로만 센다.");
+
+        test("댓글마다 되풀이되는 버튼은 클릭 리스너 하나만 단다", async ({listPage}) => {
+            await listPage.openPreview();
+            const reply = listPage.comments.first().getByRole("button", {name: "고닉 댓글에 답글", exact: true});
+            await expect(reply).toBeVisible();
+            // 리스너는 콘텐츠 스크립트의 격리된 world에서 붙으므로 그 world에서 요소를 잡아야 보인다.
+            const cdp = await listPage.page.context().newCDPSession(listPage.page);
+            const contexts: number[] = [];
+            cdp.on("Runtime.executionContextCreated", ({context}) => {
+                // Playwright도 페이지마다 격리된 world를 만든다. 확장의 world만 고른다.
+            if (context.auxData?.type === "isolated" && context.origin.startsWith("chrome-extension://")) contexts.push(context.id);
+            });
+            await cdp.send("Runtime.enable");
+            const {result} = await cdp.send("Runtime.evaluate", {
+                contextId: contexts[0],
+                expression: "document.querySelector('refresher-root').shadowRoot.querySelector('.refresher-comment button[aria-label=\"고닉 댓글에 답글\"]')"
+            });
+            const {listeners} = await cdp.send("DOMDebugger.getEventListeners", {objectId: result.objectId!});
+            expect(listeners.map(({type}) => type)).toEqual(["click"]);
         });
-        await cdp.send("Runtime.enable");
-        const {result} = await cdp.send("Runtime.evaluate", {
-            contextId: contexts[0],
-            expression: "document.querySelector('refresher-root').shadowRoot.querySelector('.refresher-comment button[aria-label=\"고닉 댓글에 답글\"]')"
-        });
-        const {listeners} = await cdp.send("DOMDebugger.getEventListeners", {objectId: result.objectId!});
-        expect(listeners.map(({type}) => type)).toEqual(["click"]);
     });
 
     test("본문이 확장 UI의 클래스를 써도 본문 상자 밖을 덮지 못한다", async ({listPage}) => {
