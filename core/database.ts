@@ -66,7 +66,7 @@ export type IpCategory = "korea" | "japan" | "china" | "foreign" | "vpn";
 interface IpInfo {
     /** "KT, 부산은행" / "SoftBank Corp. (일본)" / "Tencent (VPN), KT". 후보를 겹치지 않게 모두 쓰고, 한국은 국가를 생략한다. */
     label: string;
-    /** label과 같은 후보를 한 줄에 하나씩 (툴팁·유저 버블용). */
+    /** label과 같은 후보를 한 줄에 하나씩 (툴팁용). */
     title: string;
     category: IpCategory;
 }
