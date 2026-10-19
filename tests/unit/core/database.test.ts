@@ -174,10 +174,10 @@ describe("ipInfoOf", () => {
         expect(ipInfoOf("1.5")).toEqual({label: "태국", title: "(조직 미상) (태국)\nARTERIA (일본)", category: "foreign"});
     });
 
-    it("조직은 셋까지 보이고 나머지는 수로 줄인다", async () => {
+    it("조직은 겹치지 않게 모두 보인다", async () => {
         const orgs = ["A", "B", "C", "D", "E", "A"].map((org) => ({org, vpn: false}));
         const {ipInfoOf} = await setup([["1.2", orgs]]);
-        expect(ipInfoOf("1.2")?.label).toBe("A, B, C 외 2");
+        expect(ipInfoOf("1.2")?.label).toBe("A, B, C, D, E");
     });
 
     it("데이터가 없거나 깨졌으면 undefined이고 던지지 않는다", async () => {

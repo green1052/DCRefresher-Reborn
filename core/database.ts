@@ -64,7 +64,7 @@ const parseBans = (stored: string): BanList => {
 export type IpCategory = "korea" | "japan" | "china" | "foreign" | "vpn";
 
 interface IpInfo {
-    /** "KT, 부산은행" / "SoftBank Corp. (일본)" / "Tencent (VPN)". 조직은 3개까지, 한국은 국가를 생략한다. */
+    /** "KT, 부산은행" / "SoftBank Corp. (일본)" / "Tencent (VPN)". 조직은 겹치지 않게 모두 쓰고, 한국은 국가를 생략한다. */
     label: string;
     /** 후보 전체 (툴팁용). */
     title: string;
@@ -227,8 +227,6 @@ const tagOf = ({vpn, country}: IpCandidate): string | undefined => (vpn ? "VPN" 
 
 const withTag = (name: string, tag?: string): string => (name && tag ? `${name} (${tag})` : name || tag || "");
 
-const MAX_ORGS = 3;
-
 /** IP 대역(a.b)의 조직·국가·VPN 정보. 데이터가 없으면 undefined다. */
 export const ipInfoOf = (ip: string): IpInfo | undefined => {
     const candidates = lookupIp?.(ip);
@@ -237,10 +235,9 @@ export const ipInfoOf = (ip: string): IpInfo | undefined => {
 
     // 첫 후보에 조직이 없으면 다른 후보의 조직에 첫 후보의 국가가 붙어 틀린 표시가 되므로 국가만 보인다. 조직은 툴팁에 남는다.
     const orgs = !first.org ? [] : [...new Set(candidates.map((candidate) => candidate.org).filter((org): org is string => Boolean(org)))];
-    const shown = orgs.slice(0, MAX_ORGS).join(", ") + (orgs.length > MAX_ORGS ? ` 외 ${orgs.length - MAX_ORGS}` : "");
 
     return {
-        label: withTag(shown, tagOf(first)),
+        label: withTag(orgs.join(", "), tagOf(first)),
         title: candidates.map((candidate) => withTag(candidate.org ?? "(조직 미상)", tagOf(candidate))).join("\n"),
         category: categoryOf(first)
     };

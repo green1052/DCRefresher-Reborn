@@ -29,46 +29,46 @@
     }
 
     /*
-     * 목록의 작성자 칸: 칸을 넘친 배지는 다음 줄로 내려 다 보이게 하고, 디시 메뉴는 칸(td)을 기준으로 띄운다.
-     * 칸을 visible로 풀면 메뉴를 여는 동안 글자가 옆 칸으로 튀어나오고, 메뉴가 글자 끝(칸 밖)에 붙어 밀려 뜬다.
+     * 목록의 작성자 칸: 칸을 넘친 닉네임·배지는 addbox가 가리고, 디시 메뉴는 칸(td)을 기준으로 띄운다.
+     * 칸을 visible로 풀면 메뉴를 여는 동안 가려 둔 글자가 옆 칸으로 튀어나오고, 메뉴가 글자 끝(칸 밖)에 붙어 밀려 뜬다.
      */
     .gall_list td.gall_writer {
         overflow: visible;
-        white-space: normal;
 
         .addbox {
             display: block !important;
             position: static;
             overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .user_data.add {
             position: absolute;
             top: 50% !important;
             left: 70% !important;
+            white-space: normal;
         }
     }
 
     .cmt_nickbox {
         display: flex;
 
-        /* 댓글 작성자 칸은 폭이 고정이라, 넘친 배지는 다음 줄로 내린다. */
+        /* 댓글 작성자 칸은 폭이 고정이라, 넘친 배지는 목록처럼 …으로 줄인다. 디시가 닉네임 묶음을 줄지 않게 둬서 그냥 잘린다. */
         .nickname {
-            flex-wrap: wrap;
             flex-shrink: 1 !important;
             min-width: 0;
+
+            /* 닉네임·IP는 그대로 두고 배지만 줄인다. */
+            > * {
+                flex-shrink: 0;
+            }
         }
 
         .refresher-user-badges {
-            max-width: 100%;
-            white-space: normal;
+            flex-shrink: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-    }
-
-    /* 폭이 고정인 목록·댓글 작성자 칸: 배지는 통째로 다음 줄로 넘기고, 칸보다 긴 배지만 안에서 끊는다. */
-    :is(.gall_list td.gall_writer, .cmt_nickbox) .refresherUserData {
-        display: inline-block;
-        max-width: 100%;
-        overflow-wrap: anywhere;
     }
 }
