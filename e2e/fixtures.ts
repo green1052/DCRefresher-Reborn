@@ -5,6 +5,7 @@ import type {browser} from "wxt/browser";
 
 import {FakeSite} from "./dcinside";
 import {DEBUGGER_PREFS, type FirefoxAddon, freePort, installTemporaryAddon, OFFLINE_PREFS} from "./firefox";
+import {FakeIpDb} from "./ipdb";
 import {type ListPage, openListPage} from "./pages/list";
 
 /** 서비스 워커 안(evaluate)의 chrome 전역. 테스트 파일은 확장 번들이 아니라 타입이 없다. */
@@ -16,7 +17,6 @@ const FIREFOX_EXTENSION = fileURLToPath(new URL("../.output/firefox-mv2", import
 const IP_DB_HOST = "dcrefresher.green1052.com";
 const DCINSIDE = /^https:\/\/([a-z0-9-]+\.)*dcinside\.(com|co\.kr)$/;
 
-/** 저장소 값 (JSON). */
 type Json = string | number | boolean | null | Json[] | { [key: string]: Json };
 
 /** 확장 저장소(browser.storage.local). 디시 페이지의 evaluate로는 닿지 않아 배경에서 읽고 쓴다. */
@@ -57,20 +57,26 @@ const backgrounds = new WeakMap<BrowserContext, Background>();
  *   PLAYWRIGHT_CHROMIUM에 실행 파일을 주면 그것을 쓴다.
  * - 파이어폭스: 원격 디버깅 서버로 임시 부가 기능을 설치한다 (firefox.ts). 확장 페이지로는 이동하지 못해 팝업·옵션 테스트는 크로미엄에서만 돈다.
  * - dcinside.com 요청은 가짜 디시(site)가 응답하고 IP DB 서버는 끊는다. live 프로젝트만 실제 디시에 읽기 요청을 보낸다.
+ * - serveIpDb를 켜면 크로미엄에서는 IP DB 서버 요청에 가짜 DB(ipDb)가 응답한다. 파이어폭스는 배경 요청을 route로 가로채지 못해 끊은 그대로다 (OFFLINE_PREFS).
  */
-export const test = base.extend<{ live: boolean }>({
-    live: [false, {option: true}]
-}).extend<{ site: FakeSite; context: BrowserContext; extensionId: string; storage: ExtensionStorage; errors: string[]; listPage: ListPage }>({
+export const test = base.extend<{ live: boolean; serveIpDb: boolean }>({
+    live: [false, {option: true}],
+    serveIpDb: [false, {option: true}]
+}).extend<{ site: FakeSite; ipDb: FakeIpDb; context: BrowserContext; extensionId: string; storage: ExtensionStorage; errors: string[]; listPage: ListPage }>({
     site: async ({}, use) => {
         await use(new FakeSite());
     },
 
-    context: async ({browserName, live, site}, use) => {
+    ipDb: async ({}, use) => {
+        await use(new FakeIpDb());
+    },
+
+    context: async ({browserName, live, serveIpDb, site, ipDb}, use) => {
         // 프로필 경로를 비워 두면 플레이라이트가 테스트마다 임시 프로필을 만들고 닫을 때 지운다.
         let context: BrowserContext | undefined;
         try {
             if (browserName === "firefox") {
-                // 플레이라이트의 파이어폭스는 수십 번에 한 번꼴로 뜨다가 멈춘다 (디버깅 서버 없이도 그렇다). 짧게 기다리고 새 프로필로 다시 띄운다.
+                // 플레이라이트의 파이어폭스는 수십 번에 한 번꼴로 뜨다가 멈춘다 (디버깅 서버 없이도 그렇다). 15초 안에 뜨지 않으면 새 프로필로 세 번까지 띄운다.
                 for (let attempt = 1; !context; attempt++) {
                     const port = await freePort();
                     try {
@@ -89,6 +95,8 @@ export const test = base.extend<{ live: boolean }>({
             } else {
                 context = await chromium.launchPersistentContext("", {
                     headless: true,
+                    // 실제 브라우저처럼 자리를 차지하는 스크롤바를 그린다. 스크롤을 잠가도 페이지가 옆으로 밀리지 않는지 확인한다.
+                    ignoreDefaultArgs: ["--hide-scrollbars"],
                     ...(process.env.PLAYWRIGHT_CHROMIUM ? {executablePath: process.env.PLAYWRIGHT_CHROMIUM} : {channel: "chromium"}),
                     args: [`--disable-extensions-except=${CHROME_EXTENSION}`, `--load-extension=${CHROME_EXTENSION}`]
                 });
@@ -100,7 +108,7 @@ export const test = base.extend<{ live: boolean }>({
                 await routeLive(context);
             } else {
                 await context.route((url) => DCINSIDE.test(url.origin), site.handle);
-                await context.route((url) => url.hostname === IP_DB_HOST, (route) => route.abort());
+                await context.route((url) => url.hostname === IP_DB_HOST, serveIpDb ? ipDb.handle : (route) => route.abort());
             }
 
             await use(context);

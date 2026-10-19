@@ -1,3 +1,4 @@
+// @vitest-environment node
 import {describe, expect, it} from "vitest";
 
 import {candidateKey, type CompactIpData, createIpLookup, encodeIpData, type IpCandidate, parseIpData} from "@/core/ipdb";
@@ -56,6 +57,20 @@ describe("encodeIpData / createIpLookup", () => {
         const {runs: encoded} = encodeIpData(prefixes);
         // 0 구간, KT 구간, 0 구간 → 시작 3개 + 값 3개.
         expect(Uint8Array.fromBase64(encoded).length).toBe(6 * 2);
+    });
+
+    it("길이가 다른 목록 여럿을 섞이지 않게 돌려준다", () => {
+        // 조회는 목록을 한 줄로 이어 두고 시작점으로 자른다. 경계가 하나라도 어긋나면 이웃 목록의 후보가 섞인다.
+        const prefixes = new Map([
+            [slot(1, 1), [KT, SOFTBANK]],
+            [slot(1, 2), [VPN, FOREIGN, KT]],
+            [slot(1, 3), [SOFTBANK, VPN]],
+            [slot(1, 4), [FOREIGN]]
+        ]);
+        const lookup = createIpLookup(encodeIpData(prefixes));
+        for (const [prefix, candidates] of prefixes) {
+            expect(lookup(`1.${prefix % 256}`)).toEqual(candidates.map(({org, country, vpn}) => ({org, country, vpn})));
+        }
     });
 
     it("넣는 순서가 같으면 결과도 같다", () => {

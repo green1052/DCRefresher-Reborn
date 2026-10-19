@@ -1,9 +1,11 @@
 import {dcinsideHref} from "@/core/http/urls";
+import {LIST_ROW_SELECTOR} from "@/core/list";
 import type {GalleryPreData} from "@/core/preview/types";
+import {hasModifier} from "@/utils/event";
 
 import type {Ctx} from "./meta";
 import type {createMini} from "./mini";
-import {buildPreData, ROW_SELECTOR as ROW} from "./rows";
+import {buildPreData} from "./rows";
 import {usePreviewStore} from "./ui/previewStore";
 
 /** 미리보기를 여는 제목 칸과 행. 행 전체 인식이 꺼져 있으면 행은 댓글 수만 받는다. */
@@ -37,7 +39,7 @@ export const bindRows = (ctx: Ctx, {open, prefetch, mini}: RowHandlers): void =>
         if (!resolved) return;
         prefetch(resolved.preData);
         // 오버레이도 처음 쓸 때 띄우므로(수십 ms) 떼기를 기다리는 동안 미리 띄운다.
-        // 다음 task에서 한다. 여기서 띄우면 오버레이 모듈 초기화가 마이크로태스크로 먼저 돌아 본문 요청이 그만큼 늦게 나간다.
+        // 다음 task로 미뤄야 오버레이 초기화 마이크로태스크가 본문 요청보다 먼저 돌지 않는다.
         if (!usePreviewStore.getState().warm) window.setTimeout(() => usePreviewStore.setState({warm: true}));
     };
 
@@ -54,8 +56,7 @@ export const bindRows = (ctx: Ctx, {open, prefetch, mini}: RowHandlers): void =>
     const resolveTarget = (ev: MouseEvent): { preData: GalleryPreData; commentsOnly: boolean; link: string } | null => {
         const target = ev.target;
         if (!(target instanceof Element)) return null;
-        // 제목 칸 안이면 제목 칸이, 아니면 행이 대상이다.
-        const element = target.closest<HTMLElement>(WORD) ?? target.closest<HTMLElement>(ROW);
+        const element = target.closest<HTMLElement>(WORD) ?? target.closest<HTMLElement>(LIST_ROW_SELECTOR);
         if (!element) return null;
 
         // 댓글 수 링크는 댓글만 보기로 연다. 행 전체 인식이 꺼져 있어도 열리게 아래 검사보다 먼저 본다.
@@ -65,8 +66,8 @@ export const bindRows = (ctx: Ctx, {open, prefetch, mini}: RowHandlers): void =>
         if (!commentsOnly) {
             if (element.classList.contains("ub-content") && !ctx.settings.expandRecognizeRange) return null;
 
-            // 작성자 칸 클릭은 유저 버블(차단·유저 정보 모듈) 몫이라 행 전체 인식이어도 열지 않는다.
-            if (target.closest(".ub-writer")) return null;
+            // 작성자 칸 클릭은 유저 버블(차단·유저 정보 모듈) 몫이고, 관리자 체크박스 칸은 글 고르기 몫이라 행 전체 인식이어도 열지 않는다.
+            if (target.closest(".ub-writer, td:has(.article_chkbox)")) return null;
         }
 
         const preData = buildPreData(element);
@@ -95,7 +96,7 @@ export const bindRows = (ctx: Ctx, {open, prefetch, mini}: RowHandlers): void =>
 
     const onClick = (ev: MouseEvent) => {
         // 수정키 클릭(새 탭·창으로 열기, manage 모듈의 Ctrl+클릭 삭제)은 가로채지 않는다.
-        if (ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
+        if (hasModifier(ev)) return;
 
         // 좌클릭은 키 반전일 때만 미리보기다. 아니면 제목·댓글 수 모두 원래대로 링크를 연다.
         if (!ctx.settings.reversePreviewKey) return;
@@ -106,8 +107,8 @@ export const bindRows = (ctx: Ctx, {open, prefetch, mini}: RowHandlers): void =>
         open(resolved.preData, resolved.commentsOnly);
     };
 
-    // 행마다 붙이지 않고 문서에서 받는다. 목록이 수십 행이고 새로고침마다 행이 바뀌므로, 행마다 붙이면 리스너 수백 개를 다시 붙인다.
-    // 캡처 단계에서 받아 디시 스크립트가 행에서 전파를 멈춰도 놓치지 않는다.
+    // 문서에서 받는다. 행마다 붙이면 새로고침으로 행이 바뀔 때마다 리스너 수백 개를 다시 붙인다.
+    // 캡처 단계라 디시 스크립트가 행에서 전파를 멈춰도 놓치지 않는다.
     const options = {capture: true, signal: ctx.signal};
     document.addEventListener("mousedown", onMouseDown, options);
     document.addEventListener("mouseup", onMouseUp, options);

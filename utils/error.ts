@@ -1,4 +1,22 @@
-import {isHTTPError, isNetworkError, isTimeoutError} from "ky";
+import {isHTTPError, isNetworkError} from "ky";
+
+/**
+ * 오류 이름으로 본다. 파이어폭스 content.fetch의 오류는 다른 영역 객체라 instanceof Error가 틀릴 수 있다.
+ * HTTP 클라이언트가 아니라 여기 둔다. 저 모듈은 불러오면 ky 인스턴스를 만들어, 요청하지 않는 옵션·팝업 번들에 ky가 딸려 간다.
+ */
+const isNamed = (e: unknown, name: string): boolean => typeof e === "object" && e !== null && "name" in e && e.name === name;
+
+/**
+ * 시간 초과 오류인지. ky의 TimeoutError(totalTimeout)와 core/http/client.ts의 limitedFetch가 끊은 DOMException 둘 다 이름이 TimeoutError다.
+ * ky의 isTimeoutError는 DOMException을 거짓으로 본다.
+ */
+export const isTimeoutError = (e: unknown): boolean => isNamed(e, "TimeoutError");
+
+/** 끊은 요청(AbortController)의 오류인지. */
+export const isAbortError = (e: unknown): boolean => isNamed(e, "AbortError");
+
+/** 디시 임시 차단(core/http/client.ts의 BlockedError)인지. 배경에서 받은 요청의 오류는 메시지를 건너오며 클래스를 잃고 이름만 남는다. */
+export const isBlockedError = (e: unknown): boolean => isNamed(e, "BlockedError");
 
 /** 오류의 메시지. 파이어폭스 content.fetch의 오류는 페이지 영역의 DOMException이라 instanceof Error가 거짓이므로 모양으로 꺼낸다. */
 export const messageOf = (error: unknown): string =>
@@ -29,7 +47,6 @@ export const friendlyMessage = (error: unknown): string => {
         if (status === 403 || status === 429) return "요청이 많아 잠시 막혔습니다. 잠시 후 다시 시도해 주세요.";
         return status >= 500 ? "서버가 불안정합니다. 잠시 후 다시 시도해 주세요." : `요청이 거절되었습니다. (HTTP ${status})`;
     }
-    // 요청 시간 제한(core/http/client.ts)의 DOMException도 이름이 TimeoutError다.
     if (isTimeoutError(error)) return "응답이 없습니다. 잠시 후 다시 시도해 주세요.";
     if (isNetworkError(error) || /failed to fetch|networkerror/i.test(message)) return "서버에 연결하지 못했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.";
     if (error instanceof SyntaxError) return "JSON 형식이 올바르지 않습니다.";

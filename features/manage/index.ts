@@ -1,6 +1,6 @@
 import {defineModule} from "@/core/module/define";
-import {rowPostNo, queryString} from "@/core/http/urls";
-import {ROW_SELECTOR} from "@/core/list";
+import {documentUrl, pageGallery, rowPostNo} from "@/core/http/urls";
+import {LIST_ROW_SELECTOR, WRITER_ROW_SELECTOR} from "@/core/list";
 import {deletePost} from "@/core/preview/request";
 import {whenDomReady} from "@/utils/dom";
 import {notifyManage} from "@/stores/notify";
@@ -10,7 +10,7 @@ import meta from "./meta";
 import {removeViewTools, renderViewTools} from "./view";
 
 /** 체크박스와 작성자 칸이 같이 든 칸. 목록 행에 더해 댓글은 작성자 칸(.cmt_nickbox)이다. */
-const CHECKBOX_ROW = `${ROW_SELECTOR}, .cmt_nickbox`;
+const CHECKBOX_ROW = `${WRITER_ROW_SELECTOR}, .cmt_nickbox`;
 
 const GIF_VIDEO = ".gallview_contents video";
 
@@ -37,10 +37,13 @@ const disableGifControl = (): void => {
     }
 };
 
-export default defineModule({
-    ...meta,
-
+export default defineModule(meta, {
     setup(ctx) {
+        ctx.onRevoke(() => {
+            disableGifControl();
+            removeViewTools();
+        });
+
         // 핸들러를 붙인 요소. DOM 속성으로 표시하면 refresh가 체크박스 칸을 복제할 때 표시도 복제돼 새 행에 핸들러가 붙지 않는다.
         const handled = new WeakSet<Element>();
 
@@ -70,13 +73,11 @@ export default defineModule({
                 if (!(element instanceof HTMLInputElement) || handled.has(element)) return;
                 handled.add(element);
 
-                const parent = element.closest<HTMLElement>(CHECKBOX_ROW);
-                const {uid, ip, nick} = parent?.querySelector<HTMLElement>(":scope > .ub-writer")?.dataset ?? {};
-
                 element.addEventListener("click", (ev) => {
+                    // 작성자는 누를 때 읽는다. 처음 볼 때 읽으면 문서를 읽는 중이라 작성자 칸이 아직 없는 행이 있다.
+                    const {uid, ip, nick} = element.closest<HTMLElement>(CHECKBOX_ROW)?.querySelector<HTMLElement>(":scope > .ub-writer")?.dataset ?? {};
                     if (ctx.settings.checkAllTargetUser && ev.shiftKey && (uid || ip || nick)) {
-                        // 유동은 data-uid=""다. key와 값을 같은 기준으로 골라야 한다.
-                        // 값만 ??로 고르면 [data-ip=""]가 되어 회원 글이 전부 잡힌다.
+                        // 유동은 data-uid=""라 key와 값을 같은 기준으로 고른다. 값만 ??로 고르면 [data-ip=""]가 되어 회원 글이 전부 잡힌다.
                         const [key, value] = uid ? ["uid", uid] : ip ? ["ip", ip] : ["nick", nick!];
 
                         for (const other of document.querySelectorAll<HTMLElement>(`.ub-writer[data-${key}="${CSS.escape(value)}"]`)) {
@@ -111,7 +112,7 @@ export default defineModule({
         const deleting = new Set<string>();
 
         ctx.addFilter(
-            ".gall_list .ub-content",
+            LIST_ROW_SELECTOR,
             (element) => {
                 if (handled.has(element)) return;
                 handled.add(element);
@@ -132,9 +133,9 @@ export default defineModule({
                     deleting.add(postId);
 
                     // #gallery_id 입력칸은 없는 페이지가 있어 주소의 id를 갤러리로 쓴다.
-                    const gallery = queryString("id") ?? "";
+                    const gallery = pageGallery ?? "";
                     void notifyManage(
-                        deletePost({gallery, id: postId, link: location.href}),
+                        deletePost({gallery, id: postId, link: documentUrl.href}),
                         "게시글을 삭제했습니다.",
                         "게시글을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요."
                     ).then((deleted) => {
@@ -144,10 +145,5 @@ export default defineModule({
                 }, {signal: ctx.signal});
             }
         );
-    },
-
-    revoke() {
-        disableGifControl();
-        removeViewTools();
     }
 });

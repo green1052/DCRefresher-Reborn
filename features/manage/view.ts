@@ -1,6 +1,10 @@
-import {pagePostNo, postSearchUrl, queryString} from "@/core/http/urls";
+import {pageGallery, pagePostNo, postSearchUrl} from "@/core/http/urls";
 import {sendMessage} from "@/core/messaging/protocol";
+import {BLOCKED_PAGE_MESSAGE} from "@/core/pages";
+import {NUMBERED_SOURCE} from "@/core/preview/parser";
 import {useUiStore} from "@/stores/ui";
+import {textWithoutScripts} from "@/utils/dom";
+import {isBlockedError} from "@/utils/error";
 
 const ORIGIN_CLASS = "refresherImageOrigin";
 const SEARCH_CLASS = "refresherTitleSearch";
@@ -21,7 +25,7 @@ const DOWNLOADED_NAME = /^([a-z0-9_]+)-\d{8}-\d{6}-\d{3}(?:-resize)?\.\w+$/;
 
 /** 다른 갤러리에서 올린 본문 이미지와, 다른 갤러리에서 받은 첨부 파일을 제목 위에 알린다. */
 const showImageOrigin = (head: Element): void => {
-    const gallery = queryString("id") ?? "";
+    const gallery = pageGallery ?? "";
     const own = new Set([gallery, `mi$${gallery}`].map((id) => id.slice(0, 16)));
     const foreign = new Map<string, string[]>();
     const check = (source: string | undefined, label: string): void => {
@@ -30,7 +34,12 @@ const showImageOrigin = (head: Element): void => {
 
     const media = document.querySelectorAll<HTMLImageElement | HTMLVideoElement>(".write_div :is(img:not(.written_dccon, .og-img), video)");
     // 늦게 불러오는 이미지는 data-original, GIF를 바꾼 영상은 data-src에 주소가 있다.
-    for (const [index, element] of media.entries()) check(uploadedGallery(element.dataset.original ?? element.dataset.src ?? element.src), `${index + 1}번`);
+    // 번호는 디시처럼 첨부 이미지·동영상만 센다. 외부 이미지까지 세면 디시·미리보기가 단 번호와 어긋난다.
+    let number = 0;
+    for (const element of media) {
+        const source = element.dataset.original ?? element.dataset.src ?? element.src;
+        if (NUMBERED_SOURCE.test(source)) check(uploadedGallery(source), `${++number}번`);
+    }
     for (const [index, item] of document.querySelectorAll(".appending_file li").entries()) {
         check(DOWNLOADED_NAME.exec(item.textContent?.trim() ?? "")?.[1], `첨부 ${index + 1}번`);
     }
@@ -50,13 +59,15 @@ const searchSameTitle = async (button: HTMLButtonElement, title: string): Promis
         const galleries = Array.from(dom.querySelectorAll("ul.sch_result_list > li"), (item) => {
             const link = item.querySelector(".tit_txt");
             const params = URL.parse(link?.getAttribute("href") ?? "")?.searchParams;
-            const self = params?.get("id") === queryString("id") && params?.get("no") === pagePostNo;
+            const self = params?.get("id") === pageGallery && params?.get("no") === pagePostNo;
             return link?.textContent?.trim() === title && !self ? (item.querySelector(".sub_txt")?.textContent?.trim() ?? "") : null;
         }).filter((gallery) => gallery !== null);
 
         if (galleries.length === 0) showToast("제목이 같은 글을 찾지 못했습니다.", "info", 5000, openResults);
         else showToast(`제목이 같은 글 ${galleries.length}개: ${[...new Set(galleries)].join(", ")}`, "warning", 10_000, openResults);
     } catch (e) {
+        // 임시 차단은 배경이 받아 이 탭엔 아직 알림이 없다.
+        if (isBlockedError(e)) return showToast(BLOCKED_PAGE_MESSAGE, "warning");
         console.error("Title search failed:", e);
         showToast("통합검색을 불러오지 못했습니다.", "error");
     } finally {
@@ -65,7 +76,7 @@ const searchSameTitle = async (button: HTMLButtonElement, title: string): Promis
 };
 
 const addTitleSearch = (head: Element): void => {
-    const title = head.querySelector(".title_subject")?.textContent?.trim();
+    const title = textWithoutScripts(head.querySelector(".title_subject"));
     const counts = head.querySelector(".gall_writer .fr");
     if (!title || !counts) return;
 
@@ -84,6 +95,6 @@ export const renderViewTools = (show: { imageOrigin: boolean; titleSearch: boole
     const head = document.querySelector(".gallview_head");
     if (!head) return;
     // 개념글은 다른 갤러리의 글을 옮긴 것이라 이미지 출처는 언제나 다르다.
-    if (show.imageOrigin && queryString("id") !== "dcbest") showImageOrigin(head);
+    if (show.imageOrigin && pageGallery !== "dcbest") showImageOrigin(head);
     if (show.titleSearch) addTitleSearch(head);
 };

@@ -20,8 +20,11 @@ export const createMini = (
     let miniTarget: HTMLElement | null = null;
     // 떠 있는 미니가 보여 주는 제목 칸.
     let miniFor: HTMLElement | null = null;
+    // 마지막 커서 자리. 들어온 자리로 띄우면 지연 시간 동안 옮긴 커서 아래에 카드가 뜬다.
+    let pointerX = 0;
+    let pointerY = 0;
 
-    const showMini = async (element: HTMLElement, x: number, y: number) => {
+    const showMini = async (element: HTMLElement) => {
         const preData = buildPreData(element);
         if (!preData) return;
 
@@ -29,6 +32,8 @@ export const createMini = (
 
         // 받지 못했거나, 받는 사이 행을 떠났거나 전체 미리보기가 열렸으면 띄우지 않는다.
         if (!post || miniTarget !== element || usePreviewStore.getState().visible) return;
+        const x = pointerX;
+        const y = pointerY;
 
         // 조작할 수 있는 미니는 v5처럼 커서 바로 오른쪽에 붙인다(x+10, y-50). 오른쪽으로만 옮기면 다른 행을 지나지 않고 카드에 닿는다.
         // 오른쪽에 자리가 없어 커서 위로 밀려 오면 제목을 덮어 누를 수 없으니 커서 왼쪽에 붙인다.
@@ -42,7 +47,7 @@ export const createMini = (
                 ...position,
                 title: postTitle(post),
                 // 미니에는 마우스를 올려 블러를 걷을 수 없으니 블러 차단도 안내 문구로 가린다.
-                contents: post.textBlocked && !useUiStore.getState().blockView?.revealed ? BLOCKED_TEXT : post.contents ?? "",
+                contents: post.textBlocked && !useUiStore.getState().blockRevealed ? BLOCKED_TEXT : post.contents ?? "",
                 // 전체 미리보기와 같은 조건으로 이미지를 가린다. 다르면 거기서 숨긴 이미지가 호버로 보인다.
                 blockMedia: ctx.settings.blockImage && isTextPost(preData),
                 interactive: ctx.settings.tooltipInteraction,
@@ -57,20 +62,22 @@ export const createMini = (
         if (usePreviewStore.getState().visible) return;
 
         if (isBlurHidden(element)) return;
-        // 조작할 수 있는 미니에서 제목으로 돌아왔으면 닫지 않는다. 떠난 제목의 닫기 타이머는 다른 제목에 들어와도 끊어야
-        // 새로 뜰 카드를 닫지 않으므로 keepMini는 늘 부른다. 다른 제목이면 앞 글의 카드는 바로 내린다 (새 글을 받지 못하면 앞 글 카드가 그대로 남는다).
+        // 떠난 제목의 닫기 타이머는 미니에서 돌아왔든 다른 제목에 들어왔든 끊어야 하므로 keepMini는 늘 부른다.
+        // 다른 제목이면 앞 글 카드는 바로 내린다. 두면 새 글을 받지 못했을 때 앞 글 카드가 남는다.
         keepMini();
         if (element !== miniFor && usePreviewStore.getState().mini) usePreviewStore.setState({mini: null});
-        const x = ev.clientX;
-        const y = ev.clientY;
+        pointerX = ev.clientX;
+        pointerY = ev.clientY;
 
         miniTarget = element;
         window.clearTimeout(miniTimer);
         // 지연 시간 동안 머문 제목만 받는다. 목록을 훑으며 지나간 행은 요청을 보내지 않는다 (지연 시간 최소값은 meta.ts).
-        miniTimer = window.setTimeout(() => void showMini(element, x, y), ctx.settings.tooltipDelay);
+        miniTimer = window.setTimeout(() => void showMini(element), ctx.settings.tooltipDelay);
     };
 
     const onMiniMove = (ev: MouseEvent) => {
+        pointerX = ev.clientX;
+        pointerY = ev.clientY;
         // 조작할 수 있는 미니는 커서를 따라가면 카드로 옮겨 갈 수 없다.
         if (!usePreviewStore.getState().mini?.interactive) usePreviewStore.getState().moveMini(ev.clientX, ev.clientY);
     };

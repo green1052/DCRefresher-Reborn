@@ -10,9 +10,10 @@ const page = ({head = "", body = "<div class=\"write_div\">본문</div>", tail =
 <div class="view_content_wrap">
   <div class="gallview_head">
     <h3><span class="title_headtext">[잡담]</span><span class="title_subject">제목<script>document.write("광고")</script></span></h3>
-    <div class="gall_writer" data-nick="닉" data-uid="uid1" data-ip=""><img src="https://nstatic.dcinside.com/nik.gif"></div>
-    <span class="gall_date" title="2026-09-26 02:29:40">2026.09.26 02:29:40</span>
-    <div class="fr"><span class="gall_count">조회 1234</span><span class="gall_reply_num">추천 5</span><span class="gall_comment">댓글 7</span></div>
+    <div class="gall_writer" data-nick="닉" data-uid="uid1" data-ip="">
+      <div class="fl"><img src="https://nstatic.dcinside.com/nik.gif"><span class="gall_date" title="2026-09-26 02:29:40">2026.09.26 02:29:40</span></div>
+      <div class="fr"><span class="gall_count">조회 1234</span><span class="gall_reply_num">추천 5</span><span class="gall_comment">댓글 7</span></div>
+    </div>
     ${head}
   </div>
   <div class="writing_view_box">${body}</div>
@@ -27,6 +28,7 @@ const page = ({head = "", body = "<div class=\"write_div\">본문</div>", tail =
 </form></div>
 <input type="hidden" id="check_6" value="c6"><input type="hidden" id="check_7" value="c7">
 <input type="checkbox" id="use_gall_nick">
+<form id="_cmt_del_form_" name="_cmt_del_form_"><input type="hidden" name="del_rand" value="dv"/></form>
 <script id="reply-setting-tmpl" type="text/x-jquery-tmpl"></script><script>_d('DVAL');</script>
 <script>$(document).data('comment_id', 'cid'); $(document).data('comment_no', '42');</script>
 ${tail}
@@ -81,6 +83,10 @@ describe("parsePostInfo", () => {
             checks: {check_6: "c6", check_7: "c7", check_8: ""},
             gallNickName: "갤닉"
         });
+    });
+
+    it("비밀번호 댓글 삭제 폼의 숨은 값을 꺼낸다", () => {
+        expect(parse(page()).commentDeleteFields).toEqual([["del_rand", "dv"]]);
     });
 
     it("갤닉 입력칸이 없으면 gallNickName이 없다", () => {

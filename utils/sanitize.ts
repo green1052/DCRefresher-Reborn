@@ -21,6 +21,8 @@ const keepFormatting = (node: HTMLElement | SVGElement): void => {
     for (const name of [...style]) {
         const dropped = !KEPT_STYLE.test(name)
             || (name === "height" && autoHeight(node))
+            // 디시 투표(pollFrame)는 width·height 0으로 와서 페이지 스크립트가 내용 크기로 늘린다. 미리보기엔 그 스크립트가 없어 0이면 지워 width·height 속성 크기로 보인다.
+            || ((name === "width" || name === "height") && node.nodeName === "IFRAME" && Number.parseFloat(style.getPropertyValue(name)) === 0)
             || (name.startsWith("margin") && style.getPropertyValue(name).includes("-"));
         if (dropped) style.removeProperty(name);
     }
@@ -33,7 +35,8 @@ const IFRAME_ALLOW = new Set(["autoplay", "encrypted-media", "fullscreen", "pict
 // 동영상에는 재생 컨트롤을 붙인다. 디시 본문은 컨트롤 없이 페이지 스크립트로 재생하기 때문이다.
 // 디시콘·움짤은 디시처럼 컨트롤 없이 자동 반복 재생한다.
 // 이미지·iframe은 lazy로 두어 스텔스·이미지 차단으로 숨긴 것은 받지 않게 한다.
-// 링크(# 앵커 제외)는 새 탭으로 연다. DOMPurify가 target을 지우므로 두면 갤러리 탭이 링크로 넘어가 목록과 미리보기를 잃는다.
+// 링크는 새 탭으로 연다. DOMPurify가 target을 지워 그대로 두면 갤러리 탭이 넘어가 목록과 미리보기를 잃는다.
+// # 앵커는 주소를 뗀다. 미리보기(shadow DOM) 안에서는 가리킬 곳이 없고, 누르면 주소에 #이 붙어 미리보기 기록이 바뀌며 창이 닫힌다.
 const onAttributes = (node: Element): void => {
     // MathML(<math>) 같은 나머지 요소는 서식만 골라 지울 수 없어(HTMLElement·SVGElement가 아니다) style을 통째로 지운다.
     if (node.hasAttribute("style")) {
@@ -52,7 +55,15 @@ const onAttributes = (node: Element): void => {
             if (kept.length > 0) node.setAttribute("allow", kept.join("; "));
             else node.removeAttribute("allow");
         }
-    } else if (node.nodeName === "A" && !(node.getAttribute("href") ?? "#").startsWith("#")) {
+    } else if (node.localName === "a" || node.localName === "area") {
+        // SVG <a>(nodeName이 소문자 a, 주소는 href나 xlink:href)와 이미지 맵 <area>도 링크다.
+        const href = node.getAttribute("href") ?? node.getAttribute("xlink:href");
+        if (href === null) return;
+        if (href.startsWith("#")) {
+            node.removeAttribute("href");
+            node.removeAttribute("xlink:href");
+            return;
+        }
         node.setAttribute("target", "_blank");
         node.setAttribute("rel", "noopener noreferrer");
     }
@@ -63,14 +74,18 @@ const YOUTUBE_EMBED = /<embed\s[^>]*?src="(https:\/\/www\.youtube(?:-nocookie)?\
 const embedYoutube = (html: string): string =>
     html.includes("<embed") ? html.replace(YOUTUBE_EMBED, "<iframe src=\"$1\" width=\"560\" height=\"315\" allowfullscreen></iframe>") : html;
 
-// 인라인 style은 서식만 남기고(keepFormatting), 본문의 동영상 임베드(iframe)는 허용한다.
 // <style>은 shadow 루트 전체(창·댓글·가린 내용)에 걸리고, 폼 요소는 본문에 필요 없는데 가짜 입력칸을 만들 수 있어 뺀다.
 // SVG <feImage>와 background 속성은 원격 이미지를 불러오는데 미디어 숨기기(태그·CSS)에 걸리지 않는다. 본문에 쓸 일도 없어 뺀다.
 // popover·command 속성은 본문 버튼으로 <dialog>나 팝오버를 최상위 층에 띄운다. 남긴 크기·배경색과 합치면 화면 전체를 덮는 가짜 창이 되어 뺀다.
-// IN_PLACE: sanitizeHtml이 비활성 문서의 요소를 그 자리에서 정화한다.
+// data-slot은 확장 UI가 다이얼로그가 떠 있는지 볼 때 찾는 표시다 (utils/event.ts의 isTyping, Frame의 Esc). 본문이 달면 단축키가 막힌다.
+// data-blocked·data-*-revealed·data-blur-reveal·data-duplicate·data-low-activity는 확장이 가림 상태로 읽는 표시다
+// (core/block.ts의 isBlockedHidden, features/preview/overlay.css). 본문이 달면 차단한 이미지·디시콘의 가림을 스스로 푼다.
 const FORBIDDEN = ["style", "form", "input", "textarea", "select", "feimage"];
 const BASE: Config = {
-    FORBID_ATTR: ["background", "popover", "popovertarget", "popovertargetaction", "commandfor", "command"],
+    FORBID_ATTR: [
+        "background", "popover", "popovertarget", "popovertargetaction", "commandfor", "command", "data-slot",
+        "data-blocked", "data-block-revealed", "data-comments-revealed", "data-blur-reveal", "data-duplicate", "data-low-activity"
+    ],
     FORBID_TAGS: FORBIDDEN,
     ADD_TAGS: ["iframe"],
     ADD_ATTR: ["allowfullscreen", "frameborder", "allow", "scrolling"],
@@ -79,8 +94,7 @@ const BASE: Config = {
 // SVG <image>도 원격 이미지를 불러온다.
 const NO_MEDIA: Config = {...BASE, FORBID_TAGS: [...FORBIDDEN, "img", "video", "iframe", "audio", "embed", "source", "picture", "image"]};
 
-// 설정을 고정한 인스턴스를 쓴다. sanitize(html, cfg)는 호출마다 허용 목록을 다시 만든다.
-// 인스턴스는 처음 쓸 때 만든다(정화할 일이 없는 페이지에서는 만들지 않게).
+// 설정을 고정한 인스턴스를 처음 쓸 때 만든다. sanitize(html, cfg)는 호출마다 허용 목록을 다시 만든다.
 const make = (cfg: Config): Purifier => {
     const purify = DOMPurify();
     purify.setConfig(cfg);

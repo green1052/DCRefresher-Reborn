@@ -6,6 +6,7 @@
  * 조각 수와 해시를 담은 <칸> 키와 함께 set 한 번으로 쓴다. 쓰기가 실패하면 이전 백업이 그대로 남는다.
  */
 
+import MODULE_IDS from "@/.wxt/module-ids";
 import {
     BLOCK_DEFAULTS_KEY,
     BLOCK_TYPES,
@@ -15,10 +16,11 @@ import {
     MEMO_TYPES,
     memoMapKey,
     MODULES_KEY,
-    rawKey,
-    settingsKeyModule
+    moduleSettingsKey,
+    rawKey
 } from "@/core/storage/items";
 import {friendlyMessage} from "@/utils/error";
+import {sha256} from "@/utils/hash";
 import {isRecord} from "@/utils/record";
 
 export type BackupSlot = "manual" | "auto";
@@ -28,36 +30,44 @@ const SLOT_KEYS: Record<BackupSlot, string> = {manual: "backup", auto: "autoBack
 const chunkKey = (slot: BackupSlot, index: number): string => `${SLOT_KEYS[slot]}:${index}`;
 const isSlotKey = (slot: BackupSlot, key: string): boolean => key === SLOT_KEYS[slot] || key.startsWith(`${SLOT_KEYS[slot]}:`);
 
-/** storage.sync 전체 한도 (바이트). 크롬·파이어폭스 모두 102400이다. */
-export const CLOUD_QUOTA = browser.storage.sync.QUOTA_BYTES;
+/** storage.sync 전체 한도 (바이트). 파이어폭스는 QUOTA_* 상수가 없어 크롬과 같은 값을 쓴다. */
+export const CLOUD_QUOTA = browser.storage.sync.QUOTA_BYTES ?? 102_400;
 /** 조각 하나의 글자 수. 항목 한도(8192바이트)에서 키와 따옴표 몫을 뺐다. */
-const CHUNK_CHARS = browser.storage.sync.QUOTA_BYTES_PER_ITEM - 192;
+const CHUNK_CHARS = (browser.storage.sync.QUOTA_BYTES_PER_ITEM ?? 8_192) - 192;
 /** 전체 한도에서 메타·키 몫을 뺐다 (두 칸 합계). */
 const TOTAL_CHARS = CLOUD_QUOTA - 2400;
 
+/** 이 버전이 쓰고 읽는 백업 형식. */
+const FORMAT = 1;
+
 interface BackupMeta {
-    format: 1;
+    /** 형식을 올려도 chunks·size·createdAt은 그대로 둔다. 그래야 옛 버전이 새 형식 백업도 '있음'으로 보고 덮기 전에 확인한다. */
+    format: number;
     chunks: number;
     /** 압축 데이터의 SHA-256 (hex). */
     hash: string;
     /** 압축 후 크기 (base64 글자 수). */
     size: number;
     createdAt: number;
+    /** 올린 기기 (backupStorage.device). 이 값을 남기기 전 버전이 올린 백업에는 없다. */
+    device?: string;
 }
 
-/** 백업하는 로컬 키 (local: 없이). 모듈 설정(refresher:module:<id>:settings)은 settingsKeyModule로 가린다. */
+/** 백업하는 로컬 키 (local: 없이). 모듈 설정은 지금 있는 모듈(MODULE_IDS) 것만 넣는다. */
 const BACKUP_KEYS = new Set<string>([
     rawKey(MODULES_KEY),
     rawKey(BLOCK_DEFAULTS_KEY),
     ...BLOCK_TYPES.map((type) => rawKey(blockListKey(type))),
-    ...MEMO_TYPES.map((type) => rawKey(memoMapKey(type)))
+    ...MEMO_TYPES.map((type) => rawKey(memoMapKey(type))),
+    ...MODULE_IDS.map((id) => rawKey(moduleSettingsKey(id)))
 ]);
 
 /**
  * 백업·내보내기 대상인 로컬 키: 모듈 on/off와 설정, 차단 목록과 기본 차단 모드, 메모.
- * 그 밖의 키(IP/밴 DB, 백업 상태, 모듈 캐시, 사용 기록, 예전 버전이 남긴 키)는 크거나 기기마다 다르거나 읽지 않는 값이라 뺀다.
+ * 그 밖의 키(IP/밴 DB, 백업 상태, 모듈 캐시, 사용 기록, 없어진 모듈의 설정, 예전 버전이 남긴 키)는 크거나 기기마다 다르거나 읽지 않는 값이라 뺀다.
+ * 가져오기·복원(core/settings-transfer.ts)도 이것으로 걸러 없는 모듈의 설정을 저장하지 않는다.
  */
-export const isBackupTarget = (key: string): boolean => BACKUP_KEYS.has(key) || settingsKeyModule(key) !== undefined;
+export const isBackupTarget = (key: string): boolean => BACKUP_KEYS.has(key);
 
 /** 백업 대상 키(isBackupTarget)의 값만 읽는다. get(null)은 수백 KB짜리 IP·밴 DB까지 읽는다. */
 export const readBackupTargets = async (): Promise<Record<string, unknown>> => {
@@ -87,10 +97,8 @@ const gzip = (text: string): Promise<Uint8Array<ArrayBuffer>> =>
 const gunzip = (bytes: Uint8Array<ArrayBuffer>): Promise<string> =>
     new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
 
-const sha256 = async (bytes: Uint8Array<ArrayBuffer>): Promise<string> =>
-    new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)).toHex();
-
-const isMeta = (value: unknown): value is BackupMeta => isRecord(value) && value.format === 1 && Number.isInteger(value.chunks);
+/** 형식 번호의 크기는 따지지 않는다. 더 높은 형식(새 버전이 올린 백업)도 백업이 있는 것으로 보고, 읽을 때만 막는다. */
+const isMeta = (value: unknown): value is BackupMeta => isRecord(value) && Number.isInteger(value.format) && Number.isInteger(value.chunks);
 
 const backupToCloud = async (slot: BackupSlot): Promise<void> => {
     const bytes = await gzip(JSON.stringify(await collectLocalData()));
@@ -107,7 +115,7 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
     const chunks: string[] = [];
     for (let at = 0; at < encoded.length; at += CHUNK_CHARS) chunks.push(encoded.slice(at, at + CHUNK_CHARS));
 
-    const meta: BackupMeta = {format: 1, chunks: chunks.length, hash: await sha256(bytes), size: encoded.length, createdAt: Date.now()};
+    const meta: BackupMeta = {format: FORMAT, chunks: chunks.length, hash: await sha256(bytes), size: encoded.length, createdAt: Date.now(), device: await backupStorage.device().getValue()};
     const items: Record<string, unknown> = {
         ...Object.fromEntries(chunks.map((chunk, index) => [chunkKey(slot, index), chunk])),
         [SLOT_KEYS[slot]]: meta
@@ -119,28 +127,39 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
     if (stale.length > 0) await browser.storage.sync.remove(stale);
 };
 
+interface SlotStatus {
+    createdAt: number;
+    size: number;
+    /** 다른 기기가 올렸다. 기기를 남기기 전 버전이 올린 백업도 어느 기기 것인지 몰라 여기에 넣는다. */
+    other: boolean;
+}
+
 export interface CloudBackupStatus {
     /** 칸마다 마지막 백업 시각과 크기(바이트). 백업이 없으면 없다. */
-    manual?: { createdAt: number; size: number };
-    auto?: { createdAt: number; size: number };
-    /** sync 전체 사용량 (바이트). 브라우저가 한도에 쓰는 getBytesInUse 값. */
-    used: number;
+    manual?: SlotStatus;
+    auto?: SlotStatus;
 }
 
 /** 클라우드 백업 상태. 다른 기기가 올린 백업도 메타로 알 수 있다. */
 export const readCloudBackupStatus = async (): Promise<CloudBackupStatus> => {
-    const [all, used] = await Promise.all([browser.storage.sync.get(null), browser.storage.sync.getBytesInUse(null)]);
-    const slotStatus = (slot: BackupSlot): CloudBackupStatus["manual"] => {
+    const all = await browser.storage.sync.get(null);
+    const device = await backupStorage.device().getValue();
+    const slotStatus = (slot: BackupSlot): SlotStatus | undefined => {
         const meta = all[SLOT_KEYS[slot]];
-        return isMeta(meta) ? {createdAt: meta.createdAt, size: meta.size} : undefined;
+        return isMeta(meta) ? {createdAt: meta.createdAt, size: meta.size, other: meta.device !== device} : undefined;
     };
 
     return {
         manual: slotStatus("manual"),
-        auto: slotStatus("auto"),
-        used
+        auto: slotStatus("auto")
     };
 };
+
+/**
+ * 두 칸의 백업을 메타·조각까지 모두 지운다. sync에는 백업 칸만 쓰므로 통째로 비운다.
+ * v5가 sync에 통째로 올려 둔 키(최대 100KB)도 같이 지워져, 그 때문에 한도를 넘어 실패하던 백업을 여기서 풀 수 있다.
+ */
+export const clearCloudBackups = (): Promise<void> => browser.storage.sync.clear();
 
 interface CloudBackup {
     data: Record<string, unknown>;
@@ -153,15 +172,19 @@ export const readCloudBackup = async (slot: BackupSlot): Promise<CloudBackup | n
     const meta = all[SLOT_KEYS[slot]];
 
     if (!isMeta(meta)) return null;
+    if (meta.format > FORMAT) throw new Error("새 버전 확장에서 만든 백업입니다. 확장을 업데이트해 주세요.");
 
     const chunks = Array.from({length: meta.chunks}, (_, index) => all[chunkKey(slot, index)]);
     if (chunks.some((chunk) => typeof chunk !== "string")) {
         throw new Error("백업 조각이 빠져 있습니다. 다른 기기에서 동기화가 아직 끝나지 않았을 수 있습니다.");
     }
 
-    const bytes = Uint8Array.fromBase64(chunks.join(""));
-    // 새 메타만 먼저 동기화되고 조각은 아직 이전 백업이어도 여기서 어긋난다.
-    if ((await sha256(bytes)) !== meta.hash) throw new Error("백업 데이터가 맞지 않습니다. 다른 기기에서 동기화가 아직 끝나지 않았을 수 있습니다.");
+    let bytes: Uint8Array<ArrayBuffer> | undefined;
+    try {
+        bytes = Uint8Array.fromBase64(chunks.join(""));
+    } catch {}
+    // 새 메타만 먼저 동기화되고 조각은 아직 이전 백업이어도 여기서 어긋난다. 조각 수가 늘었으면 옛 마지막 조각의 '='가 가운데 끼어 디코딩부터 실패한다.
+    if (!bytes || (await sha256(bytes)) !== meta.hash) throw new Error("백업 데이터가 맞지 않습니다. 다른 기기에서 동기화가 아직 끝나지 않았을 수 있습니다.");
 
     const data: unknown = JSON.parse(await gunzip(bytes));
     if (!isRecord(data)) throw new Error("백업 데이터가 손상되었습니다.");
@@ -172,10 +195,10 @@ export const readCloudBackup = async (slot: BackupSlot): Promise<CloudBackup | n
 export const runBackup = async (slot: BackupSlot): Promise<void> => {
     try {
         await backupToCloud(slot);
-        await backupStorage.error.setValue("");
+        await backupStorage.error().setValue("");
     } catch (e) {
         console.error("백업하지 못했습니다.", e);
-        await backupStorage.error.setValue(friendlyMessage(e));
+        await backupStorage.error().setValue(friendlyMessage(e));
         throw e;
     }
 };

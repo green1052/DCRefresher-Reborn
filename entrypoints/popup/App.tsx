@@ -1,5 +1,5 @@
 import {Ban, type LucideIcon, NotebookPen, Puzzle, Settings} from "lucide-react";
-import {type ReactNode, useEffect, useId, useState} from "react";
+import {type ReactNode, useEffect, useId, useLayoutEffect, useState} from "react";
 
 import {Badge} from "@/components/ui/badge";
 import {Button} from "@/components/ui/button";
@@ -7,12 +7,12 @@ import {Card, CardContent} from "@/components/ui/card";
 import {Field, FieldContent, FieldDescription, FieldLabel} from "@/components/ui/field";
 import {Switch} from "@/components/ui/switch";
 import {Toggle} from "@/components/ui/toggle";
-import {type PageAction, type PageToggleState, sendMessage} from "@/core/messaging/protocol";
+import {type PageAction, type PageState, sendMessage} from "@/core/messaging/protocol";
 import {backupStorage} from "@/core/storage/items";
 import features from "@/features/meta";
 import {initBlocksStore, useBlocksStore} from "@/stores/blocks";
 import {initMemosStore, useMemosStore} from "@/stores/memos";
-import {initModulesStore, useExtensionPageVars, useModulesStore} from "@/stores/modules";
+import {ExtensionPageVars, initModulesStore, useModulesStore} from "@/stores/modules";
 
 const LOGO_URL = browser.runtime.getURL("/icons/48.png");
 const VERSION = browser.runtime.getManifest().version;
@@ -20,8 +20,8 @@ const VERSION = browser.runtime.getManifest().version;
 interface Page {
     tabId: number;
     gallery: string;
-    /** 처음 물었을 때의 탭 상태. 콘텐츠 스크립트가 없으면 null이다. */
-    state: PageToggleState[] | null;
+    /** 처음 물었을 때의 탭 상태. 콘텐츠 스크립트가 없으면(설치·업데이트 전에 열린 탭 등) null이다. */
+    state: PageState | null;
 }
 
 /** 활성 탭이 디시 갤러리 페이지면 탭과 갤러리 id를 돌려준다. tabs 권한이 없어 탭 주소는 host_permissions가 있는 디시 탭에서만 보인다. */
@@ -31,7 +31,6 @@ const findPage = async (): Promise<Page | null> => {
     const gallery = url?.hostname === "gall.dcinside.com" ? url.searchParams.get("id") : null;
     if (tab?.id === undefined || !gallery) return null;
 
-    // 설치 전에 열린 탭 등 콘텐츠 스크립트가 없으면 토글 없이 보여 준다.
     const state = await sendMessage("refresher:pageState", undefined, tab.id).catch(() => null);
     return {tabId: tab.id, gallery, state};
 };
@@ -42,9 +41,13 @@ const openOptions = async (): Promise<void> => {
     window.close();
 };
 
-/** 토글 아이콘(컴포넌트)은 메시지로 보낼 수 없어 팝업이 모듈 메타(toggles)에서 찾는다. */
+/** 토글 아이콘(컴포넌트)은 메시지로 보낼 수 없어 팝업이 모듈 아이콘(features/<id>/icons.ts의 toggles)에서 찾는다. */
 const toggleIcon = ({module, id}: PageAction): LucideIcon =>
-    features.find((feature) => feature.id === module)?.toggles?.find((toggle) => toggle.id === id)?.icon ?? Puzzle;
+    features.find((feature) => feature.id === module)?.icons.toggles?.[id] ?? Puzzle;
+
+/** 토글 이름. 콘텐츠 번들에 두지 않으려고 팝업이 모듈 표시 문구(features/<id>/labels.ts의 toggles)에서 찾는다. */
+const toggleLabel = ({module, id}: PageAction): string =>
+    features.find((feature) => feature.id === module)?.labels.toggles?.[id] ?? id;
 
 const SectionTitle = ({children, aside}: { children: ReactNode; aside?: ReactNode }) => (
     <div className="mb-2 flex items-center justify-between px-1">
@@ -103,6 +106,7 @@ function PageSection({tabId, gallery, state: initial, toggled}: Page & { toggled
     const visible = (entry: { gallery?: string }): boolean => !entry.gallery || entry.gallery === gallery;
     const blockCount = Object.values(blocks).flat().filter(visible).length;
     const memoCount = Object.values(memos).flatMap((map) => Object.values(map)).filter(visible).length;
+    const failed = features.filter((feature) => state?.failed.includes(feature.id)).map((feature) => feature.name);
 
     return (
         <div>
@@ -115,15 +119,19 @@ function PageSection({tabId, gallery, state: initial, toggled}: Page & { toggled
                 현재 페이지
             </SectionTitle>
 
-            {/* 확장을 업데이트하기 전에 열린 탭 등 콘텐츠 스크립트가 없으면 토글을 받을 수 없다. */}
             {state === null && <p className="text-center text-xs text-muted-foreground">페이지를 새로고침하면 이 페이지 설정이 나옵니다.</p>}
-            {/* 이 페이지에서 끌 수 있는 것이 없어도 빈 칸으로 두지 않는다. */}
-            {state?.length === 0 && <p className="text-center text-xs text-muted-foreground">이 페이지에는 끌 수 있는 설정이 없습니다.</p>}
-            {state && state.length > 0 && (
+            {/* 켜져 있는데 setup이 던진 모듈. 모듈 타일은 켜짐으로만 보여 왜 안 되는지 알 수 없다. */}
+            {failed.length > 0 && (
+                <p className="mb-2 text-center text-xs text-destructive" role="alert">
+                    이 페이지에서 시작하지 못한 모듈: {failed.join(", ")}. 페이지를 새로고침해 보세요.
+                </p>
+            )}
+            {state?.toggles.length === 0 && <p className="text-center text-xs text-muted-foreground">이 페이지에서 바꿀 수 있는 설정이 없습니다.</p>}
+            {state && state.toggles.length > 0 && (
                 <Card className="py-3">
                     <CardContent className="flex flex-col gap-3 px-3">
-                        {state.map((toggle) => (
-                            <ToggleRow key={`${toggle.module}:${toggle.id}`} icon={toggleIcon(toggle)} label={toggle.label} desc={toggle.desc}
+                        {state.toggles.map((toggle) => (
+                            <ToggleRow key={`${toggle.module}:${toggle.id}`} icon={toggleIcon(toggle)} label={toggleLabel(toggle)} desc={toggle.desc}
                                        checked={toggle.on} onChange={() => act({module: toggle.module, id: toggle.id})}/>
                         ))}
                     </CardContent>
@@ -145,10 +153,9 @@ function ModulesSection({onToggled}: { onToggled: () => void }) {
             <div className="grid grid-cols-2 gap-2">
                 {features.map((feature) => {
                     const enabled = enables[feature.id] === true;
-                    const Icon = feature.icon;
+                    const Icon = feature.icons.module;
 
                     return (
-                        // 모듈 타일 — 누르면 켜고 끈다. 켜진 타일은 오른쪽 점이 강조색이다.
                         <Toggle key={feature.id} variant="outline" className="min-w-0 justify-start font-normal"
                                 title={feature.description} pressed={enabled}
                                 onPressedChange={(next) => void toggle(feature.id, next).then(() => {
@@ -173,24 +180,24 @@ export function App() {
 
     // 한 번에 그려야 팝업 크기가 여러 번 바뀌지 않는다. 모두 로컬 읽기라 금방 끝난다.
     // 하나가 실패해도 빈 팝업으로 남지 않게 기본값으로 그린다.
-    useEffect(() => {
+    // useEffect는 한 프레임 뒤에 돌아 읽기가 그만큼 늦게 시작하므로 그리기 전에 시작한다.
+    useLayoutEffect(() => {
         void Promise.all([
             findPage().catch(() => null),
             // 자동 백업은 배경에서 돌아 실패해도 데이터 탭을 열기 전에는 모른다. 켜져 있을 때만 팝업에서 한 줄로 알린다.
-            // 오류는 백업이 성공해야 지워지므로, 한도 초과로 자동 백업을 끈 뒤에도 알리면 경고가 사라지지 않는다 (지난 실패는 데이터 탭에 남는다).
-            Promise.all([backupStorage.auto.getValue(), backupStorage.error.getValue()]).then(([auto, error]) => (auto ? error : "")).catch(() => ""),
+            // 오류는 백업이 성공해야 지워지므로 꺼진 뒤에도 알리면 경고가 사라지지 않는다 (지난 실패는 데이터 탭에 남는다).
+            Promise.all([backupStorage.auto().getValue(), backupStorage.error().getValue()]).then(([auto, error]) => (auto ? error : "")).catch(() => ""),
             initBlocksStore().catch(console.error),
             initMemosStore().catch(console.error),
             initModulesStore().catch(console.error)
         ]).then(([page, backupError]) => setLoaded({page, backupError}));
     }, []);
 
-    useExtensionPageVars();
-
     if (!loaded) return null;
 
     return (
         <div className="flex flex-col">
+            <ExtensionPageVars/>
             <div className="flex items-center gap-3 border-b px-4 py-3">
                 <img src={LOGO_URL} alt="" width={32} height={32} className="rounded-md"/>
                 <div className="min-w-0 grow">

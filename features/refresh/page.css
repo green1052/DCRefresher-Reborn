@@ -22,7 +22,17 @@
     background-color: rgba(232, 100, 95, 0.25) !important;
 }
 
+/* '여기까지 읽음' 구분선 (refresh 모듈의 titleCount) — 탭을 떠날 때 맨 위에 있던 글. */
+.refresherReadMark > td {
+    border-top: 2px solid #e8645f !important;
+}
+
 /* 방문 링크 색 끄기 (refresh 모듈의 doNotColorVisited). */
 .refresherDoNotColorVisited .gall_list a:visited {
     color: inherit !important;
+
+    /* 스포일러 표시는 디시가 방문한 링크 안에서 따로 칠한다 (.gall_tit a:visited .spoiler, 다크모드도). 방문 전 색(.spoiler)으로 되돌린다. */
+    .spoiler {
+        color: #059a25 !important;
+    }
 }

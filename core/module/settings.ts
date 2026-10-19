@@ -1,6 +1,5 @@
-import {storage} from "wxt/utils/storage";
-
 import {MODULES_KEY, moduleSettingsKey} from "@/core/storage/items";
+import {readItems} from "@/core/storage/sync";
 import type {SettingValue} from "@/core/storage/types";
 import {isRecord} from "@/utils/record";
 
@@ -17,7 +16,7 @@ export const defaultValue = (schema: SettingSchema): SettingValue => (schema.typ
 
 /**
  * 저장값을 스키마에 맞춘다. 타입이 틀리면 기본값을 쓰고, range는 슬라이더처럼 step 단위로 맞춰 min~max로 자른다
- * (가져온 설정의 소수 등. 동시 요청 수는 정수가 아니면 utils/limit이 던진다).
+ * (가져온 설정의 소수 등. 동시 요청 수는 정수가 아니면 p-limit이 던진다).
  * order는 스키마에 없거나 겹친 항목을 빼고, 새로 생긴 항목을 덧붙인다.
  */
 export const normalizeSetting = (schema: SettingSchema, value: unknown): SettingValue => {
@@ -25,7 +24,7 @@ export const normalizeSetting = (schema: SettingSchema, value: unknown): Setting
         case "check":
             return typeof value === "boolean" ? value : schema.default;
         case "text":
-            return typeof value === "string" ? value : schema.default;
+            return typeof value === "string" ? value.slice(0, schema.maxLength) : schema.default;
         case "option":
             return typeof value === "string" && Object.hasOwn(schema.items, value) ? value : schema.default;
         case "key":
@@ -50,13 +49,6 @@ export const normalizeSetting = (schema: SettingSchema, value: unknown): Setting
     }
 };
 
-export const areEqual = (a: SettingValue | undefined, b: SettingValue): boolean => {
-    if (a === b) return true;
-    if (Array.isArray(a) && Array.isArray(b)) return a.length === b.length && a.every((v, i) => v === b[i]);
-    return false;
-};
-
-
 /** 저장소의 모듈 on/off 값. 없거나 모양이 다르면 빈 객체(모두 defaultEnable). */
 export const enablesOf = (stored: unknown): Record<string, unknown> => (isRecord(stored) ? stored : {});
 
@@ -75,7 +67,6 @@ export const settingsOf = (def: Pick<ModuleDefinition, "settings">, stored: unkn
  * 콘텐츠 레지스트리·배경 모듈이 같이 쓴다.
  */
 export const readModuleStorage = async (ids: readonly string[]): Promise<{ enables: Record<string, unknown>; settings: Map<string, unknown> }> => {
-    // getItems는 받은 키로 값을 돌려주지만 순서는 약속이 아니므로 키로 짝짓는다 (core/storage/sync.ts와 같다).
-    const items = new Map((await storage.getItems([MODULES_KEY, ...ids.map(moduleSettingsKey)])).map(({key, value}) => [key, value]));
+    const items = await readItems([MODULES_KEY, ...ids.map(moduleSettingsKey)]);
     return {enables: enablesOf(items.get(MODULES_KEY)), settings: new Map(ids.map((id) => [id, items.get(moduleSettingsKey(id)) ?? null]))};
 };

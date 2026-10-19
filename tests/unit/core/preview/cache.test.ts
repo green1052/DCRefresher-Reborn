@@ -1,13 +1,10 @@
+import QuickLRU from "quick-lru";
 import {describe, expect, it, vi} from "vitest";
 
 import {getEntry, postKey, restoreArchive, setEntry} from "@/core/preview/cache";
 import type {DcinsideComment} from "@/core/preview/types";
 
-import {preData} from "../../../helpers";
-
-const comment = (no: number, fields: Partial<DcinsideComment> = {}): DcinsideComment => ({
-    no: String(no), c_no: "0", depth: 0, user_id: "", name: "ㅇㅇ", ip: "", memo: `댓글 ${no}`, is_delete: "0", date_time: "", ...fields
-});
+import {dcComment as comment, preData} from "../../../helpers";
 
 // 캐시는 모듈 전역이라 테스트마다 다른 글을 쓴다.
 let seq = 0;
@@ -43,6 +40,21 @@ describe("setEntry", () => {
         vi.advanceTimersByTime(1_000);
         expect(getEntry(pre)).toBeUndefined();
     });
+
+    it("다시 열지 않아도 수명이 끝나면 메모리에서 지운다", () => {
+        vi.useFakeTimers();
+        // 꺼내면 어차피 지워지므로 꺼내지 않고 quick-lru가 지우는지만 본다.
+        const remove = vi.spyOn(QuickLRU.prototype, "delete");
+        const pre = nextPost();
+        setEntry(pre, {fetchedAt: 1});
+        vi.advanceTimersByTime(30_000);
+        setEntry(pre, {commentsAt: 2});
+        vi.advanceTimersByTime(60_000);
+        expect(remove).not.toHaveBeenCalledWith(postKey(pre));
+        vi.advanceTimersByTime(1_000);
+        expect(remove).toHaveBeenCalledWith(postKey(pre));
+        remove.mockRestore();
+    });
 });
 
 describe("restoreArchive", () => {
@@ -66,7 +78,6 @@ describe("restoreArchive", () => {
         restoreArchive(pre, [comment(1, {memo: "원문"})]);
         const changed = comment(1, {memo: "삭제된 댓글입니다.", is_delete: "1"});
         expect(restoreArchive(pre, [changed])).toEqual([comment(1, {memo: "원문", is_delete: "1"})]);
-        // 원문을 바뀐 내용으로 덮지 않는다.
         expect(restoreArchive(pre, [changed])[0]?.memo).toBe("원문");
     });
 

@@ -9,11 +9,10 @@ import {DialogClose, DialogDescription, DialogFooter, DialogHeader, DialogTitle}
 import {Field, FieldLabel} from "@/components/ui/field";
 import {InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput} from "@/components/ui/input-group";
 import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
-import {queryString} from "@/core/http/urls";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
 import type {MemoType} from "@/core/storage/types";
 import {ownMemo, randomColor, useMemosStore} from "@/stores/memos";
-import {type MemoTargetState, useUiStore} from "@/stores/ui";
+import {type MemoTargetState, selectedGallery, useUiStore} from "@/stores/ui";
 import {SAVE_FAILED} from "@/utils/error";
 import {arrayIncludes} from "@/utils/typed";
 
@@ -27,7 +26,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     const input = useRef<HTMLInputElement>(null);
 
     // 지금 보고 있는 갤러리. 이 갤러리에서만 보이는 메모로 저장할 때 쓴다.
-    const gallery = queryString("id");
+    const gallery = selectedGallery(state.gallery);
 
     const memoOf = (memoType: MemoType, user: string) => ownMemo(memos[memoType], user);
 
@@ -51,23 +50,26 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     const value = state.targets[type] ?? "";
     const existing = Boolean(memoOf(type, value));
 
+    /** 저장·삭제를 마치면 알리고 닫는다. 실패하면 창을 열어 둔다. 닫으면 입력한 메모가 사라진다. */
+    const save = async (write: Promise<void>, done: string): Promise<void> => {
+        try {
+            await write;
+        } catch {
+            showToast(SAVE_FAILED, "error");
+            return;
+        }
+        showToast(done);
+        closeMemo();
+    };
+
+    const remove = (): Promise<void> => save(removeMemo(type, value), "메모를 삭제했습니다.");
+
     const submit = async (): Promise<void> => {
         // 공백만 있는 메모는 빈 메모로 본다. 그대로 저장하면 빈 "[ ]" 배지가 붙는다.
         const trimmed = text.trim();
-        try {
-            if (!trimmed) {
-                if (existing) {
-                    await removeMemo(type, value);
-                    showToast("메모를 삭제했습니다.");
-                } else showToast("메모 내용이 없어 저장하지 않았습니다.", "error");
-            } else {
-                await setMemo(type, value, {text: trimmed, color, gallery: scope});
-                showToast("메모를 저장했습니다.");
-            }
-        } catch {
-            showToast(SAVE_FAILED, "error");
-        }
-
+        if (trimmed) return save(setMemo(type, value, {text: trimmed, color, gallery: scope}), "메모를 저장했습니다.");
+        if (existing) return remove();
+        showToast("메모 내용이 없어 저장하지 않았습니다.", "error");
         closeMemo();
     };
 
@@ -80,12 +82,11 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
                 </DialogDescription>
             </DialogHeader>
 
-            <SubmitForm onSubmit={submit} className="flex flex-col gap-4">
+            <SubmitForm onSubmit={submit}>
                 <div className="flex flex-col gap-3">
-                    <ToggleGroup variant="outline" spacing={0} value={[type]} onValueChange={([next]) => {
+                    <ToggleGroup aria-label="메모 대상" variant="outline" spacing={0} value={[type]} onValueChange={([next]) => {
                         if (!arrayIncludes(MEMO_TYPES, next)) return;
                         setType(next);
-                        // 종류를 바꿀 때 입력한 적이 없으면 다른 대상의 저장된 메모로 채우고, 입력했으면 지우지 않는다.
                         if (!touched) setForm(prefill(next));
                     }}>
                         {MEMO_TYPES.filter((memoType) => state.targets[memoType]).map((memoType) => (
@@ -127,10 +128,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
 
                 <DialogFooter>
                     {existing && (
-                        <Button type="button" variant="destructive" onClick={() => {
-                            removeMemo(type, value).catch(() => showToast(SAVE_FAILED, "error"));
-                            closeMemo();
-                        }}>
+                        <Button type="button" variant="destructive" onClick={() => void remove()}>
                             삭제
                         </Button>
                     )}

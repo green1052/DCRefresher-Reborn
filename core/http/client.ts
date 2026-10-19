@@ -1,7 +1,7 @@
 import ky, {type AfterResponseHook, type KyInstance} from "ky";
+import pLimit from "p-limit";
 
 import {isBlockedPage} from "@/core/pages";
-import {createLimiter} from "@/utils/limit";
 
 type Fetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
@@ -19,11 +19,11 @@ const baseFetch: Fetch = pageWindow
     : globalThis.fetch.bind(globalThis);
 
 /** 동시 요청 수. 요청 제한 모듈(features/requests)이 설정값으로 바꾸고, 모듈이 꺼져 있거나 배경·옵션 페이지면 무제한이다. */
-const limiter = createLimiter(Number.POSITIVE_INFINITY);
+const limiter = pLimit(Number.POSITIVE_INFINITY);
 
 /** 1 이상의 정수나 Infinity여야 한다 (아니면 던진다). 설정값은 normalizeSetting이 step 단위로 맞춘다. */
 export const setRequestConcurrency = (concurrency: number): void => {
-    limiter.setConcurrency(concurrency);
+    limiter.concurrency = concurrency;
 };
 
 /** 요청 한 번의 시간 제한 (ms). */
@@ -36,7 +36,7 @@ const REQUEST_TIMEOUT = 15_000;
  * 요청을 끊는 신호(ky·호출한 쪽)는 Request에 들어 있어 함께 건다.
  */
 const limitedFetch: Fetch = (input, init) =>
-    limiter.run(() => {
+    limiter(() => {
         // AbortSignal.timeout은 파이어폭스 콘텐츠 스크립트에서 "Could not find window"로 던진다 (전역이 창이 아니라 샌드박스다).
         const timeout = new AbortController();
         const timer = setTimeout(() => timeout.abort(new DOMException("요청 시간 초과", "TimeoutError")), REQUEST_TIMEOUT);
@@ -66,15 +66,19 @@ const detectBlocked: AfterResponseHook = async ({request, response}) => {
     const url = new URL(request.url);
     if (!response.ok || !url.hostname.endsWith("dcinside.com")) return;
     if (request.method !== "GET" && !url.pathname.startsWith("/board/comment/")) return;
-    if (!isBlockedPage(await response.clone().text())) return;
+    // ky가 훅마다 복제본을 넘기고 호출한 쪽에는 원본을 주므로 바로 읽어도 된다.
+    if (!isBlockedPage(await response.text())) return;
 
     onBlocked?.();
     throw new BlockedError("디시인사이드 임시 차단");
 };
 
 export const http: KyInstance = ky.create({
-    // 시간 제한은 limitedFetch가 차례를 받은 뒤부터 잰다.
+    // 머리까지의 시간 제한은 limitedFetch가 차례를 받은 뒤부터 잰다.
     timeout: false,
+    // 요청 전체(차례 기다림·재시도·차단 검사·본문 읽기)의 상한. 머리를 받은 뒤 본문이 멈추면 끝나지 않아 진행 중 표시가 굳는다.
+    // 본문 읽기는 ky의 .text()/.json()으로 읽어야 이 상한에 묶인다.
+    totalTimeout: 60_000,
     fetch: limitedFetch,
     // jitter: 재시도가 한꺼번에 몰리지 않게 시점을 흩는다.
     // maxRetryAfter: Retry-After가 몇 분이어도 10초까지만 기다린다. 더 기다리면 화면이 멈춘 것처럼 보인다.
@@ -90,7 +94,6 @@ export const http: KyInstance = ky.create({
 export const formBody = (fields: Record<string, string | null | undefined | false>): URLSearchParams =>
     new URLSearchParams(Object.entries(fields).filter((entry): entry is [string, string] => typeof entry[1] === "string"));
 
-/** 끊은 요청(AbortController)의 오류인지. 파이어폭스 content.fetch의 오류는 다른 영역 객체라 instanceof Error가 틀릴 수 있어 이름으로 본다. */
-export const isAbortError = (e: unknown): boolean => typeof e === "object" && e !== null && "name" in e && e.name === "AbortError";
+export {isAbortError} from "@/utils/error";
 
 export const ajax: KyInstance = http.extend({headers: {"X-Requested-With": "XMLHttpRequest"}});

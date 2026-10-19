@@ -76,6 +76,20 @@ describe("updateDatabase", () => {
         expect(await stored(META)).toMatchObject({version: "v1"});
     });
 
+    it("받은 ip.json이 version 파일보다 옛것이면 확인 시각을 그대로 둔다", async () => {
+        const {updateDatabase} = await load();
+        // 확인 시각이 지금으로 바뀌면 배경 알람이 7일 동안 다시 받지 않는다.
+        await browser.storage.local.set({[META]: {version: "v0", lastUpdate: 1, format: IP_FORMAT}});
+        serve("v2", ipJson([], "v1"));
+        vi.spyOn(Date, "now").mockReturnValue(5000);
+        await updateDatabase();
+        expect(await stored(META)).toEqual({version: "v1", lastUpdate: 1, format: IP_FORMAT});
+
+        serve("v2", ipJson([], "v2"));
+        await updateDatabase();
+        expect(await stored(META)).toEqual({version: "v2", lastUpdate: 5000, format: IP_FORMAT});
+    });
+
     it("버전과 형식이 같으면 확인 시각만 바꾸고 본문은 받지 않는다", async () => {
         const {updateDatabase} = await load();
         await browser.storage.local.set({[META]: {version: "v1", lastUpdate: 1, format: IP_FORMAT}, [IP]: "old"});
@@ -131,7 +145,7 @@ describe("updateDatabase", () => {
 
 describe("ipInfoOf", () => {
     const setup = async (prefixes: [string, IpCandidate[]][]): Promise<typeof import("@/core/database")> => {
-        await browser.storage.local.set({[IP]: ipJson(prefixes)});
+        await browser.storage.local.set({[META]: {version: "v1", lastUpdate: 1, format: IP_FORMAT}, [IP]: ipJson(prefixes)});
         const database = await load();
         await database.initDatabase();
         return database;
@@ -150,15 +164,20 @@ describe("ipInfoOf", () => {
             ["1.4", [{country: "미국", vpn: false}]]
         ]);
         expect(ipInfoOf("1.1")).toMatchObject({label: "SoftBank (일본)", category: "japan"});
-        expect(ipInfoOf("1.2")).toEqual({label: "Tencent, KT (VPN)", title: "Tencent (VPN)\nKT", category: "vpn"});
+        expect(ipInfoOf("1.2")).toEqual({label: "Tencent (VPN), KT", title: "Tencent (VPN)\nKT", category: "vpn"});
         expect(ipInfoOf("1.3")).toMatchObject({category: "china"});
-        expect(ipInfoOf("1.4")).toEqual({label: "미국", title: "(조직 미상) (미국)", category: "foreign"});
+        expect(ipInfoOf("1.4")).toEqual({label: "미국", title: "미국", category: "foreign"});
     });
 
-    it("조직은 셋까지 보이고 나머지는 수로 줄인다", async () => {
+    it("후보마다 자기 국가를 붙이고, 조직이 없으면 국가만 보인다", async () => {
+        const {ipInfoOf} = await setup([["1.5", [{country: "태국", vpn: false}, {org: "ARTERIA", country: "일본", vpn: false}, {vpn: false}]]]);
+        expect(ipInfoOf("1.5")).toEqual({label: "태국, ARTERIA (일본), 조직 미상", title: "태국\nARTERIA (일본)\n조직 미상", category: "foreign"});
+    });
+
+    it("후보는 겹치지 않게 모두 보인다", async () => {
         const orgs = ["A", "B", "C", "D", "E", "A"].map((org) => ({org, vpn: false}));
         const {ipInfoOf} = await setup([["1.2", orgs]]);
-        expect(ipInfoOf("1.2")?.label).toBe("A, B, C 외 2");
+        expect(ipInfoOf("1.2")?.label).toBe("A, B, C, D, E");
     });
 
     it("데이터가 없거나 깨졌으면 undefined이고 던지지 않는다", async () => {
@@ -166,7 +185,7 @@ describe("ipInfoOf", () => {
         expect(ipInfoOf("9.9")).toBeUndefined();
 
         vi.spyOn(console, "error").mockImplementation(() => {});
-        await browser.storage.local.set({[IP]: "{"});
+        await browser.storage.local.set({[META]: {version: "v1", lastUpdate: 1, format: IP_FORMAT}, [IP]: "{"});
         const broken = await load();
         await expect(broken.initDatabase()).resolves.toBeUndefined();
         expect(broken.ipInfoOf("1.2")).toBeUndefined();
@@ -204,8 +223,26 @@ describe("ipInfoOf", () => {
         await vi.waitFor(() => expect(databaseVersion()).toBe(before + 1));
     });
 
+    it("ip·meta는 한 번씩만 읽는다", async () => {
+        // 콘텐츠 쪽은 meta를 읽기만 하므로 항목을 만들지 않는다 (만들면 defineItem이 한 번 더 읽는다).
+        await browser.storage.local.set({[META]: {version: "v1", lastUpdate: 1, format: IP_FORMAT}, [IP]: ipJson([])});
+        const get = vi.spyOn(browser.storage.local, "get");
+        const {initDatabase} = await load();
+        await initDatabase();
+        await tick();
+        const reads = (key: string): number => get.mock.calls.filter(([keys]) => [keys].flat().includes(key)).length;
+        expect([reads(IP), reads(META)]).toEqual([1, 1]);
+    });
+
+    it("저장된 DB가 옛 저장 형식이면 읽지 않고 IP 정보 없이 둔다", async () => {
+        await browser.storage.local.set({[META]: {version: "v1", lastUpdate: 1}, [IP]: ipJson([["1.2", [{org: "KT", vpn: false}]]])});
+        const {initDatabase, ipInfoOf} = await load();
+        await initDatabase();
+        expect(ipInfoOf("1.2")).toBeUndefined();
+    });
+
     it("구독하면 DB를 읽기 시작한다", async () => {
-        await browser.storage.local.set({[IP]: ipJson([["1.2", [{org: "KT", vpn: false}]]])});
+        await browser.storage.local.set({[META]: {version: "v1", lastUpdate: 1, format: IP_FORMAT}, [IP]: ipJson([["1.2", [{org: "KT", vpn: false}]]])});
         const {subscribeDatabase, ipInfoOf} = await load();
         const listener = vi.fn();
         subscribeDatabase(listener);
@@ -236,6 +273,27 @@ describe("banReasonsOf", () => {
         expect(banReasonsOf("b")).toBe("갤1");
         expect(banReasonsOf("3")).toBeUndefined();
         expect(banReasonsOf("c")).toBeUndefined();
+    });
+
+    it("많은 uid도 모두 찾고 없는 uid는 찾지 않는다", async () => {
+        // 조회는 정렬해 이은 uid를 이진 탐색한다. 앞뒤 끝, 접두어가 겹치는 uid, 한글·빈 uid도 넣는다.
+        const list: Record<string, string[]> = {갤1: [], 갤2: [], 갤3: ["", "가나", "zz"]};
+        for (let index = 0; index < 500; index++) {
+            const uid = `user${index}`;
+            list[index % 3 === 0 ? "갤1" : "갤2"]!.push(uid);
+            if (index % 7 === 0) list.갤3!.push(uid);
+        }
+        await browser.storage.local.set({[BAN]: JSON.stringify(list)});
+        const {banReasonsOf} = await load();
+        banReasonsOf("user0");
+        await vi.waitFor(() => expect(banReasonsOf("user0")).toBe("갤1, 갤3"));
+
+        for (let index = 0; index < 500; index++) {
+            const expected = [index % 3 === 0 ? "갤1" : "갤2", ...(index % 7 === 0 ? ["갤3"] : [])].join(", ");
+            expect(banReasonsOf(`user${index}`)).toBe(expected);
+        }
+        for (const uid of ["", "가나", "zz"]) expect(banReasonsOf(uid)).toBe("갤3");
+        for (const uid of ["user", "user5000", "user1x", "a", "zzz", "가"]) expect(banReasonsOf(uid)).toBeUndefined();
     });
 
     it("읽은 뒤에는 저장소의 밴 DB 변경을 따라간다", async () => {

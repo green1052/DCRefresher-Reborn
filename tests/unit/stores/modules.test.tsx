@@ -129,14 +129,10 @@ describe("initModulesStore", () => {
     });
 });
 
-describe("useExtensionPageVars", () => {
+describe("ExtensionPageVars", () => {
     const mount = () => {
-        const Vars = () => {
-            modules.useExtensionPageVars();
-            return null;
-        };
         const root = document.createElement("div");
-        act(() => render(<Vars/>, root));
+        act(() => render(<modules.ExtensionPageVars/>, root));
         return () => act(() => render(null, root));
     };
     const fontVar = () => document.documentElement.style.getPropertyValue("--refresher-font");
@@ -154,5 +150,12 @@ describe("useExtensionPageVars", () => {
         await act(() => state().toggle("fonts", true));
         unmount();
         expect(fontVar()).toBe("");
+    });
+
+    it("그리는 그 자리에서 변수를 넣는다 (첫 프레임이 기본 폰트로 그려지지 않게)", () => {
+        const root = document.createElement("div");
+        render(<modules.ExtensionPageVars/>, root);
+        expect(fontVar()).not.toBe("");
+        act(() => render(null, root));
     });
 });

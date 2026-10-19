@@ -8,25 +8,16 @@ import {Skeleton} from "@/components/ui/skeleton";
 import {Spinner} from "@/components/ui/spinner";
 import {dcconCode, isBlockedHidden} from "@/core/block";
 import {urls} from "@/core/http/urls";
-import {addDcconPackage, fetchDcconPackage} from "@/core/preview/request";
-import type {DcinsideDcconPackage} from "@/core/preview/types";
+import {addDcconPackage, dcconPackages, fetchDcconPackage} from "@/core/preview/request";
 import {useUiStore} from "@/stores/ui";
-import {LruCache} from "@/utils/lru";
 
 import {clearDcconListCache} from "./DcconPopup";
-import {usePreviewStore} from "./previewStore";
-
-/**
- * 디시콘 코드별 패키지 정보. 같은 디시콘을 다시 눌러도 받지 않는다 (디시콘 목록 캐시처럼 10분).
- * 디시콘을 추가하면 가진 여부(residual)가 바뀌므로 비운다. 같은 패키지의 다른 디시콘도 코드가 달라 따로 담기기 때문이다.
- */
-const packageCache = new LruCache<string, DcinsideDcconPackage>({max: 100, ttl: 10 * 60_000});
+import {previewGallery, usePreviewStore} from "./previewStore";
 
 const close = (): void => usePreviewStore.setState({dcconInfo: null});
 
 /**
  * 본문·댓글에서 누른 디시콘의 정보 창을 연다. 디시콘을 눌렀으면 true.
- * 본문·댓글은 HTML 문자열로 그려 디시콘이 React 요소가 아니라서 감싼 상자의 클릭에서 찾는다.
  * 차단으로 가린 디시콘은 '가린 내용 보기' 동안이거나 흐림이 풀려 있는 동안(blurReveal)만 연다 (isBlockedHidden, 큰 이미지와 같은 기준).
  */
 export const openDcconInfo = (ev: MouseEvent<HTMLElement>): boolean => {
@@ -47,7 +38,7 @@ const openBlockBubble = (ev: MouseEvent<HTMLElement>): void => {
     if (!code) return;
 
     ev.preventDefault();
-    useUiStore.getState().openBubble({dccon: code}, ev.clientX, ev.clientY);
+    useUiStore.getState().openBubble({dccon: code, gallery: previewGallery()}, ev.clientX, ev.clientY);
 };
 
 /** 제작·태그 줄 앞의 작은 딱지 (디시 정보창의 tbox). */
@@ -61,7 +52,7 @@ const ShopLink = ({href, children}: { href: string; children: string }) => (
 
 /** 댓글·본문의 디시콘을 눌렀을 때 그 디시콘이 든 패키지 정보를 보여 준다 (디시 '디시콘 보기' 창). */
 export const DcconInfoPopup = ({code}: { code: string }) => {
-    const [dccon, setDccon] = useState(() => packageCache.get(code) ?? null);
+    const [dccon, setDccon] = useState(() => dcconPackages.get(code) ?? null);
     const [sending, setSending] = useState(false);
     const [added, setAdded] = useState(false);
     const [confirming, setConfirming] = useState(false);
@@ -72,18 +63,21 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
         if (sending) return;
         setSending(true);
 
-        const result = await addDcconPackage(packageIdx).catch(() => "fail" as const);
+        const result = await addDcconPackage(packageIdx).catch((e: unknown) => {
+            console.error("Dccon package add failed:", e);
+            return "fail" as const;
+        });
         const {showToast} = useUiStore.getState();
 
         if (result === "ok") {
             clearDcconListCache();
-            packageCache.clear();
+            dcconPackages.clear();
             setAdded(true);
             showToast("디시콘을 추가했습니다.");
         } else if (result === "not_login") {
             showToast("디시콘은 로그인한 뒤에 추가할 수 있습니다.", "warning");
         } else {
-            showToast("디시콘 추가 중 오류가 발생했습니다.", "error");
+            showToast("디시콘을 추가하지 못했습니다.", "error");
         }
         setSending(false);
     };
@@ -95,7 +89,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
         const {signal} = controller;
 
         void fetchDcconPackage(code, signal).then((result) => {
-            packageCache.set(code, result);
+            dcconPackages.set(code, result);
             if (!signal.aborted) setDccon(result);
         }, () => {
             if (signal.aborted) return;
@@ -116,7 +110,6 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
                 <DialogCloseButton/>
             </div>
 
-            {/* 디시 '디시콘 보기' 창처럼 위에 패키지 정보, 아래에 든 디시콘. */}
             <div className="flex gap-4 rounded-lg bg-muted/50 p-4">
                 {info ? <img src={urls.dccon.image + info.main_img_path} alt={info.title} className="size-30 flex-none object-contain"/> : <Skeleton className="size-30 flex-none"/>}
 
@@ -127,7 +120,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
                                 <span className="text-lg font-bold">{info.title}</span>
                                 {!info.register && !info.residual && !added &&
                                     <Button className="shrink-0" disabled={sending} onClick={() => setConfirming(true)}>
-                                        {sending && <Spinner data-icon="inline-start"/>}사용
+                                        {sending && <Spinner aria-hidden data-icon="inline-start"/>}사용
                                     </Button>}
                             </div>
                             {info.description && <p>{info.description}</p>}
@@ -155,13 +148,12 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
                 </div>
             </div>
 
-            {/* 우클릭하면 차단 버블이 뜬다 (openBlockBubble). 댓글 작성자 칸과 같다.
-                정보 창 목록은 최대 높이만 있어, 불러오는 동안 그 높이로 잡아 두어야 다 불러왔을 때 창이 커지지 않는다.
-                불러오는 동안은 스켈레톤을 넘치도록 깔아 꽉 찬 목록처럼 보이고, 넘친 스켈레톤에 스크롤바가 생기지 않게 자른다. */}
+            {/* 우클릭하면 차단 버블이 뜬다 (openBlockBubble). 목록은 최대 높이만 있어 불러오는 동안 그 높이로 잡아 두어야
+                다 불러왔을 때 창이 커지지 않는다. 스켈레톤은 넘치도록 깔고 스크롤바가 생기지 않게 자른다. */}
             <div className="grid max-h-[420px] grid-cols-[repeat(auto-fill,minmax(96px,1fr))] content-start gap-2 overflow-y-auto aria-busy:h-[420px] aria-busy:overflow-hidden"
                  aria-busy={!dccon} onContextMenu={openBlockBubble}>
                 {dccon
-                    ? dccon.detail.map((item) => <img key={item.idx} src={urls.dccon.image + item.path} alt={item.title} title={item.title}
+                    ? dccon.detail.map((item) => <img key={item.idx} src={urls.dccon.image + item.path} alt={item.title} title={item.title} loading="lazy" decoding="async"
                                                       className="aspect-square w-full cursor-context-menu object-contain"/>)
                     : Array.from({length: 30}, (_, index) => <Skeleton key={index} className="aspect-square w-full"/>)}
             </div>

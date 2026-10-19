@@ -2,11 +2,12 @@ import {Ban, Database, Info, Keyboard, type LucideIcon, NotebookPen, Settings} f
 import {lazy, Suspense, useEffect, useState, useSyncExternalStore} from "react";
 
 import {Notice} from "@/components/dialogs";
+import {ToastHost} from "@/components/overlay/Toasts";
 import {Button} from "@/components/ui/button";
 import {Separator} from "@/components/ui/separator";
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
-import {initModulesStore, useExtensionPageVars} from "@/stores/modules";
+import {ExtensionPageVars, initModulesStore} from "@/stores/modules";
 import {cn} from "cn";
 
 import {AboutTab} from "./AboutTab";
@@ -102,14 +103,14 @@ export function App() {
         );
     }, []);
 
-    useExtensionPageVars();
-
     return (
         <div className="flex min-h-screen flex-col md:flex-row">
+            <ExtensionPageVars/>
             <Sidebar tab={current.id} onSelect={(id) => (location.hash = id)}/>
-            {/* 누를 때마다 새로 마운트한다. React Compiler가 Math.random으로 그린 결과를 기억해 같은 모양이 반복되기 때문이다. */}
+            {/* 누를 때마다 새로 마운트해 무작위 배치와 끝내는 타이머를 처음부터 다시 건다. */}
             {rain > 0 && <Suspense><DcconRain key={rain}/></Suspense>}
             <Notice message={notice} onClose={() => useOptionsStore.setState({notice: null})}/>
+            <ToastHost/>
 
             <div className="min-w-0 grow px-4 py-8 md:px-8">
                 {/* 탭마다 새로 마운트해 들어오는 애니메이션을 다시 건다.

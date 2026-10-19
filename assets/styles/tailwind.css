@@ -1,11 +1,16 @@
 /*
- * Tailwind + shadcn 토큰. 색은 shadcn 테마 값 그대로다 (base-vega, 기본색 zinc, 테마 indigo. https://ui.shadcn.com/init?base=base&style=vega&baseColor=zinc&theme=indigo&only=theme의 cssVars). 손으로 고치지 않는다.
+ * Tailwind + shadcn 토큰. 색은 shadcn 테마 값 그대로다 (base-vega, 기본색 zinc, 테마 indigo. https://ui.shadcn.com/init?base=base&style=vega&baseColor=zinc&theme=indigo&only=theme의 cssVars). --link 말고는 손으로 고치지 않는다 (오버레이의 다크 색은 overlay.css).
  * 오버레이 shadow에서도 쓰도록 :root와 :host에 같이 건다. 다크 모드는 조상의 .dark 클래스가 정한다 (utils/appearance.ts).
  */
-@import "tailwindcss";
+@import "tailwindcss" source(none);
 @import "tw-animate-css";
 /* shadcn 부품이 쓰는 variant(data-horizontal·data-open 등, Base UI 데이터 속성에 맞춘 것)와 유틸리티. */
 @import "shadcn/tailwind.css";
+/* 클래스를 찾을 폴더를 직접 정한다. 자동 탐색은 .gitignore에 기대는데 파이어폭스 심사용 소스 zip에는 .gitignore가 없어,
+   심사 쪽 빌드의 CSS와 해시 붙은 파일 이름이 우리가 올린 빌드와 달라진다. */
+@source "../../{components,core,entrypoints,features,stores,utils}";
+/* cn 플러그인이 만드는 클래스 그룹 표(wxt.config.ts). 표의 낱말이 클래스로 읽혀 쓰지 않는 유틸리티가 생긴다. */
+@source not "../../utils/cn-tables.ts";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -53,21 +58,6 @@
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.552 0.016 285.938);
-}
-
-/* 디시 위에 뜨는 오버레이(shadow)는 새까만 배경에 흰 글자가 눈부셔 회색 배경과 덜 흰 글자를 쓴다. 옵션·팝업 페이지는 위의 값 그대로다. */
-:host .dark {
-    --background: oklch(0.24 0.006 286);
-    --foreground: oklch(0.92 0.004 286.32);
-    --card: oklch(0.28 0.006 286);
-    --card-foreground: oklch(0.92 0.004 286.32);
-    --popover: oklch(0.28 0.006 286);
-    --popover-foreground: oklch(0.92 0.004 286.32);
-    --secondary: oklch(0.32 0.006 286);
-    --secondary-foreground: oklch(0.92 0.004 286.32);
-    --muted: oklch(0.32 0.006 286);
-    --accent: oklch(0.32 0.006 286);
-    --accent-foreground: oklch(0.92 0.004 286.32);
 }
 
 @theme inline {
@@ -138,22 +128,6 @@
     }
 }
 
-/* 탭을 바꾸면 새 내용이 살짝 떠오른다 (옵션 탭, 차단·메모 목록의 종류 탭). */
-@utility tab-enter {
-    animation: tab-enter 180ms cubic-bezier(0.19, 1, 0.22, 1);
-
-    @media (prefers-reduced-motion: reduce) {
-        animation: none;
-    }
-}
-
-@keyframes tab-enter {
-    from {
-        opacity: 0;
-        transform: translateY(6px);
-    }
-}
-
 @layer base {
     * {
         @apply border-border outline-ring/50;
@@ -163,13 +137,5 @@
         @apply bg-background text-foreground;
         /* 크롬은 확장 페이지(옵션·팝업)의 body에 자체 폰트 규칙을 레이어 밖에 넣어, 레이어 안의 규칙은 진다. 폰트 교체 설정이 먹도록 important로 건다. */
         font-family: var(--font-sans) !important;
-    }
-
-    /* 오버레이에 그리는 디시 본문·댓글 HTML(.refresher-html)은 Tailwind 리셋(preflight)을 받지 않고 브라우저 기본 모양을 쓴다.
-       base 레이어 안에서 되돌리므로 레이어 밖의 본문 스타일(features/preview/overlay.css)은 그대로 걸린다. */
-    .refresher-html :where(*),
-    .refresher-html :where(*)::before,
-    .refresher-html :where(*)::after {
-        all: revert-layer;
     }
 }

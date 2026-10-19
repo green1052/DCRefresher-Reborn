@@ -6,9 +6,9 @@ type ObjectKeys<T extends object> = `${Exclude<keyof T, symbol>}`;
 /** 키를 넓히지 않는 Object.keys. */
 export const objectKeys = <T extends object>(value: T): ObjectKeys<T>[] => Object.keys(value) as ObjectKeys<T>[];
 
-/** 키·값 타입을 지키는 Object.entries. */
-export const objectEntries = <T extends object>(value: T): [ObjectKeys<T>, Required<T>[Extract<keyof T, string | number>]][] =>
-    Object.entries(value) as [ObjectKeys<T>, Required<T>[Extract<keyof T, string | number>]][];
+/** 키·값 타입을 지키는 Object.entries. 선택 속성의 값은 undefined일 수 있다 (값이 undefined인 키도 entries에 나온다). */
+export const objectEntries = <T extends object>(value: T): [ObjectKeys<T>, T[Extract<keyof T, string | number>]][] =>
+    Object.entries(value) as [ObjectKeys<T>, T[Extract<keyof T, string | number>]][];
 
 /** 키 타입을 지키는 Object.fromEntries. 개수를 모르는 배열에서 만들면 빠진 키가 있을 수 있어 선택 속성이다. */
 export const objectFromEntries = <K extends PropertyKey, V>(entries: Iterable<readonly [K, V]>): Partial<Record<K, V>> =>

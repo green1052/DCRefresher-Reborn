@@ -20,14 +20,7 @@ jobs:
                 with:
                     persist-credentials: false
 
-            -   uses: oven-sh/setup-bun@v2
-
-            -   uses: actions/setup-node@v7
-                with:
-                    node-version: latest
-
-            -   name: Install Dependencies
-                run: bun ci
+            -   uses: ./.github/actions/setup
 
             -   name: Type check
                 run: bun run compile
@@ -43,10 +36,8 @@ jobs:
             matrix:
                 include:
                     -   browser: chromium
-                        build: build
                         e2e: e2e
                     -   browser: firefox
-                        build: build:firefox
                         e2e: e2e:firefox
         name: e2e (${{ matrix.browser }})
         steps:
@@ -54,21 +45,13 @@ jobs:
                 with:
                     persist-credentials: false
 
-            -   uses: oven-sh/setup-bun@v2
-
-            -   uses: actions/setup-node@v7
-                with:
-                    node-version: latest
-
-            -   name: Install Dependencies
-                run: bun ci
-
-            -   name: Build
-                run: bun run ${{ matrix.build }}
+            -   uses: ./.github/actions/setup
 
             -   name: Install browser
+                timeout-minutes: 3
                 run: bunx playwright install --with-deps ${{ matrix.browser }}
 
+            # e2e 스크립트가 먼저 빌드한다.
             -   name: E2E tests
                 run: bun run ${{ matrix.e2e }}
 
@@ -77,6 +60,36 @@ jobs:
                 uses: actions/upload-artifact@v7
                 with:
                     name: playwright-report-${{ matrix.browser }}
+                    path: |
+                        playwright-report
+                        test-results
+                    retention-days: 7
+
+    # 실제 디시 E2E (bun run e2e:live). 디시 마크업·API와 디시 JS에서 옮긴 키(core/preview/dcinside-js.ts)가 바뀌었는지 본다.
+    # 읽기 요청만 보낸다 (e2e/fixtures.ts가 쓰기를 끊는다).
+    live:
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        steps:
+            -   uses: actions/checkout@v7
+                with:
+                    persist-credentials: false
+
+            -   uses: ./.github/actions/setup
+
+            -   name: Install browser
+                timeout-minutes: 3
+                run: bunx playwright install --with-deps chromium
+
+            # e2e:live 스크립트가 먼저 빌드한다.
+            -   name: Live E2E tests
+                run: bun run e2e:live
+
+            -   name: Upload E2E report
+                if: failure()
+                uses: actions/upload-artifact@v7
+                with:
+                    name: playwright-report-live
                     path: |
                         playwright-report
                         test-results

@@ -2,9 +2,11 @@ import {Dialog} from "@base-ui/react/dialog";
 import {ChevronLeft, ChevronRight, ExternalLink, X} from "lucide-react";
 import {useRef, useState} from "react";
 
+import {keepTabInside} from "@/components/dialogs";
 import {overlay} from "@/components/overlay/shadow";
 import {Button} from "@/components/ui/button";
 import {dcinsideHref} from "@/core/http/urls";
+import {hasModifier} from "@/utils/event";
 import {cn} from "cn";
 
 import {usePreviewStore, type ViewerImage} from "./previewStore";
@@ -33,7 +35,6 @@ export const ImageViewer = ({images, index}: { images: ViewerImage[]; index: num
     // 디시 원본 보기 주소(imgPop)만 연다.
     const original = dcinsideHref(image.pop);
 
-    // 어두운 배경 위라 밝은 글자·아이콘을 쓴다.
     const onDark = "text-white/85 hover:bg-white/10 hover:text-white";
 
     return (
@@ -44,7 +45,10 @@ export const ImageViewer = ({images, index}: { images: ViewerImage[]; index: num
                     ref={popup}
                     className="refresher-viewer fixed inset-0 flex overflow-y-auto px-18 py-14 outline-none duration-150 animate-in fade-in"
                     onKeyDown={(ev) => {
+                        keepTabInside(ev);
                         if (images.length < 2 || (ev.key !== "ArrowLeft" && ev.key !== "ArrowRight")) return;
+                        // 조합키는 브라우저 몫이다 (Alt+←는 뒤로 가기). 다른 미리보기 단축키처럼 넘기지 않는다.
+                        if (hasModifier(ev)) return;
                         ev.preventDefault();
                         go(ev.key === "ArrowLeft" ? -1 : 1);
                     }}

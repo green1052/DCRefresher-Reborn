@@ -3,6 +3,8 @@
  * 목·스파이는 vitest.config.ts의 mockReset·restoreMocks가 테스트마다 되돌린다.
  * 아래 polyfill은 jsdom·fake-browser에만 없는 것이다. 확장이 도는 브라우저에는 다 있다.
  */
+import {URLPattern} from "node:url";
+
 import {afterEach, beforeEach, vi} from "vitest";
 import {fakeBrowser} from "wxt/testing/fake-browser";
 
@@ -13,8 +15,16 @@ afterEach(() => void vi.useRealTimers());
 // fake-browser의 getKeys는 구현되지 않았다고 던진다. reset이 바꾸지 않는 객체라 한 번만 채운다.
 fakeBrowser.storage.local.getKeys = async () => Object.keys(await fakeBrowser.storage.local.get(null));
 
+// permissions.contains도 던진다 (옵션 차단 탭의 이미지 호스트 권한 확인). 받은 권한이 없는 것으로 둔다.
+fakeBrowser.permissions.contains = async () => false;
+// 권한 변경 이벤트도 걸면 던진다. 바뀌지 않는 것으로 둔다.
+for (const event of [fakeBrowser.permissions.onAdded, fakeBrowser.permissions.onRemoved]) Object.assign(event, {addListener: () => undefined, removeListener: () => undefined});
+
 // Cookie Store API (core/http/cookie). 쿠키가 하나도 없는 것으로 둔다.
 Object.assign(globalThis, {cookieStore: {get: async () => null}});
+
+// 배경의 콘텐츠 스크립트 주소 판정 (entrypoints/background/index.ts). Node에는 있지만 jsdom 환경의 전역에는 없다.
+if (!("URLPattern" in globalThis)) Object.assign(globalThis, {URLPattern});
 
 if (typeof window !== "undefined") {
     // core/http/urls가 불러올 때 내비게이션 기록을 읽는다.
@@ -24,6 +34,12 @@ if (typeof window !== "undefined") {
     style[Symbol.iterator] ??= function* (this: CSSStyleDeclaration) {
         for (let index = 0; index < this.length; index++) yield this.item(index);
     };
+    // utils/dom의 smoothScroll이 쓴다. 동작 줄이기는 꺼진 것으로, 스크롤은 하지 않는 것으로 둔다.
+    window.matchMedia ??= (query: string) => ({
+        matches: false, media: query, onchange: null, dispatchEvent: () => false,
+        addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}
+    });
+    Element.prototype.scrollIntoView ??= () => undefined;
     // Web Locks (stores/modules·core/storage/sync). 한 탭뿐이므로 차례대로 잇기만 한다.
     if (!("locks" in navigator)) {
         let queue: Promise<unknown> = Promise.resolve();

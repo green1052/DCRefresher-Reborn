@@ -17,28 +17,25 @@ export const urls = {
         /** 디시콘 상점. 뒤에 /nick_name/{제작자}, /tags/{태그}를 붙인다. */
         shop: "https://dccon.dcinside.com/hot/1"
     },
-    // data 브랜치는 .github/workflows/db.yml이 만들고, Cloudflare Pages가 그대로 배포한다. CORS를 열어 두어 호스트 권한이 필요 없다.
-    // 6.0.3 이하는 raw.githubusercontent.com에서 받으므로 data 브랜치 게시는 계속 유지한다.
     database: {
         version: "https://dcrefresher.green1052.com/version",
-        // 저장 형식 그대로다 (core/ipdb.ts의 CompactIpData).
         ip: "https://dcrefresher.green1052.com/ip.json",
         ban: "https://dcrefresher.green1052.com/ban.json"
     }
 };
 
 /**
- * 갤러리 종류별 주소 경로 접두사와 디시 요청의 _GALLTYPE_ 값. 디시가 정한 값이라 바꾸면 안 된다.
+ * 갤러리 종류별 주소 경로 접두사, 디시 요청의 _GALLTYPE_ 값, 관리 API 접두사(<manager>_manager_board_ajax). 디시가 정한 값이라 바꾸면 안 된다.
+ * 관리 접두사는 디시 get_gall_type_name()처럼 경로 첫 칸을 쓰고 mgallery만 minor로 바꾼다. 일반 갤러리엔 관리 기능이 없어 minor로 둔다.
  * 코드에서는 종류 이름(GalleryKind)으로 다루고, 이 값들은 주소·요청을 만들 때만 꺼낸다.
  */
 const GALLERIES = {
-    normal: {path: "", galltype: "G"},
-    minor: {path: "mgallery/", galltype: "M"},
-    mini: {path: "mini/", galltype: "MI"},
-    person: {path: "person/", galltype: "PR"}
+    normal: {path: "", galltype: "G", manager: "minor"},
+    minor: {path: "mgallery/", galltype: "M", manager: "minor"},
+    mini: {path: "mini/", galltype: "MI", manager: "mini"},
+    person: {path: "person/", galltype: "PR", manager: "person"}
 } as const;
 
-/** 갤러리 종류: 일반, 마이너, 미니, 인물. */
 type GalleryKind = keyof typeof GALLERIES;
 
 /**
@@ -50,8 +47,9 @@ export const dcinsideHref = (url: string | URL | null | undefined): string | und
     return parsed?.protocol === "https:" && parsed.hostname.endsWith(".dcinside.com") ? parsed.href : undefined;
 };
 
+/** 주소의 경로 첫 칸으로 본다. 주소 전체에서 찾으면 검색어(s_keyword)에 든 "dcinside.com/mgallery" 같은 글자에 걸린다. */
 export const galleryKind = (url: string): GalleryKind => {
-    const path = /\.com\/(mgallery|mini|person)/.exec(url)?.[1];
+    const path = /^\/(mgallery|mini|person)\//.exec(URL.parse(url)?.pathname ?? "")?.[1];
     return path === "mgallery" ? "minor" : path === "mini" || path === "person" ? path : "normal";
 };
 
@@ -61,10 +59,14 @@ export const galleryPath = (url: string): string => GALLERIES[galleryKind(url)].
 /** 댓글·관리·캡차 요청에 넣는 _GALLTYPE_ 값. */
 export const galltypeOf = (url: string): string => GALLERIES[galleryKind(url)].galltype;
 
+/** 관리 API 주소 (ajax/<접두사>_manager_board_ajax/<action>). */
+export const managerAjaxUrl = (url: string, action: string): string => `${urls.base}ajax/${GALLERIES[galleryKind(url)].manager}_manager_board_ajax/${action}`;
+
 /**
  * 게시글/목록 URL → 같은 갤러리·쿼리의 목록 URL.
  * 같은 목록이면 같은 문자열이 되도록 글 보기 전용 값(no, t)과 page=1을 빼고 쿼리를 정렬한다.
- * 그래서 미리보기가 pushState로 바꾼 글 주소도 원래 목록과 같은 값이 나온다.
+ * 글 주소는 목록과 쿼리가 같을 때만 원래 목록과 같은 값이 나온다. 미리보기가 쌓는 행 링크는 목록 주소의 기본값 쿼리
+ * (sort_type=N, 빈 search_pos 등)가 빠져 다를 수 있다.
  */
 export const listUrl = (url: string): string => {
     const queries = new URL(url).searchParams;
@@ -77,7 +79,7 @@ export const listUrl = (url: string): string => {
 
 /** origin의 쿼리에 from의 쿼리를 덮어쓴 "?..." 문자열. */
 export const mergeParamURL = (origin: string, from: string): string => {
-    const params = new URLSearchParams(new URL(origin).search);
+    const params = new URL(origin).searchParams;
     for (const [key, value] of new URL(from).searchParams) params.set(key, value);
     return `?${params}`;
 };
@@ -86,6 +88,30 @@ export const mergeParamURL = (origin: string, from: string): string => {
 export const postSearchUrl = (query: string): string =>
     `https://search.dcinside.com/post/sort/latest/q/${Array.from(new TextEncoder().encode(query), (byte) => `.${byte.toString(16).padStart(2, "0").toUpperCase()}`).join("")}`;
 
+/**
+ * 검색 모듈의 작성자 거르기(features/search/writer.ts)가 목록 주소에 얹는 쿼리 이름. 디시 글쓴이 검색(search_name)은 닉네임만 찾아,
+ * 아이디·IP는 이 값으로 얹어 두고 그 작성자가 아닌 행을 숨긴다. 새로고침 모듈도 거르는 목록인지 볼 때 읽는다.
+ */
+export const WRITER_PARAMS = {uid: "rf_uid", ip: "rf_ip"} as const;
+
+export type WriterKind = keyof typeof WRITER_PARAMS;
+
+export interface WriterFilter {
+    kind: WriterKind;
+    value: string;
+}
+
+/** 주소의 작성자 거르기. 없으면 null. */
+export const writerFilter = (href = location.href): WriterFilter | null => {
+    const params = new URL(href).searchParams;
+    for (const kind of ["uid", "ip"] as const) {
+        const value = params.get(WRITER_PARAMS[kind]);
+        if (value) return {kind, value};
+    }
+    return null;
+};
+
+/** 지금 주소의 쿼리 값. 이 문서의 갤러리 id는 pageGallery를 쓴다. */
 export const queryString = (name: string): string | null => new URLSearchParams(location.search).get(name);
 
 /**
@@ -97,6 +123,8 @@ export const documentUrl = URL.parse(performance.getEntriesByType("navigation")[
 export const isViewPage = VIEW_PAGE.test(documentUrl.pathname);
 /** 글 보기 페이지가 보여 주는 글 번호. */
 export const pagePostNo = isViewPage ? documentUrl.searchParams.get("no") : null;
+/** 이 문서의 갤러리 id. 미리보기가 주소를 다른 갤러리 글로 바꿔도 그대로다. */
+export const pageGallery = documentUrl.searchParams.get("id");
 
 /** 목록 행의 글 번호. 글 보기 아래 목록의 행에는 data-no가 없어 같은 갤러리로 가는 제목 링크의 no를 쓴다. */
 export const rowPostNo = (row: HTMLElement): string | undefined => {
@@ -104,5 +132,5 @@ export const rowPostNo = (row: HTMLElement): string | undefined => {
 
     const href = row.querySelector(".gall_tit > a")?.getAttribute("href");
     const params = href ? URL.parse(href, location.href)?.searchParams : undefined;
-    return (params?.get("id") === queryString("id") && params?.get("no")) || undefined;
+    return (params?.get("id") === pageGallery && params?.get("no")) || undefined;
 };

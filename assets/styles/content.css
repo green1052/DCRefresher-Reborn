@@ -2,7 +2,7 @@
 
 /* ===== 디시 페이지에 주입하는 공용 스타일. 기능별 스타일은 features/<id>/page.css (modules/feature-styles.ts가 모은다) ===== */
 
-/* 차단 — 흐리게 처리 옵션 (block 모듈)과 깡계 흐리게 (userinfo 모듈). 강도·마우스 오버 보기는 block 모듈이 <html>에 거는 변수/클래스. */
+/* 차단 흐리게 (block 모듈)와 깡계 흐리게 (userinfo 모듈). */
 .refresherBlur,
 .refresherLowActivityBlur {
     @apply refresher-blurred;
@@ -24,15 +24,16 @@
     display: none !important;
 }
 
+/* 흐린 안내 글자는 페이지 글자색을 옅게 써서 밝은·어두운 테마 모두 대비 기준(4.5:1)을 지킨다. 고정 회색(#888)은 흰 배경에서 3.5:1이다. */
 .refresherTextNotice {
     padding: 20px 0;
-    color: #888;
+    color: color-mix(in srgb, currentColor 70%, transparent);
 }
 
 .refresherDuplicateBadge {
     margin-left: 6px;
     font-size: 11px;
-    color: #888;
+    color: color-mix(in srgb, currentColor 70%, transparent);
 }
 
 /* 이 페이지에서만 가린 내용 보기 (block 모듈) — 가린 것을 흐리게 다 보인다. 숨김 규칙도 !important라 명시도로 이긴다. */

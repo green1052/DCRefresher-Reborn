@@ -6,6 +6,7 @@ import {DialogTitle} from "@/components/ui/dialog";
 import {Field, FieldLabel} from "@/components/ui/field";
 import {Skeleton} from "@/components/ui/skeleton";
 import {Switch} from "@/components/ui/switch";
+import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
 import {fetchDcconList} from "@/core/preview/request";
 import type {DcinsideDccon, DcinsideDcconDetailList} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
@@ -28,17 +29,14 @@ interface DcconPopupProps {
 export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
     const cached = listCache && Date.now() - listCache.at < LIST_TTL ? listCache.list : null;
     const [packages, setPackages] = useState(() => cached ?? []);
-    const [activePackage, setActivePackage] = useState<string | null>(() => cached?.[0]?.package_idx ?? null);
-    const [current, setCurrent] = useState<DcinsideDccon[]>(() => cached?.[0]?.detail ?? []);
+    // 고른 패키지. 고르기 전에는 첫 패키지다.
+    const [activeIdx, setActiveIdx] = useState<string>();
     const [doubleDccon, setDoubleDccon] = useState(false);
     const [bigDccon, setBigDccon] = useState(false);
     const [selected, setSelected] = useState<DcinsideDccon[]>([]);
-    const [loading, setLoading] = useState(!cached);
-
-    const openPackage = (pack: DcinsideDcconDetailList): void => {
-        setActivePackage(pack.package_idx);
-        setCurrent(pack.detail);
-    };
+    // 목록은 비어 있지 않을 때만 채운다. 비었거나 받지 못하면 창을 닫는다.
+    const loading = packages.length === 0;
+    const active = packages.find((pack) => pack.package_idx === activeIdx) ?? packages[0];
 
     useEffect(() => {
         if (!loading) return;
@@ -58,8 +56,6 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
 
             listCache = {list: result, at: Date.now()};
             setPackages(result);
-            if (result[0]) openPackage(result[0]);
-            setLoading(false);
         }, () => {
             if (signal.aborted) return;
             useUiStore.getState().showToast("디시콘을 불러오지 못했습니다.", "error");
@@ -109,29 +105,32 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
             <div className="flex gap-1 overflow-x-auto pb-2 aria-busy:overflow-hidden" aria-busy={loading}>
                 {loading
                     ? Array.from({length: 12}, (_, index) => <Skeleton key={index} className="size-12 flex-none"/>)
-                    : packages.map((pack) => (
-                        <button
-                            type="button"
-                            key={pack.package_idx}
-                            aria-pressed={activePackage === pack.package_idx}
-                            title={pack.title}
-                            className="cursor-pointer rounded-lg p-0.5 hover:bg-muted [&>img]:size-full [&>img]:object-contain size-12 flex-none border-2 border-transparent aria-pressed:border-primary"
-                            onClick={(ev) => {
-                                openPackage(pack);
-                                ev.currentTarget.scrollIntoView({behavior: smoothScroll(), block: "nearest", inline: "center"});
-                            }}
-                        >
-                            <img src={pack.main_img_url} alt={pack.title}/>
-                        </button>
-                    ))}
+                    : (
+                        // 하나만 고르는 묶음이라 Tab 정지점은 하나이고 패키지 사이는 화살표로 옮긴다. 고른 패키지를 다시 눌러 빈 값이 오면 그대로 둔다.
+                        <ToggleGroup aria-label="디시콘 패키지" spacing={1} value={active ? [active.package_idx] : []} onValueChange={([value]) => {
+                            if (value !== undefined) setActiveIdx(value);
+                        }}>
+                            {packages.map((pack) => (
+                                <ToggleGroupItem
+                                    key={pack.package_idx}
+                                    value={pack.package_idx}
+                                    title={pack.title}
+                                    className="cursor-pointer rounded-lg p-0.5 [&>img]:size-full [&>img]:object-contain size-12 flex-none border-2 border-transparent aria-pressed:border-primary aria-pressed:bg-transparent"
+                                    onClick={(ev) => ev.currentTarget.scrollIntoView({behavior: smoothScroll(), block: "nearest", inline: "center"})}
+                                >
+                                    <img src={pack.main_img_url} alt={pack.title} loading="lazy" decoding="async"/>
+                                </ToggleGroupItem>
+                            ))}
+                        </ToggleGroup>
+                    )}
             </div>
 
             <div className="grid h-80 grid-cols-[repeat(auto-fill,minmax(72px,1fr))] content-start gap-1 overflow-y-auto aria-busy:overflow-hidden" aria-busy={loading}>
                 {loading
                     ? Array.from({length: 36}, (_, index) => <Skeleton key={index} className="aspect-square w-full"/>)
-                    : current.map((dccon) => (
+                    : (active?.detail ?? []).map((dccon) => (
                         <button type="button" key={dccon.detail_idx} title={dccon.title} className="cursor-pointer rounded-lg p-0.5 hover:bg-muted [&>img]:size-full [&>img]:object-contain aspect-square" onClick={() => clickDccon(dccon)}>
-                            <img src={dccon.list_img} alt={dccon.title}/>
+                            <img src={dccon.list_img} alt={dccon.title} loading="lazy" decoding="async"/>
                         </button>
                     ))}
             </div>

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import {describe, expect, it, vi} from "vitest";
 import {fakeBrowser} from "wxt/testing/fake-browser";
 
@@ -77,9 +78,11 @@ describe("startAutoBackup", () => {
         expect(await stored("refresher:backup:pending")).toBe(false);
     });
 
-    it("그사이 새 알람이 걸렸으면 대기를 남긴다", async () => {
+    it("백업하는 사이 설정이 또 바뀌면 대기를 남긴다", async () => {
         await fakeBrowser.storage.local.set({"refresher:backup:auto": true, "refresher:backup:pending": true});
-        vi.mocked(runBackup).mockImplementation(async () => void await fakeBrowser.alarms.create(ALARM, {delayInMinutes: 1}));
+        vi.mocked(runBackup).mockImplementation(() => fakeBrowser.storage.local.set({"refresher:block:NICK": []}));
+        // alarms.get이 새 알람보다 먼저 응답한 경우. 알람 유무로 보면 대기가 지워진다.
+        vi.spyOn(fakeBrowser.alarms, "get").mockResolvedValue(undefined);
         startAutoBackup();
 
         await ring();

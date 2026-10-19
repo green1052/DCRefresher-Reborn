@@ -5,17 +5,31 @@ const fetchMock = vi.hoisted(() => (globalThis.fetch = vi.fn<typeof fetch>()));
 
 import {BlockedError} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
-import {fetchComments, fetchPost, viewUrl, vote} from "@/core/preview/request";
-import type {DcinsideComment, PostInfo} from "@/core/preview/types";
+import {
+    adminDeleteComments,
+    blockCommenters,
+    bump,
+    fetchComments,
+    fetchDcconList,
+    fetchDcconPackage,
+    fetchPost,
+    setNotice,
+    setRecommend,
+    submitComment,
+    userDeleteComment,
+    viewUrl,
+    vote
+} from "@/core/preview/request";
+import {D_ALPHABET} from "@/core/preview/dcinside-js";
+import {submitTxtcon} from "@/core/preview/txtcon";
+import type {DcinsideComment, DcinsideDcconDetailList, PostInfo} from "@/core/preview/types";
 
-import {preData} from "../../../helpers";
+import {dcComment as comment, preData} from "../../../helpers";
 import {serve} from "./net";
 
 afterEach(() => void vi.unstubAllGlobals());
 
 const signal = () => new AbortController().signal;
-
-const comment = (no: number): DcinsideComment => ({no: String(no), c_no: "0", depth: 0, user_id: "", name: "ㅇㅇ", ip: "", memo: "", is_delete: "0", date_time: ""});
 
 const pagination = (last: number) => Array.from({length: last}, (_, index) => `<a href="javascript:viewComments(${index + 1}, 'D')">${index + 1}</a>`).join("");
 
@@ -91,12 +105,6 @@ describe("fetchComments", () => {
         expect(result.truncated).toBe(true);
     });
 
-    it("댓글 수를 모르면 1쪽부터 읽는다", async () => {
-        const pages = serveComments(3, (page) => [comment(page)]);
-        await fetchComments(preData({commentCount: Number.NaN}), {}, signal());
-        expect(pages()).toEqual([1, 2, 3]);
-    });
-
     it("쪽 나눔이 없으면 1쪽만 받는다", async () => {
         const sent = serve(fetchMock, () => JSON.stringify({comments: null, total_cnt: 0, pagination: null}));
         const result = await fetchComments(preData(), {}, signal());
@@ -109,6 +117,20 @@ describe("fetchComments", () => {
         expect((await fetchComments(preData(), {}, signal())).allowReply).toBe(false);
         serveComments(1, () => [], {allow_reply: null});
         expect((await fetchComments(preData(), {}, signal())).allowReply).toBe(true);
+    });
+
+    it("댓글 목록이 아닌 응답은 던진다", async () => {
+        for (const reply of ["null", "[]", "\"error\"", JSON.stringify({comments: "x", pagination: null})]) {
+            serve(fetchMock, () => reply);
+            await expect(fetchComments(preData(), {}, signal())).rejects.toThrow("댓글 목록이 아닙니다.");
+        }
+    });
+
+    it("모양이 다른 댓글과 쪽 나눔은 버린다", async () => {
+        const sent = serve(fetchMock, () => JSON.stringify({comments: [comment(1), null, {no: 2}, {no: "3", memo: null}, {...comment(4), no: 4}], pagination: 5}));
+        const result = await fetchComments(preData(), {}, signal());
+        expect(sent).toHaveLength(1);
+        expect(result.list.map((item) => item.no)).toEqual(["1", "3"]);
     });
 
     it("댓글 요청 값을 보낸다", async () => {
@@ -182,5 +204,165 @@ describe("vote", () => {
         stubCookies();
         serve(fetchMock, () => "false||이미 추천하셨습니다.");
         expect(await vote(preData(), post(), "U")).toEqual({success: false, message: "이미 추천하셨습니다."});
+    });
+});
+
+describe("디시콘", () => {
+    it("패키지 정보가 아닌 응답은 던진다", async () => {
+        for (const reply of ["null", "[]", JSON.stringify({info: null, detail: [], tags: []}), JSON.stringify({info: {}, detail: {}, tags: []})]) {
+            serve(fetchMock, () => reply);
+            await expect(fetchDcconPackage("1")).rejects.toThrow("디시콘 정보가 아닙니다.");
+        }
+    });
+
+    it("목록이 아닌 응답은 던진다", async () => {
+        for (const reply of ["null", "[]", JSON.stringify({target: "icon", list: null})]) {
+            serve(fetchMock, () => reply);
+            await expect(fetchDcconList(signal())).rejects.toThrow("디시콘 목록이 아닙니다.");
+        }
+    });
+
+    it("상점 안내와 비로그인을 알린다", async () => {
+        serve(fetchMock, () => JSON.stringify({target: "shop"}));
+        expect(await fetchDcconList(signal())).toBe("shop");
+        serve(fetchMock, () => "not_login");
+        expect(await fetchDcconList(signal())).toBe("not_login");
+    });
+
+    const pack = (page: number): DcinsideDcconDetailList => ({package_idx: String(page), title: `콘${page}`, main_img_url: "", detail: []});
+
+    /** 쪽마다 그 쪽 번호의 패키지 하나를 준다. 요청한 쪽 번호를 모은다. */
+    const servePages = (maxPage: number | string, reply = (page: number): string => JSON.stringify({target: "icon", max_page: maxPage, list: [pack(page)]})) => {
+        const sent = serve(fetchMock, ({body}) => reply(Number(body.get("page"))));
+        return () => sent.map(({body}) => Number(body.get("page"))).toSorted((a, b) => a - b);
+    };
+
+    it("문자열 max_page까지 모든 쪽을 받아 쪽 순서대로 잇는다", async () => {
+        const pages = servePages("2");
+        expect(await fetchDcconList(signal())).toEqual([pack(0), pack(1), pack(2)]);
+        expect(pages()).toEqual([0, 1, 2]);
+    });
+
+    it("20쪽까지만 받는다", async () => {
+        const pages = servePages(30);
+        expect(await fetchDcconList(signal())).toHaveLength(20);
+        expect(pages()).toEqual(Array.from({length: 20}, (_, index) => index));
+    });
+
+    it("뒤쪽이 비로그인이면 그 쪽만 뺀다", async () => {
+        servePages(2, (page) => (page === 1 ? "not_login" : JSON.stringify({target: "icon", max_page: 2, list: [pack(page)]})));
+        expect(await fetchDcconList(signal())).toEqual([pack(0), pack(2)]);
+    });
+});
+
+describe("댓글 관리", () => {
+    const target = () => preData({gallery: "a", id: "3", link: "https://gall.dcinside.com/mini/board/view/?id=a&no=3"});
+
+    it("고른 댓글을 한 번에 지운다", async () => {
+        const sent = serve(fetchMock, () => JSON.stringify({result: "success"}));
+        expect(await adminDeleteComments(target(), ["7", "8"])).toEqual({success: true, message: undefined});
+        expect(sent[0]?.url).toBe(`${urls.base}ajax/mini_manager_board_ajax/delete_comment`);
+        expect([...sent[0]?.body ?? []]).toEqual([["ci_t", ""], ["_GALLTYPE_", "MI"], ["id", "a"], ["pno", "3"], ["cmt_nos[]", "7"], ["cmt_nos[]", "8"]]);
+    });
+
+    it("댓글 작성자 차단은 글 번호를 parent로 보낸다", async () => {
+        const sent = serve(fetchMock, () => JSON.stringify({result: "success"}));
+        await blockCommenters(target(), ["7", "8"], {avoidHour: "1", avoidReason: "1", avoidReasonTxt: "", delChk: true, userTypeChk: false});
+        expect(sent[0]?.body.getAll("nos[]")).toEqual(["7", "8"]);
+        expect(sent[0]?.body.get("parent")).toBe("3");
+        expect(sent[0]?.body.get("del_chk")).toBe("1");
+    });
+
+    it("비밀번호 삭제는 글의 댓글 갤러리로 보내고 no는 글 번호다. 디시처럼 rc_key·c_k_v·v_cur_t·삭제 폼 값과 재전송 토큰을 붙인다", async () => {
+        const sent = serve(fetchMock, () => "true");
+        expect(await userDeleteComment(target(), {commentId: "cid", v_cur_t: "vt", commentDeleteFields: [["del_rand", "dv"]]}, "7", "pw", "new3", "tok")).toEqual({result: "true", message: undefined, detail: undefined});
+        expect(sent[0]?.url).toBe(urls.comment_remove);
+        expect(Object.fromEntries(["id", "no", "re_no", "re_password", "v_cur_t", "rc_key", "c_k_v", "g-recaptcha-token", "del_rand"].map((key) => [key, sent[0]?.body.get(key)]))).toEqual({
+            id: "cid", no: "3", re_no: "7", re_password: "pw", v_cur_t: "vt", rc_key: "new3", c_k_v: "dzc", "g-recaptcha-token": "tok", del_rand: "dv"
+        });
+    });
+
+    it("회원 삭제는 v_cur_t·삭제 폼 값을 보내지 않는다", async () => {
+        const sent = serve(fetchMock, () => "true");
+        await userDeleteComment(target(), {commentId: "cid", v_cur_t: "vt", commentDeleteFields: [["del_rand", "dv"]]}, "7", "", "new3");
+        expect(sent[0]?.body.has("v_cur_t")).toBe(false);
+        expect(sent[0]?.body.has("del_rand")).toBe(false);
+    });
+    it("성공이라고 밝힌 응답만 성공으로 본다", async () => {
+        const cases: [string, { success: boolean; message?: string }][] = [
+            [JSON.stringify({result: "success", msg: "삭제되었습니다."}), {success: true, message: "삭제되었습니다."}],
+            [JSON.stringify({result: "fail", msg: "권한이 없습니다."}), {success: false, message: "권한이 없습니다."}],
+            [JSON.stringify({result: "fail", msg: ""}), {success: false, message: undefined}],
+            ["true", {success: true, message: undefined}],
+            ["false||정상적인 접근이 아닙니다.", {success: false, message: "정상적인 접근이 아닙니다."}],
+            ["false||nomember||로그인이 필요합니다.", {success: false, message: "로그인이 필요합니다."}],
+            // 세션이 끊기면 로그인 페이지 HTML이 온다.
+            ["<!DOCTYPE html><html><body>로그인</body></html>", {success: false, message: undefined}],
+            // 인라인 스크립트의 ||를 칸 구분으로 잘라 조각을 안내 문구로 쓰면 안 된다.
+            ["<!DOCTYPE html><html><head><script>window.dataLayer = window.dataLayer || [];</script></head><body>로그인</body></html>", {success: false, message: undefined}]
+        ];
+        for (const [reply, result] of cases) {
+            serve(fetchMock, () => reply);
+            expect(await adminDeleteComments(target(), ["7"])).toEqual(result);
+        }
+    });
+
+    it("끌올·공지·개념글은 갤러리 종류의 관리 주소로 글 번호를 보낸다", async () => {
+        const sent = serve(fetchMock, () => JSON.stringify({result: "success"}));
+        await bump(target());
+        await setNotice(target(), true);
+        await setNotice(target(), false);
+        await setRecommend(target(), true);
+        await setRecommend(target(), false);
+
+        expect(sent.map(({url, body}) => [url.replace(`${urls.base}ajax/mini_manager_board_ajax/`, ""), [...body].slice(2)])).toEqual([
+            ["update_bump", [["id", "a"], ["nos[]", "3"]]],
+            ["set_notice", [["mode", "SET"], ["id", "a"], ["no", "3"]]],
+            ["set_notice", [["mode", "REL"], ["id", "a"], ["no", "3"]]],
+            ["set_recommend", [["mode", "SET"], ["id", "a"], ["nos[]", "3"]]],
+            ["set_recommend", [["mode", "REL"], ["id", "a"], ["nos[]", "3"]]]
+        ]);
+    });
+});
+
+describe("submitComment", () => {
+    /** 디시 _d()가 푸는 값. 표준 base64를 디시가 섞은 알파벳으로 옮긴다. */
+    const dValue = (plain: string) => Array.from(btoa(plain), (char) => D_ALPHABET["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".indexOf(char)]).join("");
+    const form = (value?: string): PostInfo => post({commentForm: {fields: [["service_code", "x"], ["check_6", "c6"]], serviceCode: "abc0123456789", dValue: value, checks: {}}});
+    const submit = (info: PostInfo) => submitComment(preData({gallery: "a", id: "3"}), info, {user: {name: "ㅇㅇ", pw: "1234"}, memo: "댓글", commentNo: null, replyNo: null, bigDccon: false});
+
+    it("_d() 값을 풀어 service_code 끝 10자리를 갈아 끼운다", async () => {
+        const sent = serve(fetchMock, () => "1234");
+        // "e2eRefresh"를 푸는 값. 첫 자리 6을 4 당겨 2로 적는다.
+        expect(await submit(form(dValue("207,277,508,373,409,363,349,260.5,239,166")))).toEqual({result: "1234", message: undefined, detail: undefined});
+        expect(sent[0]?.url).toBe(urls.comments_submit);
+        expect(sent[0]?.body.get("service_code")).toBe("abce2eRefresh");
+        expect(sent[0]?.body.get("check_6")).toBe("c6");
+    });
+
+    it("값이 없거나 숫자로 풀리지 않으면 보내지 않고 알린다", async () => {
+        serve(fetchMock, () => "1234");
+        for (const value of [undefined, dValue("x07,277"), dValue("207,abc,508"), "!!!!"]) {
+            expect(await submit(form(value))).toEqual({result: "false", message: "댓글 폼을 읽지 못했습니다. 원문에서 작성해 주세요."});
+        }
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+});
+
+describe("submitTxtcon", () => {
+    it("글 댓글과 같은 대상에 글자콘 값을 보내고, 회원이면 name·password를 빼고 보낸다", async () => {
+        const sent = serve(fetchMock, () => "ok");
+        const info = post({commentId: "cid", commentNo: "9", commentForm: {fields: [], serviceCode: "", checks: {check_6: "c6", check_7: "c7", check_8: ""}, gallNickName: "갤닉"}});
+        const options = {text: "안녕", colors: {bg: "333333", txt: "ffffff"}, commentNo: "10", replyNo: "11", grecaptchaToken: "tok"};
+        await submitTxtcon(preData({gallery: "a", id: "3"}), info, {...options, user: {name: "ㅇㅇ", pw: "pw"}});
+        await submitTxtcon(preData({gallery: "a", id: "3"}), info, {...options, user: {name: ""}});
+
+        expect(sent[0]?.url).toBe(urls.txtcon_submit);
+        const keys = ["id", "no", "txtcon_text", "txtcon_bg", "txtcon_color", "c_no", "reply_no", "name", "password", "check_6", "check_7", "check_8", "gall_nick_name", "use_gall_nick", "g-recaptcha-token"];
+        expect(Object.fromEntries(keys.map((key) => [key, sent[0]?.body.get(key)]))).toEqual({
+            id: "cid", no: "9", txtcon_text: "안녕", txtcon_bg: "333333", txtcon_color: "ffffff", c_no: "10", reply_no: "11", name: "ㅇㅇ", password: "pw",
+            check_6: "c6", check_7: "c7", check_8: "", gall_nick_name: "갤닉", use_gall_nick: "N", "g-recaptcha-token": "tok"
+        });
+        expect([sent[1]?.body.has("name"), sent[1]?.body.has("password")]).toEqual([false, false]);
     });
 });

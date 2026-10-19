@@ -59,6 +59,14 @@ describe("sanitizeHtml", () => {
         expect(root.querySelector("iframe")?.hasAttribute("style")).toBe(false);
     });
 
+    it("크기 0으로 온 투표 iframe은 그 크기를 지워 width·height 속성 크기로 보인다", () => {
+        const root = parse("<iframe id=\"pollFrame\" width=\"459\" height=\"437\" src=\"https://gall.dcinside.com/board/poll/vote?no=1\" style=\"width: 0px; height: 0px;\"></iframe><iframe src=\"https://a.example\" style=\"width: 300px\"></iframe>");
+        const [poll, other] = root.querySelectorAll("iframe");
+        expect(poll?.hasAttribute("style")).toBe(false);
+        expect(poll?.getAttribute("width")).toBe("459");
+        expect(other?.style.width).toBe("300px");
+    });
+
     it("남은 서식이 없으면 style 속성을 뗀다", () => {
         expect(parse("<p style=\"position: absolute\">a</p>").querySelector("p")?.hasAttribute("style")).toBe(false);
     });
@@ -94,11 +102,31 @@ describe("sanitizeHtml", () => {
         expect(dropped?.hasAttribute("allow")).toBe(false);
     });
 
-    it("링크는 새 탭으로 열고 # 앵커는 그대로 둔다", () => {
+    it("링크는 새 탭으로 열고 # 앵커는 주소를 뗀다", () => {
         const [external, anchor] = parse("<a href=\"https://gall.dcinside.com\">a</a><a href=\"#top\">b</a>").querySelectorAll("a");
         expect(external?.getAttribute("target")).toBe("_blank");
         expect(external?.getAttribute("rel")).toBe("noopener noreferrer");
         expect(anchor?.hasAttribute("target")).toBe(false);
+        // 미리보기 안에서는 가리킬 곳이 없고, 누르면 페이지 주소에 #이 붙어 미리보기 기록이 꼬인다.
+        expect(anchor?.hasAttribute("href")).toBe(false);
+    });
+
+    it("SVG 링크와 이미지 맵 area도 새 탭으로 연다", () => {
+        const root = parse("<svg><a href=\"https://a.example\"><text>a</text></a><a xlink:href=\"https://b.example\"><text>b</text></a></svg><map name=\"m\"><area href=\"https://c.example\"></map>");
+        const links = [...root.querySelectorAll("svg a"), root.querySelector("area")];
+        expect(links).toHaveLength(3);
+        for (const link of links) expect(link?.getAttribute("target")).toBe("_blank");
+    });
+
+    it("확장 UI가 찾는 data-slot 표시는 빼고 다른 data 속성은 둔다", () => {
+        const div = parse("<div data-slot=\"dialog-overlay\" data-x=\"1\"></div>").querySelector("div");
+        expect(div?.hasAttribute("data-slot")).toBe(false);
+        expect(div?.dataset.x).toBe("1");
+    });
+
+    it("확장이 가림 상태로 읽는 표시는 빼고 디시의 관리자 가림(data-block)은 둔다", () => {
+        const div = parse("<div data-comments-revealed data-block-revealed data-blur-reveal data-blocked=\"blur\" data-block=\"1\"></div>").querySelector("div");
+        expect(div?.getAttributeNames()).toEqual(["data-block"]);
     });
 
     it("<style>·폼 요소·popover·background 속성을 뺀다", () => {

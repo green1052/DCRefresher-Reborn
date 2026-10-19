@@ -114,6 +114,12 @@ export const parseIpData = (text: string): CompactIpData | null => {
 };
 
 /**
+ * 배경이 모양을 검사하고 저장한 문자열 → 저장 형식. 페이지마다 다시 검사하지 않는다 (탭마다 수 ms). 저장 형식 번호는 부르는 쪽이 본다.
+ * JSON이 깨졌으면 던진다.
+ */
+export const parseStoredIpData = (text: string): CompactIpData => JSON.parse(text);
+
+/**
  * 모양까지 본다. 받은 파일은 그대로 저장되고 페이지마다 읽히므로, 필드 하나만 틀려도 배지·미리보기가 깨진다.
  * 번호가 범위를 벗어나면 다른 기관·국가가 조용히 보이므로 meta·lists의 번호도 본다.
  */
@@ -141,19 +147,26 @@ export const createIpLookup = (data: CompactIpData): ((ip: string) => IpCandidat
     if (runs.length % 2 !== 0) throw new Error("IP 데이터 형식이 올바르지 않습니다.");
     const count = runs.length / 2;
 
-    // 시작점이 65536 밖이거나 늘지 않으면 fill이 조용히 어긋나 잘못된 표가 되므로 여기서 띤다.
-    // 값(=후보 번호+1)도 meta·lists 범위 밖이면 조회가 조용히 빈 결과를 내므로 함께 띤다.
+    // 시작점이 늘지 않거나 값(=후보 번호+1)이 meta·lists 범위 밖이면 표·조회가 조용히 어긋나므로 여기서 던진다.
     const total = data.meta.length / 3 + data.lists.length;
     for (let run = 0; run < count; run++) {
-        if (runs[run]! >= 65536 || (run > 0 && runs[run]! <= runs[run - 1]!) || runs[count + run]! - 1 >= total) throw new Error("IP 데이터 형식이 올바르지 않습니다.");
+        if ((run > 0 && runs[run]! <= runs[run - 1]!) || runs[count + run]! - 1 >= total) throw new Error("IP 데이터 형식이 올바르지 않습니다.");
     }
 
     const table = new Uint16Array(65536);
     for (let run = 0; run < count; run++) table.fill(runs[count + run]!, runs[run]!, run + 1 < count ? runs[run + 1]! : 65536);
 
     // 조회에 쓰는 필드만 클로저에 남긴다. data를 통째로 잡으면 이미 디코드한 base64 문자열이 탭마다 남는다.
-    const {orgs, countries, meta, lists} = data;
+    // meta와 lists는 작은 JS 배열 1만 개쯤이라 탭마다 0.5MB를 차지한다. 형식화 배열 하나로 이어 두면 그 10분의 1이다.
+    // 번호는 모두 표 값(Uint16) 범위 안이다. orgs·countries도 쓰이는 것만 담기므로 후보 수(65535개)를 넘지 않는다.
+    const {orgs, countries} = data;
+    const meta = Uint16Array.from(data.meta);
     const metaCount = meta.length / 3;
+    // 목록 i는 listFlat[listStart[i] .. listStart[i + 1]) 이다.
+    const listStart = new Uint32Array(data.lists.length + 1);
+    for (const [index, list] of data.lists.entries()) listStart[index + 1] = listStart[index]! + list.length;
+    const listFlat = new Uint16Array(listStart[data.lists.length]!);
+    for (const [index, list] of data.lists.entries()) listFlat.set(list, listStart[index]);
 
     const candidate = (index: number): IpCandidate => ({
         org: orgs[meta[index * 3]!] || undefined,
@@ -166,7 +179,8 @@ export const createIpLookup = (data: CompactIpData): ((ip: string) => IpCandidat
         const value = slot === undefined ? 0 : table[slot]!;
         if (!value) return undefined;
 
-        const indexes = value - 1 < metaCount ? [value - 1] : lists[value - 1 - metaCount] ?? [];
-        return indexes.map(candidate);
+        if (value - 1 < metaCount) return [candidate(value - 1)];
+        const list = value - 1 - metaCount;
+        return Array.from(listFlat.subarray(listStart[list], listStart[list + 1]), candidate);
     };
 };

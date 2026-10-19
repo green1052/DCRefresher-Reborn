@@ -1,12 +1,18 @@
+import QuickLRU from "quick-lru";
+
 import {ajax} from "@/core/http/client";
 import {csrfBody} from "@/core/http/cookie";
-import {LruCache} from "@/utils/lru";
 
 const GALLOG_API = "https://gall.dcinside.com/api/gallog_user_layer/gallog_content_reple";
 
 export interface GallogActivity {
     article: number;
     comment: number;
+}
+
+/** 글댓비 캐시(userinfo)의 한 사람 값. date는 받은 시각이다. */
+export interface RatioInfo extends GallogActivity {
+    date: number;
 }
 
 /** 갤로그의 글/댓글 수 ("글,댓글" 텍스트 응답). */
@@ -22,7 +28,19 @@ const fetchGallogActivity = async (uid: string): Promise<GallogActivity | undefi
 };
 
 /** uid별 요청. 1시간 캐시하고, 받는 중인 요청은 같이 기다린다. */
-const activityCache = new LruCache<string, Promise<GallogActivity | undefined>>({max: 500, ttl: 3_600_000});
+const activityCache = new QuickLRU<string, Promise<GallogActivity | undefined>>({maxSize: 500, maxAge: 3_600_000});
+
+type ActivityListener = (uid: string, activity: GallogActivity) => void;
+const listeners = new Set<ActivityListener>();
+
+/**
+ * 갤로그에서 새로 받은 글/댓글 수를 알린다 (캐시에서 꺼낸 값은 알리지 않는다). 글댓비(userinfo)가 미리보기·버블이 받은 값도 저장한다.
+ * 기다리던 쪽보다 먼저 불린다. 해제 함수를 돌려준다.
+ */
+export const onGallogActivity = (listener: ActivityListener): (() => void) => {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
+};
 
 /**
  * 캐시를 거친 갤로그 글/댓글 수. 실패하면 undefined다.
@@ -35,6 +53,16 @@ export const getGallogActivity = (uid: string): Promise<GallogActivity | undefin
         // 그사이 이 항목이 밀려나 새 요청이 들어왔으면 그것은 지우지 않는다.
         const pending: Promise<GallogActivity | undefined> = fetchGallogActivity(uid).catch(() => undefined).then((activity) => {
             if (!activity && activityCache.get(uid) === pending) activityCache.delete(uid);
+            if (activity) {
+                // 듣는 쪽이 던져도 기다리던 쪽은 값을 받는다. 그대로 던지면 거절된 요청이 1시간 캐시에 남는다.
+                for (const listener of listeners) {
+                    try {
+                        listener(uid, activity);
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
+            }
             return activity;
         });
         request = pending;

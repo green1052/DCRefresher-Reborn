@@ -1,20 +1,26 @@
 import {ownPreviewEntry} from "@/core/preview/history";
-import {isRecord} from "@/utils/record";
+
+/**
+ * 오버레이에 입력하던 글. 오버레이 섀도 루트는 open이라 죽은 인스턴스가 남긴 것도 읽힌다.
+ * 오버레이의 textarea는 댓글 입력칸뿐이다. 닉네임·비밀번호·캡차(input)는 짧거나 저장된 값이 있어 읽지 않는다.
+ */
+export const overlayDraft = (host: Element | null): string | undefined => host?.shadowRoot?.querySelector("textarea")?.value.trim() || undefined;
 
 /**
  * 파이어폭스는 확장을 업데이트하거나 다시 켤 때 이전 스크립트를 정리 없이 없애고 새로 주입한다.
- * 죽은 인스턴스가 남긴 오버레이와 스크롤·클릭 잠금을 걷어 낸다.
- * 죽은 인스턴스가 없으면 아무것도 하지 않는다.
+ * 죽은 인스턴스가 남긴 오버레이와 스크롤·클릭 잠금을 걷어 내고, 그 오버레이에 입력하던 글이 있으면 돌려준다.
  */
-export const cleanUpStaleInstance = (): void => {
+export const cleanUpStaleInstance = (): string | undefined => {
     const stale = document.querySelector("refresher-root");
     if (!stale) return;
 
+    const draft = overlayDraft(stale);
     stale.remove();
     const {documentElement: html, body} = document;
-    // 미리보기 창은 <html> 스크롤과 뒤 페이지(inert)를 잠근다.
+    // 미리보기 창은 <html> 스크롤(스크롤바 자리는 scrollbar-gutter로 남긴다)과 뒤 페이지(inert)를 잠근다.
     if (html.style.overflow === "hidden") {
         html.style.overflow = "";
+        html.style.removeProperty("scrollbar-gutter");
         for (const element of body.querySelectorAll<HTMLElement>(":scope > [inert]")) element.inert = false;
     }
     // Base UI 모달은 나머지 페이지에 aria-hidden(표시 속성 data-base-ui-inert)을 단다. Base UI가 모듈 변수로 추적해 새 인스턴스가 지우지 않는다.
@@ -34,8 +40,9 @@ export const cleanUpStaleInstance = (): void => {
     // 그대로 두면 새 미리보기를 닫을 때 그 항목으로 돌아가 옛 글이 다시 열린다.
     // doc이 다르면 미리보기를 연 채 새로고침한 실제 글 페이지이므로 건드리지 않는다.
     const back = ownPreviewEntry(history.state)?.back;
-    if (isRecord(back) && typeof back.url === "string") {
+    if (back) {
         history.replaceState(back.state ?? null, "", back.url);
-        if (typeof back.title === "string") document.title = back.title;
+        document.title = back.title;
     }
+    return draft;
 };

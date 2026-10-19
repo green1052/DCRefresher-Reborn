@@ -1,7 +1,8 @@
+// @vitest-environment node
 import {describe, expect, it, vi} from "vitest";
 import {fakeBrowser} from "wxt/testing/fake-browser";
 
-import {areEqual, defaultValue, enablesOf, isModuleEnabled, normalizeSetting, readModuleStorage, settingsOf} from "@/core/module/settings";
+import {defaultValue, enablesOf, isModuleEnabled, normalizeSetting, readModuleStorage, settingsOf} from "@/core/module/settings";
 
 import {setting} from "../../../helpers";
 
@@ -37,6 +38,8 @@ describe("normalizeSetting", () => {
         const text = setting({type: "text", default: "d"});
         expect(normalizeSetting(text, "")).toBe("");
         expect(normalizeSetting(text, 1)).toBe("d");
+        expect(normalizeSetting(setting({type: "text", default: "", maxLength: 3}), "가나다라")).toBe("가나다");
+        expect(normalizeSetting(text, "가나다라")).toBe("가나다라");
     });
 
     it("option은 항목에 있는 자기 키만 받는다", () => {
@@ -73,16 +76,6 @@ describe("normalizeSetting", () => {
         const order = setting({type: "order", default: ["a", "b", "c"], items: {a: "", b: "", c: ""}});
         expect(normalizeSetting(order, ["c", "x", "c", 1, "a"])).toEqual(["c", "a", "b"]);
         expect(normalizeSetting(order, "a,b")).toEqual(["a", "b", "c"]);
-    });
-});
-
-describe("areEqual", () => {
-    it("배열은 내용으로 비교한다", () => {
-        expect(areEqual(["a", "b"], ["a", "b"])).toBe(true);
-        expect(areEqual(["a", "b"], ["b", "a"])).toBe(false);
-        expect(areEqual(["a"], ["a", "b"])).toBe(false);
-        expect(areEqual(undefined, false)).toBe(false);
-        expect(areEqual(1, 1)).toBe(true);
     });
 });
 

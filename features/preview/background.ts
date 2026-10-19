@@ -1,0 +1,71 @@
+import {storage} from "wxt/utils/storage";
+
+import {onMessage} from "@/core/messaging/protocol";
+import {defineBackgroundModule, hasTab, runInPage} from "@/core/module/background";
+import {COMMENT_SITE_KEYS, ICON_SITE_KEY} from "@/core/preview/dcinside-js";
+import {moduleDataKey} from "@/core/storage/items";
+
+import meta from "./meta";
+
+/** api.js가 막히면(광고 차단 등) 끝나지 않으므로 이 시간까지만 기다린다. */
+const GRECAPTCHA_TIMEOUT = 15_000;
+
+/**
+ * 탭의 페이지 컨텍스트에서 실행된다(직렬화되므로 바깥 변수를 쓰지 않는다).
+ * api.js는 이때 처음 불러온다. 미리 넣으면 원래 comment.js의 typeof grecaptcha 검사 결과가 바뀌어 v2 체크박스가 뜬다.
+ */
+const executeGrecaptcha = async (siteKey: string, action: string): Promise<string> => {
+    type Grecaptcha = {
+        ready: (callback: () => void) => void;
+        render: (container: HTMLElement, parameters: { sitekey: string; size: "invisible" }) => number;
+        execute: (key: string | number, options: { action: string }) => Promise<string>;
+    };
+    const scope = window as Window & { grecaptcha?: Grecaptcha; refresherRecaptchaWidgets?: Record<string, number> };
+
+    if (!scope.grecaptcha) {
+        await new Promise<void>((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src = `https://www.google.com/recaptcha/api.js?render=${siteKey}`;
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error("api.js"));
+            document.head.append(script);
+        });
+    }
+
+    const grecaptcha = scope.grecaptcha!;
+    await new Promise<void>((resolve) => grecaptcha.ready(resolve));
+    try {
+        return await grecaptcha.execute(siteKey, {action});
+    } catch {
+        // api.js가 이미 다른 키로 떠 있으면(디시 comment.js나 앞선 디시콘 재전송) 그 키만 실행할 수 있어 던진다.
+        // 이 키로 보이지 않는 위젯을 키마다 한 번만 그려 다시 쓴다. 매번 그리면 위젯과 배지가 쌓인다.
+        const widgets = (scope.refresherRecaptchaWidgets ??= {});
+        widgets[siteKey] ??= grecaptcha.render(document.body.appendChild(document.createElement("div")), {sitekey: siteKey, size: "invisible"});
+        return grecaptcha.execute(widgets[siteKey], {action});
+    }
+};
+
+/** 미리보기: 댓글·디시콘 작성과 댓글 삭제에 쓸 reCAPTCHA 토큰을 탭의 페이지(MAIN world)에서 받아 온다. */
+export default defineBackgroundModule(meta, {
+    listen() {
+        // 6.2 이전의 미리보기로 읽은 글 기록(지금은 :visited로 표시)을 지운다. 6.3에서 뺀다.
+        browser.runtime.onInstalled.addListener(() => void storage.removeItem(moduleDataKey("preview")));
+
+        // 토큰은 디시 도메인에서 실행해야 유효하다. 상주 스크립트 없이 디시가 v3 토큰을 요구할 때만 주입한다.
+        onMessage("refresher:grecaptchaToken", async ({data, sender}) => {
+            if (!hasTab(sender)) return undefined;
+
+            try {
+                const siteKey = data.action === "insert_icon" ? ICON_SITE_KEY : COMMENT_SITE_KEYS[data.rcKey];
+                const injection = runInPage(sender, executeGrecaptcha, [siteKey, data.action]);
+                // 시간 초과가 이긴 뒤 탭이 닫혀 실패해도 처리되지 않은 거절로 남지 않게 한다.
+                injection.catch(() => {});
+                const timeout = new Promise<undefined>((resolve) => setTimeout(resolve, GRECAPTCHA_TIMEOUT));
+                const [result] = (await Promise.race([injection, timeout])) ?? [];
+                return typeof result?.result === "string" ? result.result : undefined;
+            } catch {
+                return undefined;
+            }
+        });
+    }
+});

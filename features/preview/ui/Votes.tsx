@@ -3,11 +3,11 @@ import {useState} from "react";
 
 import {Button} from "@/components/ui/button";
 import {Spinner} from "@/components/ui/spinner";
-import {WithTooltip} from "@/components/WithTooltip";
+import {TooltipButton} from "@/components/WithTooltip";
 import {getEntry, setEntry} from "@/core/preview/cache";
 import {captchaImage, viewUrl, vote} from "@/core/preview/request";
 import type {GalleryPreData, PostInfo} from "@/core/preview/types";
-import {useUiStore} from "@/stores/ui";
+import {copyWithToast} from "@/stores/ui";
 import {notifyManage} from "@/stores/notify";
 
 import {usePreviewStore} from "./previewStore";
@@ -44,7 +44,6 @@ export const Votes = ({post}: { post: PostInfo }) => {
         if (cached) setEntry(target, {post: {...cached, ...counts}});
     };
 
-    // try/finally는 React Compiler가 컴파일하지 못해 .finally로 푼다.
     const onVote = (mode: "U" | "D"): void => {
         if (!preData || voting) return;
         setVoting(mode);
@@ -54,10 +53,7 @@ export const Votes = ({post}: { post: PostInfo }) => {
     // 목록 쿼리(검색어·페이지)를 뺀 글 주소를 복사한다.
     const onShare = (): void => {
         if (!preData) return;
-        navigator.clipboard.writeText(viewUrl(preData.link, preData.gallery, preData.id)).then(
-            () => useUiStore.getState().showToast("링크를 복사했습니다."),
-            () => useUiStore.getState().showToast("링크를 복사하지 못했습니다.", "error")
-        );
+        void copyWithToast(viewUrl(preData.link, preData.gallery, preData.id), "링크를 ");
     };
 
     // 숫자까지 읽히게 라벨에 넣는다. aria-label은 버튼 안의 글을 대신한다.
@@ -65,24 +61,24 @@ export const Votes = ({post}: { post: PostInfo }) => {
         <div className="flex items-center justify-center gap-3 py-6">
             <Button size="lg" variant="secondary" className="h-10 px-4" aria-label={`추천 ${upvotes || "X"}${fixedUpvotes ? ` (고정닉 ${fixedUpvotes})` : ""}`}
                     disabled={voting !== null} onClick={() => onVote("U")}>
-                {voting === "U" ? <Spinner data-icon="inline-start"/> : <ChevronUp data-icon="inline-start"/>}
+                {voting === "U" ? <Spinner aria-hidden data-icon="inline-start"/> : <ChevronUp data-icon="inline-start"/>}
                 {upvotes || "X"}
                 {fixedUpvotes && <span className="text-muted-foreground">({fixedUpvotes})</span>}
             </Button>
             {downvotes !== undefined && (
                 <Button size="lg" variant="secondary" className="h-10 px-4" aria-label={`비추천 ${downvotes}`} disabled={voting !== null}
                         onClick={() => onVote("D")}>
-                    {voting === "D" ? <Spinner data-icon="inline-start"/> : <ChevronDown data-icon="inline-start"/>}
+                    {voting === "D" ? <Spinner aria-hidden data-icon="inline-start"/> : <ChevronDown data-icon="inline-start"/>}
                     {downvotes}
                 </Button>
             )}
-            <WithTooltip tip="링크 복사" trigger={<Button size="icon-lg" variant="ghost" aria-label="링크 복사" onClick={onShare}/>}>
+            <TooltipButton tip="링크 복사" size="icon-lg" variant="ghost" onClick={onShare}>
                 <Link2/>
-            </WithTooltip>
-            <WithTooltip tip="새 탭으로 열기" trigger={<Button size="icon-lg" variant="ghost" nativeButton={false} aria-label="새 탭으로 열기"
-                                                         render={<a href={preData?.link ?? location.href} target="_blank" rel="noreferrer"/>}/>}>
+            </TooltipButton>
+            <TooltipButton tip="새 탭으로 열기" size="icon-lg" variant="ghost" nativeButton={false}
+                           render={<a href={preData?.link ?? location.href} target="_blank" rel="noreferrer"/>}>
                 <ExternalLink/>
-            </WithTooltip>
+            </TooltipButton>
         </div>
     );
 };

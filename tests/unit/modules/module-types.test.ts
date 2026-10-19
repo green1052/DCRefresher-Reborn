@@ -18,4 +18,13 @@ describe("module-types 모듈", () => {
         expect(text).toContain('interface ModuleSettings extends ModuleSettingsMap<typeof import("@/features/b/meta").default | typeof import("@/features/c/meta").default> {}');
         expect(text).toContain('declare module "@/core/module/types"');
     });
+
+    it("meta.ts가 있는 폴더 이름으로 모듈 id 목록을 쓴다", async () => {
+        const {wxt, prepareTypes} = fakeWxt(featureRoot({b: ["index.ts", "meta.ts"], a: ["index.ts"], c: ["meta.ts"]}));
+        void moduleTypes.setup?.(wxt, {});
+
+        const entry = (await prepareTypes()).find((item) => "path" in item && item.path === "module-ids.ts");
+
+        expect(entry && "text" in entry ? entry.text : "").toContain('export default ["b","c"];');
+    });
 });

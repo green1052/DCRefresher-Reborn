@@ -1,11 +1,10 @@
 // @vitest-environment-options {"url": "https://gall.dcinside.com/board/lists/?id=test"}
-import {afterEach, beforeEach, describe, expect, it} from "vitest";
+import {afterEach, beforeEach, describe, expect, it, onTestFinished} from "vitest";
 
-import type {BlockEntry, DetectMode} from "@/core/storage/types";
 import block from "@/features/block/index";
 import {useUiStore} from "@/stores/ui";
 
-import {setBlockLists, tick} from "../../../helpers";
+import {blockEntry as entry, setBlockLists, tick} from "../../../helpers";
 import {type Running, runModule} from "../module";
 
 interface RowFields {
@@ -21,9 +20,6 @@ const row = ({no, nick = "ㅇㅇ", uid = "", title = `글 ${no}`, subject = "일
     `<td class="gall_tit"><a href="/board/view/?id=test&no=${no}">${title}</a></td>` +
     `<td class="gall_writer ub-writer" data-nick="${nick}" data-uid="${uid}" data-ip="1.2"></td></tr>`;
 
-const entry = (content: string, fields: { mode?: DetectMode; gallery?: string; isRegex?: boolean } = {}): BlockEntry =>
-    ({id: `${content}-${fields.gallery ?? ""}`, content, isRegex: false, ...fields});
-
 const rowOf = (no: string): HTMLElement => document.querySelector<HTMLElement>(`tr[data-no="${no}"]`)!;
 
 const hidden = (): string[] =>
@@ -37,10 +33,10 @@ beforeEach(() => {
     document.body.innerHTML = `<table class="gall_list"><tbody>${[
         row({no: "1", nick: "도배", uid: "spam"}),
         row({no: "2", nick: "착한", title: "광고 <script>var 광고 = 1</script>아님"}),
-        row({no: "3", subject: "<span class=\"subject_inner\">긴 말머리 전체</span>"})
+        row({no: "3", subject: "<span class=\"subject_inner\">긴 말머리 전체</span>긴 말머…"})
     ].join("")}</tbody></table>`;
     setBlockLists();
-    useUiStore.setState({toasts: [], blockView: null, selected: null, bubble: null});
+    useUiStore.setState({toasts: [], blockRevealed: false, selected: null, bubble: null});
 });
 
 afterEach(() => {
@@ -73,12 +69,20 @@ describe("작성자 칸 판정", () => {
     });
 
     it("잘린 말머리는 툴팁의 전체 글자로 본다", async () => {
-        setBlockLists({TAB: [entry("긴 말머리 전체")]});
+        setBlockLists({TAB: [entry("긴 말머리 전체", {mode: "SAME"})]});
         await start();
         expect(hidden()).toEqual(["3"]);
     });
 
     it("다른 갤러리 한정 항목은 쓰지 않는다", async () => {
+        setBlockLists({NICK: [entry("도배", {gallery: "other"}), entry("착한", {gallery: "test"})]});
+        await start();
+        expect(hidden()).toEqual(["2"]);
+    });
+
+    it("미리보기가 주소를 다른 갤러리 글로 바꿔 두어도 이 문서의 갤러리 항목을 쓴다", async () => {
+        history.pushState(null, "", "/board/view/?id=other&no=5");
+        onTestFinished(() => history.replaceState(null, "", "/board/lists/?id=test"));
         setBlockLists({NICK: [entry("도배", {gallery: "other"}), entry("착한", {gallery: "test"})]});
         await start();
         expect(hidden()).toEqual(["2"]);
@@ -145,22 +149,15 @@ describe("대댓글·디시콘", () => {
 });
 
 describe("보기 방식·가린 내용 보기", () => {
-    it("블러 강도·마우스 오버 보기를 <html>에 걸고 미리보기에 알린다", async () => {
+    it("블러 강도·마우스 오버 보기를 <html>에 건다", async () => {
         const {change} = await start({blur: true, blurStrength: 7});
         const root = document.documentElement;
         expect(root.style.getPropertyValue("--refresher-blur")).toBe("7px");
         expect(root.classList.contains("refresherBlurReveal")).toBe(true);
-        expect(useUiStore.getState().blockView).toEqual({blur: true, blurReveal: true, replyRemove: false, revealed: false, duplicate: null});
 
         change({blurReveal: false, blurStrength: 3});
         expect(root.style.getPropertyValue("--refresher-blur")).toBe("3px");
         expect(root.classList.contains("refresherBlurReveal")).toBe(false);
-        expect(useUiStore.getState().blockView?.blurReveal).toBe(false);
-    });
-
-    it("같은 댓글 접기 설정을 미리보기에 알린다", async () => {
-        await start({foldDuplicate: true, duplicateCount: 4, duplicateMinLength: 2});
-        expect(useUiStore.getState().blockView?.duplicate).toEqual({count: 4, minLength: 2});
     });
 
     it("가린 내용 보기를 켜고 끈다", async () => {
@@ -171,7 +168,7 @@ describe("보기 방식·가린 내용 보기", () => {
         api.toggleReveal();
         expect(api.isRevealed()).toBe(true);
         expect(document.documentElement.classList.contains("refresherBlockReveal")).toBe(true);
-        expect(useUiStore.getState().blockView?.revealed).toBe(true);
+        expect(useUiStore.getState().blockRevealed).toBe(true);
         expect(useUiStore.getState().toasts.at(-1)?.content).toBe("이 페이지에서 가린 내용을 보입니다. (2개)");
 
         api.toggleReveal();
@@ -198,7 +195,7 @@ describe("보기 방식·가린 내용 보기", () => {
         expect(root.classList.contains("refresherBlockReveal")).toBe(false);
         expect(root.classList.contains("refresherBlurReveal")).toBe(false);
         expect(root.style.getPropertyValue("--refresher-blur")).toBe("");
-        expect(useUiStore.getState().blockView).toBeNull();
+        expect(useUiStore.getState().blockRevealed).toBe(false);
 
         // 꺼진 뒤에는 목록이 바뀌어도 다시 가리지 않는다.
         setBlockLists({NICK: [entry("착한")]});

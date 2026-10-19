@@ -4,14 +4,14 @@ import {useEffect, useState} from "react";
 import {Badge} from "@/components/ui/badge";
 import {Button} from "@/components/ui/button";
 import {CLOUD_QUOTA} from "@/core/backup";
-import {dbStorage} from "@/core/storage/items";
+import {dbMetaStorage} from "@/core/storage/items";
 import features from "@/features/meta";
 import {useBlocksStore} from "@/stores/blocks";
 import {useMemosStore} from "@/stores/memos";
 import {useModulesStore} from "@/stores/modules";
 
 import {formatBytes, formatTime, Section} from "./Layout";
-import {notify} from "./optionsStore";
+import {copyText} from "./optionsStore";
 
 const REPO = "https://github.com/green1052/DCRefresher-Reborn";
 
@@ -56,20 +56,15 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
     const enabledNames = features.filter((feature) => enables[feature.id]).map((feature) => feature.name);
 
     const copyDiagnostics = async (): Promise<void> => {
-        const db = await dbStorage.meta.getValue().catch(() => null);
+        const db = await dbMetaStorage().getValue().catch(() => null);
         const lines = [
             `DCRefresher Reborn v${version} (${import.meta.env.BROWSER})`,
             `브라우저: ${navigator.userAgent}`,
             `켜진 모듈: ${enabledNames.join(", ") || "없음"}`,
-            `IP DB: ${db?.version || "없음"} (갱신 ${formatTime(db?.lastUpdate ?? 0)})`,
+            `IP DB: ${db?.version || "없음"} (마지막 확인 ${formatTime(db?.lastUpdate ?? 0)})`,
             `차단 ${blockCount}개 · 메모 ${memoCount}개`
         ];
-        try {
-            await navigator.clipboard.writeText(lines.join("\n"));
-            notify("진단 정보를 복사했습니다. 버그 제보에 붙여 넣어 주세요.");
-        } catch {
-            notify("복사하지 못했습니다.");
-        }
+        await copyText(lines.join("\n"), "진단 정보를 복사했습니다. 버그 제보에 붙여 넣어 주세요.", "복사하지 못했습니다.");
     };
 
     return (

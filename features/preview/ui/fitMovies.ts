@@ -13,8 +13,8 @@ export const fitMovies = (root: HTMLElement): (() => void) => {
             observers.get(frame)?.disconnect();
 
             const doc = frame.contentDocument;
-            // movie_view는 .v-container, 그 밖엔 body의 첫 요소를 잰다.
-            const container = doc?.querySelector<HTMLElement>(".v-container") ?? doc?.body?.firstElementChild;
+            // movie_view는 .v-container, 그 밖엔 body의 첫 요소를 잰다. 투표(poll/vote)는 body가 <script>로 시작해 그것을 재면 0×0으로 접힌다.
+            const container = doc?.querySelector<HTMLElement>(".v-container") ?? doc?.body?.querySelector(":scope > :not(script, style)");
             if (!doc || !(container instanceof doc.defaultView!.HTMLElement)) return;
 
             // 글꼴·배율에 따라 1px만 넘쳐도 안쪽에 스크롤바가 생겨 내용을 가리므로 끈다.

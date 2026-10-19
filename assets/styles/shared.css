@@ -11,11 +11,12 @@
 }
 
 /*
- * 흐림만 풀고 반투명은 남기면 가려진 글인지 알아보기 어렵다 — 둘 다 원래대로.
- * 키보드 포커스로도 볼 수 있게 하되 focus-visible만 — 클릭한 링크에 남는 포커스로 계속 보이면 안 된다.
+ * 흐림과 반투명을 함께 푼다. 반투명만 남으면 가려진 글인지 알아보기 어렵다.
+ * 포커스는 focus-visible만 본다. 클릭한 링크에 남은 포커스로 계속 보이면 안 된다.
+ * 가린 것 자체가 포커스를 받기도 한다 (미리보기 본문 디시콘, markPressable).
  */
 @utility refresher-blur-reveal {
-    &:is(:hover, :has(:focus-visible)) {
+    &:is(:hover, :focus-visible, :has(:focus-visible)) {
         filter: none;
         opacity: 1;
     }

@@ -4,11 +4,9 @@ import {fakeBrowser} from "wxt/testing/fake-browser";
 import {DEFAULT_DETECT_MODE} from "@/core/storage/items";
 import {blockKey, composeExtra, initBlocksStore, normalizeBlockList, normalizeDefaults, useBlocksStore} from "@/stores/blocks";
 
-import {setBlockLists, stored} from "../../helpers";
+import {blockEntry as entry, setBlockLists, stored} from "../../helpers";
 
 beforeEach(() => setBlockLists());
-
-const entry = (content: string, fields: Partial<{ id: string; gallery: string; isRegex: boolean }> = {}) => ({id: content, content, isRegex: false, ...fields});
 
 describe("normalizeBlockList", () => {
     it("배열이 아니면 빈 목록", () => {
@@ -24,6 +22,17 @@ describe("normalizeBlockList", () => {
             {id: "4", content: "x", isRegex: false, mode: "same"},
             {id: "5", content: "x", isRegex: false, gallery: 1},
             "text"
+        ]);
+        expect(list.map((item) => item.id)).toEqual(["1"]);
+    });
+
+    it("이미지 지문(similar·frames)은 32자 16진수만, frames는 8개까지 받는다", () => {
+        const print = "0".repeat(32);
+        const list = normalizeBlockList([
+            {id: "1", content: "x", isRegex: false, similar: print, frames: [print, print]},
+            {id: "2", content: "x", isRegex: false, similar: "XYZ"},
+            {id: "3", content: "x", isRegex: false, frames: [print, 1]},
+            {id: "4", content: "x", isRegex: false, frames: Array(9).fill(print)}
         ]);
         expect(list.map((item) => item.id)).toEqual(["1"]);
     });
@@ -69,15 +78,17 @@ describe("blockKey", () => {
 describe("useBlocksStore", () => {
     const nicks = async () => normalizeBlockList(await stored("refresher:block:NICK"));
 
-    it("addEntries는 같은 content+gallery를 새것으로 바꿔 맨 뒤로 보낸다", async () => {
+    it("addEntries는 같은 content+gallery를 새것으로 바꿔 맨 뒤로 보내고, 바꾼 항목의 id는 이어 쓴다", async () => {
         await fakeBrowser.storage.local.set({"refresher:block:NICK": [entry("a"), entry("b"), entry("a", {id: "ga", gallery: "g"})]});
 
         await useBlocksStore.getState().addEntries("NICK", [{content: "a", isRegex: true}, {content: "c", isRegex: false}]);
 
         const list = await nicks();
         expect(list.map((item) => item.content)).toEqual(["b", "a", "a", "c"]);
-        expect(list[2]).toMatchObject({content: "a", isRegex: true});
-        expect(list[2]?.id).not.toBe("a");
+        // 사용 기록이 id로 묶여 있어 바꾼 항목은 id를 지킨다. 새 항목은 새 id를 받는다.
+        expect(list[2]).toMatchObject({id: "a", content: "a", isRegex: true});
+        expect(list[3]?.id).toEqual(expect.any(String));
+        expect(new Set(list.map((item) => item.id)).size).toBe(4);
     });
 
     it("updateEntry는 내용을 바꾸고 같은 내용의 다른 항목을 지운다", async () => {
@@ -136,6 +147,11 @@ describe("useBlocksStore", () => {
         await initBlocksStore();
         expect(useBlocksStore.getState().entries.ID).toEqual([entry("u")]);
         expect(useBlocksStore.getState().defaults.ID).toBe("CONTAIN");
+
+        // 같은 값이 다시 와도 스토어를 바꾸지 않는다 (차단 모듈이 다시 판정하지 않게).
+        const before = useBlocksStore.getState().defaults;
+        await fakeBrowser.storage.local.set({"refresher:block:defaults": {ID: "CONTAIN", NICK: "SAME"}});
+        expect(useBlocksStore.getState().defaults).toBe(before);
 
         await fakeBrowser.storage.local.set({"refresher:block:defaults": {ID: "bad"}});
         expect(useBlocksStore.getState().defaults.ID).toBe("SAME");

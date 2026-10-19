@@ -9,7 +9,6 @@ export const TXTCON_COLORS = ["ffffff", "333333"];
 
 const TXTCON_MAX_LEN = 20;
 const TXTCON_MAX_LINES = 4;
-/** 한 줄 최대 글자 수. */
 const TXTCON_MAX_LINE_LEN = 5;
 
 // 컬러 이모지로 그려지는 BMP 문자. 글자 수에 1을 더 센다.
@@ -25,10 +24,10 @@ const txtconLength = (text: string): number => {
 
 // 디시 txtcon_clusters 대신 브라우저 grapheme 분할을 쓴다. 국기·스킨톤·ZWJ 같은 흔한 글자는 결과가 같고, 분해형 한글 자모 등만 다르다.
 let segmenter: Intl.Segmenter | undefined;
-/** 글자콘의 '한 글자'(grapheme) 단위로 나눈다. 모든 디시 페이지에서 만들지 않도록 분할기는 처음 쓸 때 만든다. */
+/** 글자콘의 '한 글자'(grapheme) 단위로 나눈다. 분할기도 bmpEmoji처럼 처음 쓸 때 만든다. */
 export const graphemes = (text: string): string[] => Array.from((segmenter ??= new Intl.Segmenter()).segment(text), ({segment}) => segment);
 
-/** 직접 넣은 줄바꿈은 두고 각 줄을 5글자씩 나눈다. 입력 제한과 표시(features/preview/ui/Comment.tsx)가 같이 쓴다. */
+/** 직접 넣은 줄바꿈은 두고 각 줄을 5글자씩 나눈다. 입력 제한과 표시(features/preview/ui/fitTxtcon.ts)가 같이 쓴다. */
 export const wrapTxtcon = (text: string): string =>
     text
         .replace(/\r\n?/g, "\n")
@@ -81,13 +80,15 @@ export const normalizeTxtcon = (value: string): string => {
 export const submitTxtcon = async (
     preData: GalleryPreData,
     postInfo: PostInfo,
-    user: { name: string; pw?: string },
-    text: string,
-    colors: { bg: string; txt: string },
-    commentNo: string | null,
-    replyNo: string | null,
-    captcha?: string,
-    grecaptchaToken?: string
+    {user, text, colors, commentNo, replyNo, captcha, grecaptchaToken}: {
+        user: { name: string; pw?: string };
+        text: string;
+        colors: { bg: string; txt: string };
+        commentNo: string | null;
+        replyNo: string | null;
+        captcha?: string;
+        grecaptchaToken?: string;
+    }
 ): Promise<SubmitResult> => {
     const form = postInfo.commentForm;
 

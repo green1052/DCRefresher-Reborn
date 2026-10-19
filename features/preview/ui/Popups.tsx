@@ -10,7 +10,7 @@ import {Input} from "@/components/ui/input";
 import {Kbd} from "@/components/ui/kbd";
 import {RadioGroup, RadioGroupItem} from "@/components/ui/radio-group";
 import {Spinner} from "@/components/ui/spinner";
-import {useModuleSettings} from "@/core/module/useModuleSettings";
+import {useContentModuleSettings} from "@/core/module/useModuleSettings";
 import {BLOCK_DAYS, BLOCK_REASONS, type BlockDay, type BlockReason} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 import {createDoublePress} from "@/utils/doublePress";
@@ -44,7 +44,8 @@ const RadioGrid = <T extends string, >({label, items, value, onChange}: {
     );
 };
 
-const BlockPopup = () => {
+/** comments: 고른 댓글의 작성자를 차단한다. 없으면 글쓴이를 차단한다. */
+const BlockPopup = ({comments}: { comments?: string[] }) => {
     const preData = usePreviewStore((s) => s.preData);
     const [day, setDay] = useState<BlockDay>("1");
     const [reason, setReason] = useState<BlockReason>("1");
@@ -60,7 +61,7 @@ const BlockPopup = () => {
         setSending(true);
         const signal = usePreviewStore.getState().signalId;
 
-        const done = await usePreviewStore.getState().requestBlock(preData, {avoidHour: day, avoidReason: reason, avoidReasonTxt: reason === "0" ? custom : "", delChk, userTypeChk});
+        const done = await usePreviewStore.getState().requestBlock(preData, {avoidHour: day, avoidReason: reason, avoidReasonTxt: reason === "0" ? custom : "", delChk, userTypeChk}, comments);
 
         // 그새 다른 글로 넘어갔으면 차단 창과 미리보기는 그 글 것이라 알림만 띄우고 건드리지 않는다. 글도 지웠으면 창은 이미 닫혔다.
         if (usePreviewStore.getState().signalId !== signal) return;
@@ -72,7 +73,7 @@ const BlockPopup = () => {
     return (
         <ModalDialog onClose={() => usePreviewStore.setState({blockPopup: false})} className="sm:max-w-[440px]" focusOnOpen="keyboard">
             <DialogHeader>
-                <DialogTitle>유저 차단</DialogTitle>
+                <DialogTitle>{comments ? `댓글 작성자 차단 (${comments.length}개)` : "유저 차단"}</DialogTitle>
             </DialogHeader>
 
             <div className="flex flex-col gap-2">
@@ -98,7 +99,7 @@ const BlockPopup = () => {
             <div className="flex flex-col gap-2">
                 <Field orientation="horizontal">
                     <Checkbox id={`${id}-del`} checked={delChk} onCheckedChange={setDelChk}/>
-                    <FieldLabel htmlFor={`${id}-del`} className="font-normal">선택한 글 삭제</FieldLabel>
+                    <FieldLabel htmlFor={`${id}-del`} className="font-normal">{comments ? "선택한 댓글 삭제" : "선택한 글 삭제"}</FieldLabel>
                 </Field>
                 <Field orientation="horizontal">
                     <Checkbox id={`${id}-ip`} checked={userTypeChk} onCheckedChange={setUserTypeChk}/>
@@ -108,7 +109,7 @@ const BlockPopup = () => {
 
             <DialogActions>
                 <Button variant="destructive" disabled={sending} onClick={() => void submit()}>
-                    {sending && <Spinner data-icon="inline-start"/>}차단
+                    {sending && <Spinner aria-hidden data-icon="inline-start"/>}차단
                 </Button>
             </DialogActions>
         </ModalDialog>
@@ -137,8 +138,7 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
                 <DialogTitle>자동입력 방지 코드</DialogTitle>
             </DialogHeader>
             <img src={captcha.url} alt="자동입력 방지 코드" className="block w-full rounded-lg"/>
-            {/* Enter로 보낸다 (SubmitForm). */}
-            <SubmitForm onSubmit={send} className="flex flex-col gap-4">
+            <SubmitForm onSubmit={send}>
                 <Input
                     ref={input}
                     value={code}
@@ -177,10 +177,10 @@ interface AdminAction {
  * 한 번 클릭에 창 닫기와 관리 동작이 같이 일어나지 않는다.
  */
 export const AdminPanel = () => {
-    const notice = usePreviewStore((s) => s.notice);
-    const recommend = usePreviewStore((s) => s.recommend);
+    const notice = usePreviewStore((s) => s.preData?.notice === true);
+    const recommend = usePreviewStore((s) => s.preData?.recommend === true);
     const requestManage = usePreviewStore((s) => s.requestManage);
-    const {useKeyPress, deleteKey, blockKey} = useModuleSettings("preview");
+    const {useKeyPress, deleteKey, blockKey} = useContentModuleSettings("preview");
     const keys = useKeyPress ? {delete: deleteKey.toUpperCase(), block: blockKey.toUpperCase()} : null;
     // 두 번 누르기 확인 상태. 바뀌어도 다시 그릴 필요가 없어 ref에 둔다.
     const confirmPress = useRef(createDoublePress(CONFIRM_WINDOW)).current;
@@ -190,7 +190,7 @@ export const AdminPanel = () => {
         {id: "notice", label: notice ? "공지 해제" : "공지 등록", confirm: MANAGE_LABELS.notice[notice ? 1 : 0], icon: <Megaphone data-icon="inline-start"/>, active: notice, run: () => requestManage("notice")},
         {id: "recommend", label: recommend ? "개념글 해제" : "개념글 등록", confirm: MANAGE_LABELS.recommend[recommend ? 1 : 0], icon: <Star data-icon="inline-start"/>, active: recommend, run: () => requestManage("recommend")},
         {id: "bump", label: "끌올", confirm: "게시글을 끌올", icon: <ArrowBigUpDash data-icon="inline-start"/>, run: () => requestManage("bump")},
-        {id: "block", label: "차단", hint: keys?.block, icon: <Ban data-icon="inline-start"/>, danger: true, instant: true, run: () => usePreviewStore.setState({blockPopup: true})},
+        {id: "block", label: "차단", hint: keys?.block, icon: <Ban data-icon="inline-start"/>, danger: true, instant: true, run: () => usePreviewStore.setState({blockPopup: "post"})},
         {id: "delete", label: "삭제", confirm: "게시글을 삭제", hint: keys?.delete, icon: <Trash2 data-icon="inline-start"/>, danger: true, run: () => requestManage("delete")}
     ];
 
@@ -216,7 +216,6 @@ export const AdminPanel = () => {
                 {actions.map((action) => (
                     <Button
                         key={action.id}
-                        // 상태는 색으로 보인다: 위험한 동작은 빨강, 켜진 공지·개념글은 강조색.
                         variant={action.danger ? "destructive" : action.active ? "default" : "secondary"}
                         className="justify-start"
                         // 눌러도 포커스를 가져가지 않는다. 첫 클릭 뒤 스페이스로 스크롤하면 포커스된 버튼이 눌려 두 번째 확인이 된다.
@@ -235,13 +234,16 @@ export const AdminPanel = () => {
 
 export const Popups = () => {
     const blockPopup = usePreviewStore((s) => s.blockPopup);
+    // 창을 여는 동안 고른 댓글은 그대로다. 창이 열린 채 고른 것을 바꿀 수 없다 (모달).
+    const selected = usePreviewStore((s) => s.selectedComments);
     const captcha = usePreviewStore((s) => s.captcha);
     const dcconInfo = usePreviewStore((s) => s.dcconInfo);
     const viewer = usePreviewStore((s) => s.viewer);
 
     return (
         <>
-            {blockPopup && <BlockPopup/>}
+            {blockPopup === "post" && <BlockPopup/>}
+            {blockPopup === "comments" && <BlockPopup comments={[...selected]}/>}
             {captcha && <CaptchaPopup key={captcha.url} captcha={captcha}/>}
             {dcconInfo && <DcconInfoPopup key={dcconInfo} code={dcconInfo}/>}
             {viewer && <ImageViewer images={viewer.images} index={viewer.index}/>}

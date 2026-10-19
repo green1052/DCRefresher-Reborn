@@ -59,6 +59,17 @@ describe("cleanUpStaleInstance", () => {
         expect([sibling.hasAttribute("aria-hidden"), sibling.hasAttribute("inert"), sibling.hasAttribute("data-base-ui-inert")]).toEqual([false, false, false]);
     });
 
+    it("미리보기만 잠갔어도 스크롤바 자리(scrollbar-gutter)까지 걷어 낸다", () => {
+        document.body.append(document.createElement("refresher-root"));
+        html.style.overflow = "hidden";
+        html.style.scrollbarGutter = "stable";
+
+        cleanUpStaleInstance();
+
+        expect(html.getAttribute("style") ?? "").toBe("");
+        expect(document.getElementById("page")?.inert).toBe(false);
+    });
+
     it("<html>이 잠기지 않았으면 페이지의 inert는 그대로 둔다", () => {
         document.body.append(document.createElement("refresher-root"));
 
@@ -76,6 +87,22 @@ describe("cleanUpStaleInstance", () => {
         expect(location.pathname + location.search).toBe("/list?page=2");
         expect(history.state).toEqual({from: "dc"});
         expect(document.title).toBe("목록");
+    });
+
+    it("걷어 낸 오버레이에 입력하던 글을 돌려준다", () => {
+        const host = document.body.appendChild(document.createElement("refresher-root"));
+        const textarea = host.attachShadow({mode: "open"}).appendChild(document.createElement("textarea"));
+        textarea.value = "  반쯤 쓴 댓글 ";
+
+        expect(cleanUpStaleInstance()).toBe("반쯤 쓴 댓글");
+    });
+
+    it("오버레이가 없거나 입력하던 글이 비어 있으면 undefined를 돌려준다", () => {
+        expect(cleanUpStaleInstance()).toBeUndefined();
+
+        const host = document.body.appendChild(document.createElement("refresher-root"));
+        host.attachShadow({mode: "open"}).appendChild(document.createElement("textarea")).value = "  ";
+        expect(cleanUpStaleInstance()).toBeUndefined();
     });
 
     it("다른 문서가 쌓은 기록은 건드리지 않는다", () => {

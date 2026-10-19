@@ -2,7 +2,9 @@
 // jsdom의 Blob에는 stream()이 없어 압축을 못 한다. 이 모듈은 DOM을 쓰지 않는다.
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
-import {collectLocalData, isBackupTarget, readBackupTargets, readCloudBackup, readCloudBackupStatus, runBackup} from "@/core/backup";
+import {clearCloudBackups, collectLocalData, isBackupTarget, readBackupTargets, readCloudBackup, readCloudBackupStatus, runBackup} from "@/core/backup";
+
+import {isRecord} from "@/utils/record";
 
 import {stored} from "../../helpers";
 
@@ -10,6 +12,13 @@ const ERROR = "refresher:backup:error";
 
 /** 압축되지 않는 글자. 조각 수를 늘릴 때 쓴다. */
 const noise = (length: number): string => Array.from(crypto.getRandomValues(new Uint8Array(length)), (byte) => String.fromCharCode(0xac00 + byte)).join("");
+
+/** 수동 칸 메타를 고친다. 새 버전 확장이 올린 백업처럼 꾸밀 때 쓴다. */
+const patchManualMeta = async (patch: Record<string, unknown>): Promise<void> => {
+    const {backup} = await browser.storage.sync.get("backup");
+    if (!isRecord(backup)) throw new Error("수동 백업이 없습니다.");
+    await browser.storage.sync.set({backup: {...backup, ...patch}});
+};
 
 const syncKeys = async (): Promise<string[]> => Object.keys(await browser.storage.sync.get(null)).sort();
 
@@ -20,7 +29,7 @@ beforeEach(() => {
 describe("isBackupTarget", () => {
     it("설정·차단·메모만 대상이다", () => {
         const targets = ["refresher:modules", "refresher:block:defaults", "refresher:block:NICK", "refresher:block:TAB", "refresher:memo:UID", "refresher:module:preview:settings"];
-        const others = ["refresher:db:ip", "refresher:db:meta", "refresher:module:userinfo:data", "refresher:backup:auto", "refresher:usage", "refresher:block:UNKNOWN", "refresher:memo:X", "other"];
+        const others = ["refresher:db:ip", "refresher:db:meta", "refresher:module:userinfo:data", "refresher:module:zzz:settings", "refresher:backup:auto", "refresher:usage", "refresher:block:UNKNOWN", "refresher:memo:X", "other"];
         expect(targets.filter(isBackupTarget)).toEqual(targets);
         expect(others.filter(isBackupTarget)).toEqual([]);
     });
@@ -42,6 +51,11 @@ describe("readBackupTargets / collectLocalData", () => {
             "refresher:block:NICK": [{content: "닉", isRegex: false}, "깨진 항목"],
             "refresher:memo:UID": {a: {text: "메모", color: "red"}}
         });
+    });
+
+    it("없어진 모듈의 설정은 내보내기·백업에 넣지 않는다", async () => {
+        await browser.storage.local.set({"refresher:module:preview:settings": {width: 900}, "refresher:module:zzz:settings": {width: 1}});
+        expect(await collectLocalData()).toEqual({"refresher:module:preview:settings": {width: 900}});
     });
 
     it("대상이 없으면 빈 객체다", async () => {
@@ -102,6 +116,32 @@ describe("runBackup / readCloudBackup", () => {
         await expect(readCloudBackup("manual")).rejects.toThrow("백업 데이터가 맞지 않습니다");
     });
 
+    it("조각이 섞여 가운데에 '='가 끼어도 같은 안내로 던진다", async () => {
+        await browser.storage.local.set({"refresher:modules": {a: true}});
+        await runBackup("manual");
+        await patchManualMeta({chunks: 2});
+        await browser.storage.sync.set({"backup:0": "QQ==", "backup:1": "QUJD"});
+        // vmThreads에서는 SyntaxError가 다른 realm에서 오므로 메시지로 본다.
+        await expect(readCloudBackup("manual")).rejects.toThrow("백업 데이터가 맞지 않습니다");
+    });
+
+    it("더 높은 형식의 백업은 있다고 알리고 읽지 않는다", async () => {
+        await browser.storage.local.set({"refresher:modules": {a: true}});
+        await runBackup("manual");
+        await patchManualMeta({format: 2, createdAt: 99});
+
+        expect((await readCloudBackupStatus()).manual).toEqual({createdAt: 99, size: expect.any(Number), other: false});
+        await expect(readCloudBackup("manual")).rejects.toThrow("새 버전 확장에서 만든 백업입니다");
+    });
+
+    it("다른 칸 크기는 더 높은 형식이어도 한도 계산에 넣는다", async () => {
+        await browser.storage.local.set({"refresher:modules": {big: noise(40_000)}});
+        await runBackup("manual");
+        await patchManualMeta({format: 2});
+
+        await expect(runBackup("auto")).rejects.toThrow(/클라우드 한도를 넘습니다/);
+    });
+
     it("성공하면 남은 실패 이유를 지운다", async () => {
         await browser.storage.local.set({[ERROR]: "이전 실패"});
         await runBackup("manual");
@@ -131,15 +171,43 @@ describe("runBackup / readCloudBackup", () => {
 });
 
 describe("readCloudBackupStatus", () => {
-    it("칸마다 시각·크기와 전체 사용량을 알린다", async () => {
+    it("칸마다 시각·크기를 알린다", async () => {
         vi.spyOn(Date, "now").mockReturnValue(77);
-        vi.spyOn(browser.storage.sync, "getBytesInUse").mockImplementation(async () => 4096);
         await browser.storage.local.set({"refresher:modules": {a: true}});
         await runBackup("auto");
 
         const status = await readCloudBackupStatus();
         const meta = (await browser.storage.sync.get("autoBackup")).autoBackup;
-        expect(status).toEqual({manual: undefined, auto: {createdAt: 77, size: expect.any(Number)}, used: 4096});
+        expect(status).toEqual({manual: undefined, auto: {createdAt: 77, size: expect.any(Number), other: false}});
         expect(meta).toMatchObject({size: status.auto?.size, chunks: 1});
+    });
+
+    it("다른 기기나 기기를 남기기 전 버전이 올린 백업은 other로 알린다", async () => {
+        await browser.storage.local.set({"refresher:modules": {a: true}});
+        await runBackup("manual");
+        expect((await readCloudBackupStatus()).manual?.other).toBe(false);
+
+        await patchManualMeta({device: "다른 기기"});
+        expect((await readCloudBackupStatus()).manual?.other).toBe(true);
+
+        await patchManualMeta({device: undefined});
+        expect((await readCloudBackupStatus()).manual?.other).toBe(true);
+
+        await runBackup("manual");
+        expect((await readCloudBackupStatus()).manual?.other).toBe(false);
+    });
+});
+
+describe("clearCloudBackups", () => {
+    it("두 칸의 메타와 조각, v5가 남긴 키까지 모두 지운다", async () => {
+        await browser.storage.local.set({"refresher:modules": {a: true}});
+        await runBackup("manual");
+        await runBackup("auto");
+        await browser.storage.sync.set({"refresher:block:NICK": "[]"});
+
+        await clearCloudBackups();
+
+        expect(await browser.storage.sync.get(null)).toEqual({});
+        expect(await readCloudBackupStatus()).toEqual({manual: undefined, auto: undefined});
     });
 });

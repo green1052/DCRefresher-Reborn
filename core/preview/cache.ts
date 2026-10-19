@@ -1,5 +1,6 @@
+import QuickLRU from "quick-lru";
+
 import {galleryKind} from "@/core/http/urls";
-import {LruCache} from "@/utils/lru";
 
 import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} from "./types";
 
@@ -15,9 +16,18 @@ interface CacheEntry {
     commentsAt?: number;
 }
 
-// 게시글 캐시: 수명 1분, 최대 50개. 저장할 때마다 수명이 다시 1분으로 늘어난다.
-// autopurge가 없으면 만료된 항목(본문 HTML 포함)이 50개에 밀려날 때까지 메모리에 남는다.
-const entries = new LruCache<string, CacheEntry>({max: 50, ttl: 60_000, autopurge: true});
+// 게시글 캐시: 수명 1분. 저장할 때마다 수명이 다시 1분으로 늘어난다.
+// quick-lru는 두 세대로 나눠 두어 maxSize의 두 배 가까이(49개) 남기고, 만료된 항목(본문 HTML 포함)도 밀려날 때까지 메모리에 둔다. 그래서 25로 둔다.
+const MAX_AGE = 60_000;
+const entries = new QuickLRU<string, CacheEntry>({maxSize: 25, maxAge: MAX_AGE});
+
+// 만료된 항목은 꺼내거나 훑을 때에야 지워진다. 미리보기를 30개 열고 두면 본문 HTML·댓글 0.9MB가 그대로 남는다.
+// 저장할 때마다 수명이 다시 시작되므로 마지막 저장의 수명이 끝난 뒤 한 번 훑는다. 훑기(이터레이터)가 만료된 항목을 지운다.
+let sweep: ReturnType<typeof setTimeout> | undefined;
+const scheduleSweep = (): void => {
+    clearTimeout(sweep);
+    sweep = setTimeout(() => Array.from(entries), MAX_AGE + 1_000);
+};
 
 /**
  * 글 하나를 가리키는 키. 번호는 갤러리마다 따로 매겨진다. 일반·마이너·미니·인물 갤러리는 id가 겹칠 수 있어 종류도 넣는다.
@@ -34,6 +44,7 @@ export const getEntry = (preData: GalleryPreData): CacheEntry | undefined => ent
 export const setEntry = (preData: GalleryPreData, patch: CacheEntry): void => {
     const key = postKey(preData);
     entries.set(key, {...entries.get(key), ...patch});
+    scheduleSweep();
 };
 
 /**
@@ -46,7 +57,7 @@ export const restoreArchive = (preData: GalleryPreData, list: DcinsideComment[],
     const seen = entries.get(postKey(preData))?.seen ?? {};
     const current = new Set(list.map((comment) => comment.no));
     const thread = (comment: DcinsideComment): number => Number(comment.c_no) || Number(comment.no);
-    // 잘린 목록은 받은 것 중 가장 오래된 스레드보다 오래된 댓글을 삭제로 치지 않는다. 빈 목록이면 min이 Infinity가 되므로 0으로 둔다 (전부 지워진 목록).
+    // 빈 목록이면 min이 Infinity가 되므로 0으로 둔다 (전부 지워진 목록).
     const cutoff = truncated && list.length > 0 ? Math.min(...list.map(thread)) : 0;
 
     const deleted: DcinsideComment[] = [];

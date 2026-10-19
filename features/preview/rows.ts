@@ -1,4 +1,6 @@
+import {BLURRED_ROW_SELECTOR} from "@/core/block";
 import {dcinsideHref} from "@/core/http/urls";
+import {LIST_ROW_SELECTOR} from "@/core/list";
 import {postKey} from "@/core/preview/cache";
 import type {GalleryPreData} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
@@ -45,27 +47,9 @@ export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
     };
 };
 
-/** 차단 모듈이 블러로 가린 행인지. 화면에는 남아 있지만 '가린 내용 보기' 중이 아니면 넘기기·미니로 열지 않는다. */
+/** 차단 모듈이나 깡계 흐리게(userinfo)로 가린 행인지. 화면에는 남아 있지만 '가린 내용 보기' 중이 아니면 넘기기·미니로 열지 않는다. */
 export const isBlurHidden = (element: Element): boolean =>
-    !useUiStore.getState().blockView?.revealed && element.closest(".refresherBlur") !== null;
-
-/** 미리보기를 여는 목록 행. */
-export const ROW_SELECTOR = ".gall_list .ub-content";
-
-// 행 → 글 키. 새로고침은 바뀐 행을 새 요소로 갈아끼우므로 요소마다 한 번만 읽으면 된다 (댓글 수처럼 제자리에서 고치는 칸은 키에 없다).
-// 찾지 못한 것은 담지 않는다. 문서를 읽는 동안에는 행이 링크보다 먼저 붙어, 그때 읽으면 아직 키가 없다.
-const rowKeys = new WeakMap<HTMLElement, string>();
-
-/** 행의 글 키(postKey). 글로 열 수 없는 행이면 null. 읽은 글 표시·키보드 선택처럼 행마다 자주 보는 곳에서 쓴다. */
-export const rowPostKey = (row: HTMLElement): string | null => {
-    const cached = rowKeys.get(row);
-    if (cached !== undefined) return cached;
-    const pre = buildPreData(row);
-    if (!pre) return null;
-    const key = postKey(pre);
-    rowKeys.set(row, key);
-    return key;
-};
+    !useUiStore.getState().blockRevealed && element.closest(BLURRED_ROW_SELECTOR) !== null;
 
 export interface ListRow {
     row: HTMLElement;
@@ -79,7 +63,7 @@ export interface ListRow {
 export const listRows = (): ListRow[] => {
     const seen = new Set<string>();
     const rows: ListRow[] = [];
-    for (const row of document.querySelectorAll<HTMLElement>(ROW_SELECTOR)) {
+    for (const row of document.querySelectorAll<HTMLElement>(LIST_ROW_SELECTOR)) {
         if (!row.checkVisibility()) continue;
         const pre = buildPreData(row);
         if (!pre) continue;

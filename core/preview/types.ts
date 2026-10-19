@@ -5,14 +5,19 @@
 export const BLOCK_DAYS = {"1": "1시간", "6": "6시간", "24": "1일", "168": "7일", "336": "14일", "744": "31일"} as const;
 export type BlockDay = keyof typeof BLOCK_DAYS;
 
-/** 관리 API의 차단 사유. "0"은 직접 입력이다. 객체로 두면 "0"이 맨 앞으로 오므로 순서대로 배열에 둔다. */
+/**
+ * 관리 API의 차단 사유. DC 글·댓글 차단 창(update_avoid_list)의 avoid_reason 값과 같다.
+ * "0"은 직접 입력이다. 8(허위사실 적시)은 프로필 차단 창에만 있어 넣지 않는다.
+ * 객체로 두면 "0"이 맨 앞으로 오므로 순서대로 배열에 둔다.
+ */
 export const BLOCK_REASONS = [
     ["1", "음란성"],
     ["2", "광고"],
     ["3", "욕설"],
     ["4", "도배"],
-    ["5", "저작권 침해"],
-    ["6", "명예훼손"],
+    ["5", "혐오 콘텐츠"],
+    ["6", "저작권 침해"],
+    ["7", "명예훼손"],
     ["0", "직접 입력"]
 ] as const;
 export type BlockReason = (typeof BLOCK_REASONS)[number][0];
@@ -65,6 +70,8 @@ export interface PostInfo {
     writeText?: string;
     /** 댓글·글자콘 쓰기에 보내는 그 글의 폼 값. */
     commentForm: CommentForm;
+    /** 비밀번호 댓글 삭제 폼(#_cmt_del_form_)의 숨은 input들. [이름, 값]. 이름·값 모두 글마다 무작위다. */
+    commentDeleteFields?: [string, string][];
 }
 
 
@@ -97,7 +104,8 @@ export interface DcinsideDcconDetailList {
 }
 
 export interface DcinsideDcconDetail {
-    list: DcinsideDcconDetailList[];
+    /** 디시콘이 하나도 없으면(target "shop") 오지 않는다. */
+    list?: DcinsideDcconDetailList[];
     /** 마지막 쪽 번호 (0부터). 문자열로 오기도 한다. */
     max_page: number | string;
     target: string;
@@ -136,6 +144,7 @@ export interface DcinsideDcconPackage {
 
 export interface DcinsideComment {
     no: string;
+    /** 답글은 스레드 첫 댓글 번호. 첫 댓글은 디시가 숫자 0을 주므로 깊이로 가려 읽는다. */
     c_no: string;
     depth: number;
     user_id: string;
@@ -146,7 +155,8 @@ export interface DcinsideComment {
     /** "COMMENT_BOY"면 댓글돌이. */
     nicktype?: string;
     ip: string;
-    memo: string;
+    /** 비어 오면 null이다. processComments(core/preview/comments.ts)가 문자열로 바꾼다. */
+    memo: string | null;
     /** "0"이면 살아 있고 그 밖은 삭제. prepareComments(core/preview/comments.ts)를 거치면 "0"/"1"만 남는다. */
     is_delete: string;
     /** "Y"면 디시가 지운 댓글. */

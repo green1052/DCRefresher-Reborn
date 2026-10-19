@@ -1,24 +1,23 @@
-import {banReasonsOf, initDatabase, ipInfoOf, passesIpFilter, subscribeDatabase} from "@/core/database";
+import QuickLRU from "quick-lru";
+import {storage, type WxtStorageItem} from "wxt/utils/storage";
+
+import {badgeViewOf, type BadgeView, DEFAULT_BADGE_VIEW, showsUid} from "@/core/badges";
+import {banReasonsOf, initDatabase, ipInfoOf, onDatabaseChange, passesIpFilter} from "@/core/database";
 import {defineModule} from "@/core/module/define";
-import {type GallogActivity, getGallogActivity} from "@/core/gallog";
+import {type GallogActivity, getGallogActivity, onGallogActivity, type RatioInfo} from "@/core/gallog";
 import {ROWS_HIDDEN_EVENT} from "@/core/block";
-import {queryString} from "@/core/http/urls";
-import {ROW_SELECTOR} from "@/core/list";
+import {FILTER_SKIP_ATTR} from "@/core/filtering";
+import {pageGallery} from "@/core/http/urls";
+import {WRITER_ROW_SELECTOR} from "@/core/list";
 import {batchedSave} from "@/core/storage/batched";
 import {moduleDataKey, moduleDataStorage} from "@/core/storage/items";
 import {watchStorage} from "@/core/storage/sync";
+import {onBfcacheRestore} from "@/utils/dom";
 import {findMemo, useMemosStore} from "@/stores/memos";
-import {type BadgeView, DEFAULT_BADGE_VIEW, isFresh, isLowActivity, openWriterBubble, showsUid, useUiStore} from "@/stores/ui";
-import {LruCache} from "@/utils/lru";
+import {isFresh, isLowActivity, openWriterBubble, useUiStore} from "@/stores/ui";
 import {objectFromEntries, objectKeys} from "@/utils/typed";
 
 import meta, {BADGE_COLORS, type BadgeColor, type Ctx} from "./meta";
-
-interface RatioInfo {
-    article: number;
-    comment: number;
-    date: number;
-}
 
 /** 저장소의 글댓비 캐시 (moduleDataStorage). */
 type RatioData = { ratio?: Record<string, RatioInfo> };
@@ -28,24 +27,17 @@ type BadgeColors = Partial<Record<BadgeColor, string>>;
 const colorsOf = (ctx: Ctx): BadgeColors =>
     objectFromEntries(objectKeys(BADGE_COLORS).map((key) => [key, ctx.settings[`${key}Color`]] as const));
 
-const badgeViewOf = (ctx: Ctx): BadgeView => ({
-    order: ctx.settings.badgeOrder,
-    fixedUid: ctx.settings.showFixedNickUID,
-    halfFixedUid: ctx.settings.showHalfFixedNickUID,
-    ipFilter: ctx.settings.ipInfoFilter
-});
-
-/** 설정에서 만든 배지 색·표시 조건. 작성자 칸마다(목록 새로고침마다 수십 개) 다시 만들지 않고 설정이 바뀔 때(publishBadges) 한 번 만든다. */
-let colors: BadgeColors = {};
-let view: BadgeView = DEFAULT_BADGE_VIEW;
-/** 이 문서의 갤러리 id. 미리보기가 pushState로 주소를 바꿔도 같은 갤러리다. */
-let gallery: string | null = null;
-
-let ratios: Record<string, RatioInfo> = {};
+/** 한 번의 실행(setup)이 그리는 데 쓰는 값. 모듈을 다시 켜면 새로 만든다. */
+interface BadgeState {
+    /** 설정에서 만든 배지 색·표시 조건. 작성자 칸마다(목록 새로고침마다 수십 개) 다시 만들지 않고 설정이 바뀔 때(readBadgeSettings) 한 번 만든다. */
+    colors: BadgeColors;
+    view: BadgeView;
+    ratios: Record<string, RatioInfo>;
+}
 
 /** 배지를 붙이는 작성자 칸. user_name이 붙은 칸은 디시가 이미 처리한 자리라 건너뛴다. */
 const WRITER_SELECTOR = ".ub-writer:not([user_name])";
-/** 작성자 칸 하나에 붙이는 배지 묶음. core/filtering이 이 클래스의 노드는 훑지 않는다. */
+/** 작성자 칸 하나에 붙이는 배지 묶음. FILTER_SKIP_ATTR을 붙여 core/filtering이 훑지 않게 한다. */
 const BADGES_CLASS = "refresher-user-badges";
 
 /** 글댓비 저장 상한. 최근에 받은 사람부터 이만큼만 남긴다. */
@@ -59,9 +51,6 @@ const RATIO_SAVE_DELAY = 30_000;
 
 const trimRatios = (all: Record<string, RatioInfo>): Record<string, RatioInfo> =>
     Object.fromEntries(Object.entries(all).sort(([, a], [, b]) => b.date - a.date).slice(0, MAX_RATIOS));
-
-/** 글댓비를 받지 못한 유저 (임시 차단 포함). 디시가 막거나 실패하는 동안 새 목록마다 다시 묻지 않게 5분 동안 건너뛴다. */
-const failedRatios = new LruCache<string, true>({max: 500, ttl: 5 * 60_000});
 
 const buildBadgeSpan = (text: string, color?: string, title?: string, className = "refresherUserData"): HTMLElement => {
     const span = Object.assign(document.createElement("span"), {className, textContent: text});
@@ -84,8 +73,8 @@ const LOW_ACTIVITY_CLASS_LIST = Object.values(LOW_ACTIVITY_CLASSES);
 const LOW_ACTIVITY_SELECTOR = LOW_ACTIVITY_CLASS_LIST.map((name) => `.${name}`).join(",");
 
 /**
- * 깡계 숨김·흐림을 바꿨다고 알린다. 차단 모듈이 같은 댓글을 다시 접는다 (가린 댓글은 세지 않는다).
- * 차단 모듈의 접기는 이 모듈이 DB를 읽기 전에 먼저 돈다. 작성자마다 부르므로 한 번에 모아 보낸다.
+ * 깡계 숨김·흐림이 바뀌었다고 알려 차단 모듈이 같은 댓글을 다시 접게 한다. 그 접기는 이 모듈이 DB를 읽기 전에 먼저 돈다.
+ * 작성자마다 불리므로 한 번에 모아 보낸다.
  */
 let notifyQueued = false;
 const notifyRowsHidden = (): void => {
@@ -104,7 +93,7 @@ const clearLowActivity = (): boolean => {
     return marked.length > 0;
 };
 
-const process = (ctx: Ctx, element: HTMLElement): void => {
+const process = (ctx: Ctx, {colors, view, ratios}: BadgeState, element: HTMLElement): void => {
     // 완료 표시 없이 매번 다시 그린다. 파싱 중인 작성자 칸(닉콘·IP 전)에서 먼저 불려도, 칸이 다 읽혀 다시 불릴 때 배지가 제자리를 찾는다.
     element.querySelector(`.${BADGES_CLASS}`)?.remove();
 
@@ -120,14 +109,14 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
         }
 
         const info = ip ? ipInfoOf(ip) : undefined;
-        if (info && passesIpFilter(info, view.ipFilter)) badges.push(buildBadgeSpan(`[${info.label}]`, colors[info.category], info.title));
+        if (info && passesIpFilter(info, view.ipFilter)) badges.push(buildBadgeSpan(`[${info.label}]`, colors[info.category], info.title, "refresherUserData refresherIpInfo"));
     };
 
     for (const key of view.order) {
         if (key === "UID") appendIdentity();
 
         if (key === "MEMO") {
-            const memo = findMemo({uid, ip, nick}, gallery);
+            const memo = findMemo({uid, ip, nick}, pageGallery);
             if (memo) badges.push(buildBadgeSpan(`[${memo.text}]`, memo.color || undefined, memo.text));
         }
 
@@ -151,122 +140,159 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
     if (lowActivity && action === "tag") badges.push(buildBadgeSpan("[깡계]", colors.ratioAlarm, `글댓합 ${ctx.settings.alarmRatio}개 이하`));
     // 글 보기 머리는 가리지 않는다. 머리만 가리면 본문은 그대로 보인다 (배지 색으로만 알린다).
     if (lowActivity && (action === "blur" || action === "hide") && !element.closest(".gallview_head")) {
-        (element.closest<HTMLElement>(ROW_SELECTOR) ?? element).classList.add(LOW_ACTIVITY_CLASSES[action]);
+        (element.closest<HTMLElement>(WRITER_ROW_SELECTOR) ?? element).classList.add(LOW_ACTIVITY_CLASSES[action]);
         notifyRowsHidden();
     }
 
     if (badges.length > 0) {
         const group = Object.assign(document.createElement("span"), {className: BADGES_CLASS});
+        group.setAttribute(FILTER_SKIP_ATTR, "");
         group.append(...badges);
         insertBadges(element, group);
     }
 };
 
-/** 미리보기 작성자 표시가 같은 색·순서·표시 조건을 쓰도록 ui 스토어에 올린다. */
-const publishBadges = (ctx: Ctx): void => {
-    colors = colorsOf(ctx);
-    view = badgeViewOf(ctx);
-    gallery = queryString("id");
-    useUiStore.setState({
-        badgeColors: {
-            ...colors,
-            // 갱차 조회를 끄면 미리보기에서도 숨긴다.
-            permBan: ctx.settings.checkPermBan ? colors.permBan : undefined
-        },
-        badgeView: view
-    });
+/** 설정에서 배지 색·표시 조건을 만든다. 미리보기 작성자 표시(UserCard)는 같은 설정을 바로 읽어 같은 badgeViewOf로 만든다. */
+const readBadgeSettings = (ctx: Ctx, state: BadgeState): void => {
+    state.colors = colorsOf(ctx);
+    state.view = badgeViewOf(ctx.settings);
 };
 
 /** 미리보기도 같은 글댓비를 쓰도록 ui 스토어에 올린다. 지난 값은 미리보기·버블이 읽을 때 isFresh로 걸러 새로 조회한다. */
-const publishRatios = (ctx: Ctx): void => {
-    useUiStore.setState({ratios: ctx.settings.checkRatio ? {cache: ratios, alarm: ctx.settings.alarmRatio} : null});
+const publishRatios = (ctx: Ctx, {ratios}: BadgeState): void => {
+    useUiStore.setState({ratios: ctx.settings.checkRatio ? {cache: ratios, alarm: ctx.settings.alarmRatio, action: ctx.settings.lowActivityAction} : null});
 };
 
 // 숨김이 다시 붙으면 process가 알린다. 여기서는 뗀 것이 있을 때만 알려 차단 모듈이 같은 댓글 접기를 괜히 다시 하지 않게 한다.
-const rebuildAll = (ctx: Ctx): void => {
+const rebuildAll = (ctx: Ctx, state: BadgeState): void => {
     const cleared = clearLowActivity();
     // 배지가 없던 작성자도 돈다. 설정을 켜서 새로 생기는 배지가 있다 (필터 선택자와 같은 대상).
-    for (const element of document.querySelectorAll<HTMLElement>(WRITER_SELECTOR)) process(ctx, element);
+    for (const element of document.querySelectorAll<HTMLElement>(WRITER_SELECTOR)) process(ctx, state, element);
     if (cleared) notifyRowsHidden();
 };
 
 /** 몇몇 유저의 작성자 칸만 다시 그린다. 깡계 흐림·숨김은 process가 더하기만 하므로 먼저 뗀다. */
-const rebuildUsers = (ctx: Ctx, uids: string[]): void => {
+const rebuildUsers = (ctx: Ctx, state: BadgeState, uids: string[]): void => {
     // 작성자 칸을 한 번만 훑는다. 다른 탭이 글댓비를 쓸 때마다(새 글마다 최대 10명) 유저 수만큼 문서를 다시 찾지 않는다.
     const changed = new Set(uids);
     let cleared = false;
     for (const element of document.querySelectorAll<HTMLElement>(WRITER_SELECTOR)) {
         if (!changed.has(element.dataset.uid ?? "")) continue;
-        const row = element.closest<HTMLElement>(ROW_SELECTOR) ?? element;
+        const row = element.closest<HTMLElement>(WRITER_ROW_SELECTOR) ?? element;
         cleared ||= row.matches(LOW_ACTIVITY_SELECTOR);
         row.classList.remove(...LOW_ACTIVITY_CLASS_LIST);
-        process(ctx, element);
+        process(ctx, state, element);
     }
     if (cleared) notifyRowsHidden();
 };
 
-export default defineModule({
-    ...meta,
-
+export default defineModule(meta, {
     async setup(ctx) {
-        // await 전에 알린다. 뒤에 두면 기다리는 동안 모듈이 꺼졌을 때 revoke가 지운 값을 다시 쓴다.
-        publishBadges(ctx);
-        ctx.onSettingsChanged(() => {
-            publishBadges(ctx);
-            publishRatios(ctx);
-            rebuildAll(ctx);
+        // 배지 자리를 내는 페이지 스타일을 켠다 (page.css). 끄면 디시 작성자 칸이 원래대로 돌아간다.
+        document.documentElement.classList.add("refresherUserInfo");
+        ctx.onRevoke(() => {
+            document.documentElement.classList.remove("refresherUserInfo");
+            useUiStore.setState({ratios: null});
+            // 드러난 깡계 댓글도 같은 댓글 접기에 다시 세게 알린다.
+            if (clearLowActivity()) notifyRowsHidden();
+            for (const element of document.querySelectorAll(`.${BADGES_CLASS}`)) element.remove();
         });
 
-        // await 뒤마다 확인해, 그사이 모듈이 꺼졌으면 revoke가 지운 배지·글댓비를 다시 그리지 않는다.
+        const state: BadgeState = {colors: {}, view: DEFAULT_BADGE_VIEW, ratios: {}};
+        readBadgeSettings(ctx, state);
+        /** 글댓비를 받지 못한 유저 (임시 차단 포함). 디시가 막거나 실패하는 동안 새 목록마다 다시 묻지 않게 5분 동안 건너뛴다. */
+        const failedRatios = new QuickLRU<string, true>({maxSize: 500, maxAge: 5 * 60_000});
+        // IP 정보를 보이지 않고 갱차도 보지 않으면 수백 KB짜리 IP DB를 읽지 않는다. 유저 버블은 열 때 따로 읽는다 (subscribeDatabase).
+        // 갱차 목록은 banReasonsOf가 처음 불릴 때 읽지만, 갱신 감시는 initDatabase가 건다.
+        const needsDatabase = (): boolean => state.view.ipFilter !== "none" || ctx.settings.checkPermBan;
+        ctx.onSettingsChanged(() => {
+            readBadgeSettings(ctx, state);
+            publishRatios(ctx, state);
+            rebuildAll(ctx, state);
+            // 읽고 나면 번호가 올라 아래 onDatabaseChange가 다시 그린다.
+            if (needsDatabase()) void initDatabase().catch(console.error);
+        });
+
+        // await 뒤마다 확인해, 그사이 모듈이 꺼졌으면 onRevoke가 지운 배지·글댓비를 다시 그리지 않는다.
         const {signal} = ctx;
 
-        // 글댓비 캐시. 다른 탭의 쓰기도 watch로 받는다. moduleDataStorage 키라 백업·내보내기에서 빠진다.
-        // setup에서 만든다: defineItem은 만드는 순간 값을 읽으므로, 모듈 scope에 두면 features를 불러오는 모든 페이지·팝업·옵션이 이 캐시를 읽는다.
-        const ratioStorage = moduleDataStorage<RatioData>("userinfo", {});
+        // 글댓비 캐시. moduleDataStorage 키라 백업·내보내기에서 빠진다.
+        // 읽기·감시는 키로 하고 항목은 처음 저장할 때 만든다. defineItem은 만드는 순간 값을 읽어, 미리 만들면 같은 캐시를 두 번 읽는다.
+        const ratioKey = moduleDataKey("userinfo");
+        let ratioStorage: WxtStorageItem<RatioData, {}> | undefined;
 
         // 작성자 우클릭으로 유저 버블(메모·차단·갤로그)을 연다. 메모는 이 모듈의 기능이라 차단 모듈이 꺼져 있어도 열려야 한다.
         document.addEventListener("contextmenu", openWriterBubble, {capture: true, signal});
 
-        // IP/밴 DB는 모듈 설정을 읽은 뒤 여기서 처음 읽는다 (콘텐츠 스크립트도 부르지만 이 모듈이 꺼졌을 때를 위한 것이다).
-        // 읽기가 끝난 뒤 필터를 걸어야 첫 배지부터 IP 정보가 붙는다.
-        const [stored] = await Promise.all([ratioStorage.getValue(), initDatabase()]);
-        if (signal.aborted) return;
-        ratios = stored.ratio ?? {};
-        publishRatios(ctx);
         // 받았지만 아직 저장하지 않은 글댓비 (RATIO_SAVE_DELAY).
         let unsaved: Record<string, RatioInfo> = {};
-        // 저장소를 다시 읽지 않고 메모리의 값을 한 번에 쓴다 (batchedSave). ratios는 아래 감시가 다른 탭이 저장한 값과 합쳐 두었다.
-        // 쓰기가 끝난 뒤에 unsaved를 비워, 그사이 다른 탭의 저장이 와도 이 탭의 값이 남는다.
-        const saver = batchedSave(ctx, RATIO_SAVE_DELAY, async () => {
-            const batch = unsaved;
-            if (Object.keys(batch).length === 0) return;
-            await ratioStorage.setValue({ratio: ratios});
-            unsaved = Object.fromEntries(Object.entries(unsaved).filter(([uid, info]) => batch[uid] !== info));
-        });
-
-        // 다른 탭이 저장한 글댓비가 여기로 온다 (이 탭의 저장도 돌아온다). 열린 디시 탭마다 오므로, 값이 바뀐 유저의 칸만 다시 그린다.
-        watchStorage<RatioData>(moduleDataKey("userinfo"), (next) => {
-            const before = ratios;
-            ratios = trimRatios({...next?.ratio, ...unsaved});
+        // 저장소의 글댓비를 받아 합친다. 다른 탭의 저장(이 탭의 저장도 돌아온다)과 bfcache 복원이 여기로 온다.
+        // 열린 디시 탭마다 오므로, 값이 바뀐 유저의 칸만 다시 그린다.
+        const applyStored = (next: RatioData | null): void => {
+            const before = state.ratios;
+            const ratios = trimRatios({...next?.ratio, ...unsaved});
+            state.ratios = ratios;
             const changed = [...new Set([...Object.keys(before), ...Object.keys(ratios)])]
                 .filter((uid) => before[uid]?.date !== ratios[uid]?.date || before[uid]?.article !== ratios[uid]?.article || before[uid]?.comment !== ratios[uid]?.comment);
             if (changed.length === 0) return;
 
-            publishRatios(ctx);
-            rebuildUsers(ctx, changed);
+            publishRatios(ctx, state);
+            rebuildUsers(ctx, state, changed);
+        };
+
+        // 감시는 읽기 전에 건다. 읽는 사이 다른 탭이 저장한 값을 놓치면 아래 저장이 그 값을 지운다 (storageSync와 같다).
+        // 읽는 동안 온 값은 모아 두었다가 읽은 값 대신 쓴다.
+        let loading = true;
+        let early: RatioData | null | undefined;
+        watchStorage<RatioData>(ratioKey, (next) => {
+            if (loading) early = next;
+            else applyStored(next);
         }, signal);
+        // bfcache에 있는 동안 받은 저장은 감시로 오지 않는다. 돌아올 때 다시 읽는다.
+        onBfcacheRestore(async () => applyStored(await storage.getItem<RatioData>(ratioKey)), signal);
+
+        // IP/밴 DB는 모듈 설정을 읽은 뒤 여기서 처음 읽는다. 읽기가 끝난 뒤 필터를 걸어야 첫 배지부터 IP 정보가 붙는다.
+        const [stored] = await Promise.all([storage.getItem<RatioData>(ratioKey), needsDatabase() ? initDatabase() : null]);
+        if (signal.aborted) return;
+        loading = false;
+        state.ratios = (early === undefined ? stored : early)?.ratio ?? {};
+        publishRatios(ctx, state);
+        // 페이지를 떠날 때도 끝나도록 저장소 호출은 한 번이다. ratios에는 위 감시가 다른 탭의 저장을 이미 합쳐 두었다.
+        // unsaved는 쓰기가 끝난 뒤 비워야 그사이 온 다른 탭의 저장에도 이 탭의 값이 남는다. 쓰는 사이 받은 글댓비는 남기도록 batch에 든 것만 지운다.
+        const saver = batchedSave(ctx, RATIO_SAVE_DELAY, async () => {
+            const batch = {...unsaved};
+            if (Object.keys(batch).length === 0) return;
+            await (ratioStorage ??= moduleDataStorage<RatioData>("userinfo", {})).setValue({ratio: state.ratios});
+            unsaved = Object.fromEntries(Object.entries(unsaved).filter(([uid, info]) => batch[uid] !== info));
+        });
 
         ctx.addFilter(
             WRITER_SELECTOR,
-            (element) => process(ctx, element)
+            (element) => process(ctx, state, element)
         );
 
-        const unsubscribeMemos = useMemosStore.subscribe((state, previous) => {
-            if (state.memos !== previous.memos) rebuildAll(ctx);
-        });
+        ctx.addCleanup(useMemosStore.subscribe((current, previous) => {
+            if (current.memos !== previous.memos) rebuildAll(ctx, state);
+        }));
 
-        // IP DB가 갱신되거나 갱차 목록을 다 읽으면 다시 그린다. 갱차 목록은 banReasonsOf를 처음 부를 때 읽기 시작한다.
-        const unwatchDatabase = subscribeDatabase(() => rebuildAll(ctx));
+        // IP DB가 갱신되거나 갱차 목록을 다 읽으면 다시 그린다.
+        ctx.addCleanup(onDatabaseChange(() => rebuildAll(ctx, state)));
+
+        // 받은 글댓비를 이 탭에는 바로 그리고, 저장은 모아서 한다 (RATIO_SAVE_DELAY).
+        const storeRatios = (entries: (readonly [string, GallogActivity])[]): void => {
+            const now = Date.now();
+            const received = Object.fromEntries(entries.map(([uid, info]) => [uid, {...info, date: now}]));
+            Object.assign(unsaved, received);
+            state.ratios = trimRatios({...state.ratios, ...received});
+            publishRatios(ctx, state);
+            rebuildUsers(ctx, state, Object.keys(received));
+            saver.schedule();
+        };
+
+        // 미리보기·버블·새 글 조회가 갤로그에서 새로 받은 값을 모두 저장한다. 이미 받은 사람을 다시 묻지 않는다.
+        ctx.addCleanup(onGallogActivity((uid, activity) => {
+            if (ctx.settings.checkRatio) storeRatios([[uid, activity]]);
+        }));
 
         // 조회 중인 uid. 응답이 새로고침 주기보다 늦어도 다음 새로고침이 같은 요청을 또 보내지 않게 한다.
         const pending = new Set<string>();
@@ -276,7 +302,7 @@ export default defineModule({
             if (!ctx.settings.checkRatio) return;
 
             const stale = [...new Set(elements.slice(0, 10).flatMap((post) => post.querySelector<HTMLElement>(".ub-writer")?.dataset.uid || []))]
-                .filter((uid) => !isFresh(ratios[uid]) && !failedRatios.has(uid) && !pending.has(uid));
+                .filter((uid) => !isFresh(state.ratios[uid]) && !failedRatios.has(uid) && !pending.has(uid));
             if (stale.length === 0) return;
             for (const uid of stale) pending.add(uid);
 
@@ -286,43 +312,15 @@ export default defineModule({
                 for (const [uid, info] of results) {
                     if (!info) failedRatios.set(uid, true);
                 }
-                const fresh = results.filter((entry): entry is [string, GallogActivity] => Boolean(entry[1]));
-                if (fresh.length === 0) return;
-
-                if (signal.aborted) return;
-
-                // 이 탭에는 바로 그리고, 저장은 모아서 한다 (RATIO_SAVE_DELAY).
-                const now = Date.now();
-                const received = Object.fromEntries(fresh.map(([uid, info]) => [uid, {...info, date: now}]));
-                Object.assign(unsaved, received);
-                ratios = trimRatios({...ratios, ...received});
-                publishRatios(ctx);
-                rebuildUsers(ctx, Object.keys(received));
-                saver.schedule();
+                // 새로 받은 값은 위 onGallogActivity가 이미 넣었다. 남은 것은 이 모듈이나 글댓비 표시가 꺼져 있을 때 받아 갤로그 캐시에만 있던 값이다.
+                const fresh = results.filter((entry): entry is [string, GallogActivity] => Boolean(entry[1]) && !isFresh(state.ratios[entry[0]]));
+                if (fresh.length === 0 || signal.aborted) return;
+                storeRatios(fresh);
             }).catch(console.error).finally(() => {
                 for (const uid of stale) pending.delete(uid);
             });
         };
 
-        ctx.addCleanup(() => {
-            unsubscribeMemos();
-            unwatchDatabase();
-        });
-
         return {checkNewPosts};
-    },
-
-    revoke() {
-        useUiStore.setState({badgeColors: {}, badgeView: DEFAULT_BADGE_VIEW, ratios: null});
-        clearLowActivity();
-
-        // 파이어폭스 재주입으로 새 인스턴스가 setup될 때 옛 인스턴스의 값을 이어받지 않게 비운다.
-        colors = {};
-        view = DEFAULT_BADGE_VIEW;
-        gallery = null;
-        ratios = {};
-        failedRatios.clear();
-
-        for (const element of document.querySelectorAll(`.${BADGES_CLASS}`)) element.remove();
     }
 });

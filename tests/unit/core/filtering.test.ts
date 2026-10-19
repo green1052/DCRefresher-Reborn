@@ -1,6 +1,6 @@
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import {addFilter} from "@/core/filtering";
+import {addFilter, FILTER_SKIP_ATTR} from "@/core/filtering";
 
 import {tick} from "../../helpers";
 
@@ -62,10 +62,10 @@ describe("addFilter", () => {
         expect(ids(spy)).toEqual(["a"]);
     });
 
-    it("유저 정보 배지 묶음이 붙은 것은 보지 않는다", async () => {
+    it("건너뛰기 표시가 있는 장식이 붙은 것은 보지 않는다", async () => {
         document.body.innerHTML = "<div class='ub-writer' id='w'></div>";
         const spy = filter(".ub-writer");
-        document.querySelector("#w")!.append(html("<span class='refresher-user-badges'></span>"));
+        document.querySelector("#w")!.append(html(`<span ${FILTER_SKIP_ATTR}></span>`));
         await tick();
         expect(ids(spy)).toEqual(["w"]);
     });

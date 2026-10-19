@@ -7,7 +7,7 @@
 1. develop에서 `package.json`의 `version`을 올리고 `chore(release): X.Y.Z`로 커밋합니다.
 2. release 브랜치에 develop을 머지 커밋(`Merge X.Y.Z into release`)으로 합치고 push합니다.
 
-release 브랜치에 push하면 `.github/workflows/release.yml`이 `package.json` 버전에 태그가 있는지 봅니다. 없으면 CI(`ci.yml`)를 통과한 뒤 그 커밋에 `X.Y.Z` 태그를 달고 zip을 GitHub 릴리즈에 올리고 Chrome 웹 스토어와 Firefox Add-ons에 제출합니다. 태그가 이미 있으면(버전을 올리지 않은 push) 아무것도 하지 않습니다. 태그는 손으로 만들지 않습니다. 제출 단계는 실패해도 넘어가므로(`continue-on-error`) 결과는 그 단계의 로그에서 확인합니다.
+release 브랜치에 push하면 `.github/workflows/release.yml`이 `package.json` 버전에 태그가 있는지 봅니다. 없으면 CI(`ci.yml`)를 통과한 뒤 머지해 온 develop 쪽 커밋(머지 커밋의 두 번째 부모인 `chore(release)` 커밋, 머지 커밋이 아니면 push한 커밋)에 `X.Y.Z` 태그를 달고 zip을 GitHub 릴리즈에 올리고 Chrome 웹 스토어와 Firefox Add-ons에 제출합니다. release에만 있는 옛 기록이 릴리즈 노트에 들어가지 않도록 머지 커밋이 아니라 develop 쪽에 태그를 답니다. 태그가 이미 있으면(버전을 올리지 않은 push) 아무것도 하지 않습니다. 태그는 손으로 만들지 않습니다. 제출 도구는 한 스토어가 실패해도 다른 스토어는 끝까지 제출한 뒤 실패로 끝나므로, 실행이 실패하면 그 단계의 로그에서 실패한 스토어를 확인하고 그 스토어만 GitHub 릴리즈의 zip으로 다시 제출합니다.
 
 릴리즈는 IP·밴 DB를 만들지 않습니다([IP·밴 DB](#ip밴-db)).
 
@@ -19,6 +19,6 @@ release 브랜치에 push하면 `.github/workflows/release.yml`이 `package.json
 - `ip.json`은 확장이 저장하는 형식(`core/ipdb.ts`의 `CompactIpData`) 그대로입니다. `ban.json`과 `_headers`는 `data` 브랜치에서 손으로 관리하며, 워크플로가 가져와 다시 올립니다.
 - `data` 브랜치는 커밋 하나로 유지합니다. 빌드 사이 `data`가 바뀌었으면(ban.json 수정 등) 덮어쓰지 않고 실패합니다.
 - 6.0.3 이하는 `raw.githubusercontent.com`에서 받으므로 GitHub `data` 브랜치 게시는 유지합니다.
-- 확장은 `version` 파일이 저장된 버전과 다를 때만 `ip.json`·`ban.json`을 받습니다(`core/database.ts`의 `updateDatabase`). 받은 파일이 깨졌으면 저장하지 않고 갖고 있던 DB를 씁니다.
+- 확장은 `version` 파일이 저장된 버전과 같고 저장 형식(`IP_FORMAT`)도 같으면 `ip.json`·`ban.json`을 받지 않습니다(`core/database.ts`의 `updateDatabase`). 옵션의 "지금 갱신"은 버전이 같아도 다시 받습니다. 받은 파일이 깨졌으면 저장하지 않고 갖고 있던 DB를 씁니다.
 
 **IP DB 형식(`IP_FORMAT`)을 바꾸면** 옛 확장은 새 `ip.json`을, 새 확장은 옛 `ip.json`을 읽지 못합니다. 형식을 바꾼 버전을 릴리즈했으면 DB 워크플로를 바로 수동으로 돌립니다. 그러지 않으면 새 버전 사용자는 다음 예약 실행까지 IP 정보를 받지 못합니다. 두 스토어의 심사 시점이 달라 한동안 옛 버전과 새 버전이 섞이므로 형식은 꼭 필요할 때만 바꿉니다.

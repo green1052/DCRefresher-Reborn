@@ -1,4 +1,3 @@
-import {Puzzle} from "lucide-react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {fakeBrowser} from "wxt/testing/fake-browser";
 
@@ -95,6 +94,13 @@ describe("loadAll", () => {
         expect(setup).not.toHaveBeenCalled();
     });
 
+    it("on/off·설정을 못 읽으면 아무 모듈도 켜지 않는다", async () => {
+        vi.spyOn(fakeBrowser.storage.local, "get").mockRejectedValueOnce(new Error("invalidated"));
+        const setup = vi.fn();
+        await expect(load([testModule({id: "a", setup})])).rejects.toThrow("invalidated");
+        expect(setup).not.toHaveBeenCalled();
+    });
+
     it("읽는 사이 바뀐 설정을 놓치지 않는다", async () => {
         await setSettings("a", {size: 3});
         const get = fakeBrowser.storage.local.get.bind(fakeBrowser.storage.local);
@@ -159,6 +165,18 @@ describe("loadAll", () => {
         expect(revoke).toHaveBeenCalled();
         expect(other).toHaveBeenCalledTimes(1);
         expect(error).toHaveBeenCalled();
+        expect(registry.runningModulesStore.getState()).toEqual({broken: false, fine: true});
+    });
+
+    it("setup이 실패한 모듈을 페이지 상태에 알리고, 끄면 지운다", async () => {
+        vi.spyOn(console, "error").mockImplementation(() => {});
+
+        await load([testModule({id: "broken", setup: () => Promise.reject(new Error("boom"))}), testModule({id: "fine", setup: () => {}})]);
+        expect(registry.pageState().failed).toEqual(["broken"]);
+
+        await setEnables({broken: false});
+        await tick();
+        expect(registry.pageState().failed).toEqual([]);
     });
 
     it("setup이 실패한 모듈은 껐다 켤 때만 다시 setup한다", async () => {
@@ -182,6 +200,33 @@ describe("loadAll", () => {
         await setEnables({broken: true});
         await tick();
         expect(setup).toHaveBeenCalledTimes(2);
+    });
+
+    it("revoke가 던져도 남기기만 하고, 같은 변경의 다른 모듈과 setup 실패 표시는 그대로 반영한다", async () => {
+        const log = vi.spyOn(console, "error").mockImplementation(() => {});
+        const error = new Error("revoke");
+        const revoke = () => {
+            throw error;
+        };
+        const broken = vi.fn(() => {
+            throw new Error("boom");
+        });
+        const later = vi.fn();
+
+        await load([
+            testModule({id: "broken", revoke, setup: broken}),
+            testModule({id: "a", revoke, setup: () => {}}),
+            testModule({id: "b", defaultEnable: false, setup: later})
+        ]);
+        expect(log).toHaveBeenCalledWith("Module revoke failed: broken", error);
+
+        // a의 revoke가 던져도 뒤의 b를 켜고, 실패한 broken은 다시 setup하지 않는다.
+        await setEnables({a: false, b: true});
+        await tick();
+        expect(log).toHaveBeenCalledWith("Module revoke failed: a", error);
+        expect(later).toHaveBeenCalledOnce();
+        expect(broken).toHaveBeenCalledOnce();
+        expect(registry.runningModulesStore.getState()).toMatchObject({broken: false, a: false, b: true});
     });
 });
 
@@ -269,6 +314,34 @@ describe("설정 변경", () => {
 });
 
 describe("켜기·끄기", () => {
+    it("끄자마자 다시 켜면 앞 setup이 끝난 뒤에 새 setup을 시작한다", async () => {
+        const {promise: blocker, resolve: release} = Promise.withResolvers<void>();
+        const log: string[] = [];
+        let runs = 0;
+        await load([testModule({
+            id: "a", setup: async () => {
+                const run = ++runs;
+                log.push(`start ${run}`);
+                if (run === 2) await blocker;
+                log.push(`end ${run}`);
+            }
+        })]);
+        await setEnables({a: false});
+        await setEnables({a: true});
+        await tick();
+        expect(log).toEqual(["start 1", "end 1", "start 2"]);
+
+        // 두 번째 setup이 await 중일 때 껐다 켠다.
+        await setEnables({a: false});
+        await setEnables({a: true});
+        await tick();
+        expect(log).toEqual(["start 1", "end 1", "start 2"]);
+
+        release();
+        await tick();
+        expect(log).toEqual(["start 1", "end 1", "start 2", "end 2", "start 3", "end 3"]);
+    });
+
     it("끄면 정리하고 revoke하며, 다시 켜면 새로 setup한다", async () => {
         const cleanup = vi.fn();
         const revoke = vi.fn();
@@ -283,6 +356,7 @@ describe("켜기·끄기", () => {
             }
         })]);
         expect(registry.getModuleApi("preview")).toBe("api");
+        expect(registry.runningModuleSettings("preview")).toEqual({size: 5});
 
         await setEnables({preview: false});
         expect(signals[0]?.aborted).toBe(true);
@@ -290,15 +364,52 @@ describe("켜기·끄기", () => {
         expect(revoke).toHaveBeenCalledTimes(1);
         expect(registry.getModuleApi("preview")).toBeUndefined();
 
-        // 멈춘 실행의 설정 리스너는 부르지 않는다.
+        // 멈춘 실행의 설정 리스너는 부르지 않는다. 설정은 반영하지만 돌 때만 따르는 UI에는 주지 않는다.
         await setSettings("preview", {size: 2});
         expect(listener).not.toHaveBeenCalled();
+        expect(registry.moduleSettings("preview")).toEqual({size: 2});
+        expect(registry.runningModuleSettings("preview")).toBeUndefined();
 
         await setEnables({preview: true});
         await tick();
         expect(signals).toHaveLength(2);
         expect(signals[1]?.aborted).toBe(false);
         expect(registry.getModuleApi("preview")).toBe("api");
+        expect(registry.runningModuleSettings("preview")).toEqual({size: 2});
+    });
+
+    it("setup이 기다리는 사이 꺼진 뒤 등록한 onRevoke는 바로 부르고, 무효화(stopAll) 뒤에는 부르지 않는다", async () => {
+        // 처음 setup은 바로 끝나고, 다시 켠 setup은 gate가 풀린 뒤에 onRevoke를 등록한다.
+        const lateModule = (id: string) => {
+            const gate = Promise.withResolvers<void>();
+            const revoke = vi.fn();
+            let starts = 0;
+            const module = testModule({id, setup: async (ctx) => {
+                if (starts++ > 0) await gate.promise;
+                ctx.onRevoke(revoke);
+            }});
+            return {module, revoke, open: gate.resolve};
+        };
+        const disabled = lateModule("a");
+        const invalidated = lateModule("b");
+        await load([disabled.module, invalidated.module]);
+        await setEnables({a: false, b: false});
+        await tick();
+        expect(disabled.revoke).toHaveBeenCalledTimes(1);
+        expect(invalidated.revoke).toHaveBeenCalledTimes(1);
+
+        await setEnables({a: true, b: true});
+        await tick();
+        await setEnables({a: false, b: true});
+        await tick();
+        disabled.open();
+        await tick();
+        expect(disabled.revoke).toHaveBeenCalledTimes(2);
+
+        registry.stopAll();
+        invalidated.open();
+        await tick();
+        expect(invalidated.revoke).toHaveBeenCalledTimes(1);
     });
 
     it("setup이 끝나기 전에는 api가 없다", async () => {
@@ -393,10 +504,10 @@ describe("단축키·페이지 토글", () => {
         id,
         defaultEnable,
         setup: () => ({count: 2, on: true}),
-        shortcuts: {jump: (ctx, api) => toggled(id, ctx.signal.aborted, api)},
+        shortcuts: {jump: (api) => toggled(id, api)},
         pageToggles: [
-            {id: "fixed", label: "고정", icon: Puzzle, desc: "설명", isOn: (api) => api.on, toggle: (api) => toggled(id, api)},
-            {id: "count", label: "개수", icon: Puzzle, desc: (api) => `${api.count}개`, isOn: () => false, toggle: () => {}}
+            {id: "fixed", desc: "설명", isOn: (api) => api.on, toggle: (api) => toggled(id, api)},
+            {id: "count", desc: (api) => `${api.count}개`, isOn: () => false, toggle: () => {}}
         ]
     });
 
@@ -407,15 +518,15 @@ describe("단축키·페이지 토글", () => {
         registry.runShortcut("none");
 
         expect(toggled).toHaveBeenCalledTimes(1);
-        expect(toggled).toHaveBeenCalledWith("on", false, {count: 2, on: true});
+        expect(toggled).toHaveBeenCalledWith("on", {count: 2, on: true});
     });
 
     it("토글 상태는 돌고 있는 모듈 것만, desc 함수는 계산한다", async () => {
         await load([withToggles("on"), withToggles("off", false)]);
 
         expect(registry.pageToggleStates()).toEqual([
-            {module: "on", id: "fixed", label: "고정", desc: "설명", on: true},
-            {module: "on", id: "count", label: "개수", desc: "2개", on: false}
+            {module: "on", id: "fixed", desc: "설명", on: true},
+            {module: "on", id: "count", desc: "2개", on: false}
         ]);
     });
 
@@ -430,7 +541,7 @@ describe("단축키·페이지 토글", () => {
         expect(toggled).toHaveBeenCalledWith("on", {count: 2, on: true});
     });
 
-    it("settledPageToggleStates는 저장소를 다시 읽고 켜지는 모듈을 기다린다", async () => {
+    it("settledPageState는 저장소를 다시 읽고 켜지는 모듈을 기다린다", async () => {
         const gate = Promise.withResolvers<void>();
         await load([testModule({
             id: "late", defaultEnable: false,
@@ -438,17 +549,36 @@ describe("단축키·페이지 토글", () => {
                 await gate.promise;
                 return true;
             },
-            pageToggles: [{id: "t", label: "", icon: Puzzle, desc: "", isOn: (api) => api, toggle: () => {}}]
+            pageToggles: [{id: "t", desc: "", isOn: (api) => api, toggle: () => {}}]
         })]);
         // 감시 알림이 아직 오지 않은 상태다.
         muteWatchers();
         await setEnables({late: true});
 
-        const states = registry.settledPageToggleStates();
+        const state = registry.settledPageState();
         await tick();
         gate.resolve();
 
-        expect(await states).toEqual([{module: "late", id: "t", label: "", desc: "", on: true}]);
+        expect(await state).toEqual({toggles: [{module: "late", id: "t", desc: "", on: true}], failed: []});
+    });
+
+    it("불러오는 중에 물으면 모듈이 다 뜬 뒤에 답한다", async () => {
+        const gate = Promise.withResolvers<void>();
+        const loaded = load([testModule({
+            id: "slow",
+            setup: async () => {
+                await gate.promise;
+                return true;
+            },
+            pageToggles: [{id: "t", desc: "", isOn: (api) => api, toggle: () => {}}]
+        })]);
+
+        const state = registry.settledPageState();
+        await tick();
+        gate.resolve();
+
+        expect(await state).toEqual({toggles: [{module: "slow", id: "t", desc: "", on: true}], failed: []});
+        await loaded;
     });
 
     it("컨텍스트가 끝난 뒤에는 다시 읽지 않는다", async () => {
@@ -457,7 +587,7 @@ describe("단축키·페이지 토글", () => {
         controller.abort();
         const get = vi.spyOn(fakeBrowser.storage.local, "get");
 
-        await registry.settledPageToggleStates();
+        await registry.settledPageState();
 
         expect(get).not.toHaveBeenCalled();
     });

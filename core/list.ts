@@ -1,5 +1,5 @@
 // 디시 글 목록 DOM 도우미. 목록을 갈아끼우거나 이어 붙이는 refresh·search 모듈과 행을 찾는 모듈이 같이 쓴다.
-import {sendMessage} from "@/core/messaging/protocol";
+import {LIST_REPLACED_EVENT, sendMessage} from "@/core/messaging/protocol";
 
 /** 갈아끼울 글 목록 tbody. 검색 페이지 아래쪽 통합검색 목록(#kakao_seach_list)은 id가 있어 :not([id])로 빠진다. */
 export const LIST_SELECTOR = ".gall_list:not([id]) tbody";
@@ -9,14 +9,40 @@ export const PAGING_SELECTOR = ".left_content article:has(.gall_listwrap) .botto
  * 작성자 칸(.ub-writer)이 든 행. 글 목록 행·글 보기 머리·댓글은 .ub-content이고,
  * 댓글 검색 결과의 댓글 행은 ub-content가 아니라 .search_comment다.
  */
-export const ROW_SELECTOR = ".ub-content, .search_comment";
+export const WRITER_ROW_SELECTOR = ".ub-content, .search_comment";
+
+/** 글 목록의 글 행. 글 보기 머리·댓글과 댓글 검색 결과의 댓글 행(.search_comment)은 들지 않는다. */
+export const LIST_ROW_SELECTOR = ".gall_list .ub-content";
+
+// 숨은 탭에서 미뤄 둔 알림이 있는지. 다시 보일 때 한 번만 보낸다.
+let deferred = false;
+
+// 페이지에 건 목록 다리. 페이지마다 한 번만 배경에 요청하고, 실패하면 다음에 다시 요청한다.
+let bridge: Promise<void> | undefined;
+
+const installBridge = (): Promise<void> => bridge ??= sendMessage("refresher:installListBridge").catch((e: unknown) => {
+    bridge = undefined;
+    throw e;
+});
 
 /**
- * 목록 행을 갈아끼우거나 붙인 뒤 부른다. 디시는 자체 차단·이용자 메모 표시를 로드 때만 걸므로, 배경이 페이지(MAIN world)에서 다시 건다
- * (콘텐츠 스크립트에선 디시 함수를 부를 수 없다). 실패해도(확장이 멈춤 등) 목록은 그대로라 넘긴다.
+ * 목록 행을 갈아끼우거나 붙인 뒤 부른다. 디시는 자체 차단·이용자 메모 표시를 로드 때만 걸므로, 배경이 페이지(MAIN world)에 건 다리가 다시 건다
+ * (콘텐츠 스크립트에선 디시 함수를 부를 수 없다). 다리를 건 뒤로는 이벤트만 보내 배경을 깨우지 않는다.
+ * 실패해도(확장이 멈춤 등) 목록은 그대로라 넘긴다.
  */
 export const notifyListReplaced = (gallery: string): void => {
-    void sendMessage("refresher:listReplaced", gallery).catch(() => {});
+    // 숨은 탭은 다시 보일 때 한 번만 알린다. 숨은 탭 새로고침 주기(30초~)는 서비스 워커가 잠드는 30초보다 길어
+    // 바뀔 때마다 보내면 잠든 워커를 매번 다시 띄운다. 숨은 동안엔 차단·메모 표시가 늦게 붙어도 보는 사람이 없다.
+    if (document.hidden) {
+        if (deferred) return;
+        deferred = true;
+        document.addEventListener("visibilitychange", () => {
+            deferred = false;
+            notifyListReplaced(gallery);
+        }, {once: true});
+        return;
+    }
+    void installBridge().then(() => document.dispatchEvent(new CustomEvent(LIST_REPLACED_EVENT, {detail: gallery})), () => {});
 };
 
 /**
@@ -64,9 +90,12 @@ export const checkboxFiller = (list: HTMLElement, commentSearch: boolean): ((row
     };
 };
 
-/** 제목 링크 안의 검색어를 span.mark로 감싼다. 텍스트 노드만 바꿔 링크 안의 다른 요소는 건드리지 않는다. */
-export const highlightSearchResults = (newList: HTMLElement, searchValue: string): void => {
-    if (!searchValue) return;
+/**
+ * 제목 링크 안의 검색어를 span.mark로 감싼다. 텍스트 노드만 바꿔 링크 안의 다른 요소는 건드리지 않는다.
+ * 댓글 검색은 제목이 아니라 댓글에서 찾은 결과라 DC처럼 표시하지 않는다.
+ */
+export const highlightSearchResults = (newList: HTMLElement, searchValue: string, commentSearch: boolean): void => {
+    if (!searchValue || commentSearch) return;
 
     for (const gallTit of newList.querySelectorAll<HTMLElement>(".gall_tit")) {
         const anchor = gallTit.querySelector<HTMLElement>("a:first-child");

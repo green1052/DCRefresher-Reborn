@@ -1,61 +1,65 @@
-import {isTimeoutError} from "ky";
 import {Send, Smile, Type, X} from "lucide-react";
-import {useLayoutEffect, useRef, useState} from "react";
+import QuickLRU from "quick-lru";
+import {useEffect, useLayoutEffect, useRef, useState} from "react";
 
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Spinner} from "@/components/ui/spinner";
 import {Textarea} from "@/components/ui/textarea";
-import {WithTooltip} from "@/components/WithTooltip";
+import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
+import {TooltipButton, WithTooltip} from "@/components/WithTooltip";
 import {captchaImage, normalizeTxtcon, TXTCON_BACKGROUNDS, TXTCON_COLORS} from "@/core/preview/request";
-import {postKey, setEntry} from "@/core/preview/cache";
+import {postKey} from "@/core/preview/cache";
 import type {DcinsideDccon} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
+import {isTimeoutError} from "@/utils/error";
 import {loggedInUserId} from "@/utils/user";
 
 import {postComment} from "../comment-submit";
 import {saveNonmember, savedNonmember} from "../nonmember";
 import {DcconPopup} from "./DcconPopup";
-import {NO_REPLY, usePreviewStore} from "./previewStore";
+import {NO_REPLY, refreshCommentsOf, usePreviewStore} from "./previewStore";
 
 /** 비회원 댓글 비밀번호 (영문 소문자·숫자 8자). */
 const randomPassword = (): string => Array.from(crypto.getRandomValues(new Uint8Array(8)), (byte) => (byte % 36).toString(36)).join("");
 
-/** 글자콘 색 스와치. */
-const Swatch = ({color, selected, label, onClick}: {
-    color: string;
-    selected: boolean;
-    label: string;
-    onClick: () => void
-}) => (
-    // 고른 색은 한 칸 띄운 링으로 보인다. outline은 비워 두어야 키보드 포커스 링이 보인다.
-    <button
-        type="button"
+/** 글자콘 색 스와치. ToggleGroup 안에 둔다. */
+const Swatch = ({color, label}: { color: string; label: string }) => (
+    // 고른 색은 한 칸 띄운 테두리(outline)로 보인다. 키보드 포커스 링(box-shadow)은 그 틈을 채워 고른 색에 포커스가 있어도 구분된다.
+    <ToggleGroupItem
+        value={color}
         aria-label={label}
-        aria-pressed={selected}
-        onClick={onClick}
-        className="size-[18px] cursor-pointer rounded-full border border-foreground/25 aria-pressed:ring-2 aria-pressed:ring-primary aria-pressed:ring-offset-1 aria-pressed:ring-offset-background"
+        className="size-[18px] min-w-0 cursor-pointer rounded-full border border-foreground/25 p-0 aria-pressed:outline-2 aria-pressed:outline-offset-2 aria-pressed:outline-solid aria-pressed:outline-primary"
         style={{background: `#${color}`}}
     />
 );
 
 const NO_DCCON: { list: DcinsideDccon[]; big: boolean } = {list: [], big: false};
 
-/** 쓰던 댓글 하나를 모듈 전역에 둔다. 창을 닫았다 같은 글을 다시 열면 되살리고, 다른 글을 열면 버린다. */
-let draft = {key: "", text: ""};
+/**
+ * 쓰던 댓글을 글마다 모듈 전역에 둔다. 다른 글에 갔다 오거나 창을 닫았다 다시 열면 되살린다. 페이지가 살아 있는 동안만 기억한다.
+ * quick-lru는 두 세대로 나눠 두어 maxSize의 두 배 가까이 남긴다.
+ */
+const drafts = new QuickLRU<string, string>({maxSize: 10});
 /** 댓글을 보내는 중인 글. 보내는 사이 폼이 다시 마운트돼도(다른 글에 갔다 돌아옴) 같은 댓글을 또 보내지 않게 모듈 전역에 둔다. */
 const sendingKeys = new Set<string>();
 
 export const WriteComment = () => {
     const reply = usePreviewStore((s) => s.reply);
+    // 입력칸 위에 보일 답글 대상의 이름 (Comment의 UserCard가 보여 주는 닉네임).
+    const replyName = usePreviewStore((s) => s.comments?.find((comment) => comment.no === s.reply.replyNo)?.name);
     // 폼은 글마다 새로 마운트된다 (Frame의 key). 마운트할 때 이 글에서 쓰던 댓글이 있으면 되살린다.
     // 보내는 중인 댓글은 되살리지 않는다. 올라간 댓글이 입력칸에 남아 한 번 더 보내게 된다.
-    const [initialText] = useState(() => {
+    const [draftKey] = useState(() => {
         const preData = usePreviewStore.getState().preData;
-        const key = preData ? postKey(preData) : "";
-        if (draft.key !== key) draft = {key, text: ""};
-        return sendingKeys.has(key) ? "" : draft.text;
+        return preData ? postKey(preData) : "";
     });
+    const [initialText] = useState(() => (sendingKeys.has(draftKey) ? "" : (drafts.get(draftKey) ?? "")));
+    // 입력칸을 바꾸는 곳마다 이 글의 초안으로 적어 둔다. 비우면 지워 자리를 차지하지 않게 한다.
+    const saveDraft = (text: string): void => {
+        if (text) drafts.set(draftKey, text);
+        else drafts.delete(draftKey);
+    };
     const [login] = useState(() => Boolean(document.querySelector("#login_box .user_info .nickname > em")));
     const [accountId] = useState(loggedInUserId);
     const [saved] = useState(savedNonmember);
@@ -64,7 +68,6 @@ export const WriteComment = () => {
     const [password, setPassword] = useState(() => saved.pw || randomPassword());
     const pwSaved = Boolean(saved.pw);
     // 저장된 비밀번호는 입력칸에 넣지 않는다. 오버레이 섀도 루트가 open이라 페이지 스크립트가 값을 읽을 수 있다.
-    // 사용자가 직접 고친 뒤에만 입력칸에 값이 보인다.
     const [passwordEdited, setPasswordEdited] = useState(false);
     // 고른 디시콘(더블콘이면 둘)과 대왕콘 여부. 같이 고르고 같이 비운다.
     const [{list: dccons, big: bigDccon}, setDccon] = useState(NO_DCCON);
@@ -95,6 +98,11 @@ export const WriteComment = () => {
     const textarea = useRef<HTMLTextAreaElement>(null);
     const beforeTxtcon = useRef<string | null>(null);
 
+    // 답글 버튼을 누르면 입력칸으로 데려간다. 포커스가 입력칸을 화면 안으로 스크롤한다.
+    useEffect(() => {
+        if (reply.replyNo) textarea.current?.focus();
+    }, [reply.replyNo]);
+
     const submit = async (): Promise<void> => {
         const st = usePreviewStore.getState();
         const raw = textarea.current?.value ?? "";
@@ -115,69 +123,56 @@ export const WriteComment = () => {
             return;
         }
 
-        // 댓글 목록은 이 글이 열려 있으면 새로 받는다. 보내는 사이 다른 글에 갔다 돌아왔으면 새 창의 목록은 댓글이 올라가기 전에 받은 것이다.
-        // 다른 글에 가 있으면 캐시의 목록을 낡은 것으로 표시해 둔다. 두면 10초 안에 돌아올 때 방금 받은 목록으로 쳐서(COMMENTS_REUSE) 다시 받지 않아,
-        // 올라간 댓글이 안 보여 한 번 더 보내게 된다.
-        const refreshIfOpen = (): void => {
-            setEntry(preData, {commentsAt: 0});
-            const current = usePreviewStore.getState();
-            if (current.preData && postKey(current.preData) === key) void current.requestRefresh();
-        };
-
         setSending(true);
         sendingKeys.add(key);
-        const signal = st.signalId;
-        // 안쪽 함수에서도 null이 아닌 값으로 쓰도록 미리 꺼내 둔다.
-        const {preData, post} = st;
-        // 보내기는 안쪽 함수에 두고 끝나면(성공·실패·캡차 취소 모두) 정리한다. try…finally는 React Compiler가 아직 다루지 못해 컴포넌트 전체가 컴파일되지 않는다.
-        const submit = async (): Promise<void> => {
-            try {
-                let code: string | undefined;
-                if (post.requireCommentCaptcha) {
-                    code = await st.openCaptcha(captchaImage(preData, "comment"));
-                    if (!code) return;
-                }
-
-                const user = {name: login ? "" : nick, pw: login ? undefined : password};
-                const outcome = await postComment(preData, post, user, {text, dccons, bigDccon, txtcon: txtcon ? txtconColors : undefined}, st.reply, code);
-
-                if (outcome.ok) {
-                    // 보내는 사이 더 쓴 글은 남긴다. 디시콘만 보냈으면 입력칸의 글은 보내지 않았으니 둔다.
-                    if (!useDccon) {
-                        if (textarea.current?.value === raw) textarea.current.value = "";
-                        if (draft.text === raw) draft.text = "";
-                    }
-                    setDccon(NO_DCCON);
-                    setTxtcon(false);
-                    // 디시처럼 쓴 닉네임·비밀번호를 기억한다. 만든 비밀번호도 저장해야 나중에 자기 댓글을 지울 수 있다.
-                    if (!login) saveNonmember(nick, password);
-                    // 그새 다른 글로 넘어갔으면 답글 대상은 그 글 것이라 건드리지 않는다.
-                    if (usePreviewStore.getState().signalId === signal) usePreviewStore.setState({reply: NO_REPLY});
-                    refreshIfOpen();
-                } else if (outcome.captcha) {
-                    useUiStore.getState().showToast(
-                        "자동입력 방지 확인이 필요합니다. 원문에서 작성해 주세요.",
-                        "warning",
-                        8000,
-                        {label: "원문 열기", run: () => window.open(preData.link, "_blank", "noopener")}
-                    );
-                } else {
-                    useUiStore.getState().showToast(outcome.message, "error");
-                }
-            } catch (e) {
-                // 시간 초과 등으로 끊겨도 서버는 댓글을 올렸을 수 있다. 목록을 새로 받아 올라간 댓글이 보이게 해 다시 보내지 않게 한다. 입력한 글은 둔다.
-                refreshIfOpen();
-                const timeout = isTimeoutError(e);
-                useUiStore.getState().showToast(
-                    timeout ? "응답이 없어 작성 여부를 확인하지 못했습니다. 댓글 목록을 확인해 주세요." : "댓글을 작성하지 못했습니다. 잠시 후 다시 시도해 주세요.",
-                    "error"
-                );
+        const {preData, post, reply: sentReply} = st;
+        try {
+            let code: string | undefined;
+            if (post.requireCommentCaptcha) {
+                code = await st.openCaptcha(captchaImage(preData, "comment"));
+                if (!code) return;
             }
-        };
 
-        await submit();
-        sendingKeys.delete(key);
-        setSending(false);
+            const user = {name: login ? "" : nick, pw: login ? undefined : password};
+            const outcome = await postComment(preData, post, user, {text, dccons, bigDccon, txtcon: txtcon ? txtconColors : undefined}, sentReply, code);
+
+            if (outcome.ok) {
+                // 보내는 사이 더 쓴 글은 남긴다. 디시콘만 보냈으면 입력칸의 글은 보내지 않았으니 둔다.
+                if (!useDccon) {
+                    if (textarea.current?.value === raw) textarea.current.value = "";
+                    if (drafts.get(key) === raw) drafts.delete(key);
+                }
+                // 보내는 사이 새로 고른 디시콘·켠 글자콘·답글 대상은 다음 댓글 것이라 보낸 것만 비운다.
+                setDccon((current) => (current.list === dccons ? NO_DCCON : current));
+                if (txtcon) setTxtcon(false);
+                // 디시처럼 쓴 닉네임·비밀번호를 기억한다. 만든 비밀번호도 저장해야 나중에 자기 댓글을 지울 수 있다.
+                if (!login) saveNonmember(nick, password);
+                // 답글 버튼은 누를 때마다 새 대상을 넣으므로, 그새 다른 글로 넘어갔거나 다른 댓글을 골랐으면 같지 않다.
+                usePreviewStore.setState((current) => (current.reply === sentReply ? {reply: NO_REPLY} : {}));
+                refreshCommentsOf(preData);
+            } else if (outcome.captcha) {
+                useUiStore.getState().showToast(
+                    "자동입력 방지 확인이 필요합니다. 원문에서 작성해 주세요.",
+                    "warning",
+                    8000,
+                    {label: "원문 열기", run: () => window.open(preData.link, "_blank", "noopener")}
+                );
+            } else {
+                useUiStore.getState().showToast(outcome.message, "error");
+            }
+        } catch (e) {
+            console.error("Comment submit failed:", e);
+            // 시간 초과 등으로 끊겨도 서버는 댓글을 올렸을 수 있다. 목록을 새로 받아 올라간 댓글이 보이게 해 다시 보내지 않게 한다. 입력한 글은 둔다.
+            refreshCommentsOf(preData);
+            const timeout = isTimeoutError(e);
+            useUiStore.getState().showToast(
+                timeout ? "응답이 없어 작성됐는지 알 수 없습니다. 댓글 목록을 확인해 주세요." : "댓글을 작성하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+                "error"
+            );
+        } finally {
+            sendingKeys.delete(key);
+            setSending(false);
+        }
     };
 
     /**
@@ -190,7 +185,7 @@ export const WriteComment = () => {
 
         const next = normalizeTxtcon(element.value);
         if (next !== element.value) element.value = next;
-        draft.text = element.value;
+        saveDraft(element.value);
     };
 
     /** 글자콘을 끈다. 켤 때 잘린 글을 그대로 두었으면 원문으로 되돌린다. 토글 버튼과 디시콘 선택이 같이 쓴다. */
@@ -198,7 +193,7 @@ export const WriteComment = () => {
         const element = textarea.current;
         if (element && beforeTxtcon.current !== null && element.value === normalizeTxtcon(beforeTxtcon.current)) {
             element.value = beforeTxtcon.current;
-            draft.text = element.value;
+            saveDraft(element.value);
         }
         beforeTxtcon.current = null;
         setTxtcon(false);
@@ -232,6 +227,18 @@ export const WriteComment = () => {
                 </div>
             )}
 
+            {reply.replyNo && (
+                <div className="mb-1 flex items-center gap-1 text-xs text-muted-foreground">
+                    <span className="truncate">{replyName}에게 답글</span>
+                    <TooltipButton tip="답글 취소" variant="ghost" size="icon-xs" onClick={() => {
+                        usePreviewStore.setState({reply: NO_REPLY});
+                        textarea.current?.focus();
+                    }}>
+                        <X/>
+                    </TooltipButton>
+                </div>
+            )}
+
             <div className="flex items-end gap-2">
                 <Textarea
                     ref={textarea}
@@ -241,17 +248,17 @@ export const WriteComment = () => {
                     aria-label={`${mode} 입력`}
                     placeholder={
                         dccons.length > 0 ? "디시콘이 선택되었습니다."
-                            : txtcon ? "글자콘 입력... (최대 20자, 4줄, 줄당 5자로 나뉨)"
+                            : txtcon ? "글자콘 입력... (최대 20자, 4줄, 줄당 5자로 나뉨, Shift+Enter 줄바꿈)"
                                 : "댓글 입력... (Shift+Enter 줄바꿈)"
                     }
                     className="min-h-16 flex-1 resize-y"
                     onChange={(ev) => {
                         if (txtcon && !(ev.nativeEvent instanceof InputEvent && ev.nativeEvent.isComposing)) applyTxtcon();
-                        draft.text = ev.target.value;
+                        saveDraft(ev.target.value);
                     }}
                     onCompositionEnd={(ev) => {
                         if (txtcon) applyTxtcon();
-                        draft.text = ev.currentTarget.value;
+                        saveDraft(ev.currentTarget.value);
                     }}
                     onKeyDown={(ev) => {
                         if (ev.key === "Enter" && !ev.shiftKey && !ev.nativeEvent.isComposing) {
@@ -262,11 +269,10 @@ export const WriteComment = () => {
                 />
                 <div className="flex flex-col gap-2">
                     <div className="flex gap-2">
-                        <WithTooltip tip={dccons.length > 0 ? "디시콘 취소" : "디시콘"}
-                                     trigger={<Button variant="secondary" size="icon" aria-label={dccons.length > 0 ? "디시콘 취소" : "디시콘"}
-                                                      onClick={() => (dccons.length > 0 ? setDccon(NO_DCCON) : setDcconOpen(true))}/>}>
+                        <TooltipButton tip={dccons.length > 0 ? "디시콘 취소" : "디시콘"} variant="secondary" size="icon"
+                                       onClick={() => (dccons.length > 0 ? setDccon(NO_DCCON) : setDcconOpen(true))}>
                             {dccons.length > 0 ? <X/> : <Smile/>}
-                        </WithTooltip>
+                        </TooltipButton>
                         <WithTooltip tip={txtcon ? "글자콘 취소" : "글자콘"}
                                      trigger={<Button variant={txtcon ? "default" : "secondary"} size="icon" aria-label="글자콘" aria-pressed={txtcon}
                                                       onClick={() => {
@@ -287,34 +293,31 @@ export const WriteComment = () => {
                         </WithTooltip>
                     </div>
                     <Button aria-label="작성" className="w-full" disabled={sending} onClick={() => void submit()}>
-                        {sending ? <Spinner/> : <Send/>}
+                        {sending ? <Spinner aria-hidden/> : <Send/>}
                     </Button>
                 </div>
             </div>
 
             {txtcon && (
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span className="text-xs text-muted-foreground">배경</span>
-                    {TXTCON_BACKGROUNDS.map((bg) => (
-                        <Swatch key={bg} color={bg} label={`배경색 #${bg}`} selected={txtconColors.bg === bg}
-                                onClick={() => setTxtconColors((prev) => ({...prev, bg}))}/>
-                    ))}
-                    <span className="ml-2 text-xs text-muted-foreground">글자</span>
-                    {TXTCON_COLORS.map((txt) => (
-                        <Swatch key={txt} color={txt} label={`글자색 #${txt}`} selected={txtconColors.txt === txt}
-                                onClick={() => setTxtconColors((prev) => ({...prev, txt}))}/>
-                    ))}
+                    <span className="text-xs text-muted-foreground" aria-hidden>배경</span>
+                    {/* 다시 눌러 빈 값이 오면 고른 색을 그대로 둔다. */}
+                    <ToggleGroup aria-label="배경색" value={[txtconColors.bg]} onValueChange={([bg]) => bg && setTxtconColors((prev) => ({...prev, bg}))}>
+                        {TXTCON_BACKGROUNDS.map((bg) => <Swatch key={bg} color={bg} label={`배경색 #${bg}`}/>)}
+                    </ToggleGroup>
+                    <span className="ml-2 text-xs text-muted-foreground" aria-hidden>글자</span>
+                    <ToggleGroup aria-label="글자색" value={[txtconColors.txt]} onValueChange={([txt]) => txt && setTxtconColors((prev) => ({...prev, txt}))}>
+                        {TXTCON_COLORS.map((txt) => <Swatch key={txt} color={txt} label={`글자색 #${txt}`}/>)}
+                    </ToggleGroup>
                 </div>
             )}
 
             <p className="mt-2 text-xs text-muted-foreground">
                 {login ? (accountId ?? "회원 계정") : (
-                    <a href="#" className="text-link underline-offset-4 hover:underline" aria-expanded={showInputs} onClick={(ev) => {
-                        ev.preventDefault();
-                        toggleInputs();
-                    }}>
-                        {nick}
-                    </a>
+                    // 닉네임을 지워도 버튼이 남아 다시 펼칠 수 있게 빈 닉네임은 할 일로 보인다.
+                    <Button variant="link" size="xs" className="h-auto p-0 text-xs text-link" aria-expanded={showInputs} onClick={toggleInputs}>
+                        {nick || "닉네임 입력"}
+                    </Button>
                 )}
                 (으)로 {mode} 작성 중
             </p>

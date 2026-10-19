@@ -1,5 +1,5 @@
 import {ClipboardCopy, Smartphone} from "lucide-react";
-import {useId, useRef, useState} from "react";
+import {useId, useMemo, useRef, useState} from "react";
 
 import {ColorInput} from "@/components/ColorInput";
 import {DialogActions, ModalDialog, SubmitForm} from "@/components/dialogs";
@@ -10,15 +10,14 @@ import {Field, FieldError, FieldGroup, FieldLabel} from "@/components/ui/field";
 import {Input} from "@/components/ui/input";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
 import {memoUsageKey} from "@/core/usage";
-import type {MemoType} from "@/core/storage/types";
+import type {MemoEntry, MemoType} from "@/core/storage/types";
 import {normalizeMemoMap, ownMemo, randomColor, useMemosStore} from "@/stores/memos";
 import {SAVE_FAILED} from "@/utils/error";
-import {isRecord} from "@/utils/record";
 
 import {formatAppMemos, parseAppMemos} from "./appMemo";
 import {ImportDialog, useUsage} from "./Layout";
 import {ListRow, ListTabs} from "./ListTabs";
-import {notify} from "./optionsStore";
+import {copyText, notify} from "./optionsStore";
 import {RefresherSelect} from "./RefresherSelect";
 
 interface MemoFormState {
@@ -40,6 +39,7 @@ const MemoFormDialog = ({
     onSubmit: (state: MemoFormState) => Promise<void>;
 }) => {
     const [state, setState] = useState<MemoFormState>(initial);
+    const set = (patch: Partial<MemoFormState>): void => setState((prev) => ({...prev, ...patch}));
     const [error, setError] = useState("");
     const id = useId();
     const userInput = useRef<HTMLInputElement>(null);
@@ -80,7 +80,7 @@ const MemoFormDialog = ({
                 <DialogTitle>메모 {editing ? "수정" : "추가"}</DialogTitle>
             </DialogHeader>
 
-            <SubmitForm onSubmit={submit} className="flex flex-col gap-4">
+            <SubmitForm onSubmit={submit}>
                 <FieldGroup>
                     <Field orientation="horizontal" className="justify-between">
                         <FieldLabel>종류</FieldLabel>
@@ -88,7 +88,7 @@ const MemoFormDialog = ({
                             value={state.type}
                             disabled={editing}
                             aria-label="종류"
-                            onChange={(type) => setState((prev) => ({...prev, type}))}
+                            onChange={(type) => set({type})}
                             options={MEMO_TYPE_NAMES}
                         />
                     </Field>
@@ -102,7 +102,7 @@ const MemoFormDialog = ({
                             ref={userInput}
                             disabled={editing}
                             // 입력 중에 trim하면 닉네임 가운데 공백을 칠 수 없으므로 저장할 때 trim한다.
-                            onChange={(ev) => setState((prev) => ({...prev, user: ev.target.value}))}
+                            onChange={(ev) => set({user: ev.target.value})}
                         />
                     </Field>
 
@@ -114,7 +114,7 @@ const MemoFormDialog = ({
                             placeholder="메모를 입력해 주세요 (160자 제한)"
                             value={state.text}
                             ref={textInput}
-                            onChange={(ev) => setState((prev) => ({...prev, text: ev.target.value}))}
+                            onChange={(ev) => set({text: ev.target.value})}
                         />
                     </Field>
 
@@ -124,7 +124,7 @@ const MemoFormDialog = ({
                             id={`${id}-gallery`}
                             placeholder="갤러리 ID (비우면 모든 갤러리)"
                             value={state.gallery}
-                            onChange={(ev) => setState((prev) => ({...prev, gallery: ev.target.value.trim()}))}
+                            onChange={(ev) => set({gallery: ev.target.value.trim()})}
                         />
                     </Field>
 
@@ -134,9 +134,9 @@ const MemoFormDialog = ({
                             <ColorInput
                                 aria-label="메모 색상"
                                 value={state.color}
-                                onChange={(ev) => setState((prev) => ({...prev, color: ev.target.value}))}
+                                onChange={(ev) => set({color: ev.target.value})}
                             />
-                            <Button type="button" variant="secondary" onClick={() => setState((prev) => ({...prev, color: randomColor()}))}>
+                            <Button type="button" variant="secondary" onClick={() => set({color: randomColor()})}>
                                 랜덤
                             </Button>
                         </div>
@@ -153,14 +153,17 @@ const MemoFormDialog = ({
     );
 };
 
+// 크롬 저장소는 객체 키를 정렬해 돌려주므로 키 순서는 추가 순서가 아니다. 추가 시각으로 세운다.
+// 정렬은 안정적이라 시각이 없는 옛 메모는 오래된 쪽에 저장소 순서대로 남는다.
+const byAdded = (map: Record<string, MemoEntry>): [string, MemoEntry][] => Object.entries(map).sort(([, a], [, b]) => (a.added ?? 0) - (b.added ?? 0));
+
 export function MemoTab() {
     const memos = useMemosStore((state) => state.memos);
     const setMemo = useMemosStore((state) => state.setMemo);
-    const removeMemo = useMemosStore((state) => state.removeMemo);
-    const setMemos = useMemosStore((state) => state.setMemos);
     const updateMemos = useMemosStore((state) => state.updateMemos);
-    const ids = MEMO_TYPES.flatMap((type) => Object.keys(memos[type]).map((user) => memoUsageKey(type, user)));
+    const ids = useMemo(() => MEMO_TYPES.flatMap((type) => Object.keys(memos[type]).map((user) => memoUsageKey(type, user))), [memos]);
     const used = useUsage("memo", ids);
+    const sorted = useMemo(() => ({UID: byAdded(memos.UID), NICK: byAdded(memos.NICK), IP: byAdded(memos.IP)}), [memos]);
 
     const [form, setForm] = useState<MemoFormState | null>(null);
     const [appImport, setAppImport] = useState(false);
@@ -175,9 +178,14 @@ export function MemoTab() {
         }
         try {
             for (const type of ["UID", "IP"] as const) {
+                // 새 메모의 색은 밖에서 정한다. updateMemos의 change는 두 번(스토어·저장소 값) 불려, 안에서 고르면 저장 뒤 색이 한 번 바뀐다.
+                const colors = new Map(Object.keys(parsed[type]).map((target) => [target, randomColor()]));
+                const added = Date.now();
                 await updateMemos(type, (current) => {
                     const merged = {...current};
-                    for (const [target, memo] of Object.entries(parsed[type])) merged[target] = {...(ownMemo(merged, target) ?? {color: randomColor()}), text: memo};
+                    for (const [target, memo] of Object.entries(parsed[type])) {
+                        merged[target] = {...(ownMemo(merged, target) ?? {color: colors.get(target) ?? randomColor(), added}), text: memo};
+                    }
                     return merged;
                 });
             }
@@ -194,20 +202,20 @@ export function MemoTab() {
             notify("공앱으로 옮길 아이디·IP 메모가 없습니다.");
             return;
         }
-        try {
-            await navigator.clipboard.writeText(text);
-            notify(`공앱 형식으로 메모 ${count}개를 복사했습니다.${skipped ? ` 닉네임 메모 ${skipped}개는 공앱에 없는 종류라 뺐습니다.` : ""}`);
-        } catch {
-            notify("복사하지 못했습니다.");
-        }
+        await copyText(text, `공앱 형식으로 메모 ${count}개를 복사했습니다.${skipped ? ` 닉네임 메모 ${skipped}개는 공앱에 없는 종류라 뺐습니다.` : ""}`, "복사하지 못했습니다.");
     };
 
     const importMemos = async (parsed: Record<string, unknown>): Promise<number> => {
-        // 객체만 받는다. 차단 내보내기의 NICK/IP(배열)까지 메모로 세면 다른 데이터인데도 성공으로 알린다.
-        const types = MEMO_TYPES.filter((type) => isRecord(parsed[type]));
-        // 기존 메모에 합치고, 같은 대상은 가져온 메모로 덮는다.
-        for (const type of types) await updateMemos(type, (current) => ({...current, ...normalizeMemoMap(parsed[type])}));
-        return types.length;
+        // 유효한 메모 수를 센다. 차단 내보내기의 NICK/IP(배열)나 틀린 메모까지 세면 다른 데이터인데도 성공으로 알린다.
+        let count = 0;
+        for (const type of MEMO_TYPES) {
+            const imported = normalizeMemoMap(parsed[type]);
+            const size = Object.keys(imported).length;
+            if (size === 0) continue;
+            await updateMemos(type, (current) => ({...current, ...imported}));
+            count += size;
+        }
+        return count;
     };
 
     return (
@@ -216,13 +224,13 @@ export function MemoTab() {
                 types={MEMO_TYPES}
                 names={MEMO_TYPE_NAMES}
                 label="메모"
+                fileName="dcrefresher-memo"
                 columns={["대상", "메모"]}
                 emptyText={(type) => `${MEMO_TYPE_NAMES[type]} 메모 없음`}
                 exportData={() => memos}
                 importData={importMemos}
-                onClear={(type) => setMemos(type, {})}
+                onClear={(type) => updateMemos(type, () => ({}))}
                 onAdd={(type) => setForm({type, user: "", text: "", color: randomColor(), gallery: ""})}
-                // 공앱(디시인사이드 모바일 앱) 메모는 한 줄에 하나씩 "아이디-메모" 글이다.
                 toolbar={() => (
                     <div className="flex flex-wrap gap-2">
                         <Button variant="secondary" onClick={() => setAppImport(true)}>
@@ -233,8 +241,7 @@ export function MemoTab() {
                         </Button>
                     </div>
                 )}
-                // 객체 키 순서가 곧 추가 순서다. 숫자로만 된 키는 JS가 앞으로 정렬하는 예외가 있다.
-                items={(type) => Object.entries(memos[type])}
+                items={(type) => sorted[type]}
                 searchText={([user, entry]) => [user, entry.text, entry.gallery]}
                 galleryOf={([, entry]) => entry.gallery}
                 usedAt={(type, [user]) => used[memoUsageKey(type, user)]}
@@ -242,21 +249,25 @@ export function MemoTab() {
                     const users = new Set(removed.map(([user]) => user));
                     return updateMemos(type, (current) => Object.fromEntries(Object.entries(current).filter(([user]) => !users.has(user))));
                 }}
-                row={(type, [user, entry]) => (
+                itemKey={([user]) => user}
+                onRestore={(type, restore) => updateMemos(type, (current) => Object.fromEntries(restore(Object.entries(current))))}
+                row={(type, [user, entry], remove) => (
                     <ListRow
                         key={user}
                         head={
                             // 편집 버튼 안에 들어가므로 div 대신 span으로 그린다.
                             <span className="flex items-center gap-2">
-                                <span className="size-2.5 shrink-0 rounded-full" style={{background: entry.color}}/>
+                                {/* background 축약은 가져온 메모의 url(…)을 배경 이미지로 불러온다. 색 속성만 쓴다. */}
+                                <span className="size-2.5 shrink-0 rounded-full" style={{backgroundColor: entry.color}}/>
                                 <span className="font-medium">{user}</span>
                                 {entry.gallery && <Badge variant="secondary">{entry.gallery}</Badge>}
                             </span>
                         }
+                        label={user}
                         info={<span className="text-muted-foreground">{entry.text}</span>}
                         used={used[memoUsageKey(type, user)]}
                         onEdit={() => setForm({type, user, text: entry.text, color: entry.color, gallery: entry.gallery ?? ""})}
-                        onRemove={() => void removeMemo(type, user).catch(() => notify(SAVE_FAILED))}
+                        onRemove={remove}
                     />
                 )}
             />
@@ -266,6 +277,7 @@ export function MemoTab() {
                     title="공앱 메모 가져오기"
                     desc={<>공앱에서 복사한 메모를 붙여 넣어 주세요. 한 줄에 하나씩 <code>아이디-메모</code> 형식이고, 아이디 자리가 IP(예: <code>123.45</code>)면 IP 메모로 넣습니다.</>}
                     placeholder="아이디-메모"
+                    fromFile={false}
                     onClose={() => setAppImport(false)}
                     onSubmit={importAppMemos}
                 />

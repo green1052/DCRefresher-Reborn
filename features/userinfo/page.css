@@ -1,53 +1,110 @@
 /* ===== 유저 정보 (userinfo 모듈) ===== */
 
-/* 유저 정보 배지:닉네임이 잘리지 않게, 배지 사이 간격. */
-:is(.fl, .cmt_info, .addbox, .reply_info) {
-    .nickname {
-        max-width: unset !important;
+/* 배지 자리를 내려고 디시 작성자 칸을 바꾼다. 모듈이 켜져 있을 때만 (<html>의 refresherUserInfo, index.ts). */
+.refresherUserInfo {
+    /* 유저 정보 배지:닉네임이 잘리지 않게, 배지 사이 간격. */
+    :is(.fl, .cmt_info, .addbox, .reply_info) {
+        .nickname {
+            max-width: unset !important;
+        }
+
+        .refresherUserData {
+            margin-left: 3px;
+        }
     }
 
-    .refresherUserData {
-        margin-left: 3px;
-    }
-}
-
-.gall_writer {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-
-    /* 작성자를 누르면 뜨는 디시 메뉴(.user_data.add)가 잘리지 않게. */
-    &:has(.user_data.add) {
-        overflow: visible !important;
-    }
-
-    .addbox {
-        display: initial !important;
-    }
-}
-
-/*
- * 목록의 작성자 칸: 칸을 넘친 닉네임·배지는 addbox가 가리고, 디시 메뉴는 칸(td)을 기준으로 띄운다.
- * 칸을 visible로 풀면 메뉴를 여는 동안 가려 둔 글자가 옆 칸으로 튀어나오고, 메뉴가 글자 끝(칸 밖)에 붙어 밀려 뜬다.
- */
-.gall_list td.gall_writer {
-    overflow: visible;
-
-    .addbox {
-        display: block !important;
-        position: static;
+    .gall_writer {
         overflow: hidden;
         text-overflow: ellipsis;
+        white-space: nowrap;
+
+        /* 작성자를 누르면 뜨는 디시 메뉴(.user_data.add)가 잘리지 않게. */
+        &:has(.user_data.add) {
+            overflow: visible !important;
+        }
+
+        .addbox {
+            display: initial !important;
+        }
     }
 
-    .user_data.add {
-        position: absolute;
-        top: 50% !important;
-        left: 70% !important;
-        white-space: normal;
-    }
-}
+    /*
+     * 목록의 작성자 칸: 칸을 넘친 닉네임·배지는 addbox가 가리고, 디시 메뉴는 칸(td)을 기준으로 띄운다.
+     * 칸을 visible로 풀면 메뉴를 여는 동안 가려 둔 글자가 옆 칸으로 튀어나오고, 메뉴가 글자 끝(칸 밖)에 붙어 밀려 뜬다.
+     */
+    .gall_list td.gall_writer {
+        overflow: visible;
 
-.cmt_nickbox {
-    display: flex;
+        .addbox {
+            display: flex !important;
+            /* 넘치면 왼쪽부터 채운다. 그냥 center면 양쪽이 잘려 닉네임 앞 글자가 가려진다. */
+            justify-content: safe center;
+            position: static;
+            overflow: hidden;
+
+            > * {
+                flex-shrink: 0;
+            }
+
+            /* 닉네임은 줄지 않고(조금만 줄어도 …가 붙는다), 칸보다 길 때만 칸 폭에서 자른다. */
+            > .nickname {
+                max-width: 100% !important;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
+
+        .user_data.add {
+            position: absolute;
+            top: 50% !important;
+            left: 70% !important;
+            white-space: normal;
+        }
+    }
+
+    /* 글 머리: 칸은 넓지만 IP 후보가 많으면 날짜를 밀어내므로 IP 정보만 줄인다 (뒤의 메모 등은 그대로). 전체는 툴팁에 있다. */
+    .gallview_head .refresherIpInfo {
+        display: inline-block;
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+
+    /* 댓글 작성자 칸은 폭이 고정이다. 디시가 닉네임 묶음을 줄지 않게 둬서 넘친 배지가 그냥 잘리므로 줄게 한다. */
+    .cmt_nickbox {
+        display: flex;
+
+        .nickname {
+            flex-shrink: 1 !important;
+            min-width: 0;
+
+            > * {
+                flex-shrink: 0;
+            }
+        }
+    }
+
+    /*
+     * 좁은 목록·댓글 작성자 칸: 배지 묶음만 줄고, 그 안에선 IP 정보만 줄어 뒤의 메모 등이 남는다. 전체는 툴팁에 있다.
+     * 다른 배지는 조금만 줄어도 …가 붙으므로 줄지 않게 두고, 묶음보다 길 때만 묶음 폭에서 자른다.
+     */
+    :is(.gall_list td.gall_writer, .cmt_nickbox) .refresher-user-badges {
+        display: flex;
+        flex-shrink: 1;
+        min-width: 0;
+        overflow: hidden;
+
+        > * {
+            flex-shrink: 0;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        > .refresherIpInfo {
+            flex-shrink: 1;
+            min-width: 0;
+        }
+    }
 }

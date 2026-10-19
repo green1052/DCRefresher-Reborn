@@ -1,16 +1,21 @@
-import {groupDuplicates, isAnyBlocked, isBlocked} from "@/core/block";
+import QuickLRU from "quick-lru";
+
+import {blockMode, duplicateOf, groupDuplicates, isAnyBlocked, isBlocked} from "@/core/block";
+import type {ModuleSettings} from "@/core/module/types";
+import {lowActivityOf, type Ratios} from "@/stores/ui";
 import {htmlToText, sanitizeHtml} from "@/utils/sanitize";
-import {useUiStore} from "@/stores/ui";
-import {LruCache} from "@/utils/lru";
 
 import {restoreArchive} from "./cache";
 import type {DcinsideComment, GalleryPreData} from "./types";
 
 export interface ProcessedComment extends DcinsideComment {
+    memo: string;
     /** 음성댓글. iframe이면 src가 음성 파일이 아니라 플레이어 페이지라 <audio>로 틀 수 없다. */
     voice?: { src: string; iframe: boolean };
-    /** 차단에 걸린 댓글을 가리는 방식 (차단 모듈 설정). blur는 흐리게, hide는 숨긴다. */
+    /** 차단에 걸린 댓글을 가리는 방식 (차단 모듈 설정). blur는 흐리게, hide는 숨긴다. 깡계 댓글은 깡계 처리(userinfo)를 따른다. */
     blocked?: "blur" | "hide";
+    /** 차단이 아니라 깡계라서 가렸다. 댓글 머리의 개수 요약이 따로 센다. */
+    lowActivity?: true;
     /** 같은 댓글 묶음. 첫 댓글은 반복 수, 나머지는 0이며 접힌다. */
     duplicates?: number;
 }
@@ -24,12 +29,21 @@ const GALLOG_DCCON = /dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/g;
 const splitDccons = (memo: string): string => memo.replace(/"\s*(img|video) class="written_dccon/g, "\"><$1 class=\"written_dccon");
 
 // 정화 결과는 입력에만 달려 있어 기억해 둔다. 자동 새로고침·차단 변경·가린 내용 보기마다 댓글 수백 개를 다시 정화하지 않는다.
-const cleaned = new LruCache<string, string>({max: 2000});
+const cleaned = new QuickLRU<string, string>({maxSize: 2000});
 const sanitizeMemo = (memo: string): string => sanitizeHtml(splitDccons(memo).replace(/data-dcconoverstatus="?\w+"?/g, "data-dcconoverstatus=\"true\""));
 
 // 정화된 댓글의 평문(차단 검사용)도 마찬가지로 입력에만 달려 있어 함께 기억한다.
-const plainTexts = new LruCache<string, string>({max: 2000});
-const plainTextOf = (html: string): string => plainTexts.memo(html, (text) => htmlToText(text).trim());
+const plainTexts = new QuickLRU<string, string>({maxSize: 2000});
+
+const remember = (cache: QuickLRU<string, string>, key: string, compute: (key: string) => string): string => {
+    const cached = cache.get(key);
+    if (cached !== undefined) return cached;
+    const value = compute(key);
+    cache.set(key, value);
+    return value;
+};
+
+const plainTextOf = (html: string): string => remember(plainTexts, html, (text) => htmlToText(text).trim());
 
 const extractVoice = (memo: string): { memo: string; voice?: ProcessedComment["voice"] } | undefined => {
     if (!memo.includes("@^dc^@")) return;
@@ -61,24 +75,54 @@ export const prepareComments = (raw: DcinsideComment[], preData: GalleryPreData,
 };
 
 /**
- * 정화 → 차단 표시 → 같은 댓글 묶기. 차단 목록이 바뀌면 같은 prepareComments 결과로 다시 부르므로
- * 입력(캐시된 원본)은 고치지 않고 복사본을 가공한다.
+ * 받은 두 댓글 목록이 같은지. 자동 새로고침이 같은 목록을 다시 받으면 다시 그리지 않으려고 쓴다.
+ * 목록을 JSON 문자열로 만들어 비교하면 댓글이 1000개일 때 주기마다 1MB가 넘는 문자열을 만든다. 필드 값을 차례로 비교하고 다르면 바로 멈춘다.
+ * 디시 댓글 필드는 문자열·숫자 같은 값이다. 객체 값이 오면 내용이 같아도 다르다고 보지만 다시 그릴 뿐이다.
+ * T로 받아야 for...in의 키로 형 변환 없이 읽는다.
  */
-export const processComments = (source: DcinsideComment[], preData: GalleryPreData): ProcessedComment[] => {
-    const list: ProcessedComment[] = source.map((comment) => ({...comment}));
+export const sameComments = <T extends object>(a: T[], b: T[]): boolean => {
+    if (a.length !== b.length) return false;
+    for (const [index, comment] of a.entries()) {
+        const other = b[index];
+        if (other === undefined) return false;
+        let fields = 0;
+        for (const key in comment) {
+            if (comment[key] !== other[key]) return false;
+            fields++;
+        }
+        if (fields !== Object.keys(other).length) return false;
+    }
+    return true;
+};
+
+/** 차단하지 않은 깡계 댓글을 깡계 처리대로 가린다. 차단한 댓글은 차단 방식을 따른다. */
+const markLowActivity = (list: ProcessedComment[], ratios: Ratios | null): ProcessedComment[] => {
+    for (const comment of list) {
+        const action = comment.blocked ? undefined : lowActivityOf(ratios, comment.user_id);
+        if (action) Object.assign(comment, {blocked: action, lowActivity: true});
+    }
+    return list;
+};
+
+/**
+ * 정화 → 차단 표시 → 깡계 가림 → 같은 댓글 묶기. 차단 목록이 바뀌면 같은 prepareComments 결과로 다시 부르므로
+ * 입력(캐시된 원본)은 고치지 않고 복사본을 가공한다. block은 차단 모듈 설정, ratios는 userinfo의 글댓비 캐시와 깡계 설정이다.
+ */
+export const processComments = (
+    source: DcinsideComment[], preData: GalleryPreData, block: ModuleSettings["block"] | undefined, ratios: Ratios | null = null
+): ProcessedComment[] => {
+    const list: ProcessedComment[] = source.map((comment) => ({...comment, memo: comment.memo ?? ""}));
 
     // 음성 URL은 정화(재직렬화)하면 &가 &amp;로 바뀌므로 정화 전에 떼어 낸다.
     for (const comment of list) {
-        const memo = String(comment.memo ?? "");
-        const voice = extractVoice(memo);
+        const voice = extractVoice(comment.memo);
         // 늘 덮어쓴다. 디시 응답에도 voice 필드가 있어(보통 null) 그대로 두면 음성 댓글이 아닌데도 음성 댓글로 보인다(답글 막힘을 무시한다).
         comment.voice = voice?.voice;
-        comment.memo = cleaned.memo(voice?.memo ?? memo, sanitizeMemo);
+        comment.memo = remember(cleaned, voice?.memo ?? comment.memo, sanitizeMemo);
     }
 
-    // 차단 모듈이 꺼져 있으면 blockView가 없고 아무것도 가리지 않는다.
-    const view = useUiStore.getState().blockView;
-    if (!view) return list;
+    // 차단 모듈이 꺼져 있으면 block이 없고 깡계만 가린다.
+    if (!block) return markLowActivity(list, ratios);
     // 페이지 쪽 검사처럼 앞뒤 공백을 뗀다. 디시콘만 있는 댓글이 " "로 남아 빈 글과 달라지지 않게.
     const texts = new Map(list.map((comment) => [comment, plainTextOf(comment.memo)]));
 
@@ -99,18 +143,23 @@ export const processComments = (source: DcinsideComment[], preData: GalleryPreDa
                 preData.gallery
             ) || dcconNos.some((no) => isBlocked("DCCON", no, preData.gallery));
 
-        if (blocked) comment.blocked = view.blur ? "blur" : "hide";
+        if (blocked) comment.blocked = blockMode(block);
     }
 
-    if (view.replyRemove) {
+    if (block.replyRemove) {
         // 답글의 c_no는 스레드 첫 댓글 번호다.
         const blockedThreads = new Set(list.filter((comment) => comment.depth === 0 && comment.blocked).map((comment) => comment.no));
-        for (const comment of list) if (comment.depth === 1 && blockedThreads.has(comment.c_no)) comment.blocked ??= view.blur ? "blur" : "hide";
+        for (const comment of list) if (comment.depth === 1 && blockedThreads.has(comment.c_no)) comment.blocked ??= blockMode(block);
     }
 
-    if (view.duplicate) {
+    // 답글 함께 가리기 뒤에 매긴다. 페이지처럼 깡계 댓글의 답글은 가리지 않는다.
+    markLowActivity(list, ratios);
+
+    const duplicate = duplicateOf(block);
+    if (duplicate) {
+        // 페이지처럼 가린 댓글(차단·깡계)은 세지 않는다.
         const candidates = list.filter((comment) => !comment.blocked && comment.is_delete !== "1");
-        for (const [comment, repeats] of groupDuplicates(candidates, (comment) => texts.get(comment) ?? "", view.duplicate)) comment.duplicates = repeats;
+        for (const [comment, repeats] of groupDuplicates(candidates, (comment) => texts.get(comment) ?? "", duplicate)) comment.duplicates = repeats;
     }
 
     return list;

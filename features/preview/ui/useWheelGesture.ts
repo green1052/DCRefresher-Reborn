@@ -8,16 +8,16 @@ const canScroll = (el: Element, dir: number): boolean => (dir > 0 ? el.scrollTop
 
 /**
  * 스크롤 끝에서 새로 한 번 더 굴리면 이전/다음 글로 넘어간다 (Frame의 스크롤 칸). 끝에 닿은 그 동작으로 넘기면
- * 트랙패드 관성에 글이 연달아 넘어간다. 끝에 닿으면 v5처럼 안내를 띄우고, 넘기거나 닫았다 열면 지운다
- * (hint.key가 지금 글일 때만 보인다). enabled(scrollToSkip)가 꺼져 있으면 아무것도 하지 않는다.
+ * 트랙패드 관성에 글이 연달아 넘어간다. 끝에 닿으면 v5처럼 안내를 띄운다. hint.key가 지금 연 창(signalId)일 때만 보이고,
+ * canGo가 그 방향에 넘어갈 글이 없다고 하면(목록 처음·끝) 띄우지 않는다.
  */
-export const useWheelGesture = (key: string, goToAdjacent: (dir: number) => void, enabled: boolean) => {
+export const useWheelGesture = (key: string, goToAdjacent: (dir: number) => void, canGo: (dir: number) => boolean, enabled: boolean) => {
     const wheel = useRef({last: 0, armed: 0, key: "", settling: false});
     const [hint, setHint] = useState({dir: 0, key: ""});
 
     const skipOnWheel = (dir: number, timeStamp: number, atEdge: boolean): void => {
         const state = wheel.current;
-        // 앞 글에서 끝에 닿아 둔 상태는 버린다.
+        // 앞서 연 창(다른 글이거나, 닫았다 다시 연 같은 글)에서 끝에 닿아 둔 상태는 버린다.
         if (state.key !== key) {
             state.key = key;
             state.armed = 0;
@@ -36,8 +36,8 @@ export const useWheelGesture = (key: string, goToAdjacent: (dir: number) => void
             state.settling = true;
             goToAdjacent(dir);
         }
-        // 끝에 닿은 방향을 기억해 두고 다음 동작을 기다린다.
-        else if (atEdge) armed = dir;
+        // 끝에 닿은 방향을 기억해 두고 다음 동작을 기다린다. 넘어갈 글이 없으면 기다리지 않는다.
+        else if (atEdge && canGo(dir)) armed = dir;
 
         if (armed !== state.armed) setHint({dir: armed, key});
         state.armed = armed;
@@ -48,12 +48,12 @@ export const useWheelGesture = (key: string, goToAdjacent: (dir: number) => void
 
         const box = ev.currentTarget;
         const target = ev.target;
-        // 포털로 뜬 창(디시콘 등)의 휠도 React 트리를 타고 여기로 오므로, 스크롤 칸 DOM 안에서 난 것만 본다.
+        // 스크롤 칸 DOM 안에서 난 휠만 본다. Preact는 포털로 뜬 창(디시콘 등)의 이벤트를 컴포넌트 트리로 올리지 않아 보통은 늘 참이다.
         if (!(target instanceof Element) || !box.contains(target)) return;
 
         const dir = ev.deltaY > 0 ? 1 : -1;
-        // 창이 아직 굴러가면 끝이 아니다. 끝일 때만 안쪽 스크롤 칸(댓글 입력칸 등)을 본다: 그쪽이 굴러가면 그쪽 스크롤이라 끝으로 치지 않는다.
-        // 읽는 동안 휠마다 조상을 getComputedStyle로 훑지 않게 순서를 이렇게 둔다.
+        // 창이 아직 굴러가면 끝이 아니다. 끝일 때만 안쪽 스크롤 칸(댓글 입력칸 등)을 보아, 그쪽이 굴러가면 끝으로 치지 않는다.
+        // 읽는 동안 휠마다 조상을 getComputedStyle로 훑지 않으려는 순서다.
         let atEdge = !canScroll(box, dir);
         for (let el: Element | null = target; atEdge && el && el !== box; el = el.parentElement) {
             if (el.scrollHeight > el.clientHeight && /auto|scroll/.test(getComputedStyle(el).overflowY) && canScroll(el, dir)) atEdge = false;

@@ -61,12 +61,12 @@ describe("업로드 설정", () => {
 
     it("켜면 설정을 <html>에 두고, 끄면 지운다", async () => {
         const {change} = await start({webpConvert: true, webpQuality: 70});
-        expect(options()).toEqual({webp: true, quality: 0.7, rename: false});
+        expect(options()).toEqual({webp: true, quality: 0.7, rename: false, concurrency: 2});
         // 이미 넣어 달라고 했으면 다시 보내지 않는다.
         expect(sendMessage).not.toHaveBeenCalled();
 
         change({obfuscateName: true});
-        expect(options()).toEqual({webp: true, quality: 0.7, rename: true});
+        expect(options()).toEqual({webp: true, quality: 0.7, rename: true, concurrency: 2});
         change({webpConvert: false, obfuscateName: false});
         expect(options()).toBeUndefined();
     });
@@ -161,6 +161,7 @@ describe("수정 페이지", () => {
         history.replaceState(null, "", "/board/modify/?id=test&no=1");
         subject().value = "원래 제목";
         editor().innerHTML = "<p>원래 본문</p>";
+        delete document.documentElement.dataset.refresherEdited;
     });
 
     it("고치기 전에는 막지 않는다", async () => {
@@ -179,6 +180,21 @@ describe("수정 페이지", () => {
         document.dispatchEvent(new Event("pointerdown"));
         editor().append(Object.assign(document.createElement("img"), {src: "new.png"}));
         await tick();
+        expect(blocksExit()).toBe(true);
+    });
+
+    it("다시 주입된 인스턴스는 앞 인스턴스가 남긴 표시로 처음부터 막는다", async () => {
+        document.documentElement.dataset.refresherEdited = "";
+        await start();
+        expect(blocksExit()).toBe(true);
+    });
+
+    it("고친 뒤 모듈을 껐다 켜도 계속 막는다", async () => {
+        const {stop} = await start();
+        type(subject());
+        expect(blocksExit()).toBe(true);
+        stop();
+        await start();
         expect(blocksExit()).toBe(true);
     });
 });

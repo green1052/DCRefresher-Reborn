@@ -1,31 +1,42 @@
+import pLimit from "p-limit";
+
+import {isRecord} from "@/utils/record";
+
 /** 올리는 이미지를 바꾸는 방법. 모듈이 <html>의 data 속성에 JSON으로 두고, 페이지에 넣은 hookUploads가 이벤트마다 읽는다. */
 export interface ImageOptions {
     webp: boolean;
     /** WebP 품질 (0~1). */
     quality: number;
     rename: boolean;
+    /** 한꺼번에 바꾸는 이미지 수. 원본 크기 캔버스가 이만큼 함께 살아 있다. */
+    concurrency: number;
 }
 
 /** ImageOptions를 두는 <html> dataset 키. 없으면(모듈이 꺼졌거나 두 설정이 다 꺼짐) 파일을 그대로 둔다. */
 export const UPLOAD_OPTIONS_KEY = "refresherUpload";
 
 /**
- * 탭의 페이지 컨텍스트(MAIN world)에서 실행된다(직렬화되므로 바깥 변수를 쓰지 않는다). 배경이 페이지마다 한 번 넣는다.
+ * 탭의 페이지 컨텍스트(MAIN world)에서 실행된다. entrypoints/upload-hook.ts가 따로 번들하고, 배경이 페이지마다 한 번 그 파일을 넣는다.
  * 글쓰기 에디터에 붙여 넣거나 끌어 놓은 이미지, 파일 선택칸(이미지 올리기 팝업·에디터 이미지 창·자동 짤방)에서 고른 이미지를 바꾼다.
  * 디시 스크립트보다 먼저(window 캡처 단계에서) 이벤트를 막고, 바꾼 파일로 이벤트를 다시 보낸다.
- * 직렬화되는 것은 값뿐이라 타입(ImageOptions)은 바깥 것을 그대로 쓴다.
  * 페이지에서 하는 까닭: 파이어폭스는 콘텐츠 스크립트가 DataTransfer에 넣은 파일을 페이지 스크립트에 보여 주지 않는다.
  */
-export const hookUploads = (key: string): void => {
+export const hookUploads = (): void => {
     const hooked = Symbol.for("refresher.uploads");
     const scope = window as Window & { [hooked]?: true };
     if (scope[hooked]) return;
     scope[hooked] = true;
 
+    // 페이지 스크립트도 바꿀 수 있는 속성이라 모양을 확인한다. 동시 변환 수가 1 이상의 정수가 아니면 pLimit이 던져, 이미 막은 업로드가 사라진다.
     const readOptions = (): ImageOptions | null => {
         try {
-            const raw = document.documentElement.dataset[key];
-            return raw ? (JSON.parse(raw) as ImageOptions) : null;
+            const raw = document.documentElement.dataset[UPLOAD_OPTIONS_KEY];
+            const parsed: unknown = raw ? JSON.parse(raw) : null;
+            if (!isRecord(parsed)) return null;
+            const {webp, quality, rename, concurrency} = parsed;
+            return typeof webp === "boolean" && typeof rename === "boolean" && typeof quality === "number" && Number.isFinite(quality)
+                && typeof concurrency === "number" && Number.isInteger(concurrency) && concurrency >= 1
+                ? {webp, quality, rename, concurrency} : null;
         } catch {
             return null;
         }
@@ -86,9 +97,31 @@ export const hookUploads = (key: string): void => {
         return options.rename ? named(file, file, ext.toLowerCase(), true) : file;
     };
 
+    // 파이어폭스 resistFingerprinting(LibreWolf·토르 등)은 캔버스를 읽을 때마다 무작위 잡음을 준다. 잡음 WebP는 작아서 원본 대신 올라간다.
+    // 같은 그림을 두 번 인코딩해 바이트가 같은지 본다. 업로드마다 보므로 사이트에 캔버스 읽기를 허락하면 다음부터 바뀐다.
+    const canvasReliable = async (): Promise<boolean> => {
+        const encode = async (): Promise<string> => {
+            const canvas = new OffscreenCanvas(1, 1);
+            const context = canvas.getContext("2d");
+            if (context) {
+                context.fillStyle = "#f00";
+                context.fillRect(0, 0, 1, 1);
+            }
+            return new Uint8Array(await (await canvas.convertToBlob({type: "image/webp"})).arrayBuffer()).join();
+        };
+        try {
+            return await encode() === await encode();
+        } catch (e) {
+            console.error(e);
+            return false;
+        }
+    };
+
     const convertAll = async (files: File[], options: ImageOptions): Promise<DataTransfer> => {
         const transfer = new DataTransfer();
-        for (const file of await Promise.all(files.map((file) => convert(file, options)))) {
+        const settings = options.webp && !(await canvasReliable()) ? {...options, webp: false} : options;
+        // 결과는 고른 순서대로 온다.
+        for (const file of await pLimit(settings.concurrency).map(files, (file) => convert(file, settings))) {
             done.add(file);
             transfer.items.add(file);
         }
@@ -115,16 +148,24 @@ export const hookUploads = (key: string): void => {
         });
     }, true);
 
-    // 붙여넣기·끌어 놓기는 에디터(summernote) 안에서만 바꾼다. 이벤트가 끝나면 clipboardData·dataTransfer를 읽을 수 없어 파일을 먼저 꺼낸다.
-    // 바꾼 파일은 둘 다 에디터의 끌어 놓기 칸에 drop으로 넘긴다. 파이어폭스는 만든 paste 이벤트에 파일을 실을 수 없다(clipboardData를 무시한다).
+    // 붙여넣기·끌어 놓기는 에디터(summernote)와 이미지 올리기 팝업에서 바꾼다. 이벤트가 끝나면 clipboardData·dataTransfer를 읽을 수 없어 파일을 먼저 꺼낸다.
+    // 에디터: 파이어폭스는 만든 paste 이벤트의 clipboardData를 무시하므로 둘 다 끌어 놓기 칸에 drop으로 넘긴다.
+    // 팝업: jQuery File Upload는 문서 어디서든 받지만 만든 drop은 못 읽으므로(webkitGetAsEntry가 null) 파일 선택칸의 change로 넘긴다.
     const intercept = (ev: Event, transfer: DataTransfer | null): void => {
         const dropzone = ev.target instanceof Element ? ev.target.closest(".note-editor")?.querySelector(".note-dropzone") : null;
-        const found = dropzone && pending(transfer?.files);
+        const input = dropzone ? null : document.querySelector<HTMLInputElement>("#fileupload input[type=file]");
+        const found = (dropzone || input) && pending(transfer?.files);
         if (!found) return;
 
         ev.preventDefault();
         ev.stopImmediatePropagation();
-        void convertAll(...found).then((dataTransfer) => dropzone.dispatchEvent(new DragEvent("drop", {dataTransfer, bubbles: true, cancelable: true})));
+        void convertAll(...found).then((dataTransfer) => {
+            if (dropzone) dropzone.dispatchEvent(new DragEvent("drop", {dataTransfer, bubbles: true, cancelable: true}));
+            else if (input) {
+                input.files = dataTransfer.files;
+                input.dispatchEvent(new Event("change", {bubbles: true}));
+            }
+        });
     };
 
     window.addEventListener("paste", (ev) => intercept(ev, ev.clipboardData), true);

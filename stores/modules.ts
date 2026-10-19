@@ -1,4 +1,4 @@
-import {useEffect} from "react";
+import {useLayoutEffect} from "react";
 import {storage} from "wxt/utils/storage";
 import {create} from "zustand";
 
@@ -8,7 +8,6 @@ import {MODULES_KEY, moduleDataKey, moduleKeyModule, moduleSettingsKey, moduleSe
 import {storageSync} from "@/core/storage/sync";
 import type {SettingValue} from "@/core/storage/types";
 import features from "@/features/meta";
-import {saveOrReload} from "@/utils/error";
 import {once} from "@/utils/once";
 import {isRecord} from "@/utils/record";
 
@@ -17,7 +16,7 @@ type Values = Record<string, SettingValue>;
 interface ModulesState {
     /** 모듈 on/off (저장값 없으면 defaultEnable). */
     enables: Record<string, boolean>;
-    /** 모듈별 설정값 (스키마로 정규화됨). */
+    /** 모듈별 설정값 (스키마에 맞춘 값). */
     values: Record<string, Values>;
     toggle: (id: string, value: boolean) => Promise<void>;
     changeSetting: (id: string, key: string, value: SettingValue) => Promise<void>;
@@ -57,12 +56,16 @@ export const useModulesStore = create<ModulesState>((set) => ({
     }
 }));
 
-/** 켜진 모듈의 extensionPageVars를 이 페이지(옵션·팝업)의 <html>에 넣는다. 모듈을 끄거나 설정을 바꾸면 따라간다. */
-export const useExtensionPageVars = (): void => {
+/**
+ * 켜진 모듈의 extensionPageVars를 이 페이지(옵션·팝업)의 <html>에 넣는다. 모듈을 끄거나 설정을 바꾸면 따라간다.
+ * 그리는 것 없는 컴포넌트다. 설정 전체를 구독하므로 훅으로 App에서 부르면 설정 하나를 바꿀 때마다 화면 전체를 다시 그린다.
+ */
+export const ExtensionPageVars = (): null => {
     const enables = useModulesStore((state) => state.enables);
     const values = useModulesStore((state) => state.values);
 
-    useEffect(() => {
+    // 화면을 그리기 전에 넣는다. useEffect면 첫 프레임이 기본 폰트로 그려졌다가 바뀐다.
+    useLayoutEffect(() => {
         const root = document.documentElement.style;
         const vars = features.flatMap((feature) =>
             enables[feature.id] && feature.extensionPageVars ? Object.entries(feature.extensionPageVars(values[feature.id] ?? {})) : []);
@@ -72,6 +75,8 @@ export const useExtensionPageVars = (): void => {
             for (const [name] of vars) root.removeProperty(name);
         };
     }, [enables, values]);
+
+    return null;
 };
 
 /**
@@ -126,7 +131,7 @@ const sync = storageSync([MODULES_KEY, ...[...withSettings.values()].map((featur
     if (feature) setValues(feature, value);
     else setEnables(value);
 });
-const persist = (write: () => Promise<void>): Promise<void> => saveOrReload(enqueue(write), sync.load, "모듈 설정을 저장하지 못했습니다.");
+const persist = (write: () => Promise<void>): Promise<void> => sync.save(() => enqueue(write), "모듈 설정을 저장하지 못했습니다.");
 
 /** 옵션·팝업에서 저장소 값을 읽고 변경을 감시한다. 여러 번 불러도 한 번만 한다. */
 export const initModulesStore = once(async () => {

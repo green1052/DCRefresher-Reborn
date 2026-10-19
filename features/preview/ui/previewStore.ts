@@ -1,6 +1,7 @@
 import {create} from "zustand";
 
 import {needOverlayWhen} from "@/components/overlay/demands";
+import {postKey, setEntry} from "@/core/preview/cache";
 import type {ProcessedComment} from "@/core/preview/comments";
 import type {BlockOptions} from "@/core/preview/request";
 import type {GalleryPreData, PostInfo} from "@/core/preview/types";
@@ -17,12 +18,15 @@ export interface ErrorState {
 
 export type ManageKind = "notice" | "recommend" | "delete" | "bump";
 
+/** 댓글 스레드 순서: 등록순·최신순·답글순 (CommentList.tsx의 threadParents). */
+export type CommentOrderValue = "oldest" | "newest" | "replies";
+
 /** 공지·개념글 [등록, 해제] 동작. 관리 패널의 확인 문구와 결과 알림이 같이 쓴다. */
 export const MANAGE_LABELS = {notice: ["공지로 등록", "공지를 해제"], recommend: ["개념글로 등록", "개념글을 해제"]} as const;
 
 type Reply = { commentNo: string | null; replyNo: string | null };
 
-/** 크게 보기(ImageViewer)의 이미지. pop은 디시 원본 보기 주소 (core/preview/parser.ts가 옮겨 둔 data-pop). */
+/** 크게 보기(ImageViewer)의 이미지. pop은 dcinsideHref로 거른 디시 원본 보기 주소 (core/preview/parser.ts가 옮겨 둔 data-pop). */
 export interface ViewerImage {
     src: string;
     alt: string;
@@ -43,9 +47,13 @@ interface PostState {
     archived: boolean;
 
     comments: ProcessedComment[] | undefined;
+    /** 댓글을 받지 못했다. comments가 없는 동안 받는 중 표시 대신 '다시 시도' 안내를 보인다. */
+    commentsFailed: boolean;
     /** 댓글·답글 쓰기 허용. 멤버만 댓글을 쓸 수 있는 갤러리면 댓글 응답의 allow_reply가 0이다. */
     allowReply: boolean;
     collapsed: Set<string>;
+    /** 이 글에서만 가린 댓글(숨김 차단·접힌 같은 댓글) 보기. 댓글 머리의 요약에서 켜고 끈다. 페이지의 '가린 내용 보기'와 따로다. */
+    commentsRevealed: boolean;
     /** 댓글 새로고침으로 새로 들어온 댓글 번호. 잠깐 강조한다 (Comment.tsx의 animate-fresh-comment). */
     freshComments: ReadonlySet<string>;
     reply: Reply;
@@ -54,10 +62,15 @@ interface PostState {
     /** 본문 이미지 차단 (blockImage). */
     imageBlocked: boolean;
 
-    notice: boolean;
-    recommend: boolean;
     adminVisible: boolean;
-    blockPopup: boolean;
+    /** 차단 창. post는 글쓴이, comments는 고른 댓글(selectedComments)의 작성자를 차단한다. */
+    blockPopup: false | "post" | "comments";
+    /** 관리자가 체크한 댓글 번호. 디시 댓글 목록의 체크박스처럼 골라 한 번에 지우거나 차단한다. */
+    selectedComments: ReadonlySet<string>;
+    /** 댓글 삭제 확인 창(비밀번호 삭제는 비밀번호 창)을 띄운 댓글. 창은 CommentList가 한 번만 그린다 (Comment.tsx의 CommentDeletePrompt). */
+    deletePrompt: { no: string; kind: "confirm" | "password" } | null;
+    /** 삭제 요청 중인 댓글 번호. 그동안 그 댓글의 X를 막는다. */
+    deletingComments: ReadonlySet<string>;
     /** 본문 이미지 크게 보기. 글을 넘기거나 닫으면 닫힌다. */
     viewer: { images: ViewerImage[]; index: number } | null;
 }
@@ -71,8 +84,8 @@ interface Hooks {
     /** 본문을 캐시 없이 다시 받고 댓글도 다시 받는다. */
     requestReload: () => Promise<void>;
     requestManage: (kind: ManageKind) => void;
-    /** 차단하고 성공 여부를 돌려준다. 글도 지웠으면 창을 닫는다. */
-    requestBlock: (preData: GalleryPreData, options: BlockOptions) => Promise<boolean>;
+    /** 차단하고 성공 여부를 돌려준다. comments가 있으면 그 댓글 작성자를 차단한다. 글도 지웠으면 창을 닫는다. */
+    requestBlock: (preData: GalleryPreData, options: BlockOptions, comments?: string[]) => Promise<boolean>;
 }
 
 interface PreviewState extends PostState, Hooks {
@@ -90,11 +103,14 @@ interface PreviewState extends PostState, Hooks {
 
     /** 정보 창(DcconInfoPopup)을 띄운 디시콘 코드. null이면 닫혀 있다. */
     dcconInfo: string | null;
+    /** 댓글 스레드 순서. 글을 넘겨도 그대로 두고 저장하지 않는다. */
+    commentOrder: CommentOrderValue;
 
     /** 글 상태를 비우고 patch를 얹어 한 번의 setState로 연다. */
     open: (preData: GalleryPreData, patch?: Partial<PostState>) => void;
     close: () => void;
     toggleCollapse: (no: string) => void;
+    toggleSelected: (no: string) => void;
     openCaptcha: (url: string) => Promise<string>;
     moveMini: (clientX: number, clientY: number) => void;
 }
@@ -135,8 +151,16 @@ export const miniPosition = (clientX: number, clientY: number): { x: number; y: 
 
 export const NO_REPLY: Reply = {commentNo: null, replyNo: null};
 
-/** 새 댓글이 없을 때 쓰는 빈 집합. 새로고침마다 새 객체를 넣지 않는다. */
+/** 새 댓글(고른 댓글)이 없을 때 쓰는 빈 집합. 새로고침마다 새 객체를 넣지 않는다. */
 export const NO_FRESH: ReadonlySet<string> = new Set();
+
+/** no를 넣거나(on) 뺀 새 집합. on을 주지 않으면 있으면 빼고 없으면 넣는다. 스토어에는 고친 집합이 아니라 새 집합을 넣어야 다시 그려진다. */
+export const toggled = (set: ReadonlySet<string>, no: string, on = !set.has(no)): Set<string> => {
+    const next = new Set(set);
+    if (on) next.add(no);
+    else next.delete(no);
+    return next;
+};
 
 export const NO_HOOKS: Hooks = {
     requestOpen: () => undefined,
@@ -152,16 +176,19 @@ const freshPost = (): PostState => ({
     post: undefined,
     archived: false,
     comments: undefined,
+    commentsFailed: false,
     allowReply: true,
     collapsed: new Set(),
+    commentsRevealed: false,
     freshComments: NO_FRESH,
     reply: NO_REPLY,
     commentsOnly: false,
     imageBlocked: false,
-    notice: false,
-    recommend: false,
     adminVisible: false,
     blockPopup: false,
+    selectedComments: NO_FRESH,
+    deletePrompt: null,
+    deletingComments: NO_FRESH,
     viewer: null
 });
 
@@ -198,6 +225,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     captcha: null,
     mini: null,
     dcconInfo: null,
+    commentOrder: "oldest",
 
     open: (preData, patch) => {
         // 이전 글의 캡차 창은 닫는다. 남아 있으면 입력한 코드가 이전 글로 간다.
@@ -216,18 +244,33 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
         fadeTimer = window.setTimeout(() => set({fading: false}), 200);
     },
 
-    toggleCollapse: (no) =>
-        set((state) => {
-            const next = new Set(state.collapsed);
-            if (!next.delete(no)) next.add(no);
-            return {collapsed: next};
-        }),
+    toggleCollapse: (no) => set((state) => ({collapsed: toggled(state.collapsed, no)})),
+
+    toggleSelected: (no) => set((state) => ({selectedComments: toggled(state.selectedComments, no)})),
 
     openCaptcha: (url) => new Promise((resolve) => set({captcha: {url, resolve}})),
 
     moveMini: (clientX, clientY) => set((state) => (state.mini ? {mini: {...state.mini, ...miniPosition(clientX, clientY)}} : state))
 }));
 
+/**
+ * 미리보기에서 연 유저 버블·메모 창이 갤러리 한정 차단·메모에 쓰는 갤러리 (SelectedUser.gallery). 미리보기가 떠 있지 않으면 undefined라 이 문서의 갤러리를 쓴다.
+ */
+export const previewGallery = (): string | undefined => {
+    const {visible, preData} = usePreviewStore.getState();
+    return visible ? preData?.gallery : undefined;
+};
+
+/**
+ * 댓글을 올리거나 지운 글의 댓글 목록을 새로 받는다. 이 글이 열려 있을 때만 받고, 캐시의 목록은 늘 낡은 것으로 표시한다.
+ * 두면 보내는 사이 다른 글에 갔다 10초 안에 돌아올 때 바뀌기 전 목록을 방금 받은 것(COMMENTS_REUSE)으로 쳐 다시 받지 않는다.
+ */
+export const refreshCommentsOf = (preData: GalleryPreData): void => {
+    setEntry(preData, {commentsAt: 0});
+    const current = usePreviewStore.getState();
+    if (current.preData && postKey(current.preData) === postKey(preData)) void current.requestRefresh();
+};
+
 // 미리보기 UI 중 하나라도 떠 있으면 오버레이를 띄운다 (components/overlay/demands). 새 미리보기 UI를 추가하면 여기에 넣는다.
 needOverlayWhen(usePreviewStore, (state) =>
-    state.visible || state.warm || state.mini !== null || state.captcha !== null || state.blockPopup || state.dcconInfo !== null);
+    state.visible || state.warm || state.mini !== null || state.captcha !== null || state.blockPopup !== false || state.dcconInfo !== null);

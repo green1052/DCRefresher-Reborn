@@ -1,7 +1,8 @@
-import type {Page} from "@playwright/test";
+import type {Locator, Page} from "@playwright/test";
 
-import {fakeComment} from "./dcinside";
+import {DCCON, fakeComment} from "./dcinside";
 import {expect, test} from "./fixtures";
+import {viewPage} from "./pages/gallery";
 
 test.describe("유저 버블", () => {
     test("작성자를 우클릭하면 갤로그 글/댓글 수가 보이고, 차단하면 행을 가린다", async ({listPage, storage}) => {
@@ -13,10 +14,20 @@ test.describe("유저 버블", () => {
         await bubble.getByRole("button", {name: "유저 차단"}).click();
 
         await expect(listPage.toast).toContainText("차단 목록에 추가했습니다.");
-        // 스크린 리더 알림 칸에도 들어간다.
-        await expect(listPage.overlay.getByRole("status")).toContainText("차단 목록에 추가했습니다.");
+        // 스크린 리더가 읽는 알림 칸(aria-live) 안에 뜬다.
+        await expect(listPage.overlay.getByRole("region", {name: "알림"})).toHaveAttribute("aria-live", "polite");
+        await expect(listPage.overlay.getByRole("region", {name: "알림"})).toContainText("차단 목록에 추가했습니다.");
         await expect(listPage.row(3)).toHaveClass(/refresherBlocked/);
         expect(await storage.get("refresher:block:ID")).toMatchObject([{content: "user3", extra: "고닉"}]);
+    });
+
+    test("이 갤러리에서만 차단하면 갤러리 한정 항목으로 넣고 행을 가린다", async ({listPage, storage}) => {
+        await listPage.writers.first().click({button: "right"});
+        await listPage.bubble.getByRole("button", {name: "이 갤러리에서만 차단"}).click();
+
+        await expect(listPage.toast).toContainText("이 갤러리만");
+        await expect(listPage.row(3)).toHaveClass(/refresherBlocked/);
+        expect(await storage.get("refresher:block:ID")).toMatchObject([{content: "user3", gallery: "test"}]);
     });
 
     test("버블은 막은 규칙을 보이고, 허용 목록 항목에는 해제 버튼을 두지 않는다", async ({listPage, storage}) => {
@@ -24,13 +35,28 @@ test.describe("유저 버블", () => {
         await storage.setModuleSettings("block", {blur: true});
         await storage.set({"refresher:block:NICK": [{id: "a", content: "고닉", isRegex: false, mode: "NOT_SAME"}, {id: "b", content: "ㅇㅇ", isRegex: false, mode: "SAME"}]});
         await expect(listPage.row(2)).toHaveClass(/refresherBlur/);
-        await listPage.row(2).locator(".ub-writer").click({button: "right"});
+        await listPage.writer(2).click({button: "right"});
 
         const {bubble} = listPage;
         await expect(bubble.getByRole("button", {name: "닉네임 ㅇㅇ 차단 해제"})).toBeVisible();
         // 허용 목록(고닉만 보기)의 항목을 지우면 이 사람은 그대로 막히고 고닉까지 막힌다.
-        await expect(bubble.getByText("허용 목록에 없음")).toBeVisible();
+        await expect(bubble.getByText("닉네임 허용 목록(1개)에 없음")).toBeVisible();
         await expect(bubble.getByRole("button", {name: "닉네임 고닉 차단 해제"})).toHaveCount(0);
+    });
+
+    test("규칙을 해제하면 토스트의 되돌리기로 다시 걸고 토스트를 닫는다", async ({listPage, storage}) => {
+        await storage.setModuleSettings("block", {blur: true});
+        await storage.set({"refresher:block:NICK": [{id: "b", content: "ㅇㅇ", isRegex: false, mode: "SAME"}]});
+        await expect(listPage.row(2)).toHaveClass(/refresherBlur/);
+        await listPage.writer(2).click({button: "right"});
+        await listPage.bubble.getByRole("button", {name: "닉네임 ㅇㅇ 차단 해제"}).click();
+
+        const {toast} = listPage;
+        await expect(toast).toContainText("차단을 해제했습니다.");
+        await toast.getByRole("button", {name: "되돌리기"}).click();
+
+        await expect(toast).toHaveCount(0);
+        await expect.poll(() => storage.get("refresher:block:NICK")).toMatchObject([{content: "ㅇㅇ", mode: "SAME"}]);
     });
 
     test("미리보기 위에 띄운 버블은 Esc에 버블만 닫히고 미리보기는 남는다", async ({listPage}) => {
@@ -88,8 +114,10 @@ test.describe("오버레이 포커스", () => {
             await expect(nick).toBeFocused({timeout: 100});
         }).toPass();
 
+        await expect(nick).toHaveAttribute("aria-expanded", "false");
         await page.keyboard.press("Enter");
         await expect(bubble).toBeVisible();
+        await expect(nick).toHaveAttribute("aria-expanded", "true");
         // 키보드로 열면 버블 안으로 포커스가 옮겨 간다.
         await expect.poll(() => bubble.evaluate((element) => element.contains((element.getRootNode() as ShadowRoot).activeElement))).toBe(true);
         await page.keyboard.press("Escape");
@@ -112,7 +140,7 @@ test.describe("글 페이지 댓글", () => {
     const SAME = "같은 내용의 댓글입니다";
     const openView = async (page: Page) => {
         await page.goto("https://gall.dcinside.com/board/view/?id=test&no=3");
-        return page.locator(".cmt_list > li");
+        return viewPage(page).comments;
     };
 
     test("같은 댓글은 첫 댓글에 배지를 달고 접는다. 첫 댓글을 차단하면 남은 댓글로 다시 센다", async ({page, site, storage}) => {
@@ -130,6 +158,16 @@ test.describe("글 페이지 댓글", () => {
         await expect(items.nth(1)).toBeVisible();
         await expect(items.nth(2)).toBeVisible();
         await expect(page.locator(".refresherDuplicateBadge")).toHaveCount(0);
+    });
+
+    test("글자콘 댓글도 글자로 같은 댓글을 접는다", async ({page, site, storage}) => {
+        await storage.setModuleSettings("block", {foldDuplicate: true, duplicateCount: 3});
+        site.pageComments = ["가", "나", "다"].map((name, index) => fakeComment(20 + index, {name, memo: SAME, txtcon: true}));
+        const items = await openView(page);
+
+        await expect(items.nth(0).locator(".refresherDuplicateBadge")).toHaveText("같은 댓글 ×3");
+        await expect(items.nth(1)).toBeHidden();
+        await expect(items.nth(2)).toBeHidden();
     });
 
     test("깡계로 숨긴 댓글은 세지 않아 같은 내용의 다른 댓글까지 접지 않는다", async ({page, site, storage}) => {
@@ -152,6 +190,43 @@ test.describe("글 페이지 댓글", () => {
 
     test("글 머리의 작성자에도 유저 정보 배지를 붙인다", async ({page}) => {
         await openView(page);
-        await expect(page.locator(".gallview_head .refresher-user-badges")).toHaveText("(user3)");
+        await expect(viewPage(page).headBadges).toHaveText("(user3)");
+    });
+
+    // 차단 모듈이 우클릭 처리기를 걸기 전에 누르면 브라우저 메뉴만 뜬다. 버블이 뜰 때까지 다시 누른다.
+    const openDcconBubble = async (page: Page, dccon: Locator): Promise<Locator> => {
+        const bubble = page.getByLabel("디시콘 메뉴");
+        await expect(async () => {
+            await dccon.click({button: "right"});
+            await expect(bubble).toBeVisible({timeout: 500});
+        }).toPass();
+        return bubble;
+    };
+
+    test("디시콘을 우클릭하면 버블에 패키지 이름과 설명이 보이고, 누르면 정보 창이 열린다", async ({page, site}) => {
+        site.pageComments = [fakeComment(20, {memo: `<img class="written_dccon" src="${DCCON.list_img}" alt="${DCCON.title}">`})];
+        await openView(page);
+        const bubble = await openDcconBubble(page, page.locator("img.written_dccon").first());
+        const summary = bubble.getByTitle("디시콘 정보 보기");
+        await expect(summary).toHaveText("테스트콘웃는 얼굴 모음");
+
+        await summary.click();
+        await expect(page.getByRole("dialog", {name: "디시콘 정보"})).toBeVisible();
+    });
+
+    test("버블이 떠 있는 채로 다른 디시콘을 우클릭하면 그 디시콘의 패키지를 보인다", async ({page, site}) => {
+        site.pageComments = [
+            fakeComment(20, {memo: `<img class="written_dccon" src="${DCCON.list_img}" alt="${DCCON.title}">`}),
+            fakeComment(21, {memo: "<img class=\"written_dccon\" src=\"https://dcimg5.dcinside.com/dccon.php?no=81\" alt=\"인사\">"})
+        ];
+        await openView(page);
+        const dccons = page.locator("img.written_dccon");
+        const summary = page.getByLabel("디시콘 메뉴").getByTitle("디시콘 정보 보기");
+
+        await openDcconBubble(page, dccons.nth(0));
+        await expect(summary).toHaveText("테스트콘웃는 얼굴 모음");
+        // 첫 버블이 아래 댓글을 덮을 수 있어 우클릭 이벤트를 그 디시콘에 바로 보낸다.
+        await dccons.nth(1).dispatchEvent("contextmenu", {button: 2, bubbles: true});
+        await expect(summary).toHaveText("둘째콘인사 모음");
     });
 });

@@ -10,7 +10,6 @@ type MemoMap = Record<string, MemoEntry>;
 
 interface MemosState {
     memos: Record<MemoType, MemoMap>;
-    setMemos: (type: MemoType, memos: MemoMap) => Promise<void>;
     /** 저장소의 현재 값에 change를 붙여 쓴다 (가져오기·여러 개 지우기). */
     updateMemos: (type: MemoType, change: (memos: MemoMap) => MemoMap) => Promise<void>;
     setMemo: (type: MemoType, user: string, entry: MemoEntry) => Promise<void>;
@@ -18,7 +17,8 @@ interface MemosState {
 }
 
 const isMemoEntry = (value: unknown): value is MemoEntry =>
-    isRecord(value) && typeof value.text === "string" && typeof value.color === "string" && (value.gallery === undefined || typeof value.gallery === "string");
+    isRecord(value) && typeof value.text === "string" && typeof value.color === "string" && (value.gallery === undefined || typeof value.gallery === "string")
+    && (value.added === undefined || typeof value.added === "number");
 
 /**
  * 새 메모의 기본 색. 색상만 무작위로 고르고 채도(60%)·명도(50%)는 고정한다. 아무 RGB나 고르면 흰색·검은색에 가까운 색이 나와 한쪽 테마에서 안 보인다.
@@ -44,12 +44,16 @@ export const normalizeMemoMap = (value: unknown): MemoMap =>
 export const useMemosStore = create<MemosState>(() => ({
     memos: {UID: {}, NICK: {}, IP: {}},
 
-    setMemos: (type, memos): Promise<void> => lists.save(type, memos),
-
     updateMemos: (type, change): Promise<void> => lists.update(type, change),
 
     setMemo: async (type, user, entry) => {
-        await lists.update(type, (current) => ({...current, [user]: entry}));
+        // 추가 시각은 밖에서 한 번 구한다 (change는 두 번 불린다). 고칠 때는 처음 시각을 지키고, 시각 없는 옛 메모는 그대로 둔다.
+        const now = Date.now();
+        await lists.update(type, (current) => {
+            const existing = ownMemo(current, user);
+            const added = existing ? existing.added : now;
+            return {...current, [user]: added === undefined ? entry : {...entry, added}};
+        });
     },
 
     removeMemo: async (type, user) => {
@@ -81,7 +85,7 @@ const lookupMemo = (memos: Record<MemoType, MemoMap>, user: MemoUser, gallery?: 
 export const findMemo = (user: MemoUser, gallery?: string | null): MemoEntry | undefined =>
     lookupMemo(useMemosStore.getState().memos, user, gallery);
 
-/** React용 findMemo. 구독한 memos로 찾아야 React Compiler가 메모가 바뀔 때 다시 계산한다. */
+/** 컴포넌트용 findMemo. 구독한 memos로 찾아야 메모가 바뀔 때 다시 그린다. */
 export const useUserMemo = (user: MemoUser, gallery?: string | null): MemoEntry | undefined =>
     lookupMemo(useMemosStore((state) => state.memos), user, gallery);
 

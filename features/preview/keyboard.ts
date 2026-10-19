@@ -1,10 +1,11 @@
+import {LIST_ROW_SELECTOR} from "@/core/list";
 import {postKey} from "@/core/preview/cache";
 import type {GalleryPreData} from "@/core/preview/types";
 import {smoothScroll} from "@/utils/dom";
 import {isTyping} from "@/utils/event";
 
 import type {Ctx} from "./meta";
-import {isBlurHidden, type ListRow, listRows, ROW_SELECTOR, rowPostKey} from "./rows";
+import {buildPreData, isBlurHidden, type ListRow, listRows} from "./rows";
 import {usePreviewStore} from "./ui/previewStore";
 
 const SELECTED_CLASS = "refresherSelected";
@@ -46,14 +47,11 @@ export const bindListKeys = (ctx: Ctx, open: (preData: GalleryPreData) => void):
 
         if (ev.code === "KeyJ" || ev.code === "KeyK") {
             move(ev.code === "KeyJ" ? 1 : -1);
-        } else if (selected && idle && (ev.code === "Enter" || ev.code === "NumpadEnter") && !ev.repeat) {
+        } else if (selected && idle && (ev.code === "Enter" || ev.code === "NumpadEnter" || ev.code === "KeyO") && !ev.repeat) {
             const entry = current();
             if (!entry) return;
-            open(entry.pre);
-        } else if (selected && idle && ev.code === "KeyO" && !ev.repeat) {
-            const entry = current();
-            if (!entry) return;
-            location.href = entry.pre.link;
+            if (ev.code === "KeyO") location.href = entry.pre.link;
+            else open(entry.pre);
         } else if (selected && ev.code === "Escape") {
             select(undefined);
         } else {
@@ -63,8 +61,10 @@ export const bindListKeys = (ctx: Ctx, open: (preData: GalleryPreData) => void):
     };
     window.addEventListener("keydown", onKey, {signal: ctx.signal});
 
-    ctx.addFilter(ROW_SELECTOR, (row) => {
-        if (selected && rowPostKey(row) === selected) row.classList.add(SELECTED_CLASS);
+    ctx.addFilter(LIST_ROW_SELECTOR, (row) => {
+        if (!selected) return;
+        const pre = buildPreData(row);
+        if (pre && postKey(pre) === selected) row.classList.add(SELECTED_CLASS);
     });
 
     // 미리보기에서 PageUp/Down으로 넘긴 뒤 닫으면 마지막으로 본 글을 고른다. 키보드로 고르던 중일 때만.
@@ -75,4 +75,8 @@ export const bindListKeys = (ctx: Ctx, open: (preData: GalleryPreData) => void):
         if (entry) select(entry);
     }));
     ctx.addCleanup(() => select(undefined));
+    // 끄면 Esc도 막히므로 여기서 선택을 푼다.
+    ctx.onSettingsChanged((keys) => {
+        if (keys.has("listKeyboard") && !ctx.settings.listKeyboard) select(undefined);
+    });
 };

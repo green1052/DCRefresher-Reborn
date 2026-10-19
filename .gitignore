@@ -7,3 +7,4 @@ web-ext.config.ts
 db
 test-results
 playwright-report
+stats.html
