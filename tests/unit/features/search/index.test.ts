@@ -110,3 +110,31 @@ it("결과가 없는 구간의 빈 표(empty)에 이으면 empty를 떼고, 모�
     expect(nos(list)).toEqual([]);
     expect(table.classList.contains("empty")).toBe(true);
 });
+
+it("작성자 거르기만 하는 목록은 갈아끼울 때마다 다음 쪽을 새로 받는다", async () => {
+    // 다음 쪽은 새 글이 들어오면 밀린다. 받아 둔 옛 쪽으로 이으면 1쪽에서 밀려난 글이 사라진다.
+    history.replaceState(null, "", "/board/lists/?id=test&rf_ip=1.2");
+    try {
+        const writerRow = (no: string): string => `<tr class="ub-content" data-no="${no}"><td class="ub-writer" data-ip="1.2"></td></tr>`;
+        const list = (rows: string, current: number): string =>
+            `<div class="left_content"><article><div class="gall_listwrap"><table class="gall_list"><tbody>${rows}</tbody></table></div>` +
+            `<div class="bottom_paging_box"><em>${current}</em>${current === 1 ? "<a href=\"/board/lists/?id=test&page=2\">2</a>" : ""}</div></article></div>`;
+        let second = writerRow("29");
+        get.mockImplementation(async () => new Response(list(second, 2)));
+        document.body.innerHTML = `<input id="list_num" value="2">${list(writerRow("30"), 1)}`;
+        running = await runModule(search);
+        await vi.waitFor(() => expect(nos(document.querySelector(".gall_list tbody")!)).toEqual(["30", "29"]));
+
+        // 새 글이 들어와 29가 1쪽으로 오고 28이 2쪽으로 밀렸다. 새로고침 모듈처럼 페이징을 되돌리고 목록을 갈아끼운다.
+        second = writerRow("28");
+        document.querySelector(".bottom_paging_box")!.innerHTML = "<em>1</em><a href=\"/board/lists/?id=test&page=2\">2</a>";
+        const fresh = document.createElement("tbody");
+        fresh.innerHTML = writerRow("29");
+        document.querySelector(".gall_list tbody")!.replaceWith(fresh);
+
+        await vi.waitFor(() => expect(nos(fresh)).toEqual(["29", "28"]));
+        expect(get).toHaveBeenCalledTimes(2);
+    } finally {
+        history.replaceState(null, "", "/board/lists/?id=test&s_type=search_subject_memo&s_keyword=abc");
+    }
+});

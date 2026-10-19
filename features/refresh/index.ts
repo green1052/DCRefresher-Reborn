@@ -52,7 +52,9 @@ export default defineModule(meta, {
             for (const row of document.querySelectorAll<HTMLElement>(".refresherNewPost")) clearNewPost(row);
         });
 
-        let paused = Boolean(queryString("s_keyword") && ctx.settings.noRefreshOnSearch);
+        // 아이디·IP 검색(작성자 거르기)도 검색이다. 다시 이을 때마다 다음 쪽들을 새로 받으므로(features/search) 주기마다 돌면 요청이 몰린다.
+        const searching = (): boolean => Boolean(queryString("s_keyword") || writerFilter());
+        let paused = searching() && ctx.settings.noRefreshOnSearch;
         let lastRefresh = 0;
         let loading = false;
         let timer = 0;
@@ -322,7 +324,7 @@ export default defineModule(meta, {
             if (keys.has("titleCount") && !ctx.settings.titleCount) unseen.clear();
             // 주기 설정은 옵션 탭에서 바꾸므로 이미 잡힌 주기가 끝나기를 기다리지 않고 새 값으로 다시 잡는다.
             if (keys.has("refreshRate") || keys.has("backgroundRefresh") || keys.has("backgroundRefreshRate")) armNext();
-            if (keys.has("noRefreshOnSearch") && queryString("s_keyword")) setPaused(ctx.settings.noRefreshOnSearch);
+            if (keys.has("noRefreshOnSearch") && searching()) setPaused(ctx.settings.noRefreshOnSearch);
         });
 
         const onVisibilityChange = (): void => {

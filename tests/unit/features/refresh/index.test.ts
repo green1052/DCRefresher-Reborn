@@ -88,8 +88,8 @@ describe("제어 버튼·일시정지", () => {
         expect(buttons[0]?.textContent).toBe("자동 새로고침: 켜짐");
     });
 
-    it("검색 중이면 처음부터 멈춘다", async () => {
-        history.replaceState(null, "", "/board/lists/?id=test&s_keyword=abc");
+    it.each(["s_keyword=abc", "rf_ip=1.2"])("검색 중(%s)이면 처음부터 멈춘다", async (query) => {
+        history.replaceState(null, "", `/board/lists/?id=test&${query}`);
         const {api, change} = await start();
         expect(api.isPaused()).toBe(true);
         change({noRefreshOnSearch: false});
@@ -282,7 +282,7 @@ describe("자동 새로고침", () => {
         const old = document.querySelector(".gall_list tbody")!;
         old.insertAdjacentHTML("beforeend", row("0"));
         respond(["2", "1"]);
-        await start();
+        await start({noRefreshOnSearch: false});
         await vi.advanceTimersByTimeAsync(5500);
         expect(get).toHaveBeenCalled();
         expect(document.querySelector(".gall_list tbody")).not.toBe(old);
