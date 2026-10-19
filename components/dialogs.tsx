@@ -101,10 +101,13 @@ export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true,
     );
 };
 
-/** 다이얼로그 하단 버튼 줄. 취소(닫기) 버튼 뒤에 children을 둔다. cancelLabel이 null이면 취소 버튼을 뺀다. */
-export const DialogActions = ({cancelLabel = "취소", children}: { cancelLabel?: string | null; children?: ReactNode }) => (
+/**
+ * 다이얼로그 하단 버튼 줄. 취소(닫기) 버튼 뒤에 children을 둔다. cancelLabel이 null이면 취소 버튼을 뺀다.
+ * cancelDisabled는 닫지 못하는 동안(ModalDialog의 dismissible이 false) 취소 버튼도 꺼 둔다.
+ */
+export const DialogActions = ({cancelLabel = "취소", cancelDisabled, children}: { cancelLabel?: string | null; cancelDisabled?: boolean; children?: ReactNode }) => (
     <DialogFooter>
-        {cancelLabel !== null && <DialogClose render={<Button variant="outline"/>}>{cancelLabel}</DialogClose>}
+        {cancelLabel !== null && <DialogClose disabled={cancelDisabled} render={<Button variant="outline"/>}>{cancelLabel}</DialogClose>}
         {children}
     </DialogFooter>
 );
