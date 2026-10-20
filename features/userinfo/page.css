@@ -39,6 +39,8 @@
             display: flex !important;
             /* 넘치면 왼쪽부터 채운다. 그냥 center면 양쪽이 잘려 닉네임 앞 글자가 가려진다. */
             justify-content: safe center;
+            /* 디시의 center는 글꼴 크기가 다른 닉네임·식별 코드(11px)·배지를 가운데로 맞춰 글자 밑선이 어긋난다. */
+            align-items: baseline;
             position: static;
             overflow: hidden;
 
@@ -91,6 +93,8 @@
      */
     :is(.gall_list td.gall_writer, .cmt_nickbox) .refresher-user-badges {
         display: flex;
+        /* 식별 코드 배지(.ip, 11px)와 메모 등의 글자 밑선을 맞춘다. */
+        align-items: baseline;
         flex-shrink: 1;
         min-width: 0;
         overflow: hidden;
