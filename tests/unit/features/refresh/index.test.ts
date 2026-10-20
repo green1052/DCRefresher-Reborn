@@ -573,17 +573,61 @@ describe("탭 제목 새 글 수·여기까지 읽음", () => {
         expect(marked()).toEqual(["2"]);
     });
 
-    it("titleCount를 끄면 선을 긋지 않는다", async () => {
+    it("readMark를 끄면 탭 제목에는 세어도 선을 긋지 않는다", async () => {
         Element.prototype.checkVisibility = () => true;
+        document.title = "갤러리";
+        const focus = vi.spyOn(document, "hasFocus").mockReturnValue(false);
+        const {api} = await start({readMark: false});
+        window.dispatchEvent(new Event("blur"));
+        respond(["3", "2", "1"]);
+        await api.reload();
+        await tick();
+        expect(document.title).toBe("(1) 갤러리");
+        focus.mockReturnValue(true);
+        window.dispatchEvent(new Event("focus"));
+        expect(marked()).toEqual([]);
+    });
+
+    it("titleCount를 끄면 탭 제목은 그대로 두고 선은 긋는다", async () => {
+        Element.prototype.checkVisibility = () => true;
+        document.title = "갤러리";
         const focus = vi.spyOn(document, "hasFocus").mockReturnValue(false);
         const {api} = await start({titleCount: false});
         window.dispatchEvent(new Event("blur"));
         respond(["3", "2", "1"]);
         await api.reload();
         await tick();
+        expect(document.title).toBe("갤러리");
         focus.mockReturnValue(true);
         window.dispatchEvent(new Event("focus"));
+        expect(marked()).toEqual(["2"]);
+    });
+
+    it("설정을 끄면 그 설정이 붙인 것만 뗀다", async () => {
+        Element.prototype.checkVisibility = () => true;
+        document.title = "갤러리";
+        const focus = vi.spyOn(document, "hasFocus").mockReturnValue(false);
+        const {api, change} = await start();
+        window.dispatchEvent(new Event("blur"));
+        respond(["3", "2", "1"]);
+        await api.reload();
+        await tick();
+        focus.mockReturnValue(true);
+        window.dispatchEvent(new Event("focus"));
+        expect(marked()).toEqual(["2"]);
+
+        // 다시 떠나 제목에 수가 붙은 채로 선을 끈다.
+        focus.mockReturnValue(false);
+        window.dispatchEvent(new Event("blur"));
+        respond(["4", "3", "2", "1"]);
+        await api.reload();
+        await tick();
+        expect(document.title).toBe("(1) 갤러리");
+        change({readMark: false});
         expect(marked()).toEqual([]);
+        expect(document.title).toBe("(1) 갤러리");
+        change({titleCount: false});
+        expect(document.title).toBe("갤러리");
     });
 
     it("모듈을 끄면 선을 뗀다", async () => {

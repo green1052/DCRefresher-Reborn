@@ -45,7 +45,7 @@ const applyDoNotColorVisited = (ctx: Ctx): void => {
 export default defineModule(meta, {
     setup(ctx) {
         ctx.onRevoke(() => {
-            // 탭 제목의 새 글 수와 '여기까지 읽음' 선은 title.ts의 정리 함수(clear)가 뗀다.
+            // 탭 제목의 새 글 수와 '여기까지 읽음' 선은 title.ts의 정리 함수(clearTitle·clearMark)가 뗀다.
             document.documentElement.classList.remove("refresherDoNotColorVisited");
             // 남긴 삭제된 글 행은 서버 목록에 없다. 모듈을 끄면 목록을 다시 받는 쪽이 없어 페이지를 새로고침할 때까지 남는다.
             for (const row of document.querySelectorAll(".refresherDeleted")) row.remove();
@@ -321,7 +321,8 @@ export default defineModule(meta, {
 
         ctx.onSettingsChanged((keys) => {
             if (keys.has("doNotColorVisited")) applyDoNotColorVisited(ctx);
-            if (keys.has("titleCount") && !ctx.settings.titleCount) unseen.clear();
+            if (keys.has("titleCount") && !ctx.settings.titleCount) unseen.clearTitle();
+            if (keys.has("readMark") && !ctx.settings.readMark) unseen.clearMark();
             // 주기 설정은 옵션 탭에서 바꾸므로 이미 잡힌 주기가 끝나기를 기다리지 않고 새 값으로 다시 잡는다.
             if (keys.has("refreshRate") || keys.has("backgroundRefresh") || keys.has("backgroundRefreshRate")) armNext();
             if (keys.has("noRefreshOnSearch") && searching()) setPaused(ctx.settings.noRefreshOnSearch);

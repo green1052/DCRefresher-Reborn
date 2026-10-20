@@ -9,6 +9,7 @@ export const settings = {
     noRefreshOnSearch: {type: "check", default: true},
     pauseOnHover: {type: "check", default: false},
     titleCount: {type: "check", default: true},
+    readMark: {type: "check", default: true},
     backgroundRefresh: {type: "check", default: false},
     backgroundRefreshRate: {type: "range", default: 30000, min: 10000, max: 120000, step: 1000, unit: "ms"},
     doNotColorVisited: {type: "check", default: false}
