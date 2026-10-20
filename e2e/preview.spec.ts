@@ -892,6 +892,12 @@ test.describe("미니 미리보기", () => {
         await expect(listPage.mini).toHaveCount(0);
     });
 
+    test("본문은 폰트 교체의 본문 폰트 크기를 전체 미리보기처럼 따른다", async ({listPage, storage}) => {
+        await storage.setModuleSettings("fonts", {bodyFontSize: 20});
+        const contents = listPage.mini.locator(".refresher-mini-contents");
+        await expect(contents).toHaveCSS("font-size", "22px");
+    });
+
     test("훑고 지나간 제목은 글을 받지 않고, 멈춘 제목만 받는다", async ({listPage}) => {
         await listPage.leave();
         const viewed: string[] = [];
