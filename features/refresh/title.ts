@@ -42,10 +42,10 @@ const topPostNo = (): string | undefined => {
 const isWatching = (): boolean => !document.hidden && document.hasFocus();
 
 /**
- * 이 탭을 보지 않는 동안 들어온 새 글 수를 탭 제목에 붙이고, 돌아오면(창 포커스·탭 표시) 지운다.
+ * 이 탭을 보지 않는 동안 들어온 새 글 수를 탭 제목에 붙이고(titleCount), 돌아오면(창 포커스·탭 표시) 지운다.
  * 가린 글(차단·깡계 숨김과 흐리게)은 세지 않는다. 필터는 행을 넣은 뒤(MutationObserver)에 돌므로 한 차례 뒤에 센다.
  * 돌아왔을 때 센 글이 있거나 숨긴 탭에서 돌아온 뒤 첫 로드에 새 글이 있으면, 떠날 때 맨 위에 있던 글에
- * 다음에 돌아올 때까지 '여기까지 읽음' 선을 긋는다.
+ * 다음에 돌아올 때까지 '여기까지 읽음' 선을 긋는다(readMark).
  */
 export const createUnseenCounter = (ctx: Ctx) => {
     let unseen = 0;
@@ -73,21 +73,22 @@ export const createUnseenCounter = (ctx: Ctx) => {
         returnedFrom = undefined;
         if (rows.length === 0) return;
         window.setTimeout(() => {
-            if (ctx.signal.aborted || !ctx.settings.titleCount) return;
+            // 선도 떠난 동안 센 수로 긋는지 정하므로 둘 중 하나만 켜져 있어도 센다.
+            if (ctx.signal.aborted || (!ctx.settings.titleCount && !ctx.settings.readMark)) return;
             const added = rows.filter((row) => row.isConnected && row.checkVisibility() && !row.closest(BLURRED_ROW_SELECTOR)).length;
             if (!isWatching()) {
                 unseen += added;
-                setTitleCount(unseen);
-            } else if (mark !== undefined && added > 0) {
+                if (ctx.settings.titleCount) setTitleCount(unseen);
+            } else if (ctx.settings.readMark && mark !== undefined && added > 0) {
                 readMark = mark;
                 showMark();
             }
         });
     };
 
-    const clear = (): void => {
-        unseen = 0;
-        setTitleCount(0);
+    const clearTitle = (): void => setTitleCount(0);
+
+    const clearMark = (): void => {
         readMark = undefined;
         returnedFrom = undefined;
         showMark();
@@ -102,7 +103,7 @@ export const createUnseenCounter = (ctx: Ctx) => {
         }
 
         // 돌아오면 focus와 visibilitychange가 함께 온다(페이지 안 iframe으로 포커스가 옮겨도 blur가 온다). 떠났다 돌아온 첫 번만 선을 고친다.
-        if (away) readMark = unseen > 0 ? leftAt : undefined;
+        if (away) readMark = ctx.settings.readMark && unseen > 0 ? leftAt : undefined;
         if (hiddenAway) returnedFrom = leftAt;
         away = false;
         hiddenAway = false;
@@ -113,7 +114,10 @@ export const createUnseenCounter = (ctx: Ctx) => {
     window.addEventListener("focus", onFocusChange, {signal: ctx.signal});
     window.addEventListener("blur", onFocusChange, {signal: ctx.signal});
     document.addEventListener("visibilitychange", onFocusChange, {signal: ctx.signal});
-    ctx.addCleanup(clear);
+    ctx.addCleanup(() => {
+        clearTitle();
+        clearMark();
+    });
 
-    return {count, clear, showMark};
+    return {count, clearTitle, clearMark, showMark};
 };

@@ -3,7 +3,7 @@ import {graphemes, wrapTxtcon} from "@/core/preview/txtcon";
 /* ===== 글자콘: 디시 txtcon_view.js를 옮긴 것 (디시 스크립트는 shadow DOM 안을 건드리지 못한다) ===== */
 
 /** 박스에 넘치지 않는 최대 글자 크기를 16~72px에서 이진 탐색한다. 줄 수는 16px일 때로 고정하고, 폭이 넘치면 break-all로 바꾼다. */
-export const fitTxtcon = (box: HTMLElement): void => {
+const fitTxtcon =(box: HTMLElement): void => {
     const txt = box.querySelector<HTMLElement>(".txtcon_txt");
     if (!txt || !box.getClientRects().length) return;
 

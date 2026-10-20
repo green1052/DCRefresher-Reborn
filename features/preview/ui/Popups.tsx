@@ -1,15 +1,16 @@
 import {ArrowBigUpDash, Ban, Megaphone, Star, Trash2} from "lucide-react";
-import {type ReactNode, useId, useRef, useState} from "react";
+import {type ReactNode, useEffect, useId, useRef, useState} from "react";
 
 import {DialogActions, ModalDialog, SubmitForm} from "@/components/dialogs";
 import {Button} from "@/components/ui/button";
 import {Checkbox} from "@/components/ui/checkbox";
-import {DialogHeader, DialogTitle} from "@/components/ui/dialog";
+import {DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import {Field, FieldLabel} from "@/components/ui/field";
 import {Input} from "@/components/ui/input";
 import {Kbd} from "@/components/ui/kbd";
 import {RadioGroup, RadioGroupItem} from "@/components/ui/radio-group";
 import {Spinner} from "@/components/ui/spinner";
+import {sendMessage, TURNSTILE_CANCEL_EVENT, TURNSTILE_HOST} from "@/core/messaging/protocol";
 import {useContentModuleSettings} from "@/core/module/useModuleSettings";
 import {BLOCK_DAYS, BLOCK_REASONS, type BlockDay, type BlockReason} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
@@ -19,7 +20,7 @@ import {objectEntries} from "@/utils/typed";
 
 import {DcconInfoPopup} from "./DcconInfoPopup";
 import {ImageViewer} from "./ImageViewer";
-import {MANAGE_LABELS, type ManageKind, usePreviewStore} from "./previewStore";
+import {MANAGE_LABELS, type ManageKind, type TurnstilePrompt, usePreviewStore} from "./previewStore";
 
 /** 고를 수 있는 값만 onChange로 넘긴다 (RadioGroup은 unknown을 준다). */
 const RadioGrid = <T extends string, >({label, items, value, onChange}: {
@@ -154,6 +155,45 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
     );
 };
 
+/**
+ * 확인을 눌러야 하는 Turnstile. 창의 자리(TURNSTILE_HOST)에 페이지가 위젯을 그리고, 토큰을 받으면 창을 닫는다.
+ * 닫으면 기다리던 페이지 쪽에 알리고 undefined로 끝낸다 (댓글을 보내지 않는다).
+ */
+const TurnstilePopup = ({turnstile}: { turnstile: TurnstilePrompt }) => {
+    const host = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const element = host.current;
+        let done = false;
+        void sendMessage("refresher:turnstileToken", {config: turnstile.config, visible: true}).catch(() => undefined).then((result) => {
+            done = true;
+            turnstile.resolve(result);
+            usePreviewStore.setState((state) => (state.turnstile === turnstile ? {turnstile: null} : {}));
+        });
+        return () => {
+            if (!done) element?.dispatchEvent(new Event(TURNSTILE_CANCEL_EVENT));
+        };
+    }, [turnstile]);
+
+    return (
+        <ModalDialog
+            onClose={() => {
+                turnstile.resolve(undefined);
+                usePreviewStore.setState({turnstile: null});
+            }}
+            className="sm:max-w-[360px]"
+        >
+            <DialogHeader>
+                <DialogTitle>보안 확인</DialogTitle>
+                <DialogDescription>체크박스를 누르면 댓글을 보냅니다.</DialogDescription>
+            </DialogHeader>
+            {/* 위젯(300×65)이 뜨기 전에도 자리를 잡아 둔다. */}
+            <div ref={host} {...{[TURNSTILE_HOST]: ""}} className="flex min-h-[65px] justify-center"/>
+            <DialogActions/>
+        </ModalDialog>
+    );
+};
+
 /** 관리 버튼 두 번 누르기 확인 시간(ms). 이 안에 같은 버튼을 다시 눌러야 실행한다. */
 const CONFIRM_WINDOW = 3000;
 
@@ -237,6 +277,7 @@ export const Popups = () => {
     // 창을 여는 동안 고른 댓글은 그대로다. 창이 열린 채 고른 것을 바꿀 수 없다 (모달).
     const selected = usePreviewStore((s) => s.selectedComments);
     const captcha = usePreviewStore((s) => s.captcha);
+    const turnstile = usePreviewStore((s) => s.turnstile);
     const dcconInfo = usePreviewStore((s) => s.dcconInfo);
     const viewer = usePreviewStore((s) => s.viewer);
 
@@ -245,6 +286,7 @@ export const Popups = () => {
             {blockPopup === "post" && <BlockPopup/>}
             {blockPopup === "comments" && <BlockPopup comments={[...selected]}/>}
             {captcha && <CaptchaPopup key={captcha.url} captcha={captcha}/>}
+            {turnstile && <TurnstilePopup turnstile={turnstile}/>}
             {dcconInfo && <DcconInfoPopup key={dcconInfo} code={dcconInfo}/>}
             {viewer && <ImageViewer images={viewer.images} index={viewer.index}/>}
         </>

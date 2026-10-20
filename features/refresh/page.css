@@ -22,7 +22,7 @@
     background-color: rgba(232, 100, 95, 0.25) !important;
 }
 
-/* '여기까지 읽음' 구분선 (refresh 모듈의 titleCount) — 탭을 떠날 때 맨 위에 있던 글. */
+/* '여기까지 읽음' 구분선 (refresh 모듈의 readMark) — 탭을 떠날 때 맨 위에 있던 글. */
 .refresherReadMark > td {
     border-top: 2px solid #e8645f !important;
 }

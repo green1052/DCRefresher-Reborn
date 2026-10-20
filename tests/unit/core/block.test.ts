@@ -306,6 +306,16 @@ describe("이미지 차단", () => {
             expect(fetchImage).toHaveBeenCalledTimes(2);
         });
 
+        it("같은 주소를 한 번에 여럿 물어도 한 번만 읽고, 지문도 한 번만 다시 읽는다", async () => {
+            const url = imageUrl();
+            await Promise.all([imageHash(url), imageHash(url)]);
+            expect(fetchImage).toHaveBeenCalledTimes(1);
+
+            await Promise.all([imageHash(url, {similar: true}), imageHash(url, {similar: true})]);
+            expect(fetchImage).toHaveBeenCalledTimes(2);
+            expect(imageFingerprints).toHaveBeenCalledTimes(1);
+        });
+
         it("읽지 못한 주소는 retry일 때만 다시 읽는다", async () => {
             const url = imageUrl();
             fetchImage.mockRejectedValueOnce(new TypeError("Failed to fetch"));

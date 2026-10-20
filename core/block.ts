@@ -131,7 +131,7 @@ const blockingIn = (lists: BlockLists, type: BlockType, content: string, gallery
  * src 없이 data-src나 <source>만 가진 video 디시콘이 있고, 빈 src 속성도 건너뛰어야 해서 ||를 쓴다.
  */
 export const dcconCode = (element: HTMLElement): string | undefined => {
-    const media = (element as HTMLImageElement).src ? element : (element.querySelector("img, video, source") ?? element);
+    const media = element.getAttribute("src") ? element : (element.querySelector("img, video, source") ?? element);
     const src = media.getAttribute("src") || media.getAttribute("data-src");
     return src ? URL.parse(src, location.href)?.searchParams.get("no") || undefined : undefined;
 };
@@ -194,9 +194,12 @@ const readImage = async (url: string, {retry = false, similar = false}: { retry?
     const cached = imageReads.get(url);
     // 지문이 끝나기를 기다리지 않고 돌려준다. 같은 파일은 파일 해시가 나오자마자 막는다 (isImageBlocked).
     if (cached && !retry && (cached.similar || !similar)) return cached;
-    const previous = await cached?.hashes;
+    // 읽은 것이 없으면 기다리지 않고 곧바로 등록한다. await undefined도 양보라 같은 주소를 한 번에 여럿 판정하면 저마다 받고 해시·지문을 구한다.
+    const previous = cached ? await cached.hashes : undefined;
     // 지문 없이 읽어 둔 것은 지문이 필요해지면 다시 읽는다 (비슷한 이미지 설정을 켰을 때). 읽지 못한 것은 retry일 때만 다시 읽는다.
     if (cached && (previous ? !similar || previous.similar !== undefined : !retry)) return cached;
+    // 기다리는 동안 다른 호출이 이미 다시 읽기 시작했으면 그것을 쓴다. 그 읽기는 기다리기 시작한 뒤의 것이라 retry도 채운다.
+    if (cached && imageReads.get(url) !== cached) return readImage(url, {similar});
     const file = Promise.withResolvers<string | undefined>();
     // 다시 읽다 실패하면 앞서 구한 파일 해시를 지킨다.
     const hashes = readImageHashes(url, similar, file.resolve).then((next) => next ?? previous);

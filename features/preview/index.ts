@@ -515,8 +515,8 @@ const controller = (ctx: Ctx) => {
                 const request = kind === "notice" ? setNotice(target, !on) : setRecommend(target, !on);
                 if (await notifyManage(request, `${MANAGE_LABELS[kind][on ? 1 : 0]}했습니다.`, failure) && stillOpen()) toggled(kind, !on);
             } else if (kind === "delete") {
-                close();
-                await notifyManage(deletePost(target), "게시글을 삭제했습니다.", failure);
+                // 지운 뒤에 닫는다. 먼저 닫으면 실패했을 때 보던 글이 사라진다. 그새 다른 글로 넘어갔으면 그 글은 두고 닫지 않는다.
+                if (await notifyManage(deletePost(target), "게시글을 삭제했습니다.", failure) && stillOpen()) close();
             } else if (kind === "bump") {
                 await notifyManage(bump(target), "게시글을 끌올했습니다.", failure);
             }

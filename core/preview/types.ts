@@ -87,6 +87,17 @@ export interface CommentForm {
     checks: Record<string, string>;
     /** 갤닉 입력칸(#use_gall_nick)이 있으면 #gall_nick_name의 값, 없으면 undefined다. */
     gallNickName?: string;
+    /** 글 페이지의 window._TS_CMT_. 있으면 댓글·디시콘·글자콘에 Turnstile 칸을 붙여 보낸다 (디시 comment.js의 ts_cmt_fields). */
+    turnstile?: TurnstileConfig;
+}
+
+/** 디시 댓글 Turnstile 설정 (글 페이지의 window._TS_CMT_). wait는 토큰을 기다릴 상한(ms)이다. */
+export interface TurnstileConfig {
+    mode: number;
+    sitekey: string;
+    wait: number;
+    appearance?: string;
+    test: boolean;
 }
 
 export interface DcinsideDccon {

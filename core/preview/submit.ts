@@ -4,6 +4,7 @@ import {urls} from "@/core/http/urls";
 import type {CommentRcKey} from "@/core/messaging/protocol";
 
 import {decodeD} from "./dcinside-js";
+import {fcmToken} from "./fcm";
 import {type SubmitResult, submitResult} from "./response";
 import type {DcinsideDccon, GalleryPreData, PostInfo} from "./types";
 
@@ -14,7 +15,7 @@ import type {DcinsideDccon, GalleryPreData, PostInfo} from "./types";
 export const submitComment = async (
     preData: GalleryPreData,
     postInfo: PostInfo,
-    {user, memo, commentNo, replyNo, bigDccon, captcha, rcKey, grecaptchaToken}: {
+    {user, memo, commentNo, replyNo, bigDccon, captcha, rcKey, grecaptchaToken, turnstile}: {
         user: { name: string; pw?: string };
         memo: string | DcinsideDccon[];
         commentNo: string | null;
@@ -23,6 +24,8 @@ export const submitComment = async (
         captcha?: string;
         rcKey?: CommentRcKey;
         grecaptchaToken?: string;
+        /** 디시 ts_cmt_fields처럼 끝에 붙이는 Turnstile 칸. */
+        turnstile?: Record<string, string>;
     }
 ): Promise<SubmitResult> => {
     const form = postInfo.commentForm;
@@ -79,8 +82,9 @@ export const submitComment = async (
                 double_con_chk: memo.length > 1 && "1",
                 package_idx: memo.map((dccon) => dccon.package_idx).join(","),
                 detail_idx: memo.map((dccon) => dccon.detail_idx).join(",")
-            })
+            }),
+        ...turnstile
     });
 
-    return submitResult(await ajax.post(typeof memo === "string" ? urls.comments_submit : urls.dccon_comments_submit, {body: params}).text());
+    return submitResult(await ajax.post(typeof memo === "string" ? urls.comments_submit : urls.dccon_comments_submit, {body: params, headers: {fcmToken: await fcmToken()}}).text());
 };

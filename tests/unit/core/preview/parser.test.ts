@@ -117,6 +117,13 @@ describe("parsePostInfo", () => {
         expect(info.commentId).toBe("cid");
     });
 
+    it("댓글 Turnstile 설정(_TS_CMT_)을 읽고, 본문에 넣은 같은 설정은 읽지 않는다", () => {
+        const config = "<script>var _TS_CMT_ = {\"mode\":2,\"sitekey\":\"0xKEY\",\"wait\":20000};</script>";
+        expect(parse(page({tail: config})).commentForm.turnstile).toEqual({mode: 2, sitekey: "0xKEY", wait: 20000, appearance: undefined, test: false});
+        expect(parse(page({body: config})).commentForm.turnstile).toBeUndefined();
+        expect(parse(page({tail: config.replace("\"mode\":2", "\"mode\":0")})).commentForm.turnstile).toBeUndefined();
+    });
+
     it("본문 위 짤방과 광고 자리를 뺀다", () => {
         const box = contents(parse(page({body: "<div id=\"zzbang_div\">짤방</div><div id=\"ad_nv_slot\">광고</div><p>글</p>"})));
         expect(box.textContent).toBe("글");

@@ -88,8 +88,8 @@ describe("제어 버튼·일시정지", () => {
         expect(buttons[0]?.textContent).toBe("자동 새로고침: 켜짐");
     });
 
-    it("검색 중이면 처음부터 멈춘다", async () => {
-        history.replaceState(null, "", "/board/lists/?id=test&s_keyword=abc");
+    it.each(["s_keyword=abc", "rf_ip=1.2"])("검색 중(%s)이면 처음부터 멈춘다", async (query) => {
+        history.replaceState(null, "", `/board/lists/?id=test&${query}`);
         const {api, change} = await start();
         expect(api.isPaused()).toBe(true);
         change({noRefreshOnSearch: false});
@@ -273,6 +273,21 @@ describe("자동 새로고침", () => {
         api.catchUp();
         await vi.advanceTimersByTimeAsync(0);
         expect(listed()).toEqual(["3", "2", "1"]);
+    });
+
+    it("작성자 거르기 목록은 이어 붙인 행을 제자리에서 지우지 않고 tbody를 통째로 바꾼다", async () => {
+        vi.useFakeTimers();
+        history.replaceState(null, "", "/board/lists/?id=test&rf_ip=1.2");
+        // 검색 모듈이 다음 쪽에서 이어 붙인 행. 새 tbody가 들어와야 검색 모듈이 다시 잇는다.
+        const old = document.querySelector(".gall_list tbody")!;
+        old.insertAdjacentHTML("beforeend", row("0"));
+        respond(["2", "1"]);
+        await start({noRefreshOnSearch: false});
+        await vi.advanceTimersByTimeAsync(5500);
+        expect(get).toHaveBeenCalled();
+        expect(document.querySelector(".gall_list tbody")).not.toBe(old);
+        expect(old.isConnected).toBe(false);
+        expect(listed()).toEqual(["2", "1"]);
     });
 
     it("뒤 페이지는 받지 않는다", async () => {
@@ -558,17 +573,61 @@ describe("탭 제목 새 글 수·여기까지 읽음", () => {
         expect(marked()).toEqual(["2"]);
     });
 
-    it("titleCount를 끄면 선을 긋지 않는다", async () => {
+    it("readMark를 끄면 탭 제목에는 세어도 선을 긋지 않는다", async () => {
         Element.prototype.checkVisibility = () => true;
+        document.title = "갤러리";
+        const focus = vi.spyOn(document, "hasFocus").mockReturnValue(false);
+        const {api} = await start({readMark: false});
+        window.dispatchEvent(new Event("blur"));
+        respond(["3", "2", "1"]);
+        await api.reload();
+        await tick();
+        expect(document.title).toBe("(1) 갤러리");
+        focus.mockReturnValue(true);
+        window.dispatchEvent(new Event("focus"));
+        expect(marked()).toEqual([]);
+    });
+
+    it("titleCount를 끄면 탭 제목은 그대로 두고 선은 긋는다", async () => {
+        Element.prototype.checkVisibility = () => true;
+        document.title = "갤러리";
         const focus = vi.spyOn(document, "hasFocus").mockReturnValue(false);
         const {api} = await start({titleCount: false});
         window.dispatchEvent(new Event("blur"));
         respond(["3", "2", "1"]);
         await api.reload();
         await tick();
+        expect(document.title).toBe("갤러리");
         focus.mockReturnValue(true);
         window.dispatchEvent(new Event("focus"));
+        expect(marked()).toEqual(["2"]);
+    });
+
+    it("설정을 끄면 그 설정이 붙인 것만 뗀다", async () => {
+        Element.prototype.checkVisibility = () => true;
+        document.title = "갤러리";
+        const focus = vi.spyOn(document, "hasFocus").mockReturnValue(false);
+        const {api, change} = await start();
+        window.dispatchEvent(new Event("blur"));
+        respond(["3", "2", "1"]);
+        await api.reload();
+        await tick();
+        focus.mockReturnValue(true);
+        window.dispatchEvent(new Event("focus"));
+        expect(marked()).toEqual(["2"]);
+
+        // 다시 떠나 제목에 수가 붙은 채로 선을 끈다.
+        focus.mockReturnValue(false);
+        window.dispatchEvent(new Event("blur"));
+        respond(["4", "3", "2", "1"]);
+        await api.reload();
+        await tick();
+        expect(document.title).toBe("(1) 갤러리");
+        change({readMark: false});
         expect(marked()).toEqual([]);
+        expect(document.title).toBe("(1) 갤러리");
+        change({titleCount: false});
+        expect(document.title).toBe("갤러리");
     });
 
     it("모듈을 끄면 선을 뗀다", async () => {

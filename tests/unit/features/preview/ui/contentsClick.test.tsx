@@ -43,6 +43,23 @@ describe("markPressable", () => {
 });
 
 describe("clickContents", () => {
+    it("'차단 이미지 보기'로 드러낸 관리자 가림 이미지를 크게 보기 버튼으로 알린다", () => {
+        const container = document.createElement("div");
+        document.body.append(container);
+        render(<div onClick={(ev) => clickContents(ev, true)}/>, container);
+        const root = container.querySelector("div")!;
+        root.innerHTML = "<p><button class=\"btn_img_block\"></button><img data-original=\"https://dcimg.dcinside.com/a.jpg\" data-block=\"\"></p>";
+        markPressable(root, true);
+        const hidden = root.querySelector("img")!;
+        expect(hidden.getAttribute("role")).toBeNull();
+
+        root.querySelector<HTMLButtonElement>(".btn_img_block")!.click();
+
+        expect(hidden.getAttribute("src")).toBe("https://dcimg.dcinside.com/a.jpg");
+        expect(hidden.getAttribute("role")).toBe("button");
+        expect(hidden.getAttribute("aria-label")).toBe("이미지 크게 보기");
+    });
+
     it("아직 받지 않은(lazy·받는 중) 이미지도 크게 보기 목록에 넣고, 깨진 이미지만 뺀다", () => {
         Element.prototype.checkVisibility = () => true;
         const container = document.createElement("div");

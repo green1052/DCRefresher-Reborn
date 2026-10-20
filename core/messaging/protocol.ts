@@ -1,5 +1,6 @@
 import {defineExtensionMessaging} from "@webext-core/messaging";
 
+import type {TurnstileConfig} from "@/core/preview/types";
 import type {UsageData, UsageKind} from "@/core/usage";
 import type {Sample} from "@/utils/imageFingerprint";
 
@@ -34,6 +35,18 @@ export type CommentRcKey = "new" | "new3";
 /** reCAPTCHA v3 토큰을 받을 동작 (refresher:grecaptchaToken). */
 export type GrecaptchaRequest = { action: "comment_submit" | "comment_delete_submit"; rcKey: CommentRcKey } | { action: "insert_icon" };
 
+/** 미리보기의 Turnstile 확인 창에서 위젯을 그릴 자리 (오버레이 shadow 안). 페이지(MAIN world)가 이것으로 찾는다. */
+export const TURNSTILE_HOST = "data-refresher-turnstile";
+/** 확인 창이 닫힐 때 TURNSTILE_HOST에 보내는 이벤트. 기다리던 페이지 쪽이 그만둔다. */
+export const TURNSTILE_CANCEL_EVENT = "refresher-turnstile-cancel";
+
+/** refresher:turnstileToken의 결과. 디시 ts_cmt_fields가 보내는 cf-turnstile-response·ts_state·ts_token_ms가 된다. */
+export interface TurnstileResult {
+    token: string;
+    state: string;
+    tokenMs: number;
+}
+
 /**
  * 이미지 파일의 SHA-256과 비슷한 이미지 표본 (utils/imageFingerprint.ts의 imageFingerprints: 정지 이미지는 하나, 움짤은 장면마다 하나).
  * 표본은 구하지 않았으면 undefined, 디코딩하지 못했으면 null이다.
@@ -52,6 +65,13 @@ interface ProtocolMap {
      * 글 댓글 작성·삭제(comment_submit, comment_delete_submit)는 rc_key로 보낸 쌍의 키로, 디시콘·글자콘(insert_icon)은 예전 키로 받는다.
      */
     "refresher:grecaptchaToken"(data: GrecaptchaRequest): string | undefined;
+
+    /**
+     * 탭 → 배경: 글 페이지가 댓글 Turnstile을 켰으면(_TS_CMT_) 그 탭의 MAIN world에서 토큰을 받아 온다. 실패하면 undefined다.
+     * visible이 false면 보이지 않게 그려, 확인을 눌러야 하면(interactive) 기다리지 않고 돌아온다.
+     * true면 미리보기의 확인 창(TURNSTILE_HOST)에 그려 누를 때까지 기다리고, 창이 닫히면(TURNSTILE_CANCEL_EVENT) 빈 토큰으로 돌아온다.
+     */
+    "refresher:turnstileToken"(data: { config: TurnstileConfig; visible: boolean }): TurnstileResult | undefined;
 
     /**
      * 탭 → 배경: 그 탭의 MAIN world에 목록 다리를 건다. 페이지마다 한 번.

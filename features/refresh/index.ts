@@ -1,5 +1,5 @@
 import {http} from "@/core/http/client";
-import {isViewPage, listUrl, mergeParamURL, pageGallery, queryString} from "@/core/http/urls";
+import {isViewPage, listUrl, mergeParamURL, pageGallery, queryString, writerFilter} from "@/core/http/urls";
 import {LIST_SELECTOR, notifyListReplaced, PAGING_SELECTOR} from "@/core/list";
 import {defineModule} from "@/core/module/define";
 import {getModuleApi} from "@/core/module/registry";
@@ -45,14 +45,16 @@ const applyDoNotColorVisited = (ctx: Ctx): void => {
 export default defineModule(meta, {
     setup(ctx) {
         ctx.onRevoke(() => {
-            // 탭 제목의 새 글 수와 '여기까지 읽음' 선은 title.ts의 정리 함수(clear)가 뗀다.
+            // 탭 제목의 새 글 수와 '여기까지 읽음' 선은 title.ts의 정리 함수(clearTitle·clearMark)가 뗀다.
             document.documentElement.classList.remove("refresherDoNotColorVisited");
             // 남긴 삭제된 글 행은 서버 목록에 없다. 모듈을 끄면 목록을 다시 받는 쪽이 없어 페이지를 새로고침할 때까지 남는다.
             for (const row of document.querySelectorAll(".refresherDeleted")) row.remove();
             for (const row of document.querySelectorAll<HTMLElement>(".refresherNewPost")) clearNewPost(row);
         });
 
-        let paused = Boolean(queryString("s_keyword") && ctx.settings.noRefreshOnSearch);
+        // 아이디·IP 검색(작성자 거르기)도 검색이다. 다시 이을 때마다 다음 쪽들을 새로 받으므로(features/search) 주기마다 돌면 요청이 몰린다.
+        const searching = (): boolean => Boolean(queryString("s_keyword") || writerFilter());
+        let paused = searching() && ctx.settings.noRefreshOnSearch;
         let lastRefresh = 0;
         let loading = false;
         let timer = 0;
@@ -204,9 +206,10 @@ export default defineModule(meta, {
                 // 응답을 기다리는 동안 커서를 올리거나 체크했으면 버린다. lastListHash를 아직 바꾸지 않아야 다음 주기에 이 목록이 들어간다.
                 if (holdList(customURL, force)) return false;
 
-                // 자동 새로고침은 목록 표만 파싱한다(문서의 1/3). 강제·이동 로드, 검색 결과(검색 모듈이 페이징을 보고 다시 잇는다),
+                // 자동 새로고침은 목록 표만 파싱한다(문서의 1/3). 강제·이동 로드, 검색 결과·작성자 거르기(검색 모듈이 페이징을 보고 다시 잇는다),
                 // 실패 뒤(페이징이 옛 페이지일 수 있다)에는 문서 전체를 파싱해 페이징도 맞춘다.
-                const partial = !force && failures === 0 && !queryString("s_keyword") && listHtml;
+                const writer = writerFilter(target) !== null;
+                const partial = !force && failures === 0 && !queryString("s_keyword") && !writer && listHtml;
                 const dom = new DOMParser().parseFromString(partial ? `<table class="gall_list">${listHtml}` : response, "text/html");
 
                 const oldList = document.querySelector<HTMLElement>(LIST_SELECTOR);
@@ -220,7 +223,9 @@ export default defineModule(meta, {
 
                 const {added: newPostList, changed} = replaceList(oldList, newList, {
                     navigated: Boolean(customURL),
-                    search: queryString("s_keyword") ? document.querySelector<HTMLInputElement>("#sch_q")?.value ?? "" : undefined,
+                    // 작성자 거르기도 검색 결과처럼 통째로 바꾼다. 제자리에서 고치면 검색 모듈이 이어 붙인 다음 쪽 행이 밀려난 행으로 지워지고,
+                    // tbody가 그대로라 다시 잇지도 않는다.
+                    search: queryString("s_keyword") ? document.querySelector<HTMLInputElement>("#sch_q")?.value ?? "" : writer ? "" : undefined,
                     searchType: new URL(target).searchParams.get("s_type"),
                     fadeIn: ctx.settings.fadeIn,
                     // 삭제된 글 보존은 미리보기의 archiveArticle 설정을 따르고(미리보기를 끄면 같이 꺼진다),
@@ -316,10 +321,11 @@ export default defineModule(meta, {
 
         ctx.onSettingsChanged((keys) => {
             if (keys.has("doNotColorVisited")) applyDoNotColorVisited(ctx);
-            if (keys.has("titleCount") && !ctx.settings.titleCount) unseen.clear();
+            if (keys.has("titleCount") && !ctx.settings.titleCount) unseen.clearTitle();
+            if (keys.has("readMark") && !ctx.settings.readMark) unseen.clearMark();
             // 주기 설정은 옵션 탭에서 바꾸므로 이미 잡힌 주기가 끝나기를 기다리지 않고 새 값으로 다시 잡는다.
             if (keys.has("refreshRate") || keys.has("backgroundRefresh") || keys.has("backgroundRefreshRate")) armNext();
-            if (keys.has("noRefreshOnSearch") && queryString("s_keyword")) setPaused(ctx.settings.noRefreshOnSearch);
+            if (keys.has("noRefreshOnSearch") && searching()) setPaused(ctx.settings.noRefreshOnSearch);
         });
 
         const onVisibilityChange = (): void => {

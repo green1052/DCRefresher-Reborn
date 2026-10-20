@@ -37,27 +37,30 @@ test.describe("미리보기", () => {
         await expect.poll(() => page.evaluate(() => history.state)).toBeNull();
     });
 
-    test("창을 열어 페이지 스크롤을 잠가도 스크롤바 자리를 남겨 뒤 페이지가 옆으로 밀리지 않고, 스크롤바가 없던 페이지에는 자리를 만들지 않는다", async ({listPage, browserName}) => {
-        test.skip(browserName === "firefox", "headless 파이어폭스는 자리를 차지하는 스크롤바를 그리지 않는다.");
-        const {page, frame} = listPage;
-        const layout = () => page.evaluate(() => ({width: document.body.getBoundingClientRect().width, gutter: document.documentElement.style.scrollbarGutter}));
-        const short = await layout();
-        await listPage.openPreview();
-        await expect(frame).toBeVisible();
-        expect(await layout()).toEqual(short);
-        await page.keyboard.press("Escape");
-        await expect(frame).toHaveCount(0);
+    test.describe(() => {
+        test.skip(({browserName}) => browserName === "firefox", "headless 파이어폭스는 자리를 차지하는 스크롤바를 그리지 않는다.");
 
-        // 페이지를 늘려 스크롤바를 세운다 (fixtures에서 크로미엄의 스크롤바 숨김을 끈다).
-        await page.evaluate(() => document.body.style.setProperty("min-height", "300vh"));
-        const long = await layout();
-        expect(long.width).toBeLessThan(short.width);
-        await listPage.openPreview();
-        await expect(frame).toBeVisible();
-        expect(await layout()).toEqual({width: long.width, gutter: "stable"});
-        await page.keyboard.press("Escape");
-        await expect(frame).toHaveCount(0);
-        expect(await layout()).toEqual(long);
+        test("창을 열어 페이지 스크롤을 잠가도 스크롤바 자리를 남겨 뒤 페이지가 옆으로 밀리지 않고, 스크롤바가 없던 페이지에는 자리를 만들지 않는다", async ({listPage}) => {
+            const {page, frame} = listPage;
+            const layout = () => page.evaluate(() => ({width: document.body.getBoundingClientRect().width, gutter: document.documentElement.style.scrollbarGutter}));
+            const short = await layout();
+            await listPage.openPreview();
+            await expect(frame).toBeVisible();
+            expect(await layout()).toEqual(short);
+            await page.keyboard.press("Escape");
+            await expect(frame).toHaveCount(0);
+
+            // 페이지를 늘려 스크롤바를 세운다 (fixtures에서 크로미엄의 스크롤바 숨김을 끈다).
+            await page.evaluate(() => document.body.style.setProperty("min-height", "300vh"));
+            const long = await layout();
+            expect(long.width).toBeLessThan(short.width);
+            await listPage.openPreview();
+            await expect(frame).toBeVisible();
+            expect(await layout()).toEqual({width: long.width, gutter: "stable"});
+            await page.keyboard.press("Escape");
+            await expect(frame).toHaveCount(0);
+            expect(await layout()).toEqual(long);
+        });
     });
 
     test("PageDown·PageUp으로 옆 글로 넘기고, 뒤로 가기는 앞서 본 글을 다시 열며, 닫으면 쌓은 주소를 모두 걷는다", async ({listPage}) => {
@@ -475,6 +478,8 @@ test.describe("미리보기 댓글", () => {
         site.comments = Array.from({length: 1000}, (_, index) => fakeComment(100 + index));
         await listPage.openPreview();
         await expect(listPage.overlay.locator(".refresher-frame-scroll")).toBeFocused();
+        // 스크롤 칸은 댓글을 받기 전에 포커스를 받는다. 목록이 그려져 End를 받을 준비가 된 뒤에 누른다.
+        await expect(listPage.comments.first()).toBeAttached();
         expect(await listPage.comments.count()).toBeLessThan(1000);
         await listPage.page.keyboard.press("End");
         // 키를 받는 그 자리에서 다 그린다. 늦게 그리면 End가 그때까지 그린 끝에 멈춘다.
@@ -492,24 +497,28 @@ test.describe("미리보기 댓글", () => {
         await expect(input).toBeInViewport();
     });
 
-    test("댓글마다 되풀이되는 버튼은 클릭 리스너 하나만 단다", async ({listPage, browserName}) => {
-        test.skip(browserName === "firefox", "요소의 리스너는 크로미움 CDP로만 센다.");
-        await listPage.openPreview();
-        const reply = listPage.comments.first().getByRole("button", {name: "고닉 댓글에 답글", exact: true});
-        await expect(reply).toBeVisible();
-        // 리스너는 콘텐츠 스크립트의 격리된 world에서 붙으므로 그 world에서 요소를 잡아야 보인다.
-        const cdp = await listPage.page.context().newCDPSession(listPage.page);
-        const contexts: number[] = [];
-        cdp.on("Runtime.executionContextCreated", ({context}) => {
-            if (context.auxData?.type === "isolated") contexts.push(context.id);
+    test.describe(() => {
+        test.skip(({browserName}) => browserName === "firefox", "요소의 리스너는 크로미움 CDP로만 센다.");
+
+        test("댓글마다 되풀이되는 버튼은 클릭 리스너 하나만 단다", async ({listPage}) => {
+            await listPage.openPreview();
+            const reply = listPage.comments.first().getByRole("button", {name: "고닉 댓글에 답글", exact: true});
+            await expect(reply).toBeVisible();
+            // 리스너는 콘텐츠 스크립트의 격리된 world에서 붙으므로 그 world에서 요소를 잡아야 보인다.
+            const cdp = await listPage.page.context().newCDPSession(listPage.page);
+            const contexts: number[] = [];
+            cdp.on("Runtime.executionContextCreated", ({context}) => {
+                // Playwright도 페이지마다 격리된 world를 만든다. 확장의 world만 고른다.
+            if (context.auxData?.type === "isolated" && context.origin.startsWith("chrome-extension://")) contexts.push(context.id);
+            });
+            await cdp.send("Runtime.enable");
+            const {result} = await cdp.send("Runtime.evaluate", {
+                contextId: contexts[0],
+                expression: "document.querySelector('refresher-root').shadowRoot.querySelector('.refresher-comment button[aria-label=\"고닉 댓글에 답글\"]')"
+            });
+            const {listeners} = await cdp.send("DOMDebugger.getEventListeners", {objectId: result.objectId!});
+            expect(listeners.map(({type}) => type)).toEqual(["click"]);
         });
-        await cdp.send("Runtime.enable");
-        const {result} = await cdp.send("Runtime.evaluate", {
-            contextId: contexts[0],
-            expression: "document.querySelector('refresher-root').shadowRoot.querySelector('.refresher-comment button[aria-label=\"고닉 댓글에 답글\"]')"
-        });
-        const {listeners} = await cdp.send("DOMDebugger.getEventListeners", {objectId: result.objectId!});
-        expect(listeners.map(({type}) => type)).toEqual(["click"]);
     });
 
     test("본문이 확장 UI의 클래스를 써도 본문 상자 밖을 덮지 못한다", async ({listPage}) => {
@@ -550,6 +559,40 @@ test.describe("댓글 쓰기·지우기", () => {
         expect(body.has("c_no")).toBe(false);
         // 글 댓글은 디시 comment.js처럼 reCAPTCHA 키 쌍(rc_key)을 같이 보낸다.
         expect(body.get("rc_key")).toMatch(/^new3?$/);
+    });
+
+    test("알림을 허용한 브라우저는 디시 페이지처럼 Firebase가 저장한 웹 푸시 토큰을 fcmToken 머리로 보낸다", async ({listPage, site, context}) => {
+        await context.grantPermissions(["notifications"], {origin: "https://gall.dcinside.com"});
+        const {page} = listPage;
+        const frame = await listPage.openPreview();
+        const input = frame.getByRole("textbox", {name: "댓글 입력", exact: true});
+        const submit = async (memo: string): Promise<void> => {
+            await input.fill(memo);
+            await frame.getByRole("button", {name: "작성", exact: true}).click();
+            await expect(frame.getByText(memo, {exact: true})).toBeVisible();
+        };
+
+        // 토큰을 받은 적이 없으면 머리를 붙이지 않고, 토큰 DB도 만들지 않는다 (빈 DB가 생기면 SDK가 저장소를 만들지 못한다).
+        await submit("토큰 없이 쓴 댓글");
+        expect(site.submitted.map(({fcmToken}) => fcmToken)).toEqual([undefined]);
+        expect(await page.evaluate(async () => (await indexedDB.databases()).map(({name}) => name))).not.toContain("firebase-messaging-database");
+
+        // 디시 /_js/fcm/app.js의 Firebase SDK가 저장하는 모양 그대로 넣는다.
+        await page.evaluate(() => new Promise<void>((resolve, reject) => {
+            const open = indexedDB.open("firebase-messaging-database", 1);
+            open.onupgradeneeded = () => open.result.createObjectStore("firebase-messaging-store");
+            open.onerror = () => reject(open.error);
+            open.onsuccess = () => {
+                const transaction = open.result.transaction("firebase-messaging-store", "readwrite");
+                transaction.objectStore("firebase-messaging-store").put({token: "fcm-token", createTime: 1}, "1:847263058171:web:f8932168a3b61afbeac85e");
+                transaction.oncomplete = () => {
+                    open.result.close();
+                    resolve();
+                };
+            };
+        }));
+        await submit("토큰과 함께 쓴 댓글");
+        expect(site.submitted.map(({fcmToken}) => fcmToken)).toEqual([undefined, "fcm-token"]);
     });
 
     test("쓰던 댓글은 글마다 남아 다른 글에 갔다 돌아와도 되살리고, 보내면 그 글의 초안만 지운다", async ({listPage}) => {
@@ -847,6 +890,12 @@ test.describe("미니 미리보기", () => {
         await expect(listPage.mini.locator(".refresher-mini-contents")).toContainText("본문 3 내용입니다.");
         await listPage.leave();
         await expect(listPage.mini).toHaveCount(0);
+    });
+
+    test("본문은 폰트 교체의 본문 폰트 크기를 전체 미리보기처럼 따른다", async ({listPage, storage}) => {
+        await storage.setModuleSettings("fonts", {bodyFontSize: 20});
+        const contents = listPage.mini.locator(".refresher-mini-contents");
+        await expect(contents).toHaveCSS("font-size", "22px");
     });
 
     test("훑고 지나간 제목은 글을 받지 않고, 멈춘 제목만 받는다", async ({listPage}) => {

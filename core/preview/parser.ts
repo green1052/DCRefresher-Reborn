@@ -1,4 +1,4 @@
-import type {CommentForm, PostInfo} from "./types";
+import type {CommentForm, PostInfo, TurnstileConfig} from "./types";
 
 /**
  * 지연 로딩 이미지의 data-original을 src로 옮긴다.
@@ -86,12 +86,28 @@ const isAdultPage = (html: string, dom: Document): boolean => html.includes("/er
 
 const TXTCON_CHECKS = ["check_6", "check_7", "check_8"];
 
+/** 글 페이지 스크립트의 `var _TS_CMT_ = {…};`. mode가 0이거나 없으면 디시도 Turnstile을 쓰지 않는다. */
+const parseTurnstile = (dom: Document): TurnstileConfig | undefined => {
+    for (const script of dom.scripts) {
+        const json = script.textContent?.match(/var _TS_CMT_\s*=\s*(\{[^;]*\});/)?.[1];
+        if (!json) continue;
+        try {
+            const {mode, sitekey, wait, appearance, test} = JSON.parse(json);
+            if (!Number(mode) || typeof sitekey !== "string") return;
+            return {mode: Number(mode), sitekey, wait: parseInt(wait, 10) || 0, appearance: typeof appearance === "string" ? appearance : undefined, test: Boolean(test)};
+        } catch {
+            return;
+        }
+    }
+};
+
 const parseCommentForm = (dom: Document): CommentForm => ({
     fields: Array.from(dom.querySelectorAll<HTMLInputElement>("#focus_cmt > input"), (input): [string, string] => [input.name || input.id || "", input.value]),
     serviceCode: dom.querySelector<HTMLInputElement>("input[name=service_code]")?.value ?? "",
-    dValue: dom.querySelector("#reply-setting-tmpl + script")?.textContent?.match(/_d\('(.*)'\)/)?.[1],
+    dValue: dom.querySelector("#reply-setting-tmpl + script")?.textContent?.match(/_d\('([^']*)'\)/)?.[1],
     checks: Object.fromEntries(TXTCON_CHECKS.map((name) => [name, dom.querySelector<HTMLInputElement>(`#${name}`)?.value ?? ""])),
-    gallNickName: dom.querySelector("#use_gall_nick") ? dom.querySelector<HTMLInputElement>("#focus_cmt input[name=gall_nick_name]")?.value ?? "" : undefined
+    gallNickName: dom.querySelector("#use_gall_nick") ? dom.querySelector<HTMLInputElement>("#focus_cmt input[name=gall_nick_name]")?.value ?? "" : undefined,
+    turnstile: parseTurnstile(dom)
 });
 
 /** 본문 HTML → PostInfo. 비정상 문서면 undefined, 성인 인증이 필요하면 Error(ADULT_ERROR), 비밀글이면 Error(SECRET_ERROR). */

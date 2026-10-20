@@ -178,7 +178,7 @@ export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 
             <Textarea ref={input} placeholder={placeholder} aria-label={placeholder} value={text} rows={8} className="max-h-[50vh]"
                       onChange={(ev) => setText(ev.target.value)}/>
 
-            <DialogActions>
+            <DialogActions cancelDisabled={busy}>
                 {fromFile && (
                     <>
                         <input ref={file} type="file" accept=".json,application/json" hidden aria-label="JSON 파일"

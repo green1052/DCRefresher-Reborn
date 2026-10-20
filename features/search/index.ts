@@ -139,6 +139,9 @@ export default defineModule(meta, {
             status.setAttribute("role", "status");
             paging.after(status);
             let added = 0;
+            // 검색 구간은 바뀌지 않지만 거르기만 하는 목록의 다음 쪽은 새 글이 들어올 때마다 밀린다.
+            // 받아 둔 옛 쪽으로 이으면 1쪽에서 밀려난 글이 어디에도 없으므로 다시 받는다.
+            if (!searching) pages.clear();
 
             try {
                 for (let step = 1; step <= max && count < target; step++) {

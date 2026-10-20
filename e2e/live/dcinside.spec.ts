@@ -71,6 +71,9 @@ const WRITE_MARKUP: Markup[] = [
 ];
 
 test.describe("실제 디시", () => {
+    // 다른 테스트는 나눠 돌지만(fullyParallel) 실제 디시에는 요청이 몰리지 않게 한 작업자가 차례로 돌린다.
+    test.describe.configure({mode: "default"});
+
     test("글 목록에 배지와 새로고침 버튼을 붙이고, 자동 새로고침이 같은 목록을 다시 받는다", async ({page}) => {
         const list = await openListPage(page, LIST_URL);
         await expect(page.locator(POSTS).first()).toBeVisible();
@@ -180,8 +183,12 @@ test.describe("실제 디시", () => {
         expect(decodeD(dValue ?? "")).toMatch(/^\d+(\.\d+)?(,\d+(\.\d+)?)*$/);
         expect(view).toMatch(/name="service_code" value="[^"]{10,}"/);
 
-        // comment.js는 글 페이지가 window._TS_CMT_를 주면 댓글에 Turnstile 값을 붙인다. 미리보기(core/preview/submit.ts)는 그 값을 보내지 않으므로 켜지면 알아야 한다.
-        expect(view, "디시가 댓글 Turnstile을 켰다").not.toContain("_TS_CMT_");
+        // comment.js는 글 페이지가 window._TS_CMT_를 주면 댓글에 Turnstile 칸을 붙인다. 미리보기(features/preview/comment-submit.ts)가 같은 칸을 보낸다.
+        for (const name of ["cf-turnstile-response=", "ts_state=", "ts_focus_ms=", "ts_token_ms=", "ts_test=1"]) expect(comment).toContain(name);
+        expect(comment).toContain("action: 'comment'");
+        // 켜져 있으면 파서(core/preview/parser.ts parseTurnstile)가 읽는 모양이다.
+        const turnstile = /var _TS_CMT_\s*=\s*(\{[^;]*\});/.exec(view)?.[1];
+        if (turnstile) expect(JSON.parse(turnstile)).toMatchObject({mode: expect.any(Number), sitekey: expect.any(String)});
     });
 
     // 목록·글·검색 결과·글쓰기 페이지를 한 번씩 GET으로 받아(요청 4개) 디시 스크립트를 뺀 채 빈 페이지에 그리고 선택자를 센다.

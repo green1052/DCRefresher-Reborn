@@ -123,7 +123,8 @@
     }
 }
 
-.refresher-preview-contents {
+/* 미니 미리보기 본문도 같은 크기·디시콘 높이 (fonts 모듈의 본문 폰트 크기). */
+:is(.refresher-preview-contents, .refresher-mini-contents) {
     font-size: var(--refresher-preview-font-size, 15px);
     /* 디시 본문(.writing_view_box)과 같다. */
     line-height: 1.5;
