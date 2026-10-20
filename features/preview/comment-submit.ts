@@ -65,24 +65,27 @@ export const prefetchTurnstile = (config: TurnstileConfig): void => {
 /**
  * 디시 ts_cmt_fields가 보내는 Turnstile 칸. 먼저 보이지 않게 토큰을 받고, 확인을 눌러야 하면(interactive) ask(확인 창)로 받는다.
  * 창을 닫으면 undefined다 (보내지 않는다). 토큰을 받지 못해도 디시처럼 상태를 담아 보낸다 (서버가 거절하면 그 메시지를 보인다).
- * focusMs는 폼에 처음 들어온 뒤 지난 시간이다 (디시 ts_focus_ms, 들어온 적 없으면 0).
+ * mode 1은 디시도 기록만 하므로(화면 밖 위젯) 확인 창을 띄우지 않고 interactive 상태로 보낸다.
+ * focusMs는 폼에 처음 들어온 뒤 지난 시간이다 (디시 ts_focus_ms, 들어온 적 없으면 0). 디시처럼 토큰을 받은 뒤에 잰다.
  */
 export const turnstileFields = async (
     config: TurnstileConfig,
-    focusMs: number,
+    focusMs: () => number,
     ask: (config: TurnstileConfig) => Promise<TurnstileResult | undefined>
 ): Promise<Record<string, string> | undefined> => {
     const reuse = freshPrefetch(config);
     prefetched = undefined;
-    let result = await (reuse?.result ?? hiddenToken(config));
-    if (result && !result.token && result.state === "interactive") {
+    let result = await reuse?.result;
+    // 미리 받다가 wait를 넘겼거나 실패했으면 디시 ts_cmt_wait처럼 보낼 때 다시 받는다.
+    if (!result?.token && result?.state !== "interactive") result = await hiddenToken(config);
+    if (result && !result.token && result.state === "interactive" && (config.mode !== 1 || config.appearance)) {
         result = await ask(config);
         if (!result) return undefined;
     }
     return {
         "cf-turnstile-response": result?.token ?? "",
         ts_state: result?.token ? "ok" : (result?.state ?? "error"),
-        ts_focus_ms: String(focusMs),
+        ts_focus_ms: String(focusMs()),
         ts_token_ms: String(result?.tokenMs ?? 0),
         ...(config.test && {ts_test: "1"})
     };

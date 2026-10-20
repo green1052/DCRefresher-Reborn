@@ -137,7 +137,7 @@ describe("turnstileFields", () => {
     beforeEach(() => ask.mockReset());
 
     it("보이지 않게 받은 토큰으로 디시 ts_cmt_fields와 같은 칸을 만든다", async () => {
-        expect(await turnstileFields(config, 1500, ask)).toEqual({"cf-turnstile-response": "ts", ts_state: "ok", ts_focus_ms: "1500", ts_token_ms: "300"});
+        expect(await turnstileFields(config, () => 1500, ask)).toEqual({"cf-turnstile-response": "ts", ts_state: "ok", ts_focus_ms: "1500", ts_token_ms: "300"});
         expect(net.requests).toEqual([{config, visible: false}]);
         expect(ask).not.toHaveBeenCalled();
     });
@@ -145,37 +145,51 @@ describe("turnstileFields", () => {
     it("확인을 눌러야 하면 확인 창에서 받고, 창을 닫으면 undefined다", async () => {
         net.turnstile = {token: "", state: "interactive", tokenMs: 0};
         ask.mockResolvedValueOnce({token: "clicked", state: "ok", tokenMs: 5000});
-        expect(await turnstileFields(config, 0, ask)).toMatchObject({"cf-turnstile-response": "clicked", ts_state: "ok", ts_token_ms: "5000"});
+        expect(await turnstileFields(config, () => 0, ask)).toMatchObject({"cf-turnstile-response": "clicked", ts_state: "ok", ts_token_ms: "5000"});
         expect(ask).toHaveBeenCalledWith(config);
 
         ask.mockResolvedValueOnce(undefined);
-        expect(await turnstileFields(config, 0, ask)).toBeUndefined();
+        expect(await turnstileFields(config, () => 0, ask)).toBeUndefined();
     });
 
     it("폼에 들어올 때 미리 받은 토큰을 한 번 쓰고, 4분이 지났으면 새로 받는다", async () => {
         prefetchTurnstile(config);
         prefetchTurnstile(config);
-        expect((await turnstileFields(config, 0, ask))?.["cf-turnstile-response"]).toBe("ts");
+        expect((await turnstileFields(config, () => 0, ask))?.["cf-turnstile-response"]).toBe("ts");
         expect(net.requests).toHaveLength(1);
-        await turnstileFields(config, 0, ask);
+        await turnstileFields(config, () => 0, ask);
         expect(net.requests).toHaveLength(2);
 
         vi.useFakeTimers();
         try {
             prefetchTurnstile(config);
             vi.advanceTimersByTime(240_000);
-            await turnstileFields(config, 0, ask);
+            await turnstileFields(config, () => 0, ask);
             expect(net.requests).toHaveLength(4);
         } finally {
             vi.useRealTimers();
         }
     });
 
+    it("미리 받다가 토큰 없이 끝났으면 보낼 때 다시 받는다", async () => {
+        net.turnstile = {token: "", state: "pending", tokenMs: 0};
+        prefetchTurnstile(config);
+        net.turnstile = {token: "ts", state: "ok", tokenMs: 300};
+        expect((await turnstileFields(config, () => 0, ask))?.["cf-turnstile-response"]).toBe("ts");
+        expect(net.requests).toHaveLength(2);
+    });
+
+    it("mode 1은 확인 창 없이 interactive 상태로 보낸다", async () => {
+        net.turnstile = {token: "", state: "interactive", tokenMs: 0};
+        expect((await turnstileFields({...config, mode: 1}, () => 0, ask))?.ts_state).toBe("interactive");
+        expect(ask).not.toHaveBeenCalled();
+    });
+
     it("토큰을 받지 못해도 상태를 담는다", async () => {
         net.turnstile = {token: "", state: "pending", tokenMs: 0};
-        expect(await turnstileFields({...config, test: true}, 0, ask)).toEqual({"cf-turnstile-response": "", ts_state: "pending", ts_focus_ms: "0", ts_token_ms: "0", ts_test: "1"});
+        expect(await turnstileFields({...config, test: true}, () => 0, ask)).toEqual({"cf-turnstile-response": "", ts_state: "pending", ts_focus_ms: "0", ts_token_ms: "0", ts_test: "1"});
         net.turnstile = undefined;
-        expect((await turnstileFields(config, 0, ask))?.ts_state).toBe("error");
+        expect((await turnstileFields(config, () => 0, ask))?.ts_state).toBe("error");
         expect(ask).not.toHaveBeenCalled();
     });
 });

@@ -143,11 +143,16 @@ export const WriteComment = () => {
 
             const user = {name: login ? "" : nick, pw: login ? undefined : password};
             // 글 페이지가 Turnstile을 켰으면 캡차처럼 먼저 받는다. 확인 창을 닫으면 보내지 않는다.
+            // 기다리는 사이 미리보기를 닫거나 다른 글로 옮겼으면 확인 창을 띄우지 않는다 (보이지 않는 글에 보내게 된다).
             let turnstile: Record<string, string> | undefined;
             if (post.commentForm.turnstile) {
-                const focusMs = focusedAt.current === null ? 0 : Math.max(1, Math.round(performance.now() - focusedAt.current));
+                const focused = focusedAt.current;
                 focusedAt.current = null;
-                turnstile = await turnstileFields(post.commentForm.turnstile, focusMs, st.openTurnstile);
+                turnstile = await turnstileFields(
+                    post.commentForm.turnstile,
+                    () => (focused === null ? 0 : Math.max(1, Math.round(performance.now() - focused))),
+                    (config) => (usePreviewStore.getState().signalId === st.signalId ? st.openTurnstile(config) : Promise.resolve(undefined))
+                );
                 if (!turnstile) return;
             }
             const outcome = await postComment(preData, post, user, {text, dccons, bigDccon, txtcon: txtcon ? txtconColors : undefined}, sentReply, code, turnstile);
