@@ -15,7 +15,7 @@ import {useUiStore} from "@/stores/ui";
 import {isTimeoutError} from "@/utils/error";
 import {loggedInUserId} from "@/utils/user";
 
-import {postComment} from "../comment-submit";
+import {postComment, prefetchTurnstile, turnstileFields} from "../comment-submit";
 import {saveNonmember, savedNonmember} from "../nonmember";
 import {DcconPopup} from "./DcconPopup";
 import {NO_REPLY, refreshCommentsOf, usePreviewStore} from "./previewStore";
@@ -96,6 +96,14 @@ export const WriteComment = () => {
     }, [showInputs]);
     const [sending, setSending] = useState(false);
     const textarea = useRef<HTMLTextAreaElement>(null);
+    // 폼에 처음 들어온 때. 디시 ts_focus_ms처럼 보낼 때 지난 시간을 담고 보낼 때마다 다시 잰다.
+    const focusedAt = useRef<number | null>(null);
+    // 폼에 들어오면 Turnstile 토큰을 미리 받기 시작한다 (디시 ts_cmt_touch).
+    const touchForm = (): void => {
+        focusedAt.current ??= performance.now();
+        const config = usePreviewStore.getState().post?.commentForm.turnstile;
+        if (config) prefetchTurnstile(config);
+    };
     const beforeTxtcon = useRef<string | null>(null);
 
     // 답글 버튼을 누르면 입력칸으로 데려간다. 포커스가 입력칸을 화면 안으로 스크롤한다.
@@ -134,7 +142,15 @@ export const WriteComment = () => {
             }
 
             const user = {name: login ? "" : nick, pw: login ? undefined : password};
-            const outcome = await postComment(preData, post, user, {text, dccons, bigDccon, txtcon: txtcon ? txtconColors : undefined}, sentReply, code);
+            // 글 페이지가 Turnstile을 켰으면 캡차처럼 먼저 받는다. 확인 창을 닫으면 보내지 않는다.
+            let turnstile: Record<string, string> | undefined;
+            if (post.commentForm.turnstile) {
+                const focusMs = focusedAt.current === null ? 0 : Math.max(1, Math.round(performance.now() - focusedAt.current));
+                focusedAt.current = null;
+                turnstile = await turnstileFields(post.commentForm.turnstile, focusMs, st.openTurnstile);
+                if (!turnstile) return;
+            }
+            const outcome = await postComment(preData, post, user, {text, dccons, bigDccon, txtcon: txtcon ? txtconColors : undefined}, sentReply, code, turnstile);
 
             if (outcome.ok) {
                 // 보내는 사이 더 쓴 글은 남긴다. 디시콘만 보냈으면 입력칸의 글은 보내지 않았으니 둔다.
@@ -202,7 +218,7 @@ export const WriteComment = () => {
     const mode = reply.replyNo ? "답글" : txtcon ? "글자콘" : dccons.length > 0 ? "디시콘" : "댓글";
 
     return (
-        <div ref={box} className="pt-3 pr-14 pb-6 pl-8">
+        <div ref={box} className="pt-3 pr-14 pb-6 pl-8" onFocus={touchForm}>
             {!login && showInputs && (
                 <div className="mb-2 flex gap-2">
                     <Input

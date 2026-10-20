@@ -1,6 +1,6 @@
-import {type CommentRcKey, type GrecaptchaRequest, sendMessage} from "@/core/messaging/protocol";
+import {type CommentRcKey, type GrecaptchaRequest, sendMessage, type TurnstileResult} from "@/core/messaging/protocol";
 import {type ManageResult, resultMessage, submitComment, type SubmitResult, submitTxtcon, userDeleteComment} from "@/core/preview/request";
-import type {DcinsideDccon, GalleryPreData, PostInfo} from "@/core/preview/types";
+import type {DcinsideDccon, GalleryPreData, PostInfo, TurnstileConfig} from "@/core/preview/types";
 
 // 'false||메시지' 형식이 아닌 실패 응답 코드 (디시 dccon.js·txtcon.js에서 옮김).
 const FAIL_MESSAGES: Record<string, string> = {
@@ -44,12 +44,57 @@ const sendWithV3 = async (send: (token?: string) => Promise<SubmitResult>, reque
     return token ? send(token) : response;
 };
 
+/** 토큰은 받은 뒤 300초 동안 쓸 수 있다. 미리 받아 둔 것은 그보다 일찍 버린다. */
+const PREFETCH_TTL = 240_000;
+
+/** 폼에 들어올 때 미리 받기 시작한 토큰 (prefetchTurnstile). 한 번 쓰면 비운다. */
+let prefetched: { sitekey: string; at: number; result: Promise<TurnstileResult | undefined> } | undefined;
+
+/** 보이지 않게 그려 받는다. 처음 그릴 때는 api.js를 받고 판정하느라 10초 넘게 걸리기도 한다. */
+const hiddenToken = (config: TurnstileConfig): Promise<TurnstileResult | undefined> =>
+    sendMessage("refresher:turnstileToken", {config, visible: false}).catch(() => undefined);
+
+const freshPrefetch = (config: TurnstileConfig) =>
+    prefetched?.sitekey === config.sitekey && Date.now() - prefetched.at < PREFETCH_TTL ? prefetched : undefined;
+
+/** 디시 ts_cmt_touch처럼 댓글 폼에 들어오면 토큰을 미리 받기 시작해, 보낼 때 기다리지 않게 한다. */
+export const prefetchTurnstile = (config: TurnstileConfig): void => {
+    if (!freshPrefetch(config)) prefetched = {sitekey: config.sitekey, at: Date.now(), result: hiddenToken(config)};
+};
+
+/**
+ * 디시 ts_cmt_fields가 보내는 Turnstile 칸. 먼저 보이지 않게 토큰을 받고, 확인을 눌러야 하면(interactive) ask(확인 창)로 받는다.
+ * 창을 닫으면 undefined다 (보내지 않는다). 토큰을 받지 못해도 디시처럼 상태를 담아 보낸다 (서버가 거절하면 그 메시지를 보인다).
+ * focusMs는 폼에 처음 들어온 뒤 지난 시간이다 (디시 ts_focus_ms, 들어온 적 없으면 0).
+ */
+export const turnstileFields = async (
+    config: TurnstileConfig,
+    focusMs: number,
+    ask: (config: TurnstileConfig) => Promise<TurnstileResult | undefined>
+): Promise<Record<string, string> | undefined> => {
+    const reuse = freshPrefetch(config);
+    prefetched = undefined;
+    let result = await (reuse?.result ?? hiddenToken(config));
+    if (result && !result.token && result.state === "interactive") {
+        result = await ask(config);
+        if (!result) return undefined;
+    }
+    return {
+        "cf-turnstile-response": result?.token ?? "",
+        ts_state: result?.token ? "ok" : (result?.state ?? "error"),
+        ts_focus_ms: String(focusMs),
+        ts_token_ms: String(result?.tokenMs ?? 0),
+        ...(config.test && {ts_test: "1"})
+    };
+};
+
 /** captcha: 원문 페이지에서만 풀 수 있는 자동입력 방지 확인을 요구받았다. */
 type CommentOutcome = { ok: true } | { ok: false; captcha: true } | { ok: false; captcha: false; message: string };
 
 /**
  * 댓글·디시콘·글자콘을 보낸다. 처음엔 토큰 없이 보내고, 'false||captcha||v3'가 오면 reCAPTCHA v3 토큰을 붙여 한 번 더 보낸다
- * (디시 comment.js·dccon.js·txtcon.js와 같음). 요청이 끊기면 던진다 (서버는 댓글을 올렸을 수 있다).
+ * (디시 comment.js·dccon.js·txtcon.js와 같음). turnstile(turnstileFields)은 두 전송에 같이 붙인다 (디시도 formData에 한 번 붙인다).
+ * 요청이 끊기면 던진다 (서버는 댓글을 올렸을 수 있다).
  */
 export const postComment = async (
     preData: GalleryPreData,
@@ -57,12 +102,13 @@ export const postComment = async (
     user: { name: string; pw?: string },
     content: CommentContent,
     reply: { commentNo: string | null; replyNo: string | null },
-    code?: string
+    code?: string,
+    turnstile?: Record<string, string>
 ): Promise<CommentOutcome> => {
     const useDccon = content.dccons.length > 0;
     const rcKey = pickRcKey();
     const send = (grecaptchaToken?: string): Promise<SubmitResult> => {
-        const fields = {user, ...reply, captcha: code, grecaptchaToken};
+        const fields = {user, ...reply, captcha: code, grecaptchaToken, turnstile};
         return content.txtcon
             ? submitTxtcon(preData, post, {...fields, text: content.text, colors: content.txtcon})
             : submitComment(preData, post, {...fields, memo: useDccon ? content.dccons : content.text, bigDccon: useDccon && content.bigDccon, rcKey});

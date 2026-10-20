@@ -1,10 +1,11 @@
 import {create} from "zustand";
 
 import {needOverlayWhen} from "@/components/overlay/demands";
+import type {TurnstileResult} from "@/core/messaging/protocol";
 import {postKey, setEntry} from "@/core/preview/cache";
 import type {ProcessedComment} from "@/core/preview/comments";
 import type {BlockOptions} from "@/core/preview/request";
-import type {GalleryPreData, PostInfo} from "@/core/preview/types";
+import type {GalleryPreData, PostInfo, TurnstileConfig} from "@/core/preview/types";
 
 export interface ErrorState {
     detail: string;
@@ -99,6 +100,7 @@ interface PreviewState extends PostState, Hooks {
     signalId: number;
 
     captcha: { url: string; resolve: (code: string) => void } | null;
+    turnstile: TurnstilePrompt | null;
     mini: MiniState | null;
 
     /** 정보 창(DcconInfoPopup)을 띄운 디시콘 코드. null이면 닫혀 있다. */
@@ -112,7 +114,14 @@ interface PreviewState extends PostState, Hooks {
     toggleCollapse: (no: string) => void;
     toggleSelected: (no: string) => void;
     openCaptcha: (url: string) => Promise<string>;
+    openTurnstile: (config: TurnstileConfig) => Promise<TurnstileResult | undefined>;
     moveMini: (clientX: number, clientY: number) => void;
+}
+
+/** 확인을 눌러야 하는 Turnstile 창 (TurnstilePopup). 닫으면 undefined로 끝낸다. */
+export interface TurnstilePrompt {
+    config: TurnstileConfig;
+    resolve: (result: TurnstileResult | undefined) => void;
 }
 
 let miniCloseTimer = 0;
@@ -223,22 +232,25 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     preData: null,
     signalId: 0,
     captcha: null,
+    turnstile: null,
     mini: null,
     dcconInfo: null,
     commentOrder: "oldest",
 
     open: (preData, patch) => {
-        // 이전 글의 캡차 창은 닫는다. 남아 있으면 입력한 코드가 이전 글로 간다.
+        // 이전 글의 캡차·Turnstile 창은 닫는다. 남아 있으면 입력한 코드가 이전 글로 간다.
         get().captcha?.resolve("");
-        set({...freshPost(), ...patch, visible: true, fading: false, preData, signalId: ++signalSeq, mini: null, captcha: null, dcconInfo: null});
+        get().turnstile?.resolve(undefined);
+        set({...freshPost(), ...patch, visible: true, fading: false, preData, signalId: ++signalSeq, mini: null, captcha: null, turnstile: null, dcconInfo: null});
     },
 
     close: () => {
         // 열려 있지 않으면 할 일이 없다. 모듈을 끌 때도 부르는데, 페이드를 걸면 지난 글이 잠깐 비친다.
         if (!get().visible) return;
         get().captcha?.resolve("");
+        get().turnstile?.resolve(undefined);
         // signalId도 올린다. 닫은 뒤 도착한 응답(abort로 난 오류 포함)이 페이드아웃 중인 창에 그려지면 안 된다.
-        set({visible: false, fading: true, comments: undefined, blockPopup: false, captcha: null, reply: NO_REPLY, signalId: ++signalSeq, dcconInfo: null, viewer: null});
+        set({visible: false, fading: true, comments: undefined, blockPopup: false, captcha: null, turnstile: null, reply: NO_REPLY, signalId: ++signalSeq, dcconInfo: null, viewer: null});
         // 앞서 닫을 때 건 타이머는 지운다. 남겨 두면 닫았다 곧바로 다시 열고 닫을 때 이번 페이드를 일찍 끊는다.
         window.clearTimeout(fadeTimer);
         fadeTimer = window.setTimeout(() => set({fading: false}), 200);
@@ -249,6 +261,8 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     toggleSelected: (no) => set((state) => ({selectedComments: toggled(state.selectedComments, no)})),
 
     openCaptcha: (url) => new Promise((resolve) => set({captcha: {url, resolve}})),
+
+    openTurnstile: (config) => new Promise((resolve) => set({turnstile: {config, resolve}})),
 
     moveMini: (clientX, clientY) => set((state) => (state.mini ? {mini: {...state.mini, ...miniPosition(clientX, clientY)}} : state))
 }));
@@ -273,4 +287,4 @@ export const refreshCommentsOf = (preData: GalleryPreData): void => {
 
 // 미리보기 UI 중 하나라도 떠 있으면 오버레이를 띄운다 (components/overlay/demands). 새 미리보기 UI를 추가하면 여기에 넣는다.
 needOverlayWhen(usePreviewStore, (state) =>
-    state.visible || state.warm || state.mini !== null || state.captcha !== null || state.blockPopup !== false || state.dcconInfo !== null);
+    state.visible || state.warm || state.mini !== null || state.captcha !== null || state.turnstile !== null || state.blockPopup !== false || state.dcconInfo !== null);

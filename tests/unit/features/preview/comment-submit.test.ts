@@ -3,22 +3,24 @@ import {beforeEach, describe, expect, it, vi} from "vitest";
 const fetchMock = vi.hoisted(() => (globalThis.fetch = vi.fn<typeof fetch>()));
 
 import {urls} from "@/core/http/urls";
+import type {TurnstileResult} from "@/core/messaging/protocol";
 import {submitResult} from "@/core/preview/response";
-import type {DcinsideDccon, PostInfo} from "@/core/preview/types";
-import {deleteOwnComment, isCommentPosted, postComment} from "@/features/preview/comment-submit";
+import type {DcinsideDccon, PostInfo, TurnstileConfig} from "@/core/preview/types";
+import {deleteOwnComment, isCommentPosted, postComment, prefetchTurnstile, turnstileFields} from "@/features/preview/comment-submit";
 
 import {preData as makePreData} from "../../../helpers";
 import {type Sent, serve} from "../../core/preview/net";
 
 const net = vi.hoisted(() => ({
     requests: [] as unknown[],
-    token: "token" as string | undefined
+    token: "token" as string | undefined,
+    turnstile: {token: "ts", state: "ok", tokenMs: 300} as TurnstileResult | undefined
 }));
 
 vi.mock("@/core/messaging/protocol", () => ({
-    sendMessage: async (_: string, data: unknown) => {
+    sendMessage: async (type: string, data: unknown) => {
         net.requests.push(data);
-        return net.token;
+        return type === "refresher:turnstileToken" ? net.turnstile : net.token;
     }
 }));
 
@@ -46,6 +48,7 @@ const send = (responses: string[], content: Parameters<typeof postComment>[3] = 
 beforeEach(() => {
     net.requests = [];
     net.token = "token";
+    net.turnstile = {token: "ts", state: "ok", tokenMs: 300};
 });
 
 describe("isCommentPosted", () => {
@@ -115,6 +118,65 @@ describe("postComment", () => {
     it("디시콘 실패 코드는 디시콘 댓글에서만 디시콘 문구를 보인다", async () => {
         expect(await send(["not_buy"], dccon)).toEqual({ok: false, captcha: false, message: "구매내역이 존재하지 않는 디시콘입니다."});
         expect(await send(["fail"], txtcon)).toEqual({ok: false, captcha: false, message: "댓글을 작성하지 못했습니다."});
+    });
+
+    it("Turnstile 칸을 두 전송에 같이 붙인다", async () => {
+        const turnstile = {"cf-turnstile-response": "ts", ts_state: "ok"};
+        for (const content of [text, dccon, txtcon]) {
+            respond(["false||captcha||v3", content === text ? "12345" : "ok"]);
+            expect(await postComment(preData, post, user, content, reply, undefined, turnstile)).toEqual({ok: true});
+            expect(field("cf-turnstile-response")).toEqual(["ts", "ts"]);
+            expect(field("ts_state")).toEqual(["ok", "ok"]);
+        }
+    });
+});
+
+describe("turnstileFields", () => {
+    const config = {mode: 2, sitekey: "0xKEY", wait: 20000, test: false};
+    const ask = vi.fn<(config: TurnstileConfig) => Promise<TurnstileResult | undefined>>();
+    beforeEach(() => ask.mockReset());
+
+    it("보이지 않게 받은 토큰으로 디시 ts_cmt_fields와 같은 칸을 만든다", async () => {
+        expect(await turnstileFields(config, 1500, ask)).toEqual({"cf-turnstile-response": "ts", ts_state: "ok", ts_focus_ms: "1500", ts_token_ms: "300"});
+        expect(net.requests).toEqual([{config, visible: false}]);
+        expect(ask).not.toHaveBeenCalled();
+    });
+
+    it("확인을 눌러야 하면 확인 창에서 받고, 창을 닫으면 undefined다", async () => {
+        net.turnstile = {token: "", state: "interactive", tokenMs: 0};
+        ask.mockResolvedValueOnce({token: "clicked", state: "ok", tokenMs: 5000});
+        expect(await turnstileFields(config, 0, ask)).toMatchObject({"cf-turnstile-response": "clicked", ts_state: "ok", ts_token_ms: "5000"});
+        expect(ask).toHaveBeenCalledWith(config);
+
+        ask.mockResolvedValueOnce(undefined);
+        expect(await turnstileFields(config, 0, ask)).toBeUndefined();
+    });
+
+    it("폼에 들어올 때 미리 받은 토큰을 한 번 쓰고, 4분이 지났으면 새로 받는다", async () => {
+        prefetchTurnstile(config);
+        prefetchTurnstile(config);
+        expect((await turnstileFields(config, 0, ask))?.["cf-turnstile-response"]).toBe("ts");
+        expect(net.requests).toHaveLength(1);
+        await turnstileFields(config, 0, ask);
+        expect(net.requests).toHaveLength(2);
+
+        vi.useFakeTimers();
+        try {
+            prefetchTurnstile(config);
+            vi.advanceTimersByTime(240_000);
+            await turnstileFields(config, 0, ask);
+            expect(net.requests).toHaveLength(4);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("토큰을 받지 못해도 상태를 담는다", async () => {
+        net.turnstile = {token: "", state: "pending", tokenMs: 0};
+        expect(await turnstileFields({...config, test: true}, 0, ask)).toEqual({"cf-turnstile-response": "", ts_state: "pending", ts_focus_ms: "0", ts_token_ms: "0", ts_test: "1"});
+        net.turnstile = undefined;
+        expect((await turnstileFields(config, 0, ask))?.ts_state).toBe("error");
+        expect(ask).not.toHaveBeenCalled();
     });
 });
 

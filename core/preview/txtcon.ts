@@ -81,7 +81,7 @@ export const normalizeTxtcon = (value: string): string => {
 export const submitTxtcon = async (
     preData: GalleryPreData,
     postInfo: PostInfo,
-    {user, text, colors, commentNo, replyNo, captcha, grecaptchaToken}: {
+    {user, text, colors, commentNo, replyNo, captcha, grecaptchaToken, turnstile}: {
         user: { name: string; pw?: string };
         text: string;
         colors: { bg: string; txt: string };
@@ -89,6 +89,8 @@ export const submitTxtcon = async (
         replyNo: string | null;
         captcha?: string;
         grecaptchaToken?: string;
+        /** 디시 ts_cmt_fields처럼 끝에 붙이는 Turnstile 칸. */
+        turnstile?: Record<string, string>;
     }
 ): Promise<SubmitResult> => {
     const form = postInfo.commentForm;
@@ -108,7 +110,8 @@ export const submitTxtcon = async (
         // 갤닉은 댓글(submitComment)처럼 쓰지 않는다.
         ...(form.gallNickName !== undefined && {gall_nick_name: form.gallNickName, use_gall_nick: "N"}),
         "g-recaptcha-response": "",
-        "g-recaptcha-token": grecaptchaToken || undefined
+        "g-recaptcha-token": grecaptchaToken || undefined,
+        ...turnstile
     });
 
     return submitResult(await ajax.post(urls.txtcon_submit, {body, headers: {fcmToken: await fcmToken()}}).text());
