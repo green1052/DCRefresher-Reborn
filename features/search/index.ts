@@ -104,6 +104,9 @@ export default defineModule(meta, {
         // 행을 붙이면 같은 tbody로 필터가 다시 불리므로 한 번만 채운다.
         const filled = new WeakSet<HTMLElement>();
         let running: AbortController | null = null;
+        // 거르기만 하는 목록에서 앞 목록에 이어 붙인 행과 그때의 1쪽 (이 작성자 글 번호). 1쪽의 이 작성자 글이 그대로면
+        // 새로고침이 목록을 갈아끼워도(조회수만 바뀌거나 다른 사람 글이 들어와도) 다음 쪽들을 다시 받지 않고 이 행을 옮겨 온다.
+        let lastFill: { key: string; rows: HTMLTableRowElement[]; paging: string } | null = null;
 
         const fill = async (list: HTMLElement): Promise<void> => {
             if (filled.has(list)) return;
@@ -126,8 +129,22 @@ export default defineModule(meta, {
             if (searching && !isLastPage(paging)) return;
 
             const target = Number(document.querySelector<HTMLInputElement>("#list_num")?.value) || 50;
-            let count = Array.from(list.querySelectorAll<HTMLElement>(":scope > tr"), counted).filter(Boolean).length;
+            const own = Array.from(list.querySelectorAll<HTMLElement>(":scope > tr")).filter(counted);
+            let count = own.length;
             if (count >= target) return;
+
+            const key = `${location.href}|${own.map((row) => row.dataset.no).join(",")}`;
+            if (!searching && lastFill?.key === key) {
+                // 1쪽에 올라온 다른 사람 글은 이미 이 목록에 있다.
+                const rows = lastFill.rows.filter((row) => !list.querySelector(`:scope > tr[data-no="${row.dataset.no}"]`));
+                list.append(...rows);
+                paging.innerHTML = lastFill.paging;
+                if (filter) keepWriterFilter(paging, filter);
+                lastFill.rows = rows;
+                if (rows.length > 0) notifyListReplaced(gallery);
+                return;
+            }
+            lastFill = null;
 
             const keyword = document.querySelector<HTMLInputElement>("#sch_q")?.value ?? "";
             const commentSearch = queryString("s_type") === "search_comment";
@@ -188,6 +205,7 @@ export default defineModule(meta, {
                     if (filter) keepWriterFilter(paging, filter);
                     if (searching && !isLastPage(paging)) break;
                 }
+                if (!searching) lastFill = {key, rows: Array.from(list.querySelectorAll<HTMLTableRowElement>(`:scope > .${ADDED_ROW}`)), paging: paging.innerHTML};
             } catch (e) {
                 if (!signal.aborted) reportFailure(e, "Search continuation failed:", "다음 검색 결과를 불러오지 못했습니다.");
             } finally {
