@@ -32,7 +32,8 @@ const openStrip = async (): Promise<HTMLElement> => {
     await act(() => render(<DcconPopup onSelect={vi.fn()} onClose={vi.fn()}/>, root));
     await vi.waitFor(() => expect(root.querySelector(".pack")).not.toBeNull());
     const strip = root.querySelector<HTMLElement>(".overflow-x-auto")!;
-    Object.defineProperties(strip, {scrollWidth: {value: 1000}, clientWidth: {value: 500}});
+    // 굴린 곳은 scrollTo에 넘긴 left로 본다. jsdom은 굴리지 않는다.
+    Object.defineProperties(strip, {scrollWidth: {value: 1000}, clientWidth: {value: 500}, scrollTo: {value: vi.fn()}});
     return strip;
 };
 
@@ -42,11 +43,25 @@ const wheel = (el: Element, init: WheelEventInit): WheelEvent => {
     return ev;
 };
 
-it("세로 휠로 패키지 줄을 옆으로 넘긴다", async () => {
+const scrolledTo = (strip: HTMLElement, left: number): void => expect(strip.scrollTo).toHaveBeenLastCalledWith({left, behavior: "smooth"});
+
+it("세로 휠로 패키지 줄을 옆으로 부드럽게 넘기고, 굴러가는 동안 이어진 휠은 굴러갈 곳에 더한다", async () => {
     const strip = await openStrip();
     const ev = wheel(strip, {deltaY: 100});
-    expect(strip.scrollLeft).toBe(100);
     expect(ev.defaultPrevented).toBe(true);
+    scrolledTo(strip, 100);
+
+    wheel(strip, {deltaY: 100});
+    scrolledTo(strip, 200);
+    // 끝을 넘지 않는다.
+    wheel(strip, {deltaY: 1000});
+    scrolledTo(strip, 500);
+
+    // 다 굴러가면 지금 위치부터 다시 센다.
+    strip.scrollLeft = 300;
+    strip.dispatchEvent(new Event("scrollend"));
+    wheel(strip, {deltaY: -100});
+    scrolledTo(strip, 200);
 });
 
 it("Shift·Ctrl·가로 휠은 브라우저에 맡긴다", async () => {
@@ -54,5 +69,5 @@ it("Shift·Ctrl·가로 휠은 브라우저에 맡긴다", async () => {
     for (const init of [{deltaY: 100, shiftKey: true}, {deltaY: 100, ctrlKey: true}, {deltaX: 100, deltaY: 10}]) {
         expect(wheel(strip, init).defaultPrevented).toBe(false);
     }
-    expect(strip.scrollLeft).toBe(0);
+    expect(strip.scrollTo).not.toHaveBeenCalled();
 });
