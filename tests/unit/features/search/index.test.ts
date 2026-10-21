@@ -164,6 +164,15 @@ it("작성자 거르기 목록을 갈아끼워도 1쪽의 이 작성자 글이 �
         expect(get).toHaveBeenCalledTimes(1);
         expect(fresh.children[3]).toBe(added);
         expect(document.querySelector(".bottom_paging_box em")?.textContent).toBe("2");
+
+        // 1분이 지나면 다음 쪽에서 지워진 글이 남지 않게 다시 받는다.
+        vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
+        document.querySelector(".bottom_paging_box")!.innerHTML = pagingHtml;
+        const later = document.createElement("tbody");
+        later.innerHTML = writerRow("30");
+        fresh.replaceWith(later);
+        await vi.waitFor(() => expect(get).toHaveBeenCalledTimes(2));
+        vi.restoreAllMocks();
     } finally {
         history.replaceState(null, "", "/board/lists/?id=test&s_type=search_subject_memo&s_keyword=abc");
     }
