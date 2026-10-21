@@ -59,26 +59,43 @@ const fitTxtcon =(box: HTMLElement): void => {
 };
 
 let observer: IntersectionObserver | undefined;
+/** 감시자가 아직 맞추지 않은 글자콘. 다 빠지면(창을 닫으면) 감시자를 놓는다. 쥐고 있으면 닫은 창의 DOM이 통째로 남는다. */
+const pending = new Set<Element>();
+
+const stop = (): void => {
+    observer?.disconnect();
+    observer = undefined;
+    pending.clear();
+};
+
+const unwatch = (box: Element): void => {
+    if (!pending.delete(box)) return;
+    observer?.unobserve(box);
+    if (!pending.size) stop();
+};
+
+// 콜백을 밖에 둔다. fitTxtconNearView 안에서 만들면 그 호출의 box를 같이 붙들어, 감시자를 쥐는 동안 그 댓글 트리가 남는다.
+const onIntersect: IntersectionObserverCallback = (entries) => {
+    for (const entry of entries) {
+        if (!entry.isIntersecting || !(entry.target instanceof HTMLElement)) continue;
+        unwatch(entry.target);
+        fitTxtcon(entry.target);
+    }
+};
 
 /**
  * 화면 근처(300px 안)에 온 글자콘만 한 번 맞춘다. 맞추기는 이진 탐색으로 레이아웃을 수십 번 강제하는데,
  * 댓글이 천 개인 글에서 그려지자마자 모두 맞추면 화면 밖(content-visibility로 건너뛴) 댓글까지 배치해 열기가 수백 ms 늦어진다.
  * 감시자는 하나를 같이 쓴다. 스크롤 칸(창)을 root로 둬야 margin이 먹는다. 뷰포트를 root로 두면 스크롤 칸이 잘라 낸 아래쪽은 margin 안이어도 안 보이는 것으로 친다.
- * 돌려준 함수로 감시를 푼다 (댓글이 빠지거나 내용이 바뀔 때).
+ * 창을 새로 열면 앞 창의 감시는 버리고 새로 만든다. 돌려준 함수로 감시를 푼다 (댓글이 빠지거나 내용이 바뀔 때).
  */
 export const fitTxtconNearView = (box: HTMLElement): (() => void) => {
     const root = box.closest(".refresher-frame-scroll");
     if (observer?.root !== root) {
-        observer = new IntersectionObserver((entries, self) => {
-            for (const entry of entries) {
-                if (!entry.isIntersecting || !(entry.target instanceof HTMLElement)) continue;
-                self.unobserve(entry.target);
-                fitTxtcon(entry.target);
-            }
-        }, {root, rootMargin: "300px 0px"});
+        stop();
+        observer = new IntersectionObserver(onIntersect, {root, rootMargin: "300px 0px"});
     }
-    // 창을 새로 열면 감시자도 새로 만든다. 앞 창 댓글은 그 감시자에서 풀어야 하므로 지금 것을 잡아 둔다.
-    const current = observer;
-    current.observe(box);
-    return () => current.unobserve(box);
+    pending.add(box);
+    observer.observe(box);
+    return () => unwatch(box);
 };
