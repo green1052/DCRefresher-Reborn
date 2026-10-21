@@ -111,14 +111,18 @@ export const isWholeFirstPage = (url: string): boolean => {
     return (params.get("page") ?? "1") === "1" && !params.has("exception_mode") && !params.has("search_head") && !writerFilter(url);
 };
 
-/** 같은 자리의 같은 글 행인지 제목과 작성자로 본다. 틀이 없는 행(페이지가 처음 그린 행)을 견줄 때 쓴다. */
+/**
+ * 같은 자리의 같은 글 행인지 제목과 작성자로 본다. 틀이 없는 행(페이지가 처음 그린 행)을 견줄 때 쓴다.
+ * 수 칸 개수도 같아야 한다. 댓글이 처음 달리거나 다 지워지면 댓글 수 칸이 생기거나 없어져, syncCounts가 자리로 짝지은 조회·추천 칸이 밀린다.
+ */
 const sameRow = (a: Element, b: Element): boolean => {
     const title = (row: Element) => row.querySelector(".gall_tit > a")?.textContent;
     const writer = (row: Element) => {
         const cell = row.querySelector<HTMLElement>(".ub-writer");
         return cell && `${cell.dataset.nick}|${cell.dataset.uid}|${cell.dataset.ip}`;
     };
-    return title(a) === title(b) && writer(a) === writer(b);
+    const counts = (row: Element) => row.querySelectorAll(COUNT_CELLS).length;
+    return title(a) === title(b) && writer(a) === writer(b) && counts(a) === counts(b);
 };
 
 /**

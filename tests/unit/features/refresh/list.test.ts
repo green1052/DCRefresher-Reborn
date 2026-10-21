@@ -105,6 +105,23 @@ describe("replaceList", () => {
         expect(list.children[1]).not.toBe(first);
     });
 
+    it("페이지가 처음 그린 행에 댓글이 처음 달리거나 다 지워지면 조회·추천 칸이 밀리지 않게 갈아끼운다", () => {
+        // 디시는 댓글이 없으면 댓글 수 칸을 그리지 않는다.
+        const noReplies = (no: string) => row(no, {count: 7}).replace(/<a class="reply_numbox">.*?<\/a>/, "");
+        const list = tbody([noReplies("2"), row("1", {replies: 2})]);
+        document.body.append(list.closest("table")!);
+
+        replaceList(list, tbody([row("2", {count: 7, replies: 1}), noReplies("1")]), OPTIONS);
+
+        const [second, first] = current().children;
+        expect(second?.querySelector(".reply_num")?.textContent).toBe("[1]");
+        expect(second?.querySelector(".gall_count")?.textContent).toBe("7");
+        expect(second?.querySelector(".gall_recommend")?.textContent).toBe("0");
+        expect(first?.querySelector(".reply_num")).toBeNull();
+        expect(first?.querySelector(".gall_count")?.textContent).toBe("7");
+        expect(first?.querySelector(".gall_recommend")?.textContent).toBe("0");
+    });
+
     it("받아온 행의 이미지는 화면에 올 때 받는다", () => {
         const list = mount([row("1")]);
         replaceList(list, tbody([row("2").replace("</td>", "<img src=\"https://example.com/a.gif\"></td>"), row("1")]), OPTIONS);
