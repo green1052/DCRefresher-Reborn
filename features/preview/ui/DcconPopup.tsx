@@ -102,7 +102,13 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
             )}
 
             {/* 불러오는 동안은 스켈레톤을 칸이 넘치도록 깔아 꽉 찬 목록처럼 보인다. 넘친 스켈레톤에 스크롤바가 생기지 않게 자른다. */}
-            <div className="flex gap-1 overflow-x-auto pb-2 aria-busy:overflow-hidden" aria-busy={loading}>
+            {/* 세로 휠로도 패키지를 옆으로 넘기므로 스크롤바는 숨긴다. 가로 휠(트랙패드)·Shift(브라우저가 이미 가로로 굴림)·Ctrl(확대)은 그대로 둔다. */}
+            <div className="flex gap-1 overflow-x-auto [scrollbar-width:none] aria-busy:overflow-hidden" aria-busy={loading} onWheel={(ev) => {
+                const strip = ev.currentTarget;
+                if (ev.shiftKey || ev.ctrlKey || Math.abs(ev.deltaY) <= Math.abs(ev.deltaX) || strip.scrollWidth <= strip.clientWidth) return;
+                ev.preventDefault();
+                strip.scrollLeft += ev.deltaY;
+            }}>
                 {loading
                     ? Array.from({length: 12}, (_, index) => <Skeleton key={index} className="size-12 flex-none"/>)
                     : (
