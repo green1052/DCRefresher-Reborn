@@ -1,7 +1,7 @@
 import {describe, expect, it} from "vitest";
 
 import type {ProcessedComment} from "@/core/preview/comments";
-import {summaryOf, threadParents} from "@/features/preview/ui/CommentList";
+import {groupReplies, summaryOf, threadParents} from "@/features/preview/ui/CommentList";
 
 import {dcComment as comment} from "../../../../helpers";
 
@@ -44,5 +44,22 @@ describe("summaryOf", () => {
     it("깡계로 가린 댓글은 차단과 따로 센다", () => {
         const hidden = [comment(1, {blocked: "hide"}), comment(2, {blocked: "hide", lowActivity: true}), comment(3, {blocked: "blur", lowActivity: true})];
         expect(summaryOf(hidden).hidden).toBe("차단 1개, 깡계 2개");
+    });
+});
+
+describe("groupReplies", () => {
+    it("답글이 그대로인 스레드는 앞 배열을 다시 쓰고, 바뀐 스레드만 새 배열을 준다", () => {
+        const [two, three, five] = [comments[1]!, comments[2]!, comments[3]!];
+        const first = groupReplies([two, three, five]);
+        expect(nos(first.get("1")!)).toEqual(["2", "3"]);
+
+        // 스레드 4에 답글이 붙었다. 스레드 1은 같은 배열이다.
+        const next = groupReplies([two, three, five, comment(7, {c_no: "4", depth: 1})], first);
+        expect(next.get("1")).toBe(first.get("1"));
+        expect(next.get("4")).not.toBe(first.get("4"));
+        expect(nos(next.get("4")!)).toEqual(["5", "7"]);
+
+        // 같은 번호라도 새 객체(바뀐 댓글)면 새 배열이다.
+        expect(groupReplies([two, comment(3, {c_no: "1", depth: 1}), five], next).get("1")).not.toBe(first.get("1"));
     });
 });

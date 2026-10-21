@@ -133,6 +133,12 @@
         @apply border-border outline-ring/50;
     }
 
+    /* Tailwind v4는 버튼 커서를 기본(화살표)으로 되돌린다. v3처럼 누를 수 있는 버튼엔 손가락을 보인다 (Tailwind v4 업그레이드 안내의 규칙). */
+    button:not(:disabled),
+    [role="button"]:not(:disabled) {
+        cursor: pointer;
+    }
+
     body {
         @apply bg-background text-foreground;
         /* 크롬은 확장 페이지(옵션·팝업)의 body에 자체 폰트 규칙을 레이어 밖에 넣어, 레이어 안의 규칙은 진다. 폰트 교체 설정이 먹도록 important로 건다. */

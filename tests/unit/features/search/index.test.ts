@@ -138,3 +138,42 @@ it("작성자 거르기만 하는 목록은 갈아끼울 때마다 다음 쪽을
         history.replaceState(null, "", "/board/lists/?id=test&s_type=search_subject_memo&s_keyword=abc");
     }
 });
+
+it("작성자 거르기 목록을 갈아끼워도 1쪽의 이 작성자 글이 그대로면 다음 쪽을 다시 받지 않고 이어 붙인 행을 옮겨 온다", async () => {
+    history.replaceState(null, "", "/board/lists/?id=test&rf_ip=1.2");
+    try {
+        const writerRow = (no: string, ip = "1.2"): string => `<tr class="ub-content" data-no="${no}"><td class="ub-writer" data-ip="${ip}"></td></tr>`;
+        const pagingHtml = "<em>1</em><a href=\"/board/lists/?id=test&page=2\">2</a>";
+        get.mockImplementation(async () => new Response(
+            `<div class="left_content"><article><div class="gall_listwrap"><table class="gall_list"><tbody>${writerRow("29")}${writerRow("28", "3.4")}</tbody></table></div>` +
+            "<div class=\"bottom_paging_box\"><em>2</em></div></article></div>"));
+        document.body.innerHTML = `<input id="list_num" value="2"><div class="left_content"><article><div class="gall_listwrap"><table class="gall_list"><tbody>${writerRow("30")}</tbody></table></div>` +
+            `<div class="bottom_paging_box">${pagingHtml}</div></article></div>`;
+        running = await runModule(search);
+        const first = document.querySelector(".gall_list tbody")!;
+        await vi.waitFor(() => expect(nos(first)).toEqual(["30", "29", "28"]));
+        const added = first.children[1];
+
+        // 다른 사람 글 31이 들어오고 28이 1쪽으로 올라왔다. 이 작성자 글(30)은 그대로다.
+        document.querySelector(".bottom_paging_box")!.innerHTML = pagingHtml;
+        const fresh = document.createElement("tbody");
+        fresh.innerHTML = writerRow("31", "3.4") + writerRow("30") + writerRow("28", "3.4");
+        first.replaceWith(fresh);
+
+        await vi.waitFor(() => expect(nos(fresh)).toEqual(["31", "30", "28", "29"]));
+        expect(get).toHaveBeenCalledTimes(1);
+        expect(fresh.children[3]).toBe(added);
+        expect(document.querySelector(".bottom_paging_box em")?.textContent).toBe("2");
+
+        // 1분이 지나면 다음 쪽에서 지워진 글이 남지 않게 다시 받는다.
+        vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
+        document.querySelector(".bottom_paging_box")!.innerHTML = pagingHtml;
+        const later = document.createElement("tbody");
+        later.innerHTML = writerRow("30");
+        fresh.replaceWith(later);
+        await vi.waitFor(() => expect(get).toHaveBeenCalledTimes(2));
+        vi.restoreAllMocks();
+    } finally {
+        history.replaceState(null, "", "/board/lists/?id=test&s_type=search_subject_memo&s_keyword=abc");
+    }
+});

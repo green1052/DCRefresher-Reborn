@@ -176,6 +176,20 @@ const SelectionTools = ({shownSelectable, foldable}: { shownSelectable: Processe
     );
 };
 
+/**
+ * 답글을 스레드 첫 댓글 번호(c_no)로 한 번에 묶는다. 부모마다 전체를 훑으면 O(n²)이다.
+ * 앞서 묶은 것(prev)과 답글이 그대로인 스레드는 그 배열을 다시 써 memo한 Thread가 건너뛰게 한다.
+ * 새로고침은 바뀐 댓글만 새 객체로 주므로(processKeepingUnchanged) 댓글 하나가 바뀌어도 나머지 스레드는 다시 그리지 않는다.
+ */
+export const groupReplies = (replies: ProcessedComment[], prev?: ReadonlyMap<string, ProcessedComment[]>): Map<string, ProcessedComment[]> => {
+    const grouped = Map.groupBy(replies, (comment) => comment.c_no);
+    for (const [no, group] of grouped) {
+        const old = prev?.get(no);
+        if (old?.length === group.length && group.every((comment, index) => comment === old[index])) grouped.set(no, old);
+    }
+    return grouped;
+};
+
 /** 스레드별 댓글과 접을 수 있는 답글. */
 export const CommentList = ({comments}: { comments: ProcessedComment[] }) => {
     const pageRevealed = useUiStore((s) => s.blockRevealed);
@@ -185,15 +199,12 @@ export const CommentList = ({comments}: { comments: ProcessedComment[] }) => {
 
     // 숨김 차단(깡계 숨기기 포함)과 접힌 같은 댓글은 '가린 내용 보기'나 이 글에서 가린 댓글 보기 동안만 (흐리게) 그린다. 블러 차단은 그려 두고 features/preview/overlay.css가 흐린다.
     // 트리 선과 답글 수도 그리는 댓글만 센다.
-    // 스레드를 나눠 그리는 동안(아래 limit) 답글 배열이 그대로여야 memo한 Thread가 다시 그려지지 않으므로 useMemo로 둔다.
+    // 스레드를 나눠 그리는 동안(아래 limit)과 댓글을 새로고침할 때 답글 배열이 그대로여야 memo한 Thread가 다시 그려지지 않으므로 useMemo로 두고 앞 묶음을 넘긴다.
+    const lastReplies = useRef<Map<string, ProcessedComment[]>>(undefined);
     const {shown, parents, repliesOf} = useMemo(() => {
         const shown = new Set(revealed ? comments : comments.filter((comment) => comment.blocked !== "hide" && comment.duplicates !== 0));
-        return {
-            shown,
-            parents: threadParents(comments, order),
-            // 답글을 스레드 첫 댓글 번호(c_no)로 한 번에 묶는다. 부모마다 전체를 훑으면 O(n²)이다.
-            repliesOf: Map.groupBy(comments.filter((comment) => comment.depth === 1 && shown.has(comment)), (comment) => comment.c_no)
-        };
+        lastReplies.current = groupReplies(comments.filter((comment) => comment.depth === 1 && shown.has(comment)), lastReplies.current);
+        return {shown, parents: threadParents(comments, order), repliesOf: lastReplies.current};
     }, [comments, revealed, order]);
     // 문서를 querySelector로 훑으므로 댓글마다가 아니라 여기서 한 번 잰다.
     // 모듈 전역에 두면 페이지를 다 읽기 전에 잰 false가 굳는다.

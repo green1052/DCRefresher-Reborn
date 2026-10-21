@@ -61,6 +61,9 @@ const searchUserPosts = (user: SelectedUser, by: "nick" | "identity"): void => {
     if (filter) location.href = writerSearchUrl(filter, user.nick);
 };
 
+/** 작성자 거르기 목록에서 이어 붙인 행을 다시 받지 않고 다시 쓰는 시간 (ms). 그사이 다음 쪽에서 지워지거나 고쳐진 글은 이만큼 늦게 반영된다. */
+const REUSE_TTL = 60_000;
+
 /** 이 검색 구간(search_pos)의 마지막 페이지인지. 현재 페이지(em) 뒤에 페이지 링크가 없으면 마지막이다. */
 const isLastPage = (paging: Element): boolean => {
     const next = paging.querySelector("em")?.nextElementSibling;
@@ -104,6 +107,9 @@ export default defineModule(meta, {
         // 행을 붙이면 같은 tbody로 필터가 다시 불리므로 한 번만 채운다.
         const filled = new WeakSet<HTMLElement>();
         let running: AbortController | null = null;
+        // 거르기만 하는 목록에서 앞 목록에 이어 붙인 행과 그때의 1쪽 (이 작성자 글 번호), 받은 시각. 1쪽의 이 작성자 글이 그대로면
+        // 새로고침이 목록을 갈아끼워도(조회수만 바뀌거나 다른 사람 글이 들어와도) REUSE_TTL 동안은 다음 쪽들을 다시 받지 않고 이 행을 옮겨 온다.
+        let lastFill: { key: string; rows: HTMLTableRowElement[]; paging: string; at: number } | null = null;
 
         const fill = async (list: HTMLElement): Promise<void> => {
             if (filled.has(list)) return;
@@ -126,8 +132,22 @@ export default defineModule(meta, {
             if (searching && !isLastPage(paging)) return;
 
             const target = Number(document.querySelector<HTMLInputElement>("#list_num")?.value) || 50;
-            let count = Array.from(list.querySelectorAll<HTMLElement>(":scope > tr"), counted).filter(Boolean).length;
+            const own = Array.from(list.querySelectorAll<HTMLElement>(":scope > tr")).filter(counted);
+            let count = own.length;
             if (count >= target) return;
+
+            const key = `${location.href}|${own.map((row) => row.dataset.no).join(",")}`;
+            if (!searching && lastFill?.key === key && Date.now() - lastFill.at < REUSE_TTL) {
+                // 1쪽에 올라온 다른 사람 글은 이미 이 목록에 있다.
+                const rows = lastFill.rows.filter((row) => !list.querySelector(`:scope > tr[data-no="${row.dataset.no}"]`));
+                list.append(...rows);
+                paging.innerHTML = lastFill.paging;
+                if (filter) keepWriterFilter(paging, filter);
+                lastFill.rows = rows;
+                if (rows.length > 0) notifyListReplaced(gallery);
+                return;
+            }
+            lastFill = null;
 
             const keyword = document.querySelector<HTMLInputElement>("#sch_q")?.value ?? "";
             const commentSearch = queryString("s_type") === "search_comment";
@@ -188,6 +208,7 @@ export default defineModule(meta, {
                     if (filter) keepWriterFilter(paging, filter);
                     if (searching && !isLastPage(paging)) break;
                 }
+                if (!searching) lastFill = {key, rows: Array.from(list.querySelectorAll<HTMLTableRowElement>(`:scope > .${ADDED_ROW}`)), paging: paging.innerHTML, at: Date.now()};
             } catch (e) {
                 if (!signal.aborted) reportFailure(e, "Search continuation failed:", "다음 검색 결과를 불러오지 못했습니다.");
             } finally {

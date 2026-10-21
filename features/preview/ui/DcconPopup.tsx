@@ -1,4 +1,4 @@
-import {useEffect, useId, useState} from "react";
+import {useEffect, useId, useRef, useState} from "react";
 
 import {DialogCloseButton, ModalDialog} from "@/components/dialogs";
 import {Button} from "@/components/ui/button";
@@ -66,6 +66,8 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
     }, []);
 
     const id = useId();
+    // 휠로 굴러갈 곳. 굴리는 동안 휠이 이어지면 지금 위치가 아니라 여기에 더해야 빠르게 굴려도 덜 가지 않는다. 다 굴러가면 비운다.
+    const wheelTarget = useRef<number | null>(null);
 
     const clickDccon = (dccon: DcinsideDccon): void => {
         const next = doubleDccon ? [...selected, dccon] : [dccon];
@@ -102,7 +104,15 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
             )}
 
             {/* 불러오는 동안은 스켈레톤을 칸이 넘치도록 깔아 꽉 찬 목록처럼 보인다. 넘친 스켈레톤에 스크롤바가 생기지 않게 자른다. */}
-            <div className="flex gap-1 overflow-x-auto pb-2 aria-busy:overflow-hidden" aria-busy={loading}>
+            {/* 세로 휠로도 패키지를 옆으로 부드럽게 넘기므로 스크롤바는 숨긴다. 가로 휠(트랙패드)·Shift(브라우저가 이미 가로로 굴림)·Ctrl(확대)은 그대로 둔다. */}
+            <div className="flex gap-1 overflow-x-auto [scrollbar-width:none] aria-busy:overflow-hidden" aria-busy={loading} onWheel={(ev) => {
+                const strip = ev.currentTarget;
+                if (ev.shiftKey || ev.ctrlKey || Math.abs(ev.deltaY) <= Math.abs(ev.deltaX) || strip.scrollWidth <= strip.clientWidth) return;
+                ev.preventDefault();
+                const left = Math.min(Math.max((wheelTarget.current ?? strip.scrollLeft) + ev.deltaY, 0), strip.scrollWidth - strip.clientWidth);
+                wheelTarget.current = left;
+                strip.scrollTo({left, behavior: smoothScroll()});
+            }} onScrollEnd={() => (wheelTarget.current = null)}>
                 {loading
                     ? Array.from({length: 12}, (_, index) => <Skeleton key={index} className="size-12 flex-none"/>)
                     : (
@@ -125,7 +135,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                     )}
             </div>
 
-            <div className="grid h-80 grid-cols-[repeat(auto-fill,minmax(72px,1fr))] content-start gap-1 overflow-y-auto aria-busy:overflow-hidden" aria-busy={loading}>
+            <div className="grid h-80 grid-cols-[repeat(auto-fill,minmax(72px,1fr))] content-start gap-1 overflow-y-auto [scrollbar-width:none] aria-busy:overflow-hidden" aria-busy={loading}>
                 {loading
                     ? Array.from({length: 36}, (_, index) => <Skeleton key={index} className="aspect-square w-full"/>)
                     : (active?.detail ?? []).map((dccon) => (
