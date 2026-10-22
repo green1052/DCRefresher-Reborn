@@ -30,7 +30,7 @@
         "p-limit": "^7.3.3",
         "preact": "^11.0.1",
         "quick-lru": "^7.3.0",
-        "zustand": "^5.0.15"
+        "zustand": "^5.0.16"
     },
     "devDependencies": {
         "@playwright/test": "^1.64.1",
