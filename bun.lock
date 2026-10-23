@@ -13,7 +13,7 @@
         "ky": "^2.2.0",
         "lucide-react": "^1.61.0",
         "p-limit": "^7.3.3",
-        "preact": "^11.0.1",
+        "preact": "^11.0.2",
         "quick-lru": "^7.3.0",
         "zustand": "^5.0.16",
       },
@@ -1170,7 +1170,7 @@
 
     "powershell-utils": ["powershell-utils@0.2.1", "", {}, "sha512-C+y9x90UElAddDZmV4qOx9W53B61PO7cIqWz2dQsWlwswuq4mr8NEwytdGKboYbQlGZ3awrkTeNvcZiZNHnQ8A=="],
 
-    "preact": ["preact@11.0.1", "", { "peerDependencies": { "preact-render-to-string": ">=6.7.0" }, "optionalPeers": ["preact-render-to-string"] }, "sha512-TNNwEq++jYNHy747LziCjPRVgEwnLSOIOAw/oYcjI3Tdnubx2EXtt76I0an8PATvUWtx/DX1kFIg1eFN+O/fkw=="],
+    "preact": ["preact@11.0.2", "", { "peerDependencies": { "preact-render-to-string": ">=6.7.0" }, "optionalPeers": ["preact-render-to-string"] }, "sha512-ofG+Lqznbt13JKDjdWPLTo5ONBqcNgidqnLRzJBG6PZjzGXOLRd5y9r448+HUofTyDbgKWVrPhHP0IgcxEZslQ=="],
 
     "prelude-ls": ["prelude-ls@1.2.1", "", {}, "sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g=="],
 
