@@ -168,7 +168,7 @@ const TurnstilePopup = ({turnstile}: { turnstile: TurnstilePrompt }) => {
         void sendMessage("refresher:turnstileToken", {config: turnstile.config, visible: true}).catch(() => undefined).then((result) => {
             done = true;
             turnstile.resolve(result);
-            usePreviewStore.setState((state) => (state.turnstile === turnstile ? {turnstile: null} : {}));
+            usePreviewStore.setState((state) => (state.turnstile === turnstile ? {turnstile: null} : state));
         });
         return () => {
             if (!done) element?.dispatchEvent(new Event(TURNSTILE_CANCEL_EVENT));

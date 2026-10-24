@@ -169,7 +169,7 @@ export const WriteComment = () => {
                 // 디시처럼 쓴 닉네임·비밀번호를 기억한다. 만든 비밀번호도 저장해야 나중에 자기 댓글을 지울 수 있다.
                 if (!login) saveNonmember(nick, password);
                 // 답글 버튼은 누를 때마다 새 대상을 넣으므로, 그새 다른 글로 넘어갔거나 다른 댓글을 골랐으면 같지 않다.
-                usePreviewStore.setState((current) => (current.reply === sentReply ? {reply: NO_REPLY} : {}));
+                usePreviewStore.setState((current) => (current.reply === sentReply ? {reply: NO_REPLY} : current));
                 refreshCommentsOf(preData);
             } else if (outcome.captcha) {
                 useUiStore.getState().showToast(
