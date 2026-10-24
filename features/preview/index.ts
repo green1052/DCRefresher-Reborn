@@ -240,7 +240,8 @@ const controller = (ctx: Ctx) => {
     };
 
     // 열린 창에도 차단 목록·방식 변경을 바로 반영한다. 버블에서 차단하면 그 사람 댓글이 곧바로 가려진다.
-    // 글댓비는 사용자마다 하나씩 도착해 각각 재가공을 일으키므로(200명이면 200번) 짧게 모아 한 번만 한다.
+    // 글댓비는 사용자마다 하나씩 도착해 각각 재가공을 일으키므로(200명이면 200번) 100ms 창마다 한 번으로 묶는다.
+    // 첫 요청에서 타이머를 걸고 늦추지 않으므로(throttle) 도착이 길게 이어져도 창마다 한 번씩 반영된다.
     const reapplyBlocks = async (): Promise<void> => {
         const {visible, preData, signalId} = store.getState();
         if (!visible || !preData) return;
