@@ -37,7 +37,9 @@ export const useWheelGesture = (key: string, goToAdjacent: (dir: number) => void
             goToAdjacent(dir);
         }
         // 끝에 닿은 방향을 기억해 두고 다음 동작을 기다린다. 넘어갈 글이 없으면 기다리지 않는다.
-        else if (atEdge && canGo(dir)) armed = dir;
+        // canGo는 목록 행 전체를 훑으므로 처음 그 방향으로 무장할 때만 한 번 본다. 관성 틱마다 다시 보면 초당
+        // 수십 번 훑는다. 그사이 목록이 바뀌어 글이 없어져도 안내만 남을 뿐 넘어가지 않는다(goToAdjacent가 알아서 걸른다).
+        else if (atEdge) armed = state.armed === dir ? dir : canGo(dir) ? dir : 0;
 
         if (armed !== state.armed) setHint({dir: armed, key});
         state.armed = armed;

@@ -45,6 +45,20 @@ it("그 방향에 넘어갈 글이 없으면(목록 처음·끝) 안내하지 �
     expect(goToAdjacent).not.toHaveBeenCalled();
 });
 
+it("같은 방향 관성 틱마다 canGo를 다시 부르지 않는다", () => {
+    const goToAdjacent = vi.fn();
+    const canGo = vi.fn(() => true);
+    act(() => render(<Box goToAdjacent={goToAdjacent} canGo={canGo}/>, document.body));
+    const box = document.body.firstElementChild!;
+
+    wheel(box, 1, 1000);
+    wheel(box, 1, 1100);
+    wheel(box, 1, 1200);
+    expect(canGo).toHaveBeenCalledTimes(1);
+    expect(box.getAttribute("data-hint")).toBe("1");
+    expect(goToAdjacent).not.toHaveBeenCalled();
+});
+
 it("닫았다 다시 열면(키가 바뀌면) 앞서 끝에 닿아 둔 상태로 넘기지 않는다", () => {
     const goToAdjacent = vi.fn();
     act(() => render(<Box goToAdjacent={goToAdjacent} canGo={() => true}/>, document.body));
