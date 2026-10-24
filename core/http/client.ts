@@ -64,8 +64,13 @@ export const setBlockedHandler = (handler: () => void): void => {
  */
 const detectBlocked: AfterResponseHook = async ({request, response}) => {
     const url = new URL(request.url);
-    if (!response.ok || !url.hostname.endsWith("dcinside.com")) return;
+    // 차단 페이지는 200에 빈 문서로 온다. 204·205도 ok라 빈 본문이지만 성공 응답이 비어 있을 수 있는 디시 ajax까지 차단으로 보이면 안 된다.
+    // 디시 호스트만 본다. urls.ts의 dcinsideHref와 같은 기준이라 evildcinside.com 같은 유사 도메인은 거른다.
+    if (response.status !== 200 || !(url.hostname === "dcinside.com" || url.hostname.endsWith(".dcinside.com"))) return;
     if (request.method !== "GET" && !url.pathname.startsWith("/board/comment/")) return;
+    // 차단 페이지는 빈 문서다. content-length가 본문 있음을 밝히면 복제본을 읽지 않는다 — 읽으면 매 요청마다 전체 본문(목록 수백 KB)을
+    // 두 번 디코드한다. 헤더가 없으면(청크 전송) 모르므로 읽는다. Number(null)은 0이라 헤더가 없어도 거르지 않는다.
+    if (Number(response.headers.get("content-length")) > 0) return;
     // ky가 훅마다 복제본을 넘기고 호출한 쪽에는 원본을 주므로 바로 읽어도 된다.
     if (!isBlockedPage(await response.text())) return;
 

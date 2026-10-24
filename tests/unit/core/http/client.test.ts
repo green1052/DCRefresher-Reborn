@@ -73,6 +73,24 @@ describe("임시 차단 검사", () => {
         network.respond = async () => new Response("", {status: 404});
         await expect(http.get("https://gall.dcinside.com/board/lists").text()).rejects.toMatchObject({name: "HTTPError"});
     });
+
+    it("204도 빈 본문이지만 차단으로 보지 않는다", async () => {
+        network.respond = async () => new Response(null, {status: 204});
+        await expect(http.get("https://gall.dcinside.com/board/lists").text()).resolves.toBe("");
+    });
+
+    it("디시가 아니면 유사 도메인(evildcinside.com)도 보지 않는다", async () => {
+        network.respond = async () => new Response("");
+        await expect(http.get("https://evildcinside.com/board/lists").text()).resolves.toBe("");
+    });
+
+    it("content-length가 본문 있음을 밝히면 복제본을 읽지 않는다", async () => {
+        const onBlocked = vi.fn();
+        setBlockedHandler(onBlocked);
+        network.respond = async () => new Response(empty, {headers: {"content-length": "2048"}});
+        await expect(http.get("https://gall.dcinside.com/board/lists?id=a").text()).resolves.toBe(empty);
+        expect(onBlocked).not.toHaveBeenCalled();
+    });
 });
 
 describe("동시 요청 수", () => {
