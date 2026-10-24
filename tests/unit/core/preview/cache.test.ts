@@ -123,4 +123,14 @@ describe("restoreArchive", () => {
         expect(getEntry(pre)!.seen!["101"]).toBeDefined();
         expect(getEntry(pre)!.seen!["100"]).toBeUndefined();
     });
+
+    it("seen을 줄일 때 이번 목록에 있는 댓글은 남긴다", () => {
+        const pre = nextPost();
+        restoreArchive(pre, Array.from({length: 2100}, (_, i) => comment(i + 1)));
+        restoreArchive(pre, [comment(1), comment(2100)]);
+        // 1번은 살아 있어 남고, 지워진 2~101번이 대신 밀린다.
+        expect(getEntry(pre)!.seen!["1"]).toBeDefined();
+        expect(getEntry(pre)!.seen!["101"]).toBeUndefined();
+        expect(getEntry(pre)!.seen!["102"]).toBeDefined();
+    });
 });
