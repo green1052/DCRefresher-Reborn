@@ -101,8 +101,20 @@ export interface WriterFilter {
     value: string;
 }
 
-/** 주소의 작성자 거르기. 없으면 null. */
-export const writerFilter = (href = location.href): WriterFilter | null => {
+/**
+ * 지금 판단에 쓸 문서 주소. 문서를 불러온 주소(내비게이션 항목)가 있으면 그것으로 본다 — 미리보기·페이지 넘김이
+ * pushState로 주소창을 바꿔도 이 문서가 보여 주는 목록·검색은 그대로다. 항목이 없으면(파이어폭스 확장 페이지처럼
+ * 이름이 주소가 아니거나 테스트 환경) 지금 주소로 본다. 호출마다 읽는 것은 테스트(vi.spyOn) 때문이고, 브라우저에서는
+ * 문서 수명 내내 같은 값이다.
+ */
+const loadedDocumentUrl = (): URL => {
+    // vitest 가짜 타이머가 performance를 통째로 바꿔 이 메서드가 없어질 수 있어 선택 호출로 한다.
+    const name = performance.getEntriesByType?.("navigation")[0]?.name ?? "";
+    return URL.parse(name) ?? new URL(location.href);
+};
+
+/** 주소의 작성자 거르기. 없으면 null. 기본은 문서를 불러온 주소다 — 미리보기가 글 주소를 쌓아도 문서의 거르기를 그대로 준다. */
+export const writerFilter = (href = loadedDocumentUrl().href): WriterFilter | null => {
     const params = new URL(href).searchParams;
     for (const kind of ["uid", "ip"] as const) {
         const value = params.get(WRITER_PARAMS[kind]);
@@ -111,15 +123,15 @@ export const writerFilter = (href = location.href): WriterFilter | null => {
     return null;
 };
 
-/** 지금 주소의 쿼리 값. 이 문서의 갤러리 id는 pageGallery를 쓴다. */
-export const queryString = (name: string): string | null => new URLSearchParams(location.search).get(name);
+/** 이 문서를 불러온 주소의 쿼리 값. 미리보기가 글 주소를 쌓아도 문서의 검색어를 그대로 준다. 이 문서의 갤러리 id는 pageGallery를 쓴다. */
+export const queryString = (name: string): string | null => loadedDocumentUrl().searchParams.get(name);
 
 /**
  * 이 문서를 불러온 주소. 미리보기·페이지 넘김이 pushState로 주소를 바꿔도 이 문서가 보여 주는 페이지는 그대로다.
  * 지금 주소가 아니라 내비게이션 항목에서 읽는다. 파이어폭스는 확장을 업데이트하면 미리보기가 바꿔 둔 글 주소에서 스크립트를 다시 주입한다.
  * 파이어폭스 확장 페이지(배경·옵션·팝업)는 항목 이름이 URL이 아니라 "document"라 파싱되지 않으면 지금 주소를 쓴다 (던지면 번들 전체가 멈춘다).
  */
-export const documentUrl = URL.parse(performance.getEntriesByType("navigation")[0]?.name ?? "") ?? new URL(location.href);
+export const documentUrl = loadedDocumentUrl();
 export const isViewPage = VIEW_PAGE.test(documentUrl.pathname);
 /** 글 보기 페이지가 보여 주는 글 번호. */
 export const pagePostNo = isViewPage ? documentUrl.searchParams.get("no") : null;

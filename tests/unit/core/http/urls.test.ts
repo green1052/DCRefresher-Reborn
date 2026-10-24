@@ -1,7 +1,7 @@
 // @vitest-environment-options {"url": "https://gall.dcinside.com/board/view/?id=test&no=9"}
-import {describe, expect, it} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 
-import {dcinsideHref, galleryKind, listUrl, managerAjaxUrl, mergeParamURL, postSearchUrl, rowPostNo} from "@/core/http/urls";
+import {dcinsideHref, galleryKind, listUrl, managerAjaxUrl, mergeParamURL, postSearchUrl, queryString, rowPostNo, writerFilter} from "@/core/http/urls";
 
 describe("dcinsideHref", () => {
     it.each(["https://gall.dcinside.com/board/view?id=a&no=1", "https://m.dcinside.com/", "https://dcimg5.dcinside.com/dccon.php?no=1"])("https 디시 주소 %s는 그대로 돌려준다", (url) => {
@@ -79,6 +79,24 @@ describe("mergeParamURL", () => {
 describe("postSearchUrl", () => {
     it("검색어의 UTF-8 바이트를 대문자 \".XX\"로 쓴다", () => {
         expect(postSearchUrl("a/가")).toBe("https://search.dcinside.com/post/sort/latest/q/.61.2F.EA.B0.80");
+    });
+});
+
+describe("writerFilter·queryString", () => {
+    it("내비게이션 항목이 있으면 주소창을 바꿔도 문서를 불러온 주소로 본다", () => {
+        const navigation = vi.spyOn(performance, "getEntriesByType").mockReturnValue([
+            {name: "https://gall.dcinside.com/board/lists/?id=test&s_keyword=x&rf_uid=abc"} as PerformanceResourceTiming
+        ]);
+        try {
+            // 미리보기가 글 주소를 쌓은 상태다.
+            history.replaceState(null, "", "/board/view/?id=test&no=9");
+            expect(queryString("s_keyword")).toBe("x");
+            expect(writerFilter()).toEqual({kind: "uid", value: "abc"});
+        } finally {
+            navigation.mockRestore();
+            history.replaceState(null, "", "/board/view/?id=test&no=9");
+        }
+        expect(writerFilter("https://gall.dcinside.com/board/lists/?id=test&rf_ip=1.2")).toEqual({kind: "ip", value: "1.2"});
     });
 });
 
