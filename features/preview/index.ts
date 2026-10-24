@@ -240,6 +240,7 @@ const controller = (ctx: Ctx) => {
     };
 
     // 열린 창에도 차단 목록·방식 변경을 바로 반영한다. 버블에서 차단하면 그 사람 댓글이 곧바로 가려진다.
+    // 글댓비는 사용자마다 하나씩 도착해 각각 재가공을 일으키므로(200명이면 200번) 짧게 모아 한 번만 한다.
     const reapplyBlocks = async (): Promise<void> => {
         const {visible, preData, signalId} = store.getState();
         if (!visible || !preData) return;
@@ -254,8 +255,18 @@ const controller = (ctx: Ctx) => {
         dropStaleReply();
     };
 
+    let reapplyTimer = 0;
+    const scheduleReapplyBlocks = (): void => {
+        if (reapplyTimer) return;
+        reapplyTimer = window.setTimeout(() => {
+            reapplyTimer = 0;
+            void reapplyBlocks();
+        }, 100);
+    };
+    ctx.addCleanup(() => window.clearTimeout(reapplyTimer));
+
     ctx.addCleanup(useBlocksStore.subscribe((state, previous) => {
-        if (state.entries !== previous.entries || state.defaults !== previous.defaults) void reapplyBlocks();
+        if (state.entries !== previous.entries || state.defaults !== previous.defaults) scheduleReapplyBlocks();
     }));
     // 차단 모듈의 켜짐·설정 중 가공 결과(processComments·textBlockOf)가 읽는 값만 본다. '가린 내용 보기'(blockRevealed·blurReveal)는 창과 댓글 목록이
     // 직접 구독하므로, 켜고 끌 때마다 댓글 수백 개를 다시 가공해 모두 다시 그리지 않는다. 모듈 설정은 하나만 바뀌어도 새 객체라 값으로 비교한다.
@@ -264,14 +275,14 @@ const controller = (ctx: Ctx) => {
         const key = blockKeyOf(runningModuleSettings("block"));
         if (key === blockKey) return;
         blockKey = key;
-        void reapplyBlocks();
+        scheduleReapplyBlocks();
     };
     ctx.addCleanup(moduleSettingsStore.subscribe(onBlockChange));
     ctx.addCleanup(runningModulesStore.subscribe(onBlockChange));
     // 깡계 가림(userinfo의 글댓비·깡계 설정)이 바뀌면 다시 가공한다. 글댓비는 새 글마다 받으므로, 열린 글 댓글의 깡계 판정이 달라질 때만 한다.
     ctx.addCleanup(useUiStore.subscribe(({ratios}, previous) => {
         if (ratios === previous.ratios || !shown) return;
-        if (shown.source.some((comment) => lowActivityOf(ratios, comment.user_id) !== lowActivityOf(previous.ratios, comment.user_id))) void reapplyBlocks();
+        if (shown.source.some((comment) => lowActivityOf(ratios, comment.user_id) !== lowActivityOf(previous.ratios, comment.user_id))) scheduleReapplyBlocks();
     }));
 
     /**
