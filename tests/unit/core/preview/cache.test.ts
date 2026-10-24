@@ -111,4 +111,13 @@ describe("restoreArchive", () => {
         restoreArchive(pre, [comment(1)]);
         expect(restoreArchive(nextPost(), [])).toEqual([]);
     });
+
+    it("seen이 상한을 넘으면 오래된 것부터 버린다", () => {
+        const pre = nextPost();
+        restoreArchive(pre, Array.from({length: 2100}, (_, i) => comment(i + 1)));
+        // 이번 목록에 없는(1번) 댓글은 삭제로 되살리지 못한다 — 기록에서 밀렸다.
+        expect(nos(restoreArchive(pre, [comment(2100)]))).toEqual(["2100"]);
+        expect(getEntry(pre)!.seen!["101"]).toBeDefined();
+        expect(getEntry(pre)!.seen!["100"]).toBeUndefined();
+    });
 });

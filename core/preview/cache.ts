@@ -21,6 +21,9 @@ interface CacheEntry {
 const MAX_AGE = 60_000;
 const entries = new QuickLRU<string, CacheEntry>({maxSize: 25, maxAge: MAX_AGE});
 
+/** seen(삭제 댓글 보존 기록)의 상한. 살아 있는 동안 새 댓글과 지워진 댓글이 계속 쌓이므로 오래된 것부터 버린다 (architecture.md의 캐시 상한 규칙). */
+const SEEN_LIMIT = 2000;
+
 // 만료된 항목은 꺼내거나 훑을 때에야 지워진다. 미리보기를 30개 열고 두면 본문 HTML·댓글 0.9MB가 그대로 남는다.
 // 저장할 때마다 수명이 다시 시작되므로 마지막 저장의 수명이 끝난 뒤 한 번 훑는다. 훑기(이터레이터)가 만료된 항목을 지운다.
 let sweep: ReturnType<typeof setTimeout> | undefined;
@@ -76,6 +79,9 @@ export const restoreArchive = (preData: GalleryPreData, list: DcinsideComment[],
         nextSeen[comment.no] = comment;
         return comment;
     });
+    // 받는 댓글은 1000개(10쪽)가 상한이지만 seen은 지워진 것까지 모아 자란다. 번호(등록순)가 오래된 것부터 버린다.
+    const nos = Object.keys(nextSeen).map(Number).sort((a, b) => a - b);
+    for (let i = 0; i < nos.length - SEEN_LIMIT; i++) delete nextSeen[String(nos[i])];
 
     setEntry(preData, {seen: nextSeen});
 
