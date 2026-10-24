@@ -390,9 +390,14 @@ const controller = (ctx: Ctx) => {
             // 뒤로 가기로 닫았으면 주소는 이미 돌아가 있다.
             // 미리보기가 쌓은 만큼 뒤로 간다. 새로 쌓으면 열고 닫을 때마다 두 칸씩 늘어 갤러리 전의 기록이 밀려난다.
             // 쌓은 기록이 아닌데 주소가 바뀌어 있으면(창을 연 채 설정을 바꾼 경우 등) 원래 주소를 쌓는다.
+            // 기록 조작은 장식이라 삼킨다. 던지면 close가 중간에 끊겨 창이 닫히지도 않고 Esc도 먹지 않는다.
             const depth = ownPreviewDepth();
-            if (!fromHistory && depth > 0) history.go(-depth);
-            else if (!fromHistory && location.href !== savedHistory.url) history.pushState(savedHistory.state, savedHistory.title, savedHistory.url);
+            try {
+                if (!fromHistory && depth > 0) history.go(-depth);
+                else if (!fromHistory && location.href !== savedHistory.url) history.pushState(savedHistory.state, savedHistory.title, savedHistory.url);
+            } catch (e) {
+                console.error("미리보기 기록 되돌리기 실패:", e);
+            }
             // popstate는 제목을 되돌리지 않는다.
             document.title = savedHistory.title;
         }
@@ -463,8 +468,14 @@ const controller = (ctx: Ctx) => {
             if (!historySkip) {
                 const depth = (st.visible ? ownPreviewDepth() : 0) + 1;
                 const state: PreviewEntry = {refresher: 1, doc: historyDoc, preData, back: savedHistory ?? undefined, depth: Math.min(depth, 40)};
-                if (depth > 40) history.replaceState(state, newTitle, preData.link);
-                else history.pushState(state, newTitle, preData.link);
+                // 기록 쌓기가 실패해도(브라우저의 횟수 제한 등) 창은 연다. 여기서 끊기면 새로고침 타이머와 본문 요청이
+                // 아예 안 돌아 창이 멈춘 것처럼 보인다. 실패하면 :visited 색칠만 안 될 뿐이다.
+                try {
+                    if (depth > 40) history.replaceState(state, newTitle, preData.link);
+                    else history.pushState(state, newTitle, preData.link);
+                } catch (e) {
+                    console.error("미리보기 기록 쌓기 실패:", e);
+                }
             }
             // 히스토리로 다시 열 때도 바꾼다 (popstate는 제목을 되돌리지 않는다).
             document.title = newTitle;
@@ -505,7 +516,14 @@ const controller = (ctx: Ctx) => {
             const preData = {...target, [field]: value};
             store.setState({preData});
             const state: unknown = history.state;
-            if (isRecord(state) && isRecord(state.preData) && state.preData.id === target.id) history.replaceState({...state, preData}, "");
+            if (isRecord(state) && isRecord(state.preData) && state.preData.id === target.id) {
+                // 여기서 던지면 manage의 알림마저 건너뛰므로 삼킨다.
+                try {
+                    history.replaceState({...state, preData}, "");
+                } catch (e) {
+                    console.error("미리보기 기록 고치기 실패:", e);
+                }
+            }
         };
 
         const failure = "처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
