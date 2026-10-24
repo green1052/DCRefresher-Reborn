@@ -114,7 +114,9 @@ export const createUnseenCounter = (ctx: Ctx) => {
     window.addEventListener("focus", onFocusChange, {signal: ctx.signal});
     window.addEventListener("blur", onFocusChange, {signal: ctx.signal});
     document.addEventListener("visibilitychange", onFocusChange, {signal: ctx.signal});
-    ctx.addCleanup(() => {
+    // 제목·읽음 선은 문서 상태를 바꾼 것이므로 onRevoke(사용자가 모듈을 끈 때)에만 되돌린다. addCleanup은
+    // stopAll(확장 업데이트)에서도 도는데 그때 되돌리면 새 인스턴스가 붙인 수와 구분할 표시(COUNTED_ATTRIBUTE)가 필요해진다.
+    ctx.onRevoke(() => {
         clearTitle();
         clearMark();
     });

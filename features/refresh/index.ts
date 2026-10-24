@@ -103,7 +103,8 @@ export default defineModule(meta, {
                 element.append(button);
             }
         ), ctx.signal);
-        ctx.addCleanup(() => button?.remove());
+        // 문서에 넣은 DOM은 onRevoke로 뗀다. addCleanup은 stopAll(확장 업데이트)에서도 도는데 그때는 페이지를 그대로 둬야 한다.
+        ctx.onRevoke(() => button?.remove());
 
         applyDoNotColorVisited(ctx);
 
