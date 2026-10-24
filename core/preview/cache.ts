@@ -79,9 +79,10 @@ export const restoreArchive = (preData: GalleryPreData, list: DcinsideComment[],
         nextSeen[comment.no] = comment;
         return comment;
     });
-    // 받는 댓글은 1000개(10쪽)가 상한이지만 seen은 지워진 것까지 모아 자란다. 번호(등록순)가 오래된 것부터 버린다.
-    const nos = Object.keys(nextSeen).map(Number).sort((a, b) => a - b);
-    for (let i = 0; i < nos.length - SEEN_LIMIT; i++) delete nextSeen[String(nos[i])];
+    // 받는 댓글은 1000개(10쪽)가 상한이지만 seen은 지워진 것까지 모아 자란다. 이번 목록에 없는(이미 지워진) 것을 먼저,
+    // 그 안에서는 번호(등록순)가 오래된 것부터 버린다. 살아 있는 댓글은 지워질 때 원문을 되살려야 하므로 남긴다.
+    const nos = Object.keys(nextSeen).sort((a, b) => Number(current.has(a)) - Number(current.has(b)) || Number(a) - Number(b));
+    for (let i = 0; i < nos.length - SEEN_LIMIT; i++) delete nextSeen[nos[i]];
 
     setEntry(preData, {seen: nextSeen});
 
