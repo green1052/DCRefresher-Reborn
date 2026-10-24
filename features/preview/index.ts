@@ -245,7 +245,9 @@ const controller = (ctx: Ctx) => {
         if (!visible || !preData) return;
 
         const {processComments} = await import("@/core/preview/comments");
-        store.setState((s) => (s.signalId !== signalId ? {} : {
+        // signalId가 바뀐 갈래는 s를 그대로 돌려 알림을 일으키지 않는다 (zustand는 Object.is로 거른다). {}를 돌려도
+        // 새 상태로 쳐 댓글 수천 개의 selector가 죄다 다시 평가된다.
+        store.setState((s) => (s.signalId !== signalId ? s : {
             post: s.post && {...s.post, textBlocked: textBlockOf(preData, s.post)},
             comments: shown?.signal === signalId ? processKeepingUnchanged(processComments, shown.source, preData) : s.comments
         }));

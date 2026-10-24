@@ -38,7 +38,8 @@ export const Votes = ({post}: { post: PostInfo }) => {
             : {downvotes: result.counts ?? downvotes};
         // 응답 전에 다른 글로 넘어갔으면 숫자는 고치지 않고 알림만 띄운다.
         // 함수형 setState로 지금 post를 읽어야 동시에 끝난 추천·비추천이 서로 덮지 않는다.
-        usePreviewStore.setState((s) => (s.signalId !== signal || !s.post ? {} : {post: {...s.post, ...counts}}));
+        // 바뀐 갈래는 s를 그대로 돌려 구독자를 깨우지 않는다 ({}는 zustand에서 새 상태로 쳐 전 selector를 다시 부른다).
+        usePreviewStore.setState((s) => (s.signalId !== signal || !s.post ? s : {post: {...s.post, ...counts}}));
         // 1분 안에 다시 열면 캐시 본문을 쓰므로 거기 숫자도 고친다.
         const cached = getEntry(target)?.post;
         if (cached) setEntry(target, {post: {...cached, ...counts}});
