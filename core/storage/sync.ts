@@ -69,8 +69,10 @@ export const storageSync = <K extends StorageItemKey>(keys: readonly K[], onChan
 
     const save = async (write: () => Promise<void>, failure: string): Promise<void> => {
         pending++;
+        // write을 Promise에 실어 보낸다. 동기적으로 던지면 finally가 돌지 않아 pending이 영원히 남고,
+        // apply가 저장소 변경을 더 이상 넣지 않아 그 탭의 동기화가 조용히 멈춘다.
         // 줄이고 나서 되돌린다. 남은 쓰기가 없어야 되돌린 값이 들어간다.
-        await saveOrReload(write().finally(() => pending--), load, failure);
+        await saveOrReload(Promise.resolve().then(write).finally(() => pending--), load, failure);
         // 저장은 됐다. 다시 읽지 못해도 스토어는 이미 저장한 값을 들고 있다.
         if (pending === 0) await load().catch(console.error);
     };

@@ -120,6 +120,22 @@ describe("storageSync", () => {
 
         await vi.waitFor(() => expect(apply).toHaveBeenCalledWith("local:b", 2));
     });
+
+    it("save의 write이 동기적으로 던져도 이후 저장소 변경을 계속 넣는다", async () => {
+        vi.spyOn(console, "error").mockImplementation(() => {});
+        const apply = vi.fn();
+        const sync = storageSync(keys, apply);
+        await sync.start(contextSignal());
+        apply.mockClear();
+
+        // pending이 풀리지 않으면 apply가 영구히 막혀 다른 탭의 변경이 이 탭에 안 온다.
+        await expect(sync.save(() => { throw new Error("동기 throw"); }, "failed")).rejects.toThrow("동기 throw");
+        apply.mockClear();
+
+        await fakeBrowser.storage.local.set({a: 1});
+
+        expect(apply).toHaveBeenCalledWith("local:a", 1);
+    });
 });
 
 describe("typedListSync", () => {
