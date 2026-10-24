@@ -1,5 +1,5 @@
 import {ClipboardCopy, FileDown, Plus, Trash2, Upload} from "lucide-react";
-import {type ReactNode, useRef, useState} from "react";
+import {type ReactNode, useMemo, useRef, useState} from "react";
 
 import {ConfirmDialog} from "@/components/dialogs";
 import {TooltipButton} from "@/components/WithTooltip";
@@ -170,7 +170,12 @@ export const ListTabs = <T extends string, I>({
     const [unusedDays, setUnusedDays] = useState("0");
     // 표에 그리는 줄 수. 거르는 조건이 바뀌면 처음 PAGE줄로 돌린다.
     const [limit, setLimit] = useState(PAGE);
-    const galleries = [...new Set(types.flatMap((type) => items(type).map(galleryOf)).filter((id): id is string => Boolean(id)))].sort();
+    // 걸르기(종류 전체 × searchText의 배열 할당)와 갤러리 목록은 조건이 바뀔 때만 한다.
+    // 확인 창·가져오기 창·더 보기(그리는 줄 수)가 바뀔 때에는 다시 하지 않는다.
+    const galleries = useMemo(
+        () => [...new Set(types.flatMap((type) => items(type).map(galleryOf)).filter((id): id is string => Boolean(id)))].sort(),
+        [types, items, galleryOf]
+    );
     const galleryOptions: Record<string, string> = {all: "모든 항목", common: "갤러리 공통", ...Object.fromEntries(galleries.map((id) => [`g:${id}`, id]))};
     // 고르던 갤러리의 항목을 다 지우면 선택지에서 빠지므로 전체로 돌린다.
     const galleryFilter = gallery in galleryOptions ? gallery : "all";
@@ -185,10 +190,11 @@ export const ListTabs = <T extends string, I>({
     };
     // items가 오래된 것부터 주므로 뒤집어 최신순으로 보여 준다(저장 순서는 그대로).
     // 종류마다 한 번만 걸러 탭 배지와 표가 같이 쓴다. total은 거르기 전 개수다.
-    const shown = new Map(types.map((type) => {
+    // visible은 나열한 조건(needle·galleryFilter·cutoff)만 보므로 같은 조건이면 다시 걸르지 않는다.
+    const shown = useMemo(() => new Map(types.map((type) => {
         const all = items(type);
         return [type, {total: all.length, list: all.filter((item) => visible(type, item)).reverse()}];
-    }));
+    })), [types, items, needle, galleryFilter, cutoff, searchText, galleryOf, usedAt]);
 
     // 떠 있는 확인 창: 그 종류 전체 삭제(clear)나 보이는 항목 삭제(shown).
     const [confirm, setConfirm] = useState<{ kind: "clear" | "shown"; type: T } | null>(null);
