@@ -8,18 +8,10 @@ import {Skeleton} from "@/components/ui/skeleton";
 import {Switch} from "@/components/ui/switch";
 import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
 import {fetchDcconList} from "@/core/preview/request";
-import type {DcinsideDccon, DcinsideDcconDetailList} from "@/core/preview/types";
+import {cachedDcconList, setCachedDcconList} from "@/core/preview/dccon";
+import type {DcinsideDccon} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 import {smoothScroll} from "@/utils/dom";
-
-/** 디시콘 패키지 목록 캐시. 창을 닫았다 열어도 다시 받지 않고, 새로 산 디시콘이 보이도록 10분 뒤 다시 받는다. */
-let listCache: { list: DcinsideDcconDetailList[]; at: number } | null = null;
-const LIST_TTL = 10 * 60_000;
-
-/** 디시콘 목록 캐시를 비운다. 정보 창(DcconInfoPopup)에서 디시콘을 추가하면 다음에 열 때 새로 받아 보이게 한다. */
-export const clearDcconListCache = (): void => {
-    listCache = null;
-};
 
 interface DcconPopupProps {
     onSelect: (dccons: DcinsideDccon[], bigDccon: boolean) => void;
@@ -27,7 +19,7 @@ interface DcconPopupProps {
 }
 
 export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
-    const cached = listCache && Date.now() - listCache.at < LIST_TTL ? listCache.list : null;
+    const cached = cachedDcconList();
     const [packages, setPackages] = useState(() => cached ?? []);
     // 고른 패키지. 고르기 전에는 첫 패키지다.
     const [activeIdx, setActiveIdx] = useState<string>();
@@ -54,7 +46,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                 return;
             }
 
-            listCache = {list: result, at: Date.now()};
+            setCachedDcconList(result);
             setPackages(result);
         }, () => {
             if (signal.aborted) return;

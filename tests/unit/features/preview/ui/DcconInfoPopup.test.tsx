@@ -5,7 +5,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {addDcconPackage, fetchDcconPackage} from "@/core/preview/request";
 import type {DcinsideDcconPackage} from "@/core/preview/types";
-import {clearDcconListCache} from "@/features/preview/ui/DcconPopup";
+import {clearDcconCaches} from "@/core/preview/dccon";
 import {DcconInfoPopup} from "@/features/preview/ui/DcconInfoPopup";
 import {usePreviewStore} from "@/features/preview/ui/previewStore";
 import {useUiStore} from "@/stores/ui";
@@ -26,7 +26,7 @@ vi.mock("@/components/ui/badge", () => ({Badge: ({children}: { children?: ReactN
 vi.mock("@/components/ui/dialog", () => ({DialogTitle: ({children}: { children?: ReactNode }) => <h2>{children}</h2>}));
 vi.mock("@/components/ui/skeleton", () => ({Skeleton: () => null}));
 vi.mock("@/components/ui/spinner", () => ({Spinner: () => null}));
-vi.mock("@/features/preview/ui/DcconPopup", () => ({clearDcconListCache: vi.fn()}));
+vi.mock("@/core/preview/dccon", () => ({clearDcconCaches: vi.fn()}));
 vi.mock("@/core/preview/request", () => ({addDcconPackage: vi.fn(), dcconPackages: new Map(), fetchDcconPackage: vi.fn()}));
 
 const pack = (title: string): DcinsideDcconPackage => ({
@@ -61,7 +61,7 @@ describe("DcconInfoPopup", () => {
         vi.mocked(addDcconPackage).mockResolvedValue("ok");
         await add("added");
         await vi.waitFor(() => expect(showToast).toHaveBeenCalledWith("디시콘을 추가했습니다."));
-        expect(clearDcconListCache).toHaveBeenCalledOnce();
+        expect(clearDcconCaches).toHaveBeenCalledOnce();
         await vi.waitFor(() => expect(button("사용")).toBeUndefined());
     });
 
@@ -69,7 +69,7 @@ describe("DcconInfoPopup", () => {
         vi.mocked(addDcconPackage).mockResolvedValue("not_login");
         await add("guest");
         await vi.waitFor(() => expect(showToast).toHaveBeenCalledWith("디시콘은 로그인한 뒤에 추가할 수 있습니다.", "warning"));
-        expect(clearDcconListCache).not.toHaveBeenCalled();
+        expect(clearDcconCaches).not.toHaveBeenCalled();
         expect(button("사용")).toBeDefined();
     });
 

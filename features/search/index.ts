@@ -72,8 +72,9 @@ const isLastPage = (paging: Element): boolean => {
 
 export default defineModule(meta, {
     setup(ctx) {
+        let removeWriterStyle: (() => void) | undefined;
         ctx.onRevoke(() => {
-            document.querySelector(`style#${WRITER_STYLE_ID}`)?.remove();
+            removeWriterStyle?.();
             removeWriterTypes();
             // 모듈을 끄면 목록을 다시 받는 쪽이 없어 이어 붙인 다른 구간 행과 페이징이 새로고침할 때까지 남는다.
             for (const row of document.querySelectorAll(`.${ADDED_ROW}`)) row.remove();
@@ -91,7 +92,7 @@ export default defineModule(meta, {
         const api = {searchUserPosts};
         const filter = writerFilter();
         whenDomReady(() => addWriterTypes(filter, (next) => void searchWriter(next), ctx.signal), ctx.signal);
-        if (filter) writeStyle(WRITER_STYLE_ID, `${LIST_SELECTOR} > tr:not(:has(${writerSelector(filter)})) { display: none !important; }`);
+        if (filter) removeWriterStyle = writeStyle(WRITER_STYLE_ID, `${LIST_SELECTOR} > tr:not(:has(${writerSelector(filter)})) { display: none !important; }`);
 
         // 이어 붙이기는 목록 페이지의 검색 결과나 작성자 거르기에서만. 거르기만 있으면 검색이 아니라 목록 다음 쪽을 잇는다.
         const searching = Boolean(queryString("s_keyword"));

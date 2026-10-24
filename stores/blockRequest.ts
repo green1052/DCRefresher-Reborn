@@ -15,7 +15,8 @@ type DcconPackageMode = "bundle" | "each";
  * 버블의 차단은 그 값을 막는다. 유형의 기본 모드가 NOT_*(허용 목록)면 모드 없이 넣은 항목이 허용 목록에 들어가므로 일치로 넣는다.
  * 포함(CONTAIN) 기본값은 사용자가 고른 것이라 그대로 따른다.
  */
-const blockMode = (type: BlockType) => (useBlocksStore.getState().defaults[type].startsWith("NOT_") ? "SAME" : undefined);
+// core/block.ts에 "가림 방식" 뜻의 blockMode가 있어 이름을 다르게 한다.
+const defaultDetectMode = (type: BlockType) => (useBlocksStore.getState().defaults[type].startsWith("NOT_") ? "SAME" : undefined);
 
 /** 유저 차단. uid > ip > nick 순으로 있는 값 하나를 쓴다. gallery가 있으면 그 갤러리에서만 막는다. */
 const blockUser = async (selected: SelectedUser, gallery?: string): Promise<void> => {
@@ -24,7 +25,7 @@ const blockUser = async (selected: SelectedUser, gallery?: string): Promise<void
     if (!value) return;
 
     const type: BlockType = selected.uid ? "ID" : selected.ip ? "IP" : "NICK";
-    await useBlocksStore.getState().addEntry(type, {content: value, isRegex: false, extra: selected.nick || value, mode: blockMode(type), gallery});
+    await useBlocksStore.getState().addEntry(type, {content: value, isRegex: false, extra: selected.nick || value, mode: defaultDetectMode(type), gallery});
 
     // 유저 정보 모듈만 켜져 있어도 버블이 열린다. 목록에는 넣었지만 가리지는 않는다는 것을 알린다.
     const off = runningModuleSettings("block") === undefined ? " 콘텐츠 차단 모듈이 꺼져 있어 지금은 가리지 않습니다." : "";
@@ -39,7 +40,7 @@ const blockDccon = async (selected: SelectedUser, dcconPackage?: DcconPackageMod
     const response = await fetchDcconPackage(code);
 
     const extra = `${response.info.title} [${response.info.package_idx}]`;
-    const mode = blockMode("DCCON");
+    const mode = defaultDetectMode("DCCON");
 
     if (!dcconPackage) {
         await useBlocksStore.getState().addEntry("DCCON", {content: code, isRegex: false, extra, mode});
@@ -73,7 +74,7 @@ export const blockImage = async (url: string): Promise<void> => {
         const [first, ...rest] = hashes.similar ?? [];
         const fields: Omit<BlockInputFields, "content"> = {
             isRegex: false,
-            mode: blockMode("IMAGE"),
+            mode: defaultDetectMode("IMAGE"),
             extra: paired ? "움짤" : undefined,
             // 표본마다 원본의 지문만 넣는다. 좌우 반전은 판정할 때 대상 쪽에서 본다.
             similar: first?.[0],

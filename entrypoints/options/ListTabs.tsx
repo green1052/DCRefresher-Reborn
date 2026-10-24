@@ -13,7 +13,7 @@ import {friendlyMessage, SAVE_FAILED} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 
 import {downloadJson, EmptyList, ImportDialog, SearchInput} from "./Layout";
-import {notify, notifyDone} from "./optionsStore";
+import {copyText, notify, notifyDone} from "./optionsStore";
 import {RefresherSelect} from "./RefresherSelect";
 
 
@@ -217,14 +217,13 @@ export const ListTabs = <T extends string, I>({
         );
     };
 
-    const exportList = async (sink: "클립보드" | "파일"): Promise<void> => {
-        try {
-            if (sink === "파일") downloadJson(fileName, exportData());
-            else await navigator.clipboard.writeText(JSON.stringify(exportData()));
-            notifyDone(`${object} ${sink}로 내보냈습니다.`);
-        } catch {
-            notify(`${object} 내보내지 못했습니다.`);
+    const exportList = (sink: "클립보드" | "파일"): Promise<void> => {
+        if (sink === "파일") {
+            downloadJson(fileName, exportData());
+            notifyDone(`${object} 파일로 내보냈습니다.`);
+            return Promise.resolve();
         }
+        return copyText(JSON.stringify(exportData()), `${object} 클립보드로 내보냈습니다.`, `${object} 내보내지 못했습니다.`);
     };
 
     const submitImport = async (text: string): Promise<string | undefined> => {

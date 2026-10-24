@@ -8,10 +8,33 @@ import {isRecord} from "@/utils/record";
 import type {DcinsideDcconDetail, DcinsideDcconDetailList, DcinsideDcconPackage} from "./types";
 
 /**
- * 디시콘 코드별 패키지 정보. 같은 디시콘을 다시 눌러도 받지 않는다 (디시콘 목록 캐시처럼 10분). 정보 창과 디시콘 버블이 같이 쓴다.
- * 디시콘을 추가하면 가졌는지(residual)가 바뀌므로 비운다. 같은 패키지의 다른 디시콘도 코드가 달라 따로 담기기 때문이다.
+ * 디시콘 관련 캐시의 수명. 창을 닫았다 열어도 다시 받지 않고, 새로 산 디시콘이 보이도록 이 뒤에는 다시 받는다.
  */
-export const dcconPackages = new QuickLRU<string, DcinsideDcconPackage>({maxSize: 100, maxAge: 10 * 60_000});
+const DCCON_TTL = 10 * 60_000;
+
+/**
+ * 디시콘 코드별 패키지 정보. 같은 디시콘을 다시 눌러도 받지 않는다. 정보 창과 디시콘 버블이 같이 쓴다.
+ */
+export const dcconPackages = new QuickLRU<string, DcinsideDcconPackage>({maxSize: 100, maxAge: DCCON_TTL});
+
+/** 내 디시콘 패키지 목록 캐시 (한 슬롯). 디시콘 선택 창이 닫았다 열아도 다시 받지 않게 쓴다. */
+let dcconListCache: { list: DcinsideDcconDetailList[]; at: number } | null = null;
+
+export const cachedDcconList = (): DcinsideDcconDetailList[] | null =>
+    dcconListCache && Date.now() - dcconListCache.at < DCCON_TTL ? dcconListCache.list : null;
+
+export const setCachedDcconList = (list: DcinsideDcconDetailList[]): void => {
+    dcconListCache = {list, at: Date.now()};
+};
+
+/**
+ * 디시콘 캐시를 비운다. 패키지를 추가하면 가졌는지(residual)가 바뀌므로 목록과 패키지 정보 둘 다 비운다.
+ * 같은 패키지의 다른 디시콘도 코드가 달라 따로 담기기 때문이다.
+ */
+export const clearDcconCaches = (): void => {
+    dcconPackages.clear();
+    dcconListCache = null;
+};
 
 const isDcconPackage = (value: unknown): value is DcinsideDcconPackage =>
     isRecord(value) && isRecord(value.info) && Array.isArray(value.detail) && Array.isArray(value.tags);

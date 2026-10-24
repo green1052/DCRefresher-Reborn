@@ -9,9 +9,9 @@ import {Spinner} from "@/components/ui/spinner";
 import {dcconCode, isBlockedHidden} from "@/core/block";
 import {urls} from "@/core/http/urls";
 import {addDcconPackage, dcconPackages, fetchDcconPackage} from "@/core/preview/request";
+import {clearDcconCaches} from "@/core/preview/dccon";
 import {useUiStore} from "@/stores/ui";
 
-import {clearDcconListCache} from "./DcconPopup";
 import {previewGallery, usePreviewStore} from "./previewStore";
 
 const close = (): void => usePreviewStore.setState({dcconInfo: null});
@@ -70,8 +70,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
         const {showToast} = useUiStore.getState();
 
         if (result === "ok") {
-            clearDcconListCache();
-            dcconPackages.clear();
+            clearDcconCaches();
             setAdded(true);
             showToast("디시콘을 추가했습니다.");
         } else if (result === "not_login") {
