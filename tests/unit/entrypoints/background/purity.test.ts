@@ -1,6 +1,5 @@
 // @vitest-environment node
-import {readFileSync} from "node:fs";
-import {readdirSync} from "node:fs";
+import {globSync, readFileSync} from "node:fs";
 import {dirname, join, resolve} from "node:path";
 import {expect, it} from "vitest";
 
@@ -27,19 +26,9 @@ const resolveLocal = (from: string, specifier: string): string | null => {
     return null;
 };
 
-/** import.meta.glob의 "*.ts" 같은 패턴을 파일 목록으로 펼친다 (한 단계의 *만 본다). */
-const expandGlob = (from: string, pattern: string): string[] => {
-    const base = resolve(dirname(from), pattern.slice(0, pattern.indexOf("*")));
-    const prefix = pattern.slice(0, pattern.indexOf("*")).split("/").at(-1) ?? "";
-    const suffix = pattern.slice(pattern.indexOf("*") + 1);
-    try {
-        return readdirSync(base, {withFileTypes: true})
-            .filter((entry) => entry.isFile() && entry.name.startsWith(prefix) && entry.name.endsWith(suffix))
-            .map((entry) => join(base, entry.name));
-    } catch {
-        return [];
-    }
-};
+// import.meta.glob의 패턴을 파일 목록으로 펼친다. 배경의 "../../features/*/background.ts"처럼 폴더 자리의 *도 펼친다.
+const expandGlob = (from: string, pattern: string): string[] =>
+    globSync(pattern, {cwd: dirname(from)}).map((file) => resolve(dirname(from), file));
 
 it("배경 시작 파일에서 닿는 모듈은 react·preact·zustand를 불러오지 않는다", () => {
     const visited = new Set<string>();
@@ -66,4 +55,6 @@ it("배경 시작 파일에서 닿는 모듈은 react·preact·zustand를 불러
     expect(banned).toEqual([]);
     // 훑은 파일이 없으면 통과한 것과 같으니 최소 한 파일은 닿았는지도 본다.
     expect(visited.size).toBeGreaterThan(5);
+    // import.meta.glob이 붙잡는 기능별 배경 파일까지 닿았는지 본다.
+    expect(visited).toContain(resolve(process.cwd(), "features/block/background.ts"));
 });
