@@ -21,7 +21,7 @@ import {adjacentPreData} from "../rows";
 import {TimeStamp} from "./TimeStamp";
 import {UserCard} from "./UserCard";
 import {CommentList, CommentOrder, CommentSummary, threadParents} from "./CommentList";
-import {clickContents, markPressable, pressContents} from "./contentsClick";
+import {clickContents, markMedia, markPressable, pressContents} from "./contentsClick";
 import {CountDown} from "./CountDown";
 import {ErrorBlock} from "./ErrorBlock";
 import {AdminPanel} from "./Popups";
@@ -106,8 +106,8 @@ const PostContents = () => {
                 className={cn("refresher-html refresher-preview-contents", imageBlocked && "refresher-preview-block-media")}
                 onClick={(ev) => clickContents(ev, imageViewer)}
                 onKeyDown={pressContents}
-                // 이미지가 깨지면 크게 보기 버튼 표시를 다시 맞춘다. 이미지의 error는 버블링되지 않아 캡처로 받는다.
-                onErrorCapture={(ev) => ev.target instanceof HTMLImageElement && markPressable(ev.currentTarget, imageViewer)}
+                // 이미지가 깨지면 그 이미지의 크게 보기 버튼 표시만 다시 맞춘다. 이미지의 error는 버블링되지 않아 캡처로 받는다.
+                onErrorCapture={(ev) => ev.target instanceof HTMLImageElement && markMedia(ev.target, imageViewer)}
                 dangerouslySetInnerHTML={{__html: html}}
             />
         </div>

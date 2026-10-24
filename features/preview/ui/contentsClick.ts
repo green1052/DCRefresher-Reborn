@@ -63,28 +63,30 @@ export const clickContents = (ev: MouseEvent<HTMLElement>, imageViewer: boolean)
 };
 
 /**
- * 누르면 여는 본문 미디어를 키보드로도 고를 수 있게 버튼으로 알린다. 디시콘은 정보 창, 링크로 감싸지 않은 이미지는 크게 보기(imageViewer)나 원본 보기(data-pop)다.
+ * 누르면 여는 본문 미디어 하나를 키보드로도 고를 수 있게 버튼으로 알린다. 디시콘은 정보 창, 링크로 감싸지 않은 이미지는 크게 보기(imageViewer)나 원본 보기(data-pop)다.
  * 숨긴 미디어(관리자 가림·이미지 차단·숨김 차단)는 display: none이라 Tab이 건너뛴다.
- * 깨진 이미지는 clickContents처럼 크게 보지 않고, 원본 보기가 있으면 그것만 연다. 나중에 깨지면 Frame이 다시 부른다.
+ * 깨진 이미지는 clickContents처럼 크게 보지 않고, 원본 보기가 있으면 그것만 연다. 이미지가 나중에 깨지면 Frame이 그 이미지만 이것으로 다시 맞춘다.
  * 손가락 커서도 이 버튼 표시를 따른다 (overlay.css).
  */
-export const markPressable = (root: HTMLElement, imageViewer: boolean): void => {
-    for (const media of root.querySelectorAll<HTMLElement>(".written_dccon, img")) {
-        const label = media.matches(".written_dccon") ? "디시콘 정보"
-            : media.closest("a") ? undefined
-            : imageViewer && !(media instanceof HTMLImageElement && isBroken(media)) ? "이미지 크게 보기"
-            : media.dataset.pop ? "원본 보기" : undefined;
-        if (label) {
-            media.tabIndex = 0;
-            media.setAttribute("role", "button");
-            // aria-label은 alt를 가리므로 디시콘 이름 등 alt를 앞에 남긴다.
-            const alt = media.getAttribute("alt")?.trim();
-            media.setAttribute("aria-label", alt ? `${alt} (${label})` : label);
-        } else {
-            // 크게 보기를 끄면 열 것이 없어지는 이미지가 있다.
-            for (const name of ["tabindex", "role", "aria-label"]) media.removeAttribute(name);
-        }
+export const markMedia = (media: HTMLElement, imageViewer: boolean): void => {
+    const label = media.matches(".written_dccon") ? "디시콘 정보"
+        : media.closest("a") ? undefined
+        : imageViewer && !(media instanceof HTMLImageElement && isBroken(media)) ? "이미지 크게 보기"
+        : media.dataset.pop ? "원본 보기" : undefined;
+    if (label) {
+        media.tabIndex = 0;
+        media.setAttribute("role", "button");
+        // aria-label은 alt를 가리므로 디시콘 이름 등 alt를 앞에 남긴다.
+        const alt = media.getAttribute("alt")?.trim();
+        media.setAttribute("aria-label", alt ? `${alt} (${label})` : label);
+    } else {
+        // 크게 보기를 끄면 열 것이 없어지는 이미지가 있다.
+        for (const name of ["tabindex", "role", "aria-label"]) media.removeAttribute(name);
     }
+};
+
+export const markPressable = (root: HTMLElement, imageViewer: boolean): void => {
+    for (const media of root.querySelectorAll<HTMLElement>(".written_dccon, img")) markMedia(media, imageViewer);
 };
 
 /** markPressable로 버튼이 된 미디어에서 Enter·Space를 누르면 클릭을 보내 clickContents·openDcconInfo가 그대로 받는다. */
