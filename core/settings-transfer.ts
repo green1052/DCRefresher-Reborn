@@ -3,9 +3,9 @@
  * 키는 storage.local의 이름(local: 없이)이다. 백업·내보내기와 같은 모양이다.
  */
 import {isBackupTarget, readBackupTargets} from "@/core/backup";
+import {blockKey, normalizeBlockList, normalizeDefaults} from "@/core/block-list";
 import {BLOCK_DEFAULTS_KEY, BLOCK_TYPES, backupStorage, blockListKey, isBlockListKey, MODULES_KEY, rawKey, settingsKeyModule} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
-import {blockKey, normalizeBlockList, normalizeDefaults} from "@/stores/blocks";
 import {isRecord} from "@/utils/record";
 
 const DEFAULTS_KEY = rawKey(BLOCK_DEFAULTS_KEY);
