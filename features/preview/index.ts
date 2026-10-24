@@ -530,7 +530,7 @@ const controller = (ctx: Ctx) => {
             store.setState({preData});
             const state: unknown = history.state;
             if (isRecord(state) && isRecord(state.preData) && state.preData.id === target.id) {
-                // 여기서 던지면 manage의 알림마저 건너뛰므로 삼킨다.
+                // 알림은 이미 떴다. 여기서 던지면 manage 끝의 목록 새로 고침을 건너뛰고 처리되지 않은 거부가 되므로 삼킨다.
                 try {
                     history.replaceState({...state, preData}, "");
                 } catch (e) {
