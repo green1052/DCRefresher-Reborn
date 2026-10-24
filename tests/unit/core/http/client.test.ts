@@ -84,12 +84,10 @@ describe("임시 차단 검사", () => {
         await expect(http.get("https://evildcinside.com/board/lists").text()).resolves.toBe("");
     });
 
-    it("content-length가 본문 있음을 밝히면 복제본을 읽지 않는다", async () => {
-        const onBlocked = vi.fn();
-        setBlockedHandler(onBlocked);
-        network.respond = async () => new Response(empty, {headers: {"content-length": "2048"}});
-        await expect(http.get("https://gall.dcinside.com/board/lists?id=a").text()).resolves.toBe(empty);
-        expect(onBlocked).not.toHaveBeenCalled();
+    // 차단 페이지도 빈 <body>를 감싼 문서라 길이가 0이 아니다. content-length만 보고 거르면 차단을 놓친다.
+    it("content-length가 붙은 차단 페이지도 잡는다", async () => {
+        network.respond = async () => new Response(empty, {headers: {"content-length": String(empty.length)}});
+        await expect(http.get("https://gall.dcinside.com/board/lists?id=a").text()).rejects.toBeInstanceOf(BlockedError);
     });
 });
 
