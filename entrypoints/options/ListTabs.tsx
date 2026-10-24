@@ -179,7 +179,8 @@ export const ListTabs = <T extends string, I>({
     const galleryOptions: Record<string, string> = {all: "모든 항목", common: "갤러리 공통", ...Object.fromEntries(galleries.map((id) => [`g:${id}`, id]))};
     // 고르던 갤러리의 항목을 다 지우면 선택지에서 빠지므로 전체로 돌린다.
     const galleryFilter = gallery in galleryOptions ? gallery : "all";
-    const cutoff = Number(unusedDays) > 0 ? Date.now() - Number(unusedDays) * DAY : 0;
+    // 기간을 바꿀 때만 다시 잰다. 렌더마다 Date.now()로 재면 아래 shown의 메모가 늘 빗나간다.
+    const cutoff = useMemo(() => (Number(unusedDays) > 0 ? Date.now() - Number(unusedDays) * DAY : 0), [unusedDays]);
     const filtering = Boolean(needle) || galleryFilter !== "all" || cutoff > 0;
 
     const visible = (type: T, item: I): boolean => {
