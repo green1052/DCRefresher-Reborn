@@ -27,7 +27,7 @@
 - **파이어폭스**(`bun run e2e:firefox`): `e2e/firefox.ts`가 원격 디버깅 서버로 `.output/firefox-mv2`를 임시 부가 기능으로 설치합니다. Playwright의 파이어폭스는 `moz-extension://` 페이지로 이동하지 못해 팝업·옵션 테스트는 크로미엄에서만 실행되고 파이어폭스에서는 콘텐츠 스크립트 테스트만 돌아갑니다.
 - **실제 디시**(`bun run e2e:live`, `e2e/live/`): 실제 디시에 요청하되 읽기가 아닌 POST는 끊어 아무것도 쓰지 않습니다. 모양만 보며, 차단·검색·레이아웃·스텔스처럼 못 찾으면 조용히 멈추는 기능이 찾는 디시 선택자도 목록·글·검색 결과·글쓰기 페이지에서 하나 이상 맞는지 봅니다. 글쓰기의 나가기 방지가 찾는 선택자는 `features/write/markup.ts`에서 불러옵니다. 새로고침이 목록 응답을 문자열로 자르고 수 칸을 비울 때 찾는 표지(`features/refresh/markup.ts`)도 실제 응답에 맞는지 봅니다. GitHub Actions의 CI 워크플로(`.github/workflows/ci.yml`)에서 `live` 잡으로 PR·릴리즈마다 함께 돕니다. 네트워크나 해외 IP인 러너에 대한 디시 응답에 따라 흔들릴 수 있습니다. 갤러리는 미니 갤러리 `bjwg64`로 고정입니다.
   - 목록을 갈아끼운 뒤 다시 부르는 디시 함수(자체 차단의 `chk_user_block`, 메모 배지의 `UserMemo.renderWriterMemoBadges`)가 있는지, 글 페이지에 `entrypoints/background/page.ts`가 읽는 `chk_user_block('…')` 호출이 있는지도 봅니다.
-  - 디시 JS에서 옮겨 쓴 값(`core/preview/dcinside-js.ts`의 reCAPTCHA 키, `_d()` 해독표)이 디시 `comment.js`·`dccon.js`·`txtcon.js`·`common.js`와 글 페이지에 그대로 있는지도 봅니다. 디시가 바꿔 이 검사가 실패하면 그 파일의 새 값을 옮기고 검사도 맞춥니다. 미리보기의 댓글 쓰기는 Turnstile 값을 보내지 않으므로, 글 페이지에 댓글 Turnstile(`_TS_CMT_`)이 켜졌는지도 봅니다.
+  - 디시 JS에서 옮겨 쓴 값(`core/preview/dcinside-js.ts`의 reCAPTCHA 키, `_d()` 해독표)이 디시 `comment.js`·`dccon.js`·`txtcon.js`·`common.js`와 글 페이지에 그대로 있는지도 봅니다. 디시가 바꿔 이 검사가 실패하면 그 파일의 새 값을 옮기고 검사도 맞춥니다. 미리보기의 댓글 쓰기(`features/preview/comment-submit.ts`)가 디시 `comment.js`와 같은 Turnstile 칸(`cf-turnstile-response`·`ts_state` 등)을 보내는지, 글 페이지의 `_TS_CMT_`가 켜져 있으면 파서(`parseTurnstile`)가 읽는 모양인지도 봅니다.
 - 미리 설치된 크로미엄을 쓰려면 `PLAYWRIGHT_CHROMIUM=/경로/chrome`을 줍니다.
 
 ## 손으로 확인할 것

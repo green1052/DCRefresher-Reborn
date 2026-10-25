@@ -13,7 +13,7 @@
 | HTTP | ky + p-limit(동시 요청 수 제한) |
 | HTML 정화 | DOMPurify (`utils/sanitize.ts`) |
 | 메시징 | @webext-core/messaging |
-| 패키지 관리·실행 | Bun 1.4 이상, Node 26 이상. 단위 테스트와 E2E가 `Uint8Array`의 `toBase64`·`fromBase64`·`toHex`를 써서 Node 24 이하에서는 실패합니다([테스트](testing.md)). `scripts/`는 Bun에서 돌아 Bun API를 씁니다. WXT·Vitest·Playwright는 Node에서 돌므로 빌드 모듈(`modules/`)과 E2E는 Node API를 씁니다 |
+| 패키지 관리·실행 | Bun 1.4 이상, Node 25 이상. 단위 테스트와 E2E가 `Uint8Array`의 `toBase64`·`fromBase64`·`toHex`를 써서 Node 24 이하에서는 실패합니다([테스트](testing.md)). `scripts/`는 Bun에서 돌아 Bun API를 씁니다. WXT·Vitest·Playwright는 Node에서 돌므로 빌드 모듈(`modules/`)과 E2E는 Node API를 씁니다 |
 | 테스트 | Vitest, Playwright ([테스트](testing.md)) |
 
 ## 명령
@@ -43,3 +43,7 @@ bun run zip            # 배포용 zip (zip:firefox는 Firefox zip + 소스 zip)
   - 내보내는 함수·상수·타입은 `/** … */`, 코드 안의 설명은 `//`를 씁니다.
   - 다른 파일을 가리킬 때는 경로를 적습니다(`core/storage/sync.ts`). 파일을 옮기면 가리키던 주석도 같이 고칩니다.
 - 커밋 메시지는 conventional commits(`feat`, `fix`, `perf`, `refactor`, `docs`, `chore`, `ci` …)를 따릅니다. 이슈 번호는 GitHub 이슈일 때만 적습니다.
+
+## 다음
+
+[구조](architecture.md)에서 디렉터리·실행 흐름·필터·저장소·스토어를 보고, 기능을 더할 거라면 [모듈](modules.md)의 [새 모듈 만들기](modules.md#새-모듈-만들기-차례대로)로 갑니다.

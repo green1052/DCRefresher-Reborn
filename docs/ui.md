@@ -19,7 +19,7 @@
 ## 부품
 
 - 화면은 Preact로 그리지만 코드는 `react`에서 import합니다(`@preact/preset-vite`가 `preact/compat`으로 바꿉니다). 타입은 `@types/react`를 그대로 씁니다. tsconfig에서 `react` 타입을 `preact/compat`으로 바꾸면 Base UI와 ref·이벤트 타입이 맞지 않아 shadcn 부품마다 오류가 납니다.
-- Preact는 상태 변경을 다음 마이크로태스크에 그립니다. 누른 직후 새 창이 바로 DOM에 있다고 기대하지 않습니다(E2E는 `getByRole("dialog")` 안에서 찾습니다).
+- Preact는 상태 변경을 다음 마이크로태스크에 그립니다. 누른 직후 새 창이 바로 DOM에 있다고 기대하지 않습니다(E2E는 옵션·팝업이면 `getByRole("dialog")`, 오버레이면 shadow 안의 `[data-slot=dialog-content]`로 찾습니다. `e2e/pages/`를 보세요).
 - Preact는 `autoFocus`로 포커스를 옮기지 않으므로 다이얼로그는 `ModalDialog`의 `focusOnOpen`에 ref를, 나중에 나타나는 입력칸은 `utils/focus.ts`의 `focusOnMount`를 씁니다.
 - Preact 11은 언마운트된 컴포넌트의 `useEffect` 정리를 다음 프레임으로 미룹니다. 그사이 Base UI의 문서 리스너(Esc·바깥 클릭)가 살아 있습니다. 그래서 `open`을 고정해 두고 언마운트로 닫는 창은 방금 닫혔어도 다음 키·클릭을 받습니다. 그런 창의 `onOpenChange`는 이미 닫혔으면 `details.cancel()`·`details.allowPropagation()`으로 흘려보냅니다(유저 버블, 미리보기 창).
 - 부품은 shadcn(`components/ui`, Base UI)입니다. 손으로 만들지 않고 `bunx shadcn add <이름>`으로 추가합니다. shadcn CLI가 `.wxt/tsconfig.json`의 경로를 잘못 풀어 루트 `tsconfig.json`에 `@/*` 경로를 다시 적어 두었습니다. DB 워크플로(`db.yml`)도 `wxt prepare` 없이 이 경로로 `@/`를 풀므로 지우지 않습니다. `tailwind.css`는 `shadcn/tailwind.css`(Base UI 데이터 속성용 variant)를 불러와야 합니다.
@@ -27,5 +27,24 @@
 - 다이얼로그는 `components/dialogs.tsx`의 `ModalDialog`(열 때만 마운트), `ConfirmDialog`, `Notice`, `DialogActions`, `SubmitForm`을 씁니다. `onClose`는 닫힘 애니메이션이 끝나 포커스가 돌아간 뒤에 불립니다. 일을 마친 창이 스스로 닫을 때는 `actionsRef.current.close()`를 씁니다.
 - 포커스: 트리거 없이 여는 창(다이얼로그·버블)은 `useReturnFocus`(`components/useReturnFocus.ts`)가 연 요소에 포커스를 돌려줍니다. 오버레이(shadow DOM) 안에서는 Base UI의 포커스 가두기가 끝을 알아보지 못해 모달 창(`ModalDialog`·`ConfirmDialog`·`Notice`, 이미지 크게 보기)이 `keepTabInside`로 Tab을 직접 돌립니다.
 - 툴팁은 `components/WithTooltip.tsx`를 씁니다. 수천 줄을 그리는 목록(차단 목록 줄·댓글)에는 브라우저 기본(`title`)을 씁니다.
+- 같은 이유로 수천 번 그리는 자리(목록 줄·댓글·디시콘 칸)에는 Base UI `Button` 대신 맨 `<button>`에 `components/focusRing.ts`의 `FOCUS_RING`만 붙입니다(버튼마다 리스너를 여럿 달지 않으면서 키보드 포커스 표시는 남깁니다). 값은 `components/ui/button.tsx`의 `buttonVariants`에서 떼어 온 것이라 그쪽이 바뀌면 같이 맞춥니다.
 - 옵션의 설정 검색은 맞는 글자를 CSS Custom Highlight API(`CSS.highlights`, `pages.css`의 `::highlight(refresher-search)`)로 칠합니다(`entrypoints/options/GeneralTab.tsx`). 그린 글자 위에 범위만 얹으므로 이름·설명에 `<mark>`를 넣지 않습니다.
 - 단축키는 `utils/event.ts`의 `isTyping`이 모달 다이얼로그 배경(`[data-slot=dialog-overlay]`·`[data-slot=alert-dialog-overlay]`)이 떠 있으면 막습니다. 미리보기 창의 Esc 전달(`features/preview/ui/Frame.tsx`)은 같은 배경 선택자에 팝오버(`[data-slot=popover-content]`)를 더해 위에 뜬 창을 알아봅니다. 미리보기 안에서 연 창은 Base UI가 배경을 그리지 않으므로 `useModal`이 늘 `forceRender`로 그립니다. 배경을 바꾸면 이 선택자들도 맞춥니다.
+
+## 옵션 페이지
+
+새 탭이나 설정 화면을 만들기 전에 이미 있는 것을 보세요 (`entrypoints/options/`).
+
+- `Layout.tsx`: 검색칸(`SearchInput`), 빈 목록(`EmptyList`), 가져오기 창(`ImportDialog`), JSON 내려받기(`downloadJson`), 저장소 항목을 읽기만 하는 `useStorageItem`(쓰기는 항목의 `setValue`를 직접 부릅니다).
+- `ListTabs.tsx`: 차단 목록과 메모가 같이 쓰는 목록 탭입니다. 검색·갤러리 거르기·미사용 거르기·더 보기(200줄씩)·여러 개 삭제와 되돌리기가 모두 여기 있습니다. 목록 화면을 새로 만들 일이 있으면 이것을 씁니다.
+- `optionsStore.ts`: 알림은 직접 띄우지 말고 `notify`(확인 창)·`notifyDone`(토스트)·`copyText`를 씁니다. `Notice` 하나를 `App`이 들고 있습니다.
+- `SettingItem.tsx`: 모듈 설정 한 줄을 스키마 타입에 맞게 그립니다. 새 설정 타입을 더하면 여기도 고칩니다.
+- `RefresherSelect.tsx`: 값→문구 객체를 받는 선택 상자. `aria-label`을 꼭 줍니다.
+
+## 접근성
+
+- 오류 문구에는 `role="alert"`를 답니다(`FieldError role="alert"`, 팝업의 `<p role="alert">`). 토스트는 수준이 Base UI `priority`로 가 `error`만 `high`(하던 말을 끊고 읽음)이고 나머지는 `low`입니다(`components/overlay/Toasts.tsx`).
+- `<h1>`은 페이지에 하나만 둡니다. 옵션은 본문의 탭 제목이 `<h1>`이고 사이드바 로고는 모양만 제목입니다(`options/App.tsx`). 사이드바의 현재 탭은 `aria-current="page"`입니다.
+- 아이콘만 있는 버튼에는 `aria-label`이나 `WithTooltip`의 `tip`으로 이름을 줍니다. 선택 상자·검색칸도 `aria-label`을 줍니다.
+- 움직임은 `prefers-reduced-motion: reduce`를 따릅니다(`assets/styles/pages.css`, `features/refresh/page.css`, `features/stealth/page.css`, 디시콘 비의 `optionsStore.startRain`). 새 애니메이션을 더하면 같이 막습니다.
+- 진행 상황을 글로 알릴 곳은 `role="status"` 영역을 씁니다(검색 모듈의 "다음 검색 중…", 컨텍스트 무효화 안내).

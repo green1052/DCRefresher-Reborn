@@ -64,6 +64,6 @@ Chrome 140(Edge·Whale 등 크로뮴 계열 포함), Firefox 144 이상에서 �
 
 ## 개발·기여
 
-[Bun](https://bun.sh) 1.4 이상과 [Node.js](https://nodejs.org) 26 이상이 필요합니다. `bun install` 뒤 `bun run dev`로 띄웁니다. 자세한 내용은 [개발 문서](docs/README.md)에 있고, 풀 리퀘스트는 `develop` 브랜치로 보내 주세요.
+[Bun](https://bun.sh) 1.4 이상과 [Node.js](https://nodejs.org) 25 이상이 필요합니다. `bun install` 뒤 `bun run dev`로 띄웁니다. 자세한 내용은 [개발 문서](docs/README.md)에 있고, 풀 리퀘스트는 `develop` 브랜치로 보내 주세요.
 
 [디스코드 서버](https://discord.gg/SSW6Zuyjz6) · [리프레셔 미니 갤러리](https://gall.dcinside.com/mini/board/lists/?id=bjwg64)

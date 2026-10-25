@@ -17,6 +17,15 @@
 | 배경에서 할 일 | `features/<id>/background.ts` ([배경 모듈](#배경-모듈)) |
 | 다른 모듈에 줄 api | setup의 반환값. 받는 쪽은 `getModuleApi(id)` |
 
+### 새 모듈 만들기 (차례대로)
+
+1. `features/<id>/`에 `meta.ts`·`labels.ts`·`icons.ts`·`index.ts`를 만듭니다. glob으로 모으므로 어디에도 등록하지 않습니다.
+2. `bunx wxt prepare` — `modules/module-types.ts`가 `.wxt/`에 모듈 id와 설정 타입을 다시 만듭니다. 이걸 건너뛰면 `ctx.settings` 타입이 비어 있습니다.
+3. `bun run test` — `tests/unit/features/meta.test.ts`가 모든 모듈에 대해 설정 스키마↔`labels.ts` 짝, 아이콘, 토글 id, 단축키 설명이 맞는지 확인합니다. 빠진 것이 있으면 여기서 걸립니다.
+4. `page.css`를 새로 만들었으면 `bun run dev`를 다시 띄웁니다(빌드 모듈이 manifest를 다시 만듭니다, [UI](ui.md#오버레이와-css)).
+5. 루트 `README.md`의 모듈 표에 줄을 더합니다.
+6. [위키](https://github.com/green1052/DCRefresher-Reborn/wiki)에 그 모듈 페이지를 만들고 `Home.md`·`_Sidebar.md`에 넣습니다. 설정 이름·설명은 `labels.ts`와 글자까지 맞춥니다.
+
 ## 모듈 정의
 
 옵션·팝업이 그리는 데 필요한 정보는 `features/<id>/meta.ts`에서 `defineModuleMeta`로, 페이지에서 하는 일은 `features/<id>/index.ts`에서 `defineModule(meta, {setup, …})`으로 정의해 각각 default로 내보냅니다. 가장 작은 예는 `features/requests`입니다.
