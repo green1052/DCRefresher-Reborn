@@ -205,9 +205,9 @@ const controller = (ctx: Ctx) => {
             // 댓글 가공(정화·차단)은 파일 위에서 정적으로 들어 와 있다. 파이어폭스는 콘텐츠 스크립트의 늦은
             // 동적 import(청크)를 페이지를 다시 읽은 직후에 못 읽는다.
             // 건너뛸 때는 이 갤러리에서 받아 둔 댓글 허용(멤버만 댓글)을 쓴다. 건너뛰는 쪽이 아는 갤러리만 건너뛴다.
-            const {list: raw, allowReply, truncated} = skip
-                ? {list: [], allowReply: allowReplies.get(preData.gallery) ?? store.getState().allowReply, truncated: false}
-                : await Promise.resolve(given).then((list) => list ?? fetchComments(preData, post, signal));
+            const [{list: raw, allowReply, truncated}] = await Promise.all([
+                skip ? {list: [], allowReply: allowReplies.get(preData.gallery) ?? store.getState().allowReply, truncated: false} : await Promise.resolve(given).then((list) => list ?? fetchComments(preData, post, signal))
+            ]);
             if (store.getState().signalId !== mySignal || seq < shownSeq) return;
             shownSeq = seq;
             if (!skip) {
@@ -390,7 +390,7 @@ const controller = (ctx: Ctx) => {
             if (store.getState().signalId === mySignal && !isAbortError(e)) {
                 store.setState({commentsFailed: true});
                 if (!isBlockedError(e)) {
-                    console.error("Comment load failed:", `${(e as {name?: string})?.name ?? ""}: ${(e as {message?: string})?.message ?? ""}`);
+                    console.error("Comment load failed:", e);
                     // 캐시의 지난 댓글을 보이고 있으면 안내가 뜨지 않으므로 토스트로 알린다.
                     if (store.getState().comments !== undefined) ui.showToast("댓글을 불러오지 못했습니다.", "error");
                 }
