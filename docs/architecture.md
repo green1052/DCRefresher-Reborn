@@ -7,7 +7,8 @@
 ```
 entrypoints/
   background/           배경 스크립트. page.ts는 탭의 페이지(MAIN world)에서 대신 실행하는 것
-  content/              콘텐츠 스크립트. stale.ts는 파이어폭스 재주입으로 죽은 인스턴스 정리
+  content/              콘텐츠 스크립트. index.tsx는 부트스트랩(IIFE), main.ts는 본문. stale.ts는 파이어폭스 재주입으로 죽은 인스턴스 정리
+  content-main.html     main.ts를 ESM 청크(chunks/content-main.js)로 묶는, 여는 일 없는 HTML 엔트리
   page.content.css      디시 페이지에 입히는 CSS (manifest로 따로 주입)
   upload-hook.ts        글쓰기 이미지 변환. 배경이 페이지(MAIN world)에 넣는 unlisted script
   options/, popup/
@@ -37,6 +38,8 @@ scripts/                IP DB 빌드 스크립트
 ### 콘텐츠 스크립트
 
 `entrypoints/content/index.tsx`가 디시 페이지(`core/pages.ts`의 `CONTENT_MATCHES`)에서 `document_start`에 실행됩니다.
+
+`index.tsx`는 얇은 부트스트랩이라 배포 빌드에서는 `content-main.html`로 만든 `chunks/content-main.js`를 불러 `main.ts`의 `start`를 부르고(IIFE 번들에서는 동적 import가 강제로 인라인돼 미리보기 UI가 페이지마다 실리기 때문), 개발 빌드는 청크가 디스크에 나오지 않아 번들 안에서 직접 씁니다. 청크 이름은 `wxt.config.ts`의 `vite:build:extendConfig` 훅이 고정합니다(부트스트랩이 런타임에 경로로 찾으므로 해시가 들어가면 안 됩니다). 청크와 `content-scripts/content.css`는 웹 페이지에서도 접근할 수 있어야 하므로 `web_accessible_resources`에 디시 페이지에만 열어 둡니다(파이어폭스는 MV2라 문자열 배열 모양입니다). 아래는 `main.ts`가 하는 일입니다.
 
 1. Firefox가 재주입하며 남긴 옛 오버레이와 잠금을 걷어 내고(`stale.ts`), 단축키·팝업 메시지를 받을 준비를 합니다. 옛 오버레이에 입력하던 글(댓글 입력칸)이 있었으면 오버레이를 띄울 준비가 끝난 뒤 토스트로 알리고 복사 버튼을 줍니다.
 2. 저장소를 기다리기 전에 컨텍스트가 무효가 되면 모듈을 멈추는 처리를 겁니다. 확장이 정말 없어졌을 때만 새로고침 안내를 띄웁니다(`invalidated.ts`). WXT가 오버레이를 걷어 내기 전에 입력하던 글을 읽어 두고, 있으면 안내에 복사 버튼을 답니다.
