@@ -58,7 +58,7 @@ const Sidebar = ({tab, onSelect}: {
 }) => (
     <div className="flex w-full shrink-0 flex-col gap-4 border-r p-4 md:sticky md:top-0 md:h-screen md:w-60">
         <div className="flex items-center gap-3 px-2">
-            <img src={LOGO_URL} alt="" width={36} height={36} className="cursor-pointer rounded-md" onClick={() => useOptionsStore.getState().startRain()}/>
+            <img src={LOGO_URL} alt="" width={36} height={36} className="rounded-md"/>
             {/* h1은 본문의 탭 제목 하나만 둔다. 모양만 제목으로 그린다. */}
             <p className="font-bold">DCRefresher Reborn</p>
         </div>
@@ -93,8 +93,8 @@ export function App() {
     const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
 
     useEffect(() => {
-        // 열 때 10번 중 1번은 디시콘 비 이스터에그가 뜬다 (로고를 눌러도 뜬다).
-        if (Math.random() < 0.1) useOptionsStore.getState().startRain();
+        // 열 때 20번 중 1번(5%)은 디시콘 비 이스터에그가 뜬다.
+        if (Math.random() < 0.05) useOptionsStore.getState().startRain();
     }, []);
 
     useEffect(() => {
