@@ -32,26 +32,7 @@ afterEach(() => {
     network.respond = () => Promise.resolve(new Response("ok"));
 });
 
-describe("시간 제한", () => {
-    it("머리를 받은 뒤에는 시간 제한으로 끊지 않는다", async () => {
-        vi.useFakeTimers();
-        network.respond = async () => new Response("ok");
-        await http.get("https://example.com/", {retry: 0}).text();
-        await vi.advanceTimersByTimeAsync(20_000);
-        expect(network.requests[0]!.signal.aborted).toBe(false);
-    });
-
-    it("본문이 멈추면 요청 전체 시간 제한(60초)에 끊는다", async () => {
-        vi.useFakeTimers();
-        // 머리만 오고 본문이 끝나지 않는 응답. 디시 GET은 차단 검사가, 그 밖은 .text()가 본문을 읽는다.
-        network.respond = async () => new Response(new ReadableStream());
-        for (const url of ["https://gall.dcinside.com/board/lists?id=a", "https://example.com/"]) {
-            const failed = expect(http.get(url, {retry: 0}).text()).rejects.toMatchObject({name: "TimeoutError"});
-            await vi.advanceTimersByTimeAsync(60_000);
-            await failed;
-        }
-    });
-
+describe("요청", () => {
     it("호출한 쪽이 끊으면 보낸 요청도 끊긴다", async () => {
         network.respond = (request) => pending(request).promise;
         const controller = new AbortController();

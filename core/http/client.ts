@@ -15,33 +15,12 @@ const baseFetch: Fetch = pageWindow
     })
     : globalThis.fetch.bind(globalThis);
 
-/** 요청 한 번의 시간 제한 (ms). */
-const REQUEST_TIMEOUT = 15_000;
-
-/**
- * 시간 제한은 fetch를 부른 뒤부터 응답 머리를 받을 때까지 잰다. ky의 timeout은 fetch를 부르는 순간부터 재므로
- * 요청이 몰리면 느린 하나에 묶여 모두 시간 초과로 실패할 수 있다. 머리를 받으면 타이머를 지운다. 남겨 두면
- * 느린 회선에서 본문(IP DB 등)을 받는 도중에 끊는다.
- * 요청을 끊는 신호(ky·호출한 쪽)는 Request에 들어 있어 함께 건다.
- */
-const timedFetch: Fetch = (input, init) => {
-    // AbortSignal.timeout은 파이어폭스 콘텐츠 스크립트에서 "Could not find window"로 던진다 (전역이 창이 아니라 샌드박스다).
-    const timeout = new AbortController();
-    const timer = setTimeout(() => timeout.abort(new DOMException("요청 시간 초과", "TimeoutError")), REQUEST_TIMEOUT);
-    const signals = [timeout.signal];
-    if (input instanceof Request) signals.push(input.signal);
-    if (init?.signal) signals.push(init.signal);
-    return baseFetch(input, {...init, signal: AbortSignal.any(signals)}).finally(() => clearTimeout(timer));
-};
-
-/** 디시 임시 차단을 받았을 때 던지는 오류. 요청이 너무 많으면 디시는 상태 코드 없이 모든 요청에 빈 페이지를 준다. */
+// 시간 제한은 걸지 않는다. 모든 요청에 호출한 쪽의 AbortSignal이 붙어 있어 사용자가 창을 닫거나 페이지를
+// 떠나면 끊긴다. 서버가 침묵하는 드문 경우 스피너가 오래 돌지만 사용자가 다른 행동을 하면 곧 끊긴다.
 export const http: KyInstance = ky.create({
-    // 머리까지의 시간 제한은 timedFetch가 fetch를 부른 뒤부터 잰다.
     timeout: false,
-    // 요청 전체(본문 읽기)의 상한. 머리를 받은 뒤 본문이 멈추면 끝나지 않아 진행 중 표시가 굳는다.
-    totalTimeout: 60_000,
-    fetch: timedFetch,
-    // 재시도하지 않는다. 일시적 오류는 사용자가 새로고침으로 돌린다.
+    totalTimeout: false,
+    fetch: baseFetch,
     retry: 0
 });
 
