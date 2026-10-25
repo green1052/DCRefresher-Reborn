@@ -2,7 +2,7 @@ import ky from "ky";
 import pLimit from "p-limit";
 import QuickLRU from "quick-lru";
 
-import {type ImageHashes, sendMessage} from "@/core/messaging/protocol";
+import type {ImageHashes} from "@/core/messaging/protocol";
 import type {ModuleSettings} from "@/core/module/types";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {markUsed} from "@/core/usage";
@@ -152,27 +152,17 @@ interface ImageRead {
 // 오래 열어 둔 페이지에서 끝없이 늘지 않게 오래된 것부터 버린다. quick-lru는 maxSize의 두 배 가까이 남기므로 배경의 MAX_IMAGE_HASHES(500)와 비슷하다.
 const imageReads = new QuickLRU<string, ImageRead>({maxSize: 250});
 
-/** 파이어폭스 배경에 그 주소의 해시를 묻는다. similar가 아니면 지문을 기다리지 않고 파일 해시만 받는다. */
-const askBackground = (url: string, similar: boolean): Promise<ImageHashes | undefined> =>
-    sendMessage("refresher:imageHash", {url, similar}).catch(() => undefined);
-
 // 처음 차단하거나 비슷한 이미지 설정을 켜면 열린 탭들이 받아 둔 이미지를 한꺼번에 다시 판정한다.
-// 파이어폭스는 배경에 해시가 없으면 다시 받으므로, 요청이 몰려 디시의 요청 제한에 걸리지 않게 몇 개씩만 받는다.
+// 요청이 몰리지 않게 몇 개씩만 받는다.
 const fetchLimit = pLimit(4);
 
 /** onFile은 파일 해시를 구하자마자 부른다. */
 const readImageHashes = async (url: string, similar: boolean, onFile: (file: string) => void): Promise<ImageHashes | undefined> => {
-    // 파이어폭스 배경은 비슷한 이미지 설정이 켜져 있고 지문이 있는 항목이 있을 때만 지문을 구한다. 그렇지 않을 때 우클릭 차단하면 지문은 여기서 이미지를 다시 받아 구한다.
-    const known = import.meta.env.BROWSER === "firefox" ? await askBackground(url, false) : undefined;
-    if (known) onFile(known.file);
-    const background = known && similar ? (await askBackground(url, true)) ?? known : known;
-    if (background && (!similar || background.similar !== undefined)) return background;
     try {
         // 파이어폭스 콘텐츠 스크립트의 요청은 Referer를 붙이지 않아 디시가 403을 준다. 크롬은 원래 붙이고, 캐시 키에 들지 않아 캐시도 그대로 쓴다.
         // 바이트는 이 콜백 안에서만 쓴다. 밖에 두면 지문을 기다리는 동안 Blob에 더해 사본 한 벌이 남는다.
         const {file, hash} = await fetchLimit(async () => {
             // 콘텐츠 스크립트 자체의 fetch로 받아야 해서(파이어폭스의 http는 content.fetch라 페이지 CORS에 걸린다) 기본 ky로 받는다.
-            // ky의 timeout은 .blob() 읽기까지 끊어 큰 움짤을 놓치므로 끄고 전체 상한만 둔다. 본문은 같은 요청의 .blob()으로 읽어야 이 상한에 묶인다.
             const request = ky.get(url, {cache: "force-cache", referrer: location.href, retry: 0, timeout: false, totalTimeout: 60_000});
             const response = await request;
             const file = await request.blob();
@@ -185,8 +175,7 @@ const readImageHashes = async (url: string, similar: boolean, onFile: (file: str
         return {file: hash, similar: similar ? (await imageFingerprints(file)) ?? null : undefined};
     } catch (e) {
         console.warn("Image hash failed:", url, e);
-        // 지문만 못 구했으면 배경이 구한 파일 해시로 같은 파일은 막는다.
-        return background && {...background, similar: null};
+        return undefined;
     }
 };
 
@@ -212,9 +201,8 @@ const readImage = async (url: string, {retry = false, similar = false}: { retry?
 
 /**
  * 이미지 파일의 SHA-256과, similar면 비슷한 이미지 지문. 파일 해시는 이미지 차단 항목의 내용이다. 읽지 못하면(이미지 호스트 권한이 없는 등) undefined다.
- * 크롬은 페이지가 받아 둔 캐시에서 읽는다. 배경의 규칙이 이 요청(같은 문서의 다른 fetch·XHR도)에 CORS 헤더를 붙인다 (features/block/background.ts).
- * 파이어폭스는 콘텐츠 스크립트의 요청이 페이지의 캐시를 쓰지 않아, 배경이 페이지의 응답을 흘려보내며 구해 둔 해시를 받는다.
- * 둘 다 캐시나 배경에 없으면 이미지를 한 번 더 받는다. retry면 앞서 읽지 못한 것도 다시 읽는다 (권한을 막 받은 뒤의 우클릭 차단).
+ * 배경의 규칙이 이 요청(같은 문서의 다른 fetch·XHR도)에 CORS 헤더를 붙인다 (features/block/background.ts).
+ * 캐시에 없으면 이미지를 한 번 더 받는다. retry면 앞서 읽지 못한 것도 다시 읽는다 (권한을 막 받은 뒤의 우클릭 차단).
  */
 export const imageHash = async (url: string, options: { retry?: boolean; similar?: boolean } = {}): Promise<ImageHashes | undefined> =>
     (await readImage(url, options)).hashes;

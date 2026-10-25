@@ -4,6 +4,8 @@ import {defineConfig} from "wxt";
 import {CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES, IMAGE_HOST_ORIGINS} from "./core/pages";
 
 export default defineConfig({
+    // Chrome과 Firefox 모두 MV3 (Firefox의 MV2 기본값을 덮어쓴다).
+    manifestVersion: 3,
     modules: ["@wxt-dev/auto-icons"],
     vite: () => ({
         plugins: [
@@ -70,7 +72,7 @@ export default defineConfig({
             // 이미지 차단(features/block/background.ts)이 본문 이미지를 다시 받지 않고 읽는 데 쓴다.
             // 크롬은 CORS 헤더를 붙이는 규칙, 파이어폭스는 응답 스트림 필터다. 둘 다 설치·업데이트 때 묻지 않는 권한이다.
             permissions: ["alarms", "contextMenus", "storage", "scripting", "unlimitedStorage",
-                          ...(firefox ? ["webRequest", "webRequestBlocking"] : ["declarativeNetRequestWithHostAccess"])],
+                          ...(firefox ? ["declarativeNetRequest"] : ["declarativeNetRequestWithHostAccess"])],
             host_permissions: ["https://*.dcinside.com/*"],
             // 본문 이미지 호스트. 이미지를 처음 차단할 때 묻는다 (core/pages.ts의 IMAGE_HOST_ORIGINS).
             // MV2(파이어폭스)는 optional_host_permissions가 없어 WXT가 지우므로 optional_permissions에 넣는다.
@@ -84,11 +86,9 @@ export default defineConfig({
                     run_at: "document_start"
                 }
             ],
-            // 콘텐츠 스크립트 본문 청크(entrypoints/content/index.tsx가 런타임에 불러온다)와 오버레이가 읽는 CSS.
-            // 웹 페이지에서도 접근할 수 있게 되므로 DC 페이지에만 연다. 파이어폭스(MV2)는 문자열 배열이다.
-            web_accessible_resources: firefox
-                ? ["chunks/*.js", "content-scripts/content.css"]
-                : [{matches: CONTENT_MATCHES, resources: ["chunks/*.js", "content-scripts/content.css"]}]
+            // 콘텐츠 스크립트 본문 청크(entrypoints/content/index.ts가 런타임에 불러온다)와 오버레이가 읽는 CSS.
+            // 웹 페이지에서도 접근할 수 있게 되므로 DC 페이지에만 연다. 양 브라우저 MV3 형태다.
+            web_accessible_resources: [{matches: CONTENT_MATCHES, resources: ["chunks/*.js", "content-scripts/content.css"]}]
         };
     }
 });
