@@ -38,13 +38,11 @@ const timedFetch: Fetch = (input, init) => {
 export const http: KyInstance = ky.create({
     // 머리까지의 시간 제한은 timedFetch가 fetch를 부른 뒤부터 잰다.
     timeout: false,
-    // 요청 전체(재시도·본문 읽기)의 상한. 머리를 받은 뒤 본문이 멈추면 끝나지 않아 진행 중 표시가 굳는다.
-    // 본문 읽기는 ky의 .text()/.json()으로 읽어야 이 상한에 묶인다.
+    // 요청 전체(본문 읽기)의 상한. 머리를 받은 뒤 본문이 멈추면 끝나지 않아 진행 중 표시가 굳는다.
     totalTimeout: 60_000,
     fetch: timedFetch,
-    // jitter: 재시도가 한꺼번에 몰리지 않게 시점을 흩는다.
-    // maxRetryAfter: Retry-After가 몇 분이어도 10초까지만 기다린다. 더 기다리면 화면이 멈춘 것처럼 보인다.
-    retry: {jitter: true, maxRetryAfter: 10_000}
+    // 재시도하지 않는다. 일시적 오류는 사용자가 새로고침으로 돌린다.
+    retry: 0
 });
 
 /**

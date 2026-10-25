@@ -10,7 +10,7 @@ const TITLE_COUNT = /^\(\d+\) /;
 
 /**
  * 이 모듈이 탭 제목 앞에 수를 붙여 두었다는 문서 표시. 원래 "(1) "로 시작하는 제목은 건드리지 않는다.
- * 파이어폭스는 확장을 업데이트하면 정리 없이 새 인스턴스를 넣으므로(entrypoints/content/stale.ts),
+ * 파이어폭스는 확장을 업데이트하면 정리 없이 새 인스턴스를 넣으므로,
  * 모듈 변수로 두면 새 인스턴스가 옛 인스턴스가 붙인 수를 떼지 못하고 또 붙인다.
  */
 const COUNTED_ATTRIBUTE = "data-refresher-title-count";

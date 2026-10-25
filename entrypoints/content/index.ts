@@ -15,8 +15,9 @@ export default defineContentScript({
     matches: CONTENT_MATCHES,
     excludeMatches: CONTENT_EXCLUDE_MATCHES,
     runAt: "document_start",
-    // CSS는 manifest가 아니라 오버레이를 처음 띄울 때 shadow에 넣는다. "manual"이면 WXT의 자동 읽기(ENTRYPOINT
-    // 이름이 content-main이라 content.css를 못 찾는다)를 끄고 overlay.tsx가 직접 읽는다.
+    // CSS는 manifest가 아니라 오버레이를 처음 띄울 때 shadow에 넣는다. "manual"을 쓰는 건 WXT의 loadCss가
+    // import.meta.env.ENTRYPOINT(="html") 이름으로 CSS를 찾는데, 실제 파일은 content-scripts/content.css라서.
+    // (define으로 못박아도 Vite의 env 치환이 define보다 먼저 돌아 안 먹는다.) overlay.tsx가 직접 읽는다.
     cssInjectionMode: "manual",
     // 새 인스턴스가 떴다는 알림을 페이지 창에 postMessage로 뿌리지 않는다 (이전 인스턴스 정리는 WXT가 CustomEvent로 한다).
     noScriptStartedPostMessage: true,

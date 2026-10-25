@@ -1,5 +1,6 @@
 import type {ContentScriptContext} from "wxt/utils/content-script-context";
 
+import {http} from "@/core/http/client";
 import {overlayNeeded, watchOverlayDemands} from "@/components/overlay/demands";
 import {ContentRoot} from "@/components/overlay/ContentRoot";
 import {overlay} from "@/components/overlay/shadow";
@@ -17,10 +18,9 @@ export const mountOverlayWhenNeeded = (ctx: ContentScriptContext): void => {
     const mountOverlay = async (): Promise<void> => {
         if (ctx.isInvalid) return;
 
-        // cssInjectionMode가 "manual"이라 createShadowRootUi가 못 읽는다(ENTRYPOINT 이름이 content-main이라
-        // 실패한다). WXT의 loadCss와 같은 규칙으로 직접 읽는다.
+        // cssInjectionMode: "manual" — WXT의 loadCss는 ENTRYPOINT(="html") 이름으로 찾아 content.css를 못 얻는다.
         const getURL = browser.runtime.getURL as (path: string) => string;
-        const css = (await (await fetch(getURL("/content-scripts/content.css"))).text()).replaceAll(":root", ":host");
+        const css = (await http.get(getURL("/content-scripts/content.css")).text()).replaceAll(":root", ":host");
         const ui = await createShadowRootUi(ctx, {
             name: "refresher-root",
             position: "inline",

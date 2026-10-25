@@ -9,19 +9,15 @@ import {bindUsageContext} from "@/core/usage";
 import features from "@/features";
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
-import {copyWithToast, useUiStore} from "@/stores/ui";
 
 import {mountOverlayWhenNeeded} from "./overlay";
-import {cleanUpStaleInstance} from "./stale";
 
 /**
  * 콘텐츠 스크립트 본문. index.tsx(부트스트랩)가 청크(chunks/content-main.js)로 나눠 부르므로 export로만 낸다.
  * 같은 폴더의 파일이 하나씩 맡는다:
- * - stale.ts: 파이어폭스 재주입으로 죽은 인스턴스가 남긴 것 걷어 내기
  * - overlay.tsx: 오버레이(shadow DOM)를 처음 필요할 때 띄우기
  */
 export const start = async (ctx: ContentScriptContext): Promise<void> => {
-    const staleDraft = cleanUpStaleInstance();
     bindUsageContext(ctx.signal);
 
     // ===== 메시징 (배경·팝업→탭) =====
@@ -46,14 +42,6 @@ export const start = async (ctx: ContentScriptContext): Promise<void> => {
     // 옵션 페이지는 저장소에 직접 쓰고, 모듈 레지스트리가 저장소를 감시해 반영한다 (메시징 없음).
 
     mountOverlayWhenNeeded(ctx);
-    // 오버레이 감시(mountOverlayWhenNeeded)가 생긴 뒤에 띄워야 토스트가 뜬다.
-    // 다시 켜기·다시 불러오기로도 재주입되므로 '업데이트'라 하지 않는다.
-    if (staleDraft) {
-        useUiStore.getState().showToast("확장 프로그램이 다시 시작되어 열려 있던 창을 닫았습니다.", "warning", 0, {
-            label: "입력하던 글 복사",
-            run: () => void copyWithToast(staleDraft)
-        });
-    }
 
     // ===== 모듈 부트스트랩 =====
     // 차단·메모는 글 목록·본문(BOARD_PAGE)에서만 읽는다.

@@ -7,7 +7,7 @@
 ```
 entrypoints/
   background/           배경 스크립트. page.ts는 탭의 페이지(MAIN world)에서 대신 실행하는 것
-  content/              콘텐츠 스크립트. index.tsx는 부트스트랩(IIFE), main.ts는 본문. stale.ts는 파이어폭스 재주입으로 죽은 인스턴스 정리
+  content/              콘텐츠 스크립트. index.tsx는 부트스트랩(IIFE), main.ts는 본문
   content-main.html     main.ts를 ESM 청크(chunks/content-main.js)로 묶는, 여는 일 없는 HTML 엔트리
   page.content.css      디시 페이지에 입히는 CSS (manifest로 따로 주입)
   upload-hook.ts        글쓰기 이미지 변환. 배경이 페이지(MAIN world)에 넣는 unlisted script
@@ -50,7 +50,7 @@ scripts/                IP DB 빌드 스크립트
 
 아래는 `main.ts`가 하는 일입니다.
 
-1. Firefox가 재주입하며 남긴 옛 오버레이와 잠금을 걷어 내고(`stale.ts`), 단축키·팝업 메시지를 받을 준비를 합니다. 옛 오버레이에 입력하던 글(댓글 입력칸)이 있었으면 오버레이를 띄울 준비가 끝난 뒤 토스트로 알리고 복사 버튼을 줍니다.
+1. 단축키·팝업 메시지를 받을 준비를 합니다.
 2. 저장소를 기다리기 전에 컨텍스트가 무효가 되면 모듈을 멈추는 처리를 겉니다(`stopAll`·`releaseDatabase`).
 3. 오버레이는 화면에 그릴 것이 처음 생길 때 띄웁니다(`overlay.tsx`, [UI](ui.md#오버레이와-css)).
 4. 글 목록·본문 페이지(`BOARD_PAGE`)면 차단·메모 스토어와 모듈 on/off·설정(`core/module/registry.ts`의 `loadAll`)을 동시에 읽습니다. 모듈의 `setup`은 차단·메모를 다 읽은 뒤에 돕니다.
