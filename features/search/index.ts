@@ -5,12 +5,11 @@ import {documentUrl, pageGallery, queryString, type WriterFilter, writerFilter} 
 import {checkboxFiller, highlightSearchResults, LIST_SELECTOR, notifyListReplaced, PAGING_SELECTOR, writerSelector} from "@/core/list";
 import {sendMessage} from "@/core/messaging/protocol";
 import {defineModule} from "@/core/module/define";
-import {BLOCKED_PAGE_MESSAGE, LIST_PAGE} from "@/core/pages";
+import {LIST_PAGE} from "@/core/pages";
 import {ownPreviewEntry} from "@/core/preview/history";
 import {reportFailure} from "@/stores/notify";
 import {type SelectedUser, useUiStore} from "@/stores/ui";
 import {whenDomReady, writeStyle} from "@/utils/dom";
-import {isBlockedError} from "@/utils/error";
 
 import meta from "./meta";
 import {addWriterTypes, keepWriterFilter, removeWriterTypes, writerSearchUrl} from "./writer";
@@ -42,8 +41,6 @@ const searchWriter = async (filter: WriterFilter): Promise<void> => {
         if (!nick) return showToast("갤로그에서 그 아이디를 찾지 못했습니다.", "warning");
         location.href = writerSearchUrl(filter, nick);
     } catch (e) {
-        // 임시 차단은 배경이 받아 이 탭엔 아직 알림이 없다.
-        if (isBlockedError(e)) return showToast(BLOCKED_PAGE_MESSAGE, "warning");
         console.error("Gallog lookup failed:", e);
         showToast("갤로그를 불러오지 못했습니다.", "error");
     }

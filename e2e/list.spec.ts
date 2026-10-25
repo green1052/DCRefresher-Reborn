@@ -167,13 +167,6 @@ test.describe("스텔스 모드", () => {
     });
 });
 
-test.describe("임시 차단", () => {
-    test("디시가 빈 페이지를 주면 미리보기가 없는 페이지에서도 오버레이로 알린다", async ({page}) => {
-        await page.goto("https://gall.dcinside.com/board/write/?id=test");
-        await expect(page.locator("refresher-root [data-slot=toast]")).toContainText("잠시 접속을 막았습니다");
-    });
-});
-
 test.describe("작성자 검색", () => {
     test("아이디로 거르면 그 사람의 글만 남기고, 다음 쪽도 이어 보며, 페이징 링크에 거르기를 남긴다", async ({page, storage}) => {
         await storage.setModules({search: true});

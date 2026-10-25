@@ -1,7 +1,7 @@
 // @vitest-environment node
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import {ajax, BlockedError, formBody, http, setBlockedHandler} from "@/core/http/client";
+import {ajax, formBody, http} from "@/core/http/client";
 import {isAbortError} from "@/utils/error";
 
 /** 클라이언트가 불러올 때 fetch를 잡아 두므로 그 전에 바꾼다. 응답은 테스트가 정한다. */
@@ -30,64 +30,6 @@ const pending = (request: Request): { promise: Promise<Response>; resolve: () =>
 afterEach(() => {
     network.requests.length = 0;
     network.respond = () => Promise.resolve(new Response("ok"));
-    setBlockedHandler(() => {});
-});
-
-describe("임시 차단 검사", () => {
-    const empty = "<html><head></head><body>\n</body></html>";
-
-    it("디시 GET이 빈 문서면 BlockedError를 던지고 알림을 부른다", async () => {
-        const onBlocked = vi.fn();
-        setBlockedHandler(onBlocked);
-        network.respond = async () => new Response(empty);
-        await expect(http.get("https://gall.dcinside.com/board/lists?id=a").text()).rejects.toBeInstanceOf(BlockedError);
-        expect(onBlocked).toHaveBeenCalledOnce();
-    });
-
-    it("디시의 모든 GET 페이지를 본다", async () => {
-        network.respond = async () => new Response("");
-        await expect(http.get("https://gall.dcinside.com/mgallery/board/lists?id=a").text()).rejects.toBeInstanceOf(BlockedError);
-    });
-
-    it("POST는 댓글 요청만 본다", async () => {
-        network.respond = async () => new Response("");
-        await expect(http.post("https://gall.dcinside.com/board/comment/").text()).rejects.toBeInstanceOf(BlockedError);
-        // 글 삭제 등은 성공 응답이 비어 있을 수 있다.
-        await expect(http.post("https://gall.dcinside.com/board/forms/delete_submit").text()).resolves.toBe("");
-    });
-
-    it("본문이 있거나 디시가 아니거나 다른 POST면 지나간다", async () => {
-        const onBlocked = vi.fn();
-        setBlockedHandler(onBlocked);
-        network.respond = async () => new Response(empty);
-        await expect(http.get("https://dcrefresher.green1052.com/version").text()).resolves.toBe(empty);
-        await expect(http.post("https://gall.dcinside.com/ajax/recommend").text()).resolves.toBe(empty);
-
-        network.respond = async () => new Response("<body><div>글</div></body>");
-        await expect(http.get("https://gall.dcinside.com/board/view?id=a&no=1").text()).resolves.toContain("글");
-        expect(onBlocked).not.toHaveBeenCalled();
-    });
-
-    it("실패 응답은 차단으로 보지 않는다", async () => {
-        network.respond = async () => new Response("", {status: 404});
-        await expect(http.get("https://gall.dcinside.com/board/lists").text()).rejects.toMatchObject({name: "HTTPError"});
-    });
-
-    it("204도 빈 본문이지만 차단으로 보지 않는다", async () => {
-        network.respond = async () => new Response(null, {status: 204});
-        await expect(http.get("https://gall.dcinside.com/board/lists").text()).resolves.toBe("");
-    });
-
-    it("디시가 아니면 유사 도메인(evildcinside.com)도 보지 않는다", async () => {
-        network.respond = async () => new Response("");
-        await expect(http.get("https://evildcinside.com/board/lists").text()).resolves.toBe("");
-    });
-
-    // 차단 페이지도 빈 <body>를 감싼 문서라 길이가 0이 아니다. content-length만 보고 거르면 차단을 놓친다.
-    it("content-length가 붙은 차단 페이지도 잡는다", async () => {
-        network.respond = async () => new Response(empty, {headers: {"content-length": String(empty.length)}});
-        await expect(http.get("https://gall.dcinside.com/board/lists?id=a").text()).rejects.toBeInstanceOf(BlockedError);
-    });
 });
 
 describe("시간 제한", () => {

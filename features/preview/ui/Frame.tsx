@@ -186,7 +186,7 @@ export const Frame = () => {
             // key로 본다. NumLock을 끈 숫자패드 9·3은 code가 Numpad9·Numpad3이다.
             if (ev.key === "PageUp" || ev.key === "PageDown") {
                 ev.preventDefault();
-                // 누르고 있을 때의 반복 입력으로는 넘기지 않는다. 지나가는 글마다 본문 요청이 나가 임시 차단된다(#273).
+                // 누르고 있을 때의 반복 입력으로는 넘기지 않는다. 지나가는 글마다 본문 요청이 나가 임시 차단된다.
                 if (!ev.repeat) goToAdjacent(ev.key === "PageUp" ? -1 : 1);
             }
         };

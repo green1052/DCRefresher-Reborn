@@ -9,7 +9,7 @@ import type {GalleryPreData, PostInfo, TurnstileConfig} from "@/core/preview/typ
 
 export interface ErrorState {
     detail: string;
-    /** HTTP 상태 코드 (HTTPError일 때). 임시 차단(BlockedError)은 429다. */
+    /** HTTP 상태 코드 (HTTPError일 때). */
     status?: number;
     /** 성인 인증이 필요한 글 (비로그인·미인증이면 본문 대신 인증 안내가 온다). */
     adult?: boolean;

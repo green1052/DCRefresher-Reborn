@@ -11,18 +11,14 @@ import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
 import {copyWithToast, useUiStore} from "@/stores/ui";
 
-import {warnWhenBlocked} from "./blocked";
-import {showInvalidatedNote} from "./invalidated";
 import {mountOverlayWhenNeeded} from "./overlay";
-import {cleanUpStaleInstance, overlayDraft} from "./stale";
+import {cleanUpStaleInstance} from "./stale";
 
 /**
  * 콘텐츠 스크립트 본문. index.tsx(부트스트랩)가 청크(chunks/content-main.js)로 나눠 부르므로 export로만 낸다.
  * 같은 폴더의 파일이 하나씩 맡는다:
  * - stale.ts: 파이어폭스 재주입으로 죽은 인스턴스가 남긴 것 걷어 내기
- * - invalidated.ts: 확장이 업데이트되거나 꺼졌을 때의 안내
  * - overlay.tsx: 오버레이(shadow DOM)를 처음 필요할 때 띄우기
- * - blocked.ts: 디시 임시 차단 안내.
  */
 export const start = async (ctx: ContentScriptContext): Promise<void> => {
     const staleDraft = cleanUpStaleInstance();
@@ -41,13 +37,8 @@ export const start = async (ctx: ContentScriptContext): Promise<void> => {
     // 확장을 끄거나 업데이트해도 이 스크립트는 남아 새로고침 폴링·저장소 호출을 하다 실패하므로 모듈을 멈춘다.
     // 부트스트랩의 await보다 먼저 등록한다. 저장소를 읽는 중에 무효화되면 그 호출이 실패하거나 끝나지 않아 await 뒤의 등록까지 가지 못한다.
     ctx.onInvalidated(() => {
-        // WXT가 이 처리기 뒤에 오버레이를 걷어 내므로 입력하던 글을 먼저 읽어 둔다.
-        const draft = overlayDraft(document.querySelector("refresher-root"));
         stopAll();
         releaseDatabase();
-        // 새 스크립트가 주입되어 무효화된 경우(확장은 살아 있음)는 새 스크립트가 이어서 돌므로 알리지 않는다.
-        if (browser.runtime?.id) return;
-        showInvalidatedNote(draft);
     });
     // WXT는 ctx.isValid를 읽을 때만 무효화를 알아채므로 빈 interval로 5초마다 검사하게 한다.
     ctx.setInterval(() => {}, 5_000);
@@ -63,8 +54,6 @@ export const start = async (ctx: ContentScriptContext): Promise<void> => {
             run: () => void copyWithToast(staleDraft)
         });
     }
-
-    warnWhenBlocked();
 
     // ===== 모듈 부트스트랩 =====
     // 차단·메모는 글 목록·본문(BOARD_PAGE)에서만 읽는다.

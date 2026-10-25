@@ -14,7 +14,7 @@ import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} fro
 import {useBlocksStore} from "@/stores/blocks";
 import {lowActivityOf, useUiStore} from "@/stores/ui";
 import {whenDomReady} from "@/utils/dom";
-import {isBlockedError, messageOf} from "@/utils/error";
+import {messageOf} from "@/utils/error";
 import {isTyping, pressedKey} from "@/utils/event";
 import {createDoublePress} from "@/utils/doublePress";
 import {isGalleryManager} from "@/utils/user";
@@ -34,8 +34,7 @@ import {type ErrorState, MANAGE_LABELS, type ManageKind, NO_FRESH, NO_HOOKS, NO_
 // 성인 인증 안내 페이지면 parsePostInfo가 Error(ADULT_ERROR)를, 미니 갤러리 비밀글이면 Error(SECRET_ERROR)를 던진다.
 const errorOf = (error: unknown): ErrorState => ({
     detail: messageOf(error),
-    // 임시 차단(빈 페이지)은 200으로 오므로 요청 제한(429)으로 본다.
-    status: error instanceof HTTPError ? error.response.status : isBlockedError(error) ? 429 : undefined,
+    status: error instanceof HTTPError ? error.response.status : undefined,
     adult: error instanceof Error && error.message === ADULT_ERROR,
     secret: error instanceof Error && error.message === SECRET_ERROR
 });
@@ -60,7 +59,7 @@ const cachedPost = (preData: GalleryPreData): { post: PostInfo; age: number } | 
 };
 
 /**
- * 이 시간(ms) 안에 받은 댓글은 글을 다시 열어도 다시 받지 않는다 (#273).
+ * 이 시간(ms) 안에 받은 댓글은 글을 다시 열어도 다시 받지 않는다.
  * 댓글은 쪽마다 요청이라, 열고 닫기·PageUp/Down으로 같은 글을 오갈 때마다 받으면 몇 초 만에 요청이 수십 개 몰려 임시 차단된다.
  * 새로고침 버튼·자동 새로고침은 이와 상관없이 받는다.
  */
@@ -303,11 +302,8 @@ const controller = (ctx: Ctx) => {
         } catch (e) {
             if (isAbortError(e)) return true;
             if (store.getState().signalId === st.signalId) store.setState({commentsFailed: true});
-            // 임시 차단은 HTTP 클라이언트가 이미 알렸다. 덮어쓰지 않는다.
-            if (!isBlockedError(e)) {
-                console.error("Comment refresh failed:", e);
-                if (report) ui.showToast("댓글을 불러오지 못했습니다.", "error");
-            }
+            console.error("Comment refresh failed:", e);
+            if (report) ui.showToast("댓글을 불러오지 못했습니다.", "error");
             return false;
         }
     };
@@ -325,8 +321,8 @@ const controller = (ctx: Ctx) => {
             if (store.getState().signalId !== signalId) return;
             store.setState({post, error: undefined, archived: false});
         } catch (e) {
-            // 실패해도(삭제된 글 등) 보고 있던 본문은 그대로 둔다. 임시 차단은 HTTP 클라이언트가 이미 알렸다.
-            if (isAbortError(e) || isBlockedError(e) || store.getState().signalId !== signalId) return;
+            // 실패해도(삭제된 글 등) 보고 있던 본문은 그대로 둔다.
+            if (isAbortError(e) || store.getState().signalId !== signalId) return;
             console.error("Preview reload failed:", e);
             ui.showToast("게시글을 다시 불러오지 못했습니다.", "error");
             return;
@@ -346,11 +342,7 @@ const controller = (ctx: Ctx) => {
         // 방금 받은 댓글(COMMENTS_REUSE)은 그대로 쓰고 다시 받지 않는다. 캐시를 끄면 늘 받는다.
         const recent = ctx.settings.disableCache ? undefined : recentComments(preData);
         const early = !dir && !recent && preData.commentCount > 0 && esno && (ctx.settings.disableCache || !cachedPost(preData))
-            // 임시 차단으로 실패했으면 삼키지 않는다. 곧바로 같은 요청을 다시 보내면 차단만 길어진다.
-            ? fetchComments(preData, {esno}, abort!.signal).catch((e: unknown) => {
-                if (isBlockedError(e)) throw e;
-                return undefined;
-            })
+            ? fetchComments(preData, {esno}, abort!.signal).catch(() => undefined)
             : undefined;
         // 본문을 받지 못해 given으로 쓰이지 않으면 처리되지 않은 거부가 된다.
         void early?.catch(() => undefined);
@@ -386,14 +378,12 @@ const controller = (ctx: Ctx) => {
                 await pullComments(preData, post, mySignal, skip, given);
             }
         } catch (e) {
-            // 댓글만 못 받았으면 본문은 그대로 두고 댓글 칸에 '다시 시도' 안내를 보인다. 임시 차단은 HTTP 클라이언트가 이미 알렸다.
+            // 댓글만 못 받았으면 본문은 그대로 두고 댓글 칸에 '다시 시도' 안내를 보인다.
             if (store.getState().signalId === mySignal && !isAbortError(e)) {
                 store.setState({commentsFailed: true});
-                if (!isBlockedError(e)) {
-                    console.error("Comment load failed:", e);
-                    // 캐시의 지난 댓글을 보이고 있으면 안내가 뜨지 않으므로 토스트로 알린다.
-                    if (store.getState().comments !== undefined) ui.showToast("댓글을 불러오지 못했습니다.", "error");
-                }
+                console.error("Comment load failed:", e);
+                // 캐시의 지난 댓글을 보이고 있으면 안내가 뜨지 않으므로 토스트로 알린다.
+                if (store.getState().comments !== undefined) ui.showToast("댓글을 불러오지 못했습니다.", "error");
             }
         }
 

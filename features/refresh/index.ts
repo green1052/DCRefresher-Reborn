@@ -6,7 +6,6 @@ import {getModuleApi} from "@/core/module/registry";
 import {ownPreviewEntry} from "@/core/preview/history";
 import {useUiStore} from "@/stores/ui";
 import {smoothScroll, whenDomReady} from "@/utils/dom";
-import {isBlockedError} from "@/utils/error";
 import {hasModifier, isTyping} from "@/utils/event";
 import {sha256} from "@/utils/hash";
 
@@ -259,11 +258,6 @@ export default defineModule(meta, {
             } catch (e) {
                 // 주소가 바뀌어 끊은 요청은 실패가 아니다. 파이어폭스에선 오류 종류로 가리기 어려워 신호로 본다.
                 if (controller.signal.aborted) return false;
-                // 임시 차단은 HTTP 클라이언트가 이미 알렸다. 주기만 늘린다.
-                if (isBlockedError(e)) {
-                    failures++;
-                    return false;
-                }
                 console.error("Refresh failed:", e);
                 return fail();
             } finally {

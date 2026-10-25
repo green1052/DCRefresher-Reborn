@@ -1,6 +1,4 @@
-import ky, {type AfterResponseHook, type KyInstance} from "ky";
-
-import {isBlockedPage} from "@/core/pages";
+import ky, {type KyInstance} from "ky";
 
 type Fetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
@@ -37,45 +35,16 @@ const timedFetch: Fetch = (input, init) => {
 };
 
 /** 디시 임시 차단을 받았을 때 던지는 오류. 요청이 너무 많으면 디시는 상태 코드 없이 모든 요청에 빈 페이지를 준다. */
-export class BlockedError extends Error {
-    override name = "BlockedError";
-}
-
-let onBlocked: (() => void) | undefined;
-
-/** 임시 차단을 받을 때마다 부를 함수 (콘텐츠 스크립트가 알림을 건다). */
-export const setBlockedHandler = (handler: () => void): void => {
-    onBlocked = handler;
-};
-
-/**
- * 빈 응답이면 임시 차단으로 본다. 글·목록·검색 페이지(GET)와 /board/comment/ 아래 요청(댓글 목록 JSON, 댓글 삭제)만 본다.
- * 댓글 삭제 응답은 'true'나 'false||…'라 비어 있지 않다. 다른 ajax(글 삭제·추천 등)는 성공 응답이 비어 있을 수 있어 보지 않는다.
- */
-const detectBlocked: AfterResponseHook = async ({request, response}) => {
-    const url = new URL(request.url);
-    // 차단 페이지는 200에 빈 문서로 온다. 204·205도 ok라 빈 본문이지만 성공 응답이 비어 있을 수 있는 디시 ajax까지 차단으로 보이면 안 된다.
-    // 디시 호스트만 본다. urls.ts의 dcinsideHref와 같은 기준이라 evildcinside.com 같은 유사 도메인은 거른다.
-    if (response.status !== 200 || !(url.hostname === "dcinside.com" || url.hostname.endsWith(".dcinside.com"))) return;
-    if (request.method !== "GET" && !url.pathname.startsWith("/board/comment/")) return;
-    // ky가 훅마다 복제본을 넘기고 호출한 쪽에는 원본을 주므로 바로 읽어도 된다.
-    if (!isBlockedPage(await response.text())) return;
-
-    onBlocked?.();
-    throw new BlockedError("디시인사이드 임시 차단");
-};
-
 export const http: KyInstance = ky.create({
     // 머리까지의 시간 제한은 timedFetch가 fetch를 부른 뒤부터 잰다.
     timeout: false,
-    // 요청 전체(차례 기다림·재시도·차단 검사·본문 읽기)의 상한. 머리를 받은 뒤 본문이 멈추면 끝나지 않아 진행 중 표시가 굳는다.
+    // 요청 전체(재시도·본문 읽기)의 상한. 머리를 받은 뒤 본문이 멈추면 끝나지 않아 진행 중 표시가 굳는다.
     // 본문 읽기는 ky의 .text()/.json()으로 읽어야 이 상한에 묶인다.
     totalTimeout: 60_000,
     fetch: timedFetch,
     // jitter: 재시도가 한꺼번에 몰리지 않게 시점을 흩는다.
     // maxRetryAfter: Retry-After가 몇 분이어도 10초까지만 기다린다. 더 기다리면 화면이 멈춘 것처럼 보인다.
-    retry: {jitter: true, maxRetryAfter: 10_000},
-    hooks: {afterResponse: [detectBlocked]}
+    retry: {jitter: true, maxRetryAfter: 10_000}
 });
 
 /**

@@ -15,7 +15,7 @@ export {type SubmitResult, resultMessage} from "./response";
 
 export const viewUrl = (link: string, gallery: string, id: string): string => `${urls.base}${galleryPath(link)}board/view/?id=${gallery}&no=${id}`;
 
-/** 게시글을 받아 PostInfo로 푼다. 삭제된 글은 디시가 404를 주고, 임시 차단은 HTTP 클라이언트가 BlockedError로 던진다. 그 밖에 글이 없는 페이지면 Error를 던진다. */
+/** 게시글을 받아 PostInfo로 푼다. 삭제된 글은 디시가 404를 주고, 그 밖에 글이 없는 페이지면 Error를 던진다. */
 export const fetchPost = async (preData: GalleryPreData, signal: AbortSignal): Promise<PostInfo> => {
     const response = await http.get(viewUrl(preData.link, preData.gallery, preData.id), {signal}).text();
 
@@ -39,7 +39,7 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: Pick<Post
     });
 
     // 어느 쪽이든 실패하면(갱신 차단 등) 함께 보낸 다른 쪽 요청도 끊는다. 막힌 서버에 요청을 더 보내지 않는다.
-    // 끊긴 쪽은 AbortError로 실패하는데, 그대로 던지면 사용자가 취소한 것으로 보여 실제 원인(임시 차단 등)이 묻힌다. 처음 실패를 던진다.
+    // 끊긴 쪽은 AbortError로 실패하는데, 그대로 던지면 사용자가 취소한 것으로 보여 실제 원인이 묻힌다. 처음 실패를 던진다.
     const pageAbort = new AbortController();
     let failure: unknown;
     const pageSignal = AbortSignal.any([signal, pageAbort.signal]);

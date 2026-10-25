@@ -3,7 +3,6 @@ import {afterEach, describe, expect, it, vi} from "vitest";
 
 const fetchMock = vi.hoisted(() => (globalThis.fetch = vi.fn<typeof fetch>()));
 
-import {BlockedError} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
 import {
     adminDeleteComments,
@@ -67,11 +66,6 @@ describe("fetchPost", () => {
     it("삭제된 글(404)은 HTTPError다", async () => {
         serve(fetchMock, () => new Response("", {status: 404}));
         await expect(fetchPost(preData(), signal())).rejects.toBeInstanceOf(HTTPError);
-    });
-
-    it("빈 페이지는 임시 차단이다", async () => {
-        serve(fetchMock, () => "<html><head></head><body> </body></html>");
-        await expect(fetchPost(preData(), signal())).rejects.toBeInstanceOf(BlockedError);
     });
 });
 
