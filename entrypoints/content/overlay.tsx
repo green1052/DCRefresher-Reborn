@@ -13,16 +13,22 @@ export const mountOverlayWhenNeeded = (ctx: ContentScriptContext): void => {
     const mountOverlay = async (): Promise<void> => {
         if (ctx.isInvalid) return;
 
-        // react-dom·Base UI·오버레이 UI는 오버레이를 처음 띄울 때 초기화한다. 번들 안에 있어 네트워크 요청은 없다.
+        // react-dom·Base UI·오버레이 UI는 오버레이를 처음 띄울 때 초기화한다. ESM 청크로 나뉘어 있어 이때만 읽는다.
         const [{createRoot}, {ContentRoot}] = await Promise.all([
             import("react-dom/client"),
             import("@/components/overlay/ContentRoot")
         ]);
 
+        // cssInjectionMode가 "manual"이라 createShadowRootUi가 못 읽는다. 같은 규칙(content-scripts/content.css,
+        // :root → :host)으로 직접 읽는다. 이 청크의 ENTRYPOINT 이름은 content-main이라 자동 읽기가 실패한다.
+        const getURL = browser.runtime.getURL as (path: string) => string;
+        // 슬래시로 시작하는 절대 경로로 읽는다 (WXT의 loadCss와 같은 형태).
+        const css = (await (await fetch(getURL("/content-scripts/content.css"))).text()).replaceAll(":root", ":host");
         const ui = await createShadowRootUi(ctx, {
             name: "refresher-root",
             position: "inline",
             anchor: "body",
+            css,
             // WXT 기본 리셋(:host{all:initial !important})은 pointer-events까지 되돌려 페이지 클릭을 막으므로 끄고 overlay.css의 :host 리셋을 쓴다.
             inheritStyles: true,
             // index.tsx가 불러온 CSS는 WXT가 content-scripts/content.css로 묶어 두었다가 여기서 shadow에 넣는다 (:root → :host 포함).

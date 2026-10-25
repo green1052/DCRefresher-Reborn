@@ -42,7 +42,16 @@ export default defineConfig({
         // imports.dirs는 기본값과 합쳐지므로 여기서 비운다. WXT API(defineContentScript·browser 등) 자동 import는 남는다.
         "config:resolved": (wxt) => {
             if (wxt.config.imports) wxt.config.imports.dirs = [];
-        }
+        },
+        // 멀티페이지(HTML) 그룹에서 content-main의 파일 이름을 고정한다. 부트스트랩(entrypoints/content/index.tsx)이
+        // 런타임에 찾는 경로라 해시가 들어가면 안 된다. WXT 0.21에는 이 훅의 타입이 없어 캐스팅한다.
+        "vite:build:extendConfig": ((group: unknown, config: {build?: {rollupOptions?: {output?: {entryFileNames?: unknown}}}}) => {
+            if (!Array.isArray(group) || !group.some((entry) => entry?.name === "content-main")) return;
+            const output = config.build?.rollupOptions?.output;
+            if (!output || typeof output.entryFileNames !== "function") return;
+            const original = output.entryFileNames as (chunk: {name: string}) => unknown;
+            output.entryFileNames = (chunk: {name: string}) => chunk.name === "content-main" ? "chunks/content-main.js" : original(chunk);
+        }) as never
     },
     zip: {
         // 파이어폭스 심사용 소스 zip. 테스트 결과물과 DB 빌드 결과(.gitignore에 있는 것)는 소스가 아니라 뺀다.
@@ -85,6 +94,11 @@ export default defineConfig({
                 css: ["content-scripts/page.css"],
                 run_at: "document_start"
             }
-        ]
+        ],
+        // 콘텐츠 스크립트 본문 청크(entrypoints/content/index.tsx가 런타임에 불러온다)와 오버레이가 읽는 CSS.
+        // 웹 페이지에서도 접근할 수 있게 되므로 DC 페이지에만 연다. 파이어폭스(MV2)는 문자열 배열이다.
+        web_accessible_resources: browser === "firefox"
+            ? ["chunks/*.js", "content-scripts/content.css"]
+            : [{matches: CONTENT_MATCHES, resources: ["chunks/*.js", "content-scripts/content.css"]}]
     })
 });

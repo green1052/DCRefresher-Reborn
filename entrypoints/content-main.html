@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <title>DCRefresher 콘텐츠 본문</title>
+    </head>
+    <body>
+        <!-- 여는 일 없는 페이지. WXT는 content-script·unlisted-script를 IIFE로만 묶지만 HTML 엔트리의
+             스크립트는 ESM+청크로 나눠 주므로, 콘텐츠 본문(entrypoints/content/main.ts)을 여기에 싣는다.
+             entrypoints/content/index.tsx가 chunks/content-main.js를 런타임에 불러온다. -->
+        <script type="module" src="./content/main.ts"></script>
+    </body>
+</html>
