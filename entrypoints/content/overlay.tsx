@@ -1,26 +1,22 @@
 import type {ContentScriptContext} from "wxt/utils/content-script-context";
 
 import {overlayNeeded, watchOverlayDemands} from "@/components/overlay/demands";
+import {ContentRoot} from "@/components/overlay/ContentRoot";
 import {overlay} from "@/components/overlay/shadow";
 import {followDcAppearance} from "@/utils/appearance";
 import {whenDomReady} from "@/utils/dom";
+import {createRoot} from "react-dom/client";
 
 /**
  * 오버레이 (디시 CSS와 오버레이 CSS가 섞이지 않게 shadow DOM에 둔다). 화면에 그릴 것이 처음 생길 때 띄운다.
+ * react-dom·ContentRoot는 정적으로 들어 온다 — 파이어폭스는 문서를 다시 읽은 뒤 콘텐츠 스크립트가 늦게 하는
+ * 동적 import(청크)가 실패할 수 있다(버그 1803950 계열). 첫 렌더만 whenDomReady 뒤로 미룬다.
  */
 export const mountOverlayWhenNeeded = (ctx: ContentScriptContext): void => {
     let stopAppearance: (() => void) | undefined;
     const mountOverlay = async (): Promise<void> => {
         if (ctx.isInvalid) return;
 
-        // react-dom·Base UI·오버레이 UI는 오버레이를 처음 띄울 때 초기화한다. ESM 청크로 나뉘어 있어 이때만 읽는다.
-        const [{createRoot}, {ContentRoot}] = await Promise.all([
-            import("react-dom/client"),
-            import("@/components/overlay/ContentRoot")
-        ]);
-
-        // cssInjectionMode가 "manual"이라 createShadowRootUi가 못 읽는다. 같은 규칙(content-scripts/content.css,
-        // :root → :host)으로 직접 읽는다. 이 청크의 ENTRYPOINT 이름은 content-main이라 자동 읽기가 실패한다.
         // cssInjectionMode가 "manual"이라 createShadowRootUi가 못 읽는다(ENTRYPOINT 이름이 content-main이라
         // 실패한다). WXT의 loadCss와 같은 규칙으로 직접 읽는다.
         const getURL = browser.runtime.getURL as (path: string) => string;

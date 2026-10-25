@@ -1,5 +1,4 @@
-import {render} from "preact";
-import {act} from "preact/test-utils";
+import {render, act} from "@/tests/helpers";
 import {afterEach, expect, it, vi} from "vitest";
 
 import {useWheelGesture} from "@/features/preview/ui/useWheelGesture";

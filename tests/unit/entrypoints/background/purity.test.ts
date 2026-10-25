@@ -4,8 +4,8 @@ import {dirname, join, resolve} from "node:path";
 import {expect, it} from "vitest";
 
 /**
- * 배경 번들은 react·preact·zustand의 React 바인딩을 불러오지 않는다 (entrypoints/background/blocks.ts의 주석 —
- * zustand 본체는 React 바인딩을 딸려 보내 Preact까지 끌어온다). core가 stores를 불러오는 순간 조용히 깨지므로,
+ * 배경 번들은 react·react-dom·zustand의 React 바인딩을 불러오지 않는다 (entrypoints/background/blocks.ts의 주석 —
+ * zustand 본체는 react를 딸려 보낸다). core가 stores를 불러오는 순간 조용히 깨지므로,
  * 배경 시작 파일에서 닿는 모든 모듈(동적 import와 import.meta.glob이 붙잡는 파일까지)의 import를 훑어 잡는다.
  * zustand/vanilla(·/shallow)만 React가 없어 허용한다 (core/database.ts가 이미 쓴다).
  * zustand/shallow는 useShallow를 같이 내보내 React를 끌어오므로 배경에서는 zustand/vanilla/shallow를 쓴다.

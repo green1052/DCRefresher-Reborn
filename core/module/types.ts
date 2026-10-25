@@ -84,7 +84,7 @@ export type CommandKeyOf<M extends AnyModuleMeta> = keyof NonNullable<M["command
 
 /**
  * 옵션·팝업이 그리는 아이콘 (features/<id>/icons.ts의 default). 토글이 있으면 메타 toggles의 id마다 하나씩 둔다.
- * meta.ts는 배경·콘텐츠 번들에도 들어가므로 lucide 아이콘(과 Preact)을 meta.ts에 두지 않는다. features/meta.ts(옵션·팝업)만 이것을 모은다.
+ * meta.ts는 배경·콘텐츠 번들에도 들어가므로 lucide 아이콘(과 React)을 meta.ts에 두지 않는다. features/meta.ts(옵션·팝업)만 이것을 모은다.
  */
 export type IconsOf<M extends AnyModuleMeta> = { module: LucideIcon } &
     ([ToggleKeyOf<M>] extends [never] ? { toggles?: never } : { toggles: Record<ToggleKeyOf<M>, LucideIcon> });

@@ -5,7 +5,7 @@ const FAKE_LIST_URL = "https://gall.dcinside.com/board/lists/?id=test";
 /**
  * 콘텐츠 스크립트가 돈 글 목록 페이지. 새로고침 버튼이 붙을 때까지 기다린다.
  * 기본은 가짜 디시(e2e/dcinside.ts)의 목록이고, url을 주면 그 주소를 연다 (live의 실제 디시).
- * 미리보기 창(Preact)은 비동기로 그려지므로 창 안의 것은 frame()에서 찾는다.
+ * 미리보기 창(React)은 비동기로 그려지므로 창 안의 것은 frame()에서 찾는다.
  */
 export async function openListPage(page: Page, url = FAKE_LIST_URL) {
     await page.goto(url);

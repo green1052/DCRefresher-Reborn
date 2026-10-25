@@ -1,5 +1,4 @@
-import {render} from "preact";
-import {act} from "preact/test-utils";
+import {render, act} from "@/tests/helpers";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
 import {BlockTab} from "@/entrypoints/options/BlockTab";

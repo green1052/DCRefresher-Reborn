@@ -1,6 +1,6 @@
 /**
  * 차단 목록 값의 검사·정규화. zustand 스토어(stores/blocks.ts) 없이 core(설정 옮기기 등)에서도 쓴다 —
- * core에서 stores를 불러오면 zustand의 React 바인딩이 Preact를 배경 번들에 딸려 보낸다 (entrypoints/background/blocks.ts).
+ * core에서 stores를 불러오면 zustand의 React 바인딩이 React를 배경 번들에 딸려 보낸다 (entrypoints/background/blocks.ts).
  */
 import {BLOCK_TYPES, DEFAULT_DETECT_MODE, DETECT_MODE_NAMES, DETECT_MODES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";

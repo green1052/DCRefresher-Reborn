@@ -5,9 +5,11 @@ import {CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES} from "@/core/pages";
 
 /**
  * 얇은 부트스트랩. 본문(main.ts)은 content-main.html 덕에 ESM 청크(chunks/content-main.js)로 나와
- * 런타임에 불러온다 — IIFE에서는 동적 import가 인라인돼 미리보기 UI(react-dom·Base UI)가 페이지마다
- * 실리기 때문이다. WXT가 공식 지원하면(#357, v1.1) type: "module"로 이 걷는다. 수동 구현의 근거와
- * 예제는 문서(ES Modules·esm-content-script-ui). 비동기 로더라 run_at를 완전히는 못 지킨다.
+ * 런타임에 불러온다 — IIFE 하나로 묶는 것보다 옵션·팝업과 청크를 공유해 총량이 작다. 본문 안에서는 늦은
+ * 동적 import를 쓰지 않는다 — 파이어폭스는 문서를 다시 읽은 뒤 콘텐츠 스크립트가 늦게 하는 청크 import가
+ * 실패한다(버그 1803950 계열). 이 import는 스크립트 시작(document_start)에만 일어나 믿을 수 있다.
+ * WXT가 공식 지원하면(#357, v1.1) type: "module"로 이 걷는다. 예제는 문서(ES Modules·esm-content-script-ui).
+ * 비동기 로더라 run_at를 완전히는 못 지킨다.
  */
 export default defineContentScript({
     matches: CONTENT_MATCHES,

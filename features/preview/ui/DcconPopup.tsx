@@ -62,6 +62,22 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
     const id = useId();
     // 휠로 굴러갈 곳. 굴리는 동안 휠이 이어지면 지금 위치가 아니라 여기에 더해야 빠르게 굴려도 덜 가지 않는다. 다 굴러가면 비운다.
     const wheelTarget = useRef<number | null>(null);
+    const strip = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const el = strip.current;
+        if (!el) return;
+        // React의 onWheel은 수동(passive) 리스너라 preventDefault가 안 먹는다. 페이지가 함께 굴러가지 않게 네이티브로 단다.
+        const onWheel = (ev: WheelEvent): void => {
+            if (ev.shiftKey || ev.ctrlKey || Math.abs(ev.deltaY) <= Math.abs(ev.deltaX) || el.scrollWidth <= el.clientWidth) return;
+            ev.preventDefault();
+            const left = Math.min(Math.max((wheelTarget.current ?? el.scrollLeft) + ev.deltaY, 0), el.scrollWidth - el.clientWidth);
+            wheelTarget.current = left;
+            el.scrollTo({left, behavior: smoothScroll()});
+        };
+        el.addEventListener("wheel", onWheel, {passive: false});
+        return () => el.removeEventListener("wheel", onWheel);
+    }, []);
 
     const clickDccon = (dccon: DcinsideDccon): void => {
         const next = doubleDccon ? [...selected, dccon] : [dccon];
@@ -99,14 +115,8 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
 
             {/* 불러오는 동안은 스켈레톤을 칸이 넘치도록 깔아 꽉 찬 목록처럼 보인다. 넘친 스켈레톤에 스크롤바가 생기지 않게 자른다. */}
             {/* 세로 휠로도 패키지를 옆으로 부드럽게 넘기므로 스크롤바는 숨긴다. 가로 휠(트랙패드)·Shift(브라우저가 이미 가로로 굴림)·Ctrl(확대)은 그대로 둔다. */}
-            <div className="flex gap-1 overflow-x-auto [scrollbar-width:none] aria-busy:overflow-hidden" aria-busy={loading} onWheel={(ev) => {
-                const strip = ev.currentTarget;
-                if (ev.shiftKey || ev.ctrlKey || Math.abs(ev.deltaY) <= Math.abs(ev.deltaX) || strip.scrollWidth <= strip.clientWidth) return;
-                ev.preventDefault();
-                const left = Math.min(Math.max((wheelTarget.current ?? strip.scrollLeft) + ev.deltaY, 0), strip.scrollWidth - strip.clientWidth);
-                wheelTarget.current = left;
-                strip.scrollTo({left, behavior: smoothScroll()});
-            }} onScrollEnd={() => (wheelTarget.current = null)}>
+            {/* React의 onWheel은 루트에 수동(passive) 리스너로 붙어 preventDefault가 안 먹으니 네이티브로 건다. */}
+            <div ref={strip} className="flex gap-1 overflow-x-auto [scrollbar-width:none] aria-busy:overflow-hidden" aria-busy={loading} onScrollEnd={() => (wheelTarget.current = null)}>
                 {loading
                     ? Array.from({length: 12}, (_, index) => <Skeleton key={index} className="size-12 flex-none"/>)
                     : (

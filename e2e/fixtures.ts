@@ -158,9 +158,20 @@ export const test = base.extend<{ live: boolean; serveIpDb: boolean }>({
             if (ours(error.error().stack)) errors.push(`pageerror ${error.page()?.url()}: ${error.error().message}`);
         });
         // 페이지의 것만 본다. 서비스 워커는 끊어 둔 IP DB를 받지 못해 console.error를 남긴다.
-        context.on("console", (message) => {
+        // 인자가 객체(Error 등)면 message.text()가 JSHandle@object로만 나와 읽을 수 없으니 펼쳐 적는다.
+        context.on("console", async (message) => {
             const page = message.page();
-            if (page && message.type() === "error" && ours(message.location().url)) errors.push(`console ${page.url()}: ${message.text()}`);
+            if (!page || message.type() !== "error" || !ours(message.location().url)) return;
+            const prop = async (name: string): Promise<string | null> => {
+                for (const arg of message.args()) {
+                    const handle = await arg.getProperty(name).catch(() => null);
+                    const value = handle ? await handle.jsonValue().catch(() => null) : null;
+                    if (typeof value === "string" && value.length > 0) return value;
+                }
+                return null;
+            };
+            const detail = [await prop("name"), await prop("message"), await prop("stack")].filter(Boolean).join(" ");
+            errors.push(`console ${page.url()}: ${message.text()}${detail ? ` ${detail}` : ""}`);
         });
         await use(errors);
         test.expect(errors, "페이지 오류·console.error가 없어야 한다").toEqual([]);

@@ -257,7 +257,7 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
     return (
         <Popover open onOpenChange={(open, details) => {
             if (open) return;
-            // Preact가 effect 정리를 그린 뒤로 미뤄 닫힌 버블도 잠시 클릭·Esc를 받는다. 지금 버블이 아니면 흘려보낸다.
+            // 닫히는 동안(애니메이션)에도 잠시 클릭·Esc를 받는다. 지금 버블이 아니면 흘려보낸다.
             // 받으면 곧바로 다시 연 버블을 그 클릭으로 닫고, 다음 Esc(미리보기 닫기 등)를 먹는다.
             if (useUiStore.getState().bubble !== bubble) {
                 details.cancel();

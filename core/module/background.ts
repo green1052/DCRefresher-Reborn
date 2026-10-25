@@ -9,7 +9,7 @@ import type {AnyModuleMeta, SchemaOf, SettingValues, SettingsSchema} from "./typ
 
 /**
  * 모듈의 배경 쪽 동작. S는 메타의 설정 스키마라 apply가 받는 설정이 키마다 타입을 가진다.
- * 배경 번들에 Preact가 딸려 가지 않도록 모듈 파일(index.ts)은 import하지 않는다. meta.ts는 UI를 불러오지 않아 그대로 쓴다.
+ * 배경 번들에 React가 딸려 가지 않도록 모듈 파일(index.ts)은 import하지 않는다. meta.ts는 UI를 불러오지 않아 그대로 쓴다.
  */
 interface BackgroundImpl<S extends SettingsSchema> {
     /**

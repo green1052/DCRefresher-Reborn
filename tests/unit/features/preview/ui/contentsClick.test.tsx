@@ -1,4 +1,4 @@
-import {render} from "preact";
+import {render} from "@/tests/helpers";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
 import {clickContents, markMedia, markPressable} from "@/features/preview/ui/contentsClick";

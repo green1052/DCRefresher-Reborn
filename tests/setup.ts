@@ -8,6 +8,9 @@ import {URLPattern} from "node:url";
 import {afterEach, beforeEach, vi} from "vitest";
 import {fakeBrowser} from "wxt/testing/fake-browser";
 
+// React 18+는 act()가 테스트 환경임을 이 플래그로 확인한다 (경고 방지).
+(globalThis as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true;
+
 beforeEach(() => fakeBrowser.reset());
 // 가짜 타이머를 쓴 테스트가 실패로 끝나도 다음 테스트는 실제 타이머로 시작한다.
 afterEach(() => void vi.useRealTimers());

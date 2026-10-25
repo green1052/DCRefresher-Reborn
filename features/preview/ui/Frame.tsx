@@ -214,14 +214,14 @@ export const Frame = () => {
             disablePointerDismissal
             onOpenChange={(open, details) => {
                 if (open) return;
-                // 닫히는 동안(페이드)과 닫힌 뒤 Preact가 effect 정리를 미룬 사이에도 Base UI가 Esc를 받는다. 이미 닫았으면 키를 흘려보내 목록의 Esc(선택 풀기)가 받게 한다.
+                // 닫히는 동안(페이드)과 닫힌 뒤에도 잠시 Base UI가 Esc를 받는다. 이미 닫았으면 키를 흘려보내 목록의 Esc(선택 풀기)가 받게 한다.
                 if (!usePreviewStore.getState().visible) {
                     details.cancel();
                     details.allowPropagation();
                     return;
                 }
                 // Esc는 위에 뜬 것(유저 버블·다이얼로그)부터 닫는다. 그것들은 따로 그려져 Base UI는 미리보기를 맨 위로 본다.
-                // 버블은 여기서 닫는다. Base UI는 Esc 리스너를 effect로 거는데 Preact는 effect를 그린 뒤에 돌려, 막 뜬 버블은 아직 Esc를 받지 못한다.
+                // 버블은 여기서 닫는다. Base UI는 Esc 리스너를 effect로 걸므로 막 뜬 버블은 아직 Esc를 받지 못한다.
                 if (details.reason === "escape-key" && useUiStore.getState().bubble) {
                     details.cancel();
                     useUiStore.getState().closeBubble();
@@ -244,7 +244,11 @@ export const Frame = () => {
                     스크롤바 폭을 양쪽에 비워야 긴 글과 짧은 글을 오갈 때 창이 옆으로 흔들리지 않는다. 키보드 스크롤용 포커스(tabIndex -1)라 테두리는 그리지 않는다. */}
                 <Dialog.Popup
                     className="refresher-frame-scroll fixed inset-0 flex overflow-y-auto overscroll-contain py-[5vh] outline-none duration-150 animate-in fade-in [scrollbar-color:var(--border)_transparent] [scrollbar-gutter:stable_both-edges] [scrollbar-width:thin] data-fading:pointer-events-none data-fading:animate-out data-fading:fade-out data-fading:fill-mode-forwards"
-                    ref={scroller}
+                    // Base UI가 Portal을 별도 커밋에 마운트해 [visible] effect가 돌 때는 아직 스크롤 칸이 없다(React). 붙는 순간 포커스한다.
+                    ref={(element) => {
+                        scroller.current = element;
+                        element?.focus({preventScroll: true});
+                    }}
                     tabIndex={-1}
                     data-fading={fading || undefined}
                     aria-busy={busy}

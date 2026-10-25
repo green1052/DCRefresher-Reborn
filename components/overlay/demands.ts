@@ -1,5 +1,5 @@
 /**
- * 오버레이를 띄울 조건. 오버레이(shadow DOM·Preact)는 그릴 것이 처음 생길 때 띄운다 (entrypoints/content/overlay.tsx).
+ * 오버레이를 띄울 조건. 오버레이(shadow DOM·React)는 그릴 것이 처음 생길 때 띄운다 (entrypoints/content/overlay.tsx).
  * 오버레이에 UI를 그리는 스토어가 "이 상태면 그릴 것이 있다"를 여기에 등록한다. 새 UI는 자기 스토어의 조건만 고치면 된다.
  * 매 페이지 setup이 채우는 값(배지 색·차단 보기 등)은 조건에 넣지 않는다. 넣으면 늘 띄운다.
  */

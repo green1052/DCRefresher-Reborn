@@ -3,10 +3,13 @@ import {shallow} from "zustand/shallow";
 
 import {blockMode, duplicateOf, isBlocked} from "@/core/block";
 import {isAbortError} from "@/core/http/client";
+// 정적 import: 파이어폭스는 콘텐츠 스크립트가 늦게 하는 동적 import(청크)를 페이지를 다시 읽은 직후에 못 읽는다.
+import {prepareComments, processComments, sameComments} from "@/core/preview/comments";
+import {sanitizeHtml} from "@/utils/sanitize";
 import {defineModule} from "@/core/module/define";
 import {getModuleApi, moduleSettingsStore, runningModuleSettings, runningModulesStore} from "@/core/module/registry";
 import type {ModuleSettings} from "@/core/module/types";
-import type {ProcessedComment, processComments} from "@/core/preview/comments";
+import type {ProcessedComment} from "@/core/preview/comments";
 import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
 import {useBlocksStore} from "@/stores/blocks";
 import {lowActivityOf, useUiStore} from "@/stores/ui";
@@ -93,8 +96,7 @@ const controller = (ctx: Ctx) => {
         const cache = stripMedia ? sanitizedStripped : sanitized;
         let contents = cache.get(postInfo);
         if (contents === undefined) {
-            // 정화기는 처음 쓸 때 불러온다. 미리보기를 안 여는 페이지에서까지 DOMPurify를 만들지 않는다.
-            const {sanitizeHtml} = await import("@/utils/sanitize");
+            // 정적 import다 — 파이어폭스는 콘텐츠 스크립트의 늦은 동적 import(청크)를 페이지를 다시 읽은 뒤에 못 읽는다.
             contents = sanitizeHtml(postInfo.contents ?? "", {stripMedia});
             cache.set(postInfo, contents);
         }
@@ -200,12 +202,12 @@ const controller = (ctx: Ctx) => {
         pulling++;
 
         try {
-            // 댓글 가공(정화·차단)도 처음 쓸 때 불러온다.
-            const [{prepareComments, processComments, sameComments}, {list: raw, allowReply, truncated}] = await Promise.all([
-                import("@/core/preview/comments"),
-                // 건너뛸 때는 이 갤러리에서 받아 둔 댓글 허용(멤버만 댓글)을 쓴다. 건너뛰는 쪽이 아는 갤러리만 건너뛴다.
-                skip ? {list: [], allowReply: allowReplies.get(preData.gallery) ?? store.getState().allowReply, truncated: false} : Promise.resolve(given).then((list) => list ?? fetchComments(preData, post, signal))
-            ]);
+            // 댓글 가공(정화·차단)은 파일 위에서 정적으로 들어 와 있다. 파이어폭스는 콘텐츠 스크립트의 늦은
+            // 동적 import(청크)를 페이지를 다시 읽은 직후에 못 읽는다.
+            // 건너뛸 때는 이 갤러리에서 받아 둔 댓글 허용(멤버만 댓글)을 쓴다. 건너뛰는 쪽이 아는 갤러리만 건너뛴다.
+            const {list: raw, allowReply, truncated} = skip
+                ? {list: [], allowReply: allowReplies.get(preData.gallery) ?? store.getState().allowReply, truncated: false}
+                : await Promise.resolve(given).then((list) => list ?? fetchComments(preData, post, signal));
             if (store.getState().signalId !== mySignal || seq < shownSeq) return;
             shownSeq = seq;
             if (!skip) {
@@ -245,7 +247,7 @@ const controller = (ctx: Ctx) => {
         const {visible, preData, signalId} = store.getState();
         if (!visible || !preData) return;
 
-        const {processComments} = await import("@/core/preview/comments");
+        // 댓글 재가공(정화·차단)은 파일 위에서 정적으로 들어 와 있다.
         // signalId가 바뀐 갈래는 s를 그대로 돌려 알림을 일으키지 않는다 (zustand는 Object.is로 거른다). {}를 돌려도
         // 새 상태로 쳐 댓글 수천 개의 selector가 죄다 다시 평가된다.
         store.setState((s) => (s.signalId !== signalId ? s : {
@@ -388,7 +390,7 @@ const controller = (ctx: Ctx) => {
             if (store.getState().signalId === mySignal && !isAbortError(e)) {
                 store.setState({commentsFailed: true});
                 if (!isBlockedError(e)) {
-                    console.error("Comment load failed:", e);
+                    console.error("Comment load failed:", `${(e as {name?: string})?.name ?? ""}: ${(e as {message?: string})?.message ?? ""}`);
                     // 캐시의 지난 댓글을 보이고 있으면 안내가 뜨지 않으므로 토스트로 알린다.
                     if (store.getState().comments !== undefined) ui.showToast("댓글을 불러오지 못했습니다.", "error");
                 }

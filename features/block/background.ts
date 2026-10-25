@@ -125,7 +125,7 @@ let filterEnabled = false;
 const IMAGE_LIST_KEY = blockListKey("IMAGE");
 
 const syncImageFilter = async (): Promise<void> => {
-    // stores/blocks는 배경에 Preact를 딸려 보내므로 불러오지 않는다. 검사 없이 BlockEntry[]로 읽으면 깨진 항목 하나에 필터를 맞추지 못한다.
+    // stores/blocks는 배경에 React를 딸려 보내므로 불러오지 않는다. 검사 없이 BlockEntry[]로 읽으면 깨진 항목 하나에 필터를 맞추지 못한다.
     const stored = await storage.getItem<unknown>(IMAGE_LIST_KEY);
     const entries = Array.isArray(stored) ? stored.filter(isRecord) : [];
     const on = filterEnabled && entries.length > 0;

@@ -78,8 +78,8 @@ describe("아이콘", () => {
         expect(icons).toEqual(Object.keys(import.meta.glob("/features/*/meta.ts")));
     });
 
-    it("meta.ts는 UI(lucide·Preact·React)를 불러오지 않는다", () => {
-        // 배경·콘텐츠 번들이 meta.ts를 불러온다. 거기서 UI로 이어지면 lucide·Preact가 배경 번들에 딸려 간다.
+    it("meta.ts는 UI(lucide·React)를 불러오지 않는다", () => {
+        // 배경·콘텐츠 번들이 meta.ts를 불러온다. 거기서 UI로 이어지면 lucide·React가 배경 번들에 딸려 간다.
         // 값으로 불러오는 것(import type 제외)을 프로젝트 안에서 따라가며 본다.
         const root = process.cwd();
         const resolveImport = (from: string, specifier: string): string | undefined => {
