@@ -73,6 +73,6 @@ export const start = async (ctx: ContentScriptContext): Promise<void> => {
     await loadAll(features, ctx.signal, board ? Promise.all([initBlocksStore(ctx.signal), initMemosStore(ctx.signal)]) : undefined);
 };
 
-// 이 청크를 만드는 HTML 엔트리는 이 모듈을 부수 효과만으로 읽어, export로만 닿는 start와 이 아래 전부가
-// 트리셰이킹된다. 부트스트랩(entrypoints/content/index.tsx)이 런타임에 찾을 수 있게 격리 세계 전역에 심는다.
+// 이 청크를 만드는 HTML 엔트리는 이 모듈을 부수 효과만으로 읽어, export의 start와 이 아래 전부가 트리셰이킹된다.
+// 부트스트랩이 런타임에 찾을 수 있게 격리 세계 전역에 심는다.
 (globalThis as Record<string, unknown>)["__refresherContentStart"] = start;

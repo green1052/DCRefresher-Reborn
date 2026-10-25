@@ -21,8 +21,9 @@ export const mountOverlayWhenNeeded = (ctx: ContentScriptContext): void => {
 
         // cssInjectionMode가 "manual"이라 createShadowRootUi가 못 읽는다. 같은 규칙(content-scripts/content.css,
         // :root → :host)으로 직접 읽는다. 이 청크의 ENTRYPOINT 이름은 content-main이라 자동 읽기가 실패한다.
+        // cssInjectionMode가 "manual"이라 createShadowRootUi가 못 읽는다(ENTRYPOINT 이름이 content-main이라
+        // 실패한다). WXT의 loadCss와 같은 규칙으로 직접 읽는다.
         const getURL = browser.runtime.getURL as (path: string) => string;
-        // 슬래시로 시작하는 절대 경로로 읽는다 (WXT의 loadCss와 같은 형태).
         const css = (await (await fetch(getURL("/content-scripts/content.css"))).text()).replaceAll(":root", ":host");
         const ui = await createShadowRootUi(ctx, {
             name: "refresher-root",
