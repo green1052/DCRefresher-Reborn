@@ -29,8 +29,9 @@ export default defineConfig({
         build: {
             cssTarget: ["chrome140", "firefox144"],
             rolldownOptions: {
-                // 한글이 한 글자라도 있으면 V8이 스크립트 소스 전체를 2바이트 문자열로 둔다 (content.js는 탭마다 1MB쯤).
-                // \uXXXX로 바꿔 ASCII만 내보내면 1바이트 문자열이 되어 탭마다 0.5MB 준다. 파일은 20KB쯤 커진다.
+                // 한글이 한 글자라도 있으면 V8이 스크립트 소스 전체를 2바이트 문자열로 둔다. \uXXXX로 바꿔 ASCII만
+                // 내보내면 1바이트 문자열이 되어 탭마다 실리는 본문 청크(content-main.js)의 메모리가 절반쯤로 준다.
+                // 파일은 20KB쯤 커진다.
                 output: {minify: {compress: true, mangle: true, codegen: {asciiOnly: true}}}
             },
             // 최소 버전(Chrome 140·Firefox 144)은 modulepreload를 지원해 Vite의 polyfill이 필요 없다.
@@ -61,45 +62,48 @@ export default defineConfig({
     dev: {
         reloadCommand: "Alt+Shift+R"
     },
-    manifest: ({browser}) => ({
-        name: "DCRefresher Reborn",
-        // 코드가 쓰는 API 중 가장 늦게 들어온 것에 맞춘다 (빌드가 바꿔 주지 않는다).
-        // Chrome 140: Uint8Array의 toBase64·fromBase64(백업·IP DB). Firefox 144: storage.local.getBytesInUse(정보 탭), getKeys(143).
-        // 다른 브라우저의 키는 알 수 없는 키라 manifest 경고로 남으므로 그 브라우저에만 넣는다.
-        ...(browser === "firefox"
-            ? {
-                browser_specific_settings: {
-                    gecko: {
-                        id: "dcrefresher-reborn@green1052",
-                        strict_min_version: "144.0",
-                        data_collection_permissions: {
-                            required: ["none"]
+    manifest: ({browser}) => {
+        const firefox = browser === "firefox";
+        return {
+            name: "DCRefresher Reborn",
+            // 코드가 쓰는 API 중 가장 늦게 들어온 것에 맞춘다 (빌드가 바꿔 주지 않는다).
+            // Chrome 140: Uint8Array의 toBase64·fromBase64(백업·IP DB). Firefox 144: storage.local.getBytesInUse(정보 탭), getKeys(143).
+            // 다른 브라우저의 키는 알 수 없는 키라 manifest 경고로 남으므로 그 브라우저에만 넣는다.
+            ...(firefox
+                ? {
+                    browser_specific_settings: {
+                        gecko: {
+                            id: "dcrefresher-reborn@green1052",
+                            strict_min_version: "144.0",
+                            data_collection_permissions: {
+                                required: ["none"]
+                            }
                         }
                     }
                 }
-            }
-            : {minimum_chrome_version: "140"}),
-        // 이미지 차단(features/block/background.ts)이 본문 이미지를 다시 받지 않고 읽는 데 쓴다.
-        // 크롬은 CORS 헤더를 붙이는 규칙, 파이어폭스는 응답 스트림 필터다. 둘 다 설치·업데이트 때 묻지 않는 권한이다.
-        permissions: ["alarms", "contextMenus", "storage", "scripting", "unlimitedStorage",
-                      ...(browser === "firefox" ? ["webRequest", "webRequestBlocking"] : ["declarativeNetRequestWithHostAccess"])],
-        host_permissions: ["https://*.dcinside.com/*"],
-        // 본문 이미지 호스트. 이미지를 처음 차단할 때 묻는다 (core/pages.ts의 IMAGE_HOST_ORIGINS).
-        // MV2(파이어폭스)는 optional_host_permissions가 없어 WXT가 지우므로 optional_permissions에 넣는다.
-        optional_host_permissions: IMAGE_HOST_ORIGINS,
-        ...(browser === "firefox" && {optional_permissions: IMAGE_HOST_ORIGINS}),
-        content_scripts: [
-            {
-                matches: CONTENT_MATCHES,
-                exclude_matches: CONTENT_EXCLUDE_MATCHES,
-                css: ["content-scripts/page.css"],
-                run_at: "document_start"
-            }
-        ],
-        // 콘텐츠 스크립트 본문 청크(entrypoints/content/index.tsx가 런타임에 불러온다)와 오버레이가 읽는 CSS.
-        // 웹 페이지에서도 접근할 수 있게 되므로 DC 페이지에만 연다. 파이어폭스(MV2)는 문자열 배열이다.
-        web_accessible_resources: browser === "firefox"
-            ? ["chunks/*.js", "content-scripts/content.css"]
-            : [{matches: CONTENT_MATCHES, resources: ["chunks/*.js", "content-scripts/content.css"]}]
-    })
+                : {minimum_chrome_version: "140"}),
+            // 이미지 차단(features/block/background.ts)이 본문 이미지를 다시 받지 않고 읽는 데 쓴다.
+            // 크롬은 CORS 헤더를 붙이는 규칙, 파이어폭스는 응답 스트림 필터다. 둘 다 설치·업데이트 때 묻지 않는 권한이다.
+            permissions: ["alarms", "contextMenus", "storage", "scripting", "unlimitedStorage",
+                          ...(firefox ? ["webRequest", "webRequestBlocking"] : ["declarativeNetRequestWithHostAccess"])],
+            host_permissions: ["https://*.dcinside.com/*"],
+            // 본문 이미지 호스트. 이미지를 처음 차단할 때 묻는다 (core/pages.ts의 IMAGE_HOST_ORIGINS).
+            // MV2(파이어폭스)는 optional_host_permissions가 없어 WXT가 지우므로 optional_permissions에 넣는다.
+            optional_host_permissions: IMAGE_HOST_ORIGINS,
+            ...(firefox && {optional_permissions: IMAGE_HOST_ORIGINS}),
+            content_scripts: [
+                {
+                    matches: CONTENT_MATCHES,
+                    exclude_matches: CONTENT_EXCLUDE_MATCHES,
+                    css: ["content-scripts/page.css"],
+                    run_at: "document_start"
+                }
+            ],
+            // 콘텐츠 스크립트 본문 청크(entrypoints/content/index.tsx가 런타임에 불러온다)와 오버레이가 읽는 CSS.
+            // 웹 페이지에서도 접근할 수 있게 되므로 DC 페이지에만 연다. 파이어폭스(MV2)는 문자열 배열이다.
+            web_accessible_resources: firefox
+                ? ["chunks/*.js", "content-scripts/content.css"]
+                : [{matches: CONTENT_MATCHES, resources: ["chunks/*.js", "content-scripts/content.css"]}]
+        };
+    }
 });
