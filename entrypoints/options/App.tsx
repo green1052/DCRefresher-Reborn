@@ -93,6 +93,11 @@ export function App() {
     const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
 
     useEffect(() => {
+        // 열 때 10번 중 1번은 디시콘 비 이스터에그가 뜬다 (로고를 눌러도 뜬다).
+        if (Math.random() < 0.1) useOptionsStore.getState().startRain();
+    }, []);
+
+    useEffect(() => {
         // 읽기 전이나 읽기에 실패한 채 그리면 빈 목록에서 고친 결과(전체 삭제·추가·가져오기)가 저장된 목록을 덮으므로 탭을 그리지 않는다.
         Promise.all([initBlocksStore(), initMemosStore(), initModulesStore()]).then(
             () => setStatus("ready"),
