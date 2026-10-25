@@ -44,7 +44,9 @@ export default defineConfig({
             if (wxt.config.imports) wxt.config.imports.dirs = [];
         },
         // 멀티페이지(HTML) 그룹에서 content-main의 파일 이름을 고정한다. 부트스트랩(entrypoints/content/index.tsx)이
-        // 런타임에 찾는 경로라 해시가 들어가면 안 된다. WXT 0.21에는 이 훅의 타입이 없어 캐스팅한다.
+        // 런타임에 찾는 경로라 해시가 들어가면 안 된다. WXT가 사용자 파일 이름 옵션을 일부러 덮어쓰므로(이슈 #177)
+        // 빌드가 끝난 설정을 이 훅에서 고친다 — 공식 예제(esm-content-script-ui)가 같은 훅을 쓴다.
+        // WXT 0.21에는 이 훅의 타입이 없어 캐스팅한다.
         "vite:build:extendConfig": ((group: unknown, config: {build?: {rollupOptions?: {output?: {entryFileNames?: unknown}}}}) => {
             if (!Array.isArray(group) || !group.some((entry) => entry?.name === "content-main")) return;
             const output = config.build?.rollupOptions?.output;
