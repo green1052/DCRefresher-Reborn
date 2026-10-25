@@ -1,5 +1,5 @@
 import {ClipboardCopy, Smartphone} from "lucide-react";
-import {useId, useMemo, useRef, useState} from "react";
+import {useCallback, useId, useMemo, useRef, useState} from "react";
 
 import {ColorInput} from "@/components/ColorInput";
 import {DialogActions, ModalDialog, SubmitForm} from "@/components/dialogs";
@@ -165,6 +165,12 @@ export function MemoTab() {
     const used = useUsage("memo", ids);
     const sorted = useMemo(() => ({UID: byAdded(memos.UID), NICK: byAdded(memos.NICK), IP: byAdded(memos.IP)}), [memos]);
 
+    // ListTabs의 걸르기 메모는 이 넷의 참조가 바뀔 때만 다시 한다 (BlockTab의 같은 자리 참고).
+    const items = useCallback((type: MemoType): readonly [string, MemoEntry][] => sorted[type], [sorted]);
+    const searchText = useCallback((item: [string, MemoEntry]): (string | undefined)[] => [item[0], item[1].text, item[1].gallery], []);
+    const galleryOf = useCallback((item: [string, MemoEntry]): string | undefined => item[1].gallery, []);
+    const usedAt = useCallback((type: MemoType, item: [string, MemoEntry]): number | undefined => used[memoUsageKey(type, item[0])], [used]);
+
     const [form, setForm] = useState<MemoFormState | null>(null);
     const [appImport, setAppImport] = useState(false);
 
@@ -242,10 +248,10 @@ export function MemoTab() {
                         </Button>
                     </div>
                 )}
-                items={(type) => sorted[type]}
-                searchText={([user, entry]) => [user, entry.text, entry.gallery]}
-                galleryOf={([, entry]) => entry.gallery}
-                usedAt={(type, [user]) => used[memoUsageKey(type, user)]}
+                items={items}
+                searchText={searchText}
+                galleryOf={galleryOf}
+                usedAt={usedAt}
                 onRemoveMany={(type, removed) => {
                     const users = new Set(removed.map(([user]) => user));
                     return updateMemos(type, (current) => Object.fromEntries(Object.entries(current).filter(([user]) => !users.has(user))));

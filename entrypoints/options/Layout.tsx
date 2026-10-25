@@ -64,7 +64,14 @@ export const useUsage = (kind: UsageKind, ids: readonly string[]): Record<string
         pruned.add(kind);
         const unwatch = storage.watch<Record<UsageKind, Record<string, number>>>(USAGE_KEY, (next) => {
             stale = true;
-            if (next) setTimes(next[kind] ?? {});
+            // USAGE_KEY에는 차단·메모 두 종류가 함께 들어 있어 다른 종류가 바뀌어도 이벤트가 온다. 이 종류의 값이
+            // 그대로면 상태를 그대로 두어 목록 걸르기(ListTabs)를 다시 하지 않는다.
+            const incoming = next?.[kind] ?? {};
+            setTimes((current) => {
+                const keys = Object.keys(current);
+                if (keys.length === Object.keys(incoming).length && keys.every((id) => current[id] === incoming[id])) return current;
+                return incoming;
+            });
         });
         return () => {
             stale = true;

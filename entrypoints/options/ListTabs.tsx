@@ -66,7 +66,7 @@ export const ListRow = ({head, label, info, used, onEdit, onRemove}: {
 
     return (
         <>
-            <TableRow className="cursor-pointer" onClick={onEdit}>
+            <TableRow className="cursor-pointer [content-visibility:auto] [contain-intrinsic-size:auto_45px]" onClick={onEdit}>
                 <TableHead scope="row" className="font-normal">
                     {/* 줄(tr)은 버튼이 될 수 없어 키보드·스크린 리더에는 첫 칸을 편집 버튼으로 알린다.
                         따로 onClick을 달지 않는다. 누르면(Enter/Space 포함) click이 줄로 올라가 편집이 열린다. */}
@@ -77,14 +77,16 @@ export const ListRow = ({head, label, info, used, onEdit, onRemove}: {
                 <TableCell className="whitespace-normal">{info}</TableCell>
                 <TableCell className="text-muted-foreground">{formatUsed(used)}</TableCell>
                 <TableCell className="text-right">
-                    {/* 툴팁은 브라우저 기본(title)을 쓴다. 줄마다 툴팁 부품을 달면 수천 줄 목록을 열거나 검색할 때마다 느려진다. */}
-                    <Button variant="ghost" size="icon-sm" className="text-destructive" aria-label={`${label} 삭제`} title="삭제"
+                    {/* 툴팁은 브라우저 기본(title)을 쓴다. 줄마다 툴팁 부품이나 Base UI Button을 달면 수천 줄 목록을
+                        열거나 검색할 때마다 느려지므로 맨 button에 포커스 링만 얹는다(focusRing.ts). */}
+                    <button type="button" aria-label={`${label} 삭제`} title="삭제"
+                            className={cn(FOCUS_RING, "grid size-8 place-items-center rounded-[min(var(--radius-md),10px)] text-destructive hover:bg-accent")}
                             onClick={(ev) => {
                                 ev.stopPropagation();
                                 setOpener(ev.currentTarget);
                             }}>
                         <Trash2/>
-                    </Button>
+                    </button>
                 </TableCell>
             </TableRow>
             {/* 확인 창은 줄(tr) 밖에 둔다. 창 안의 클릭이 줄로 올라가 편집이 열리지 않게 한다. */}

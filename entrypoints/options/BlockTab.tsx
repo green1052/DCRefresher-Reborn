@@ -1,4 +1,4 @@
-import {useEffect, useId, useMemo, useState} from "react";
+import {useCallback, useEffect, useId, useMemo, useState} from "react";
 
 import {Button} from "@/components/ui/button";
 import {IMAGE_HOST_ORIGINS} from "@/core/pages";
@@ -60,6 +60,13 @@ export function BlockTab() {
 
     const ids = useMemo(() => BLOCK_TYPES.flatMap((type) => entries[type].map((entry) => entry.id)), [entries]);
     const used = useUsage("block", ids);
+
+    // ListTabs의 걸르기 메모는 이 넷의 참조가 바뀔 때만 다시 한다. 인라인 화살표면 알림·창 등 다른 이유의
+    // 다시 그림에도 전체 목록을 다시 훑는다 (수천 항목에서 수십 ms).
+    const items = useCallback((type: BlockType): readonly BlockEntry[] => entries[type], [entries]);
+    const searchText = useCallback((entry: BlockEntry): (string | undefined)[] => [entry.content, entry.gallery, entry.extra], []);
+    const galleryOf = useCallback((entry: BlockEntry): string | undefined => entry.gallery, []);
+    const usedAt = useCallback((_type: BlockType, entry: BlockEntry): number | undefined => used[entry.id], [used]);
 
     const [dialog, setDialog] = useState<{ type: BlockType; initial: BlockEntry | null } | null>(null);
     const modeDescId = useId();
@@ -126,11 +133,11 @@ export function BlockTab() {
                         )}
                     </div>
                 )}
-                items={(type) => entries[type]}
+                items={items}
                 // 디시콘은 content가 코드라 이름(extra)으로도 찾을 수 있게 넣는다.
-                searchText={(entry) => [entry.content, entry.gallery, entry.extra]}
-                galleryOf={(entry) => entry.gallery}
-                usedAt={(_type, entry) => used[entry.id]}
+                searchText={searchText}
+                galleryOf={galleryOf}
+                usedAt={usedAt}
                 onRemoveMany={(type, removed) => {
                     const removedIds = new Set(removed.map((entry) => entry.id));
                     return updateEntries(type, (current) => current.filter((entry) => !removedIds.has(entry.id)));
