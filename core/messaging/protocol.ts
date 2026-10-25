@@ -100,13 +100,6 @@ interface ProtocolMap {
     /** 배경 → 탭: 이미지 우클릭 메뉴의 "이 이미지 차단". 인자는 이미지 주소다. 탭이 파일 해시를 구해 차단 목록에 넣는다 (stores/blockRequest.ts). */
     "refresher:blockImage"(url: string): void;
 
-    /**
-     * 탭 → 배경 (파이어폭스): 페이지가 받은 이미지의 해시. 배경이 페이지의 응답을 흘려보내며 구해 둔다 (features/block/background.ts).
-     * 비슷한 이미지 지문은 그 설정이 켜져 있을 때만 구한다. similar가 아니면 지문을 기다리지 않고 파일 해시만 준다.
-     * 파이어폭스는 콘텐츠 스크립트의 요청이 페이지의 캐시를 쓰지 않아 직접 받으면 이미지를 한 번 더 받는다. 구해 둔 것이 없으면 undefined다.
-     */
-    // "refresher:imageHash" removed — both browsers use DNR + content script fetch for image hashing.
-
     /** 옵션 → 배경: IP·밴 DB "지금 갱신". 같은 버전이어도 다시 받는다. 배경 한 곳에서 받아야 진행 중인 갱신과 겹쳐 두 번 받지 않는다. */
     "refresher:updateDatabase"(): void;
 

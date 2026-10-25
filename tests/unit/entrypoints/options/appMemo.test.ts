@@ -1,7 +1,7 @@
 import {describe, expect, it} from "vitest";
 
-import {formatAppMemos, parseAppMemos} from "@/entrypoints/options/appMemo";
-import {dcconImage} from "@/entrypoints/options/BlockTab";
+import {formatAppMemos, parseAppMemos} from "@/entrypoints/options/tabs/appMemo";
+import {dcconImage} from "@/entrypoints/options/tabs/BlockTab";
 
 describe("parseAppMemos", () => {
     it("첫 '-'에서만 나누고, 앞 두 자리 IP면 IP 메모다", () => {

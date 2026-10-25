@@ -75,9 +75,7 @@ export default defineConfig({
                           ...(firefox ? ["declarativeNetRequest"] : ["declarativeNetRequestWithHostAccess"])],
             host_permissions: ["https://*.dcinside.com/*"],
             // 본문 이미지 호스트. 이미지를 처음 차단할 때 묻는다 (core/pages.ts의 IMAGE_HOST_ORIGINS).
-            // MV2(파이어폭스)는 optional_host_permissions가 없어 WXT가 지우므로 optional_permissions에 넣는다.
             optional_host_permissions: IMAGE_HOST_ORIGINS,
-            ...(firefox && {optional_permissions: IMAGE_HOST_ORIGINS}),
             content_scripts: [
                 {
                     matches: CONTENT_MATCHES,

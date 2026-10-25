@@ -4,7 +4,7 @@ import {useEffect, useState} from "react";
 import {Button} from "@/components/ui/button";
 import {Kbd} from "@/components/ui/kbd";
 
-import {Section} from "./Layout";
+import {Section} from "../shared/widgets";
 
 export function ShortcutTab() {
     const [shortcuts, setShortcuts] = useState<Browser.commands.Command[]>([]);

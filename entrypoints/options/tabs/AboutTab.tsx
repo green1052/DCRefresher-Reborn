@@ -10,8 +10,9 @@ import {useBlocksStore} from "@/stores/blocks";
 import {useMemosStore} from "@/stores/memos";
 import {useModulesStore} from "@/stores/modules";
 
-import {formatBytes, formatTime, Section} from "./Layout";
-import {copyText} from "./optionsStore";
+import {formatBytes, formatTime} from "../shared/format";
+import {Section} from "../shared/widgets";
+import {copyText} from "../optionsStore";
 
 const REPO = "https://github.com/green1052/DCRefresher-Reborn";
 

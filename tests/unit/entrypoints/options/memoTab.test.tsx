@@ -2,14 +2,14 @@ import {render, act} from "@/tests/helpers";
 import type {ReactNode} from "react";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import {MemoTab} from "@/entrypoints/options/MemoTab";
+import {MemoTab} from "@/entrypoints/options/tabs/MemoTab";
 import {useMemosStore} from "@/stores/memos";
 
 vi.mock("@/core/messaging/protocol", () => ({sendMessage: vi.fn(async () => ({}))}));
 type ImportData = (parsed: Record<string, unknown>) => Promise<number>;
 const captured = vi.hoisted(() => ({importData: undefined as ImportData | undefined}));
 // 목록 화면(Base UI) 대신 UID 메모의 행 머리만 그리고 가져오기 함수를 잡아 둔다.
-vi.mock("@/entrypoints/options/ListTabs", () => ({
+vi.mock("@/entrypoints/options/lists/ListTabs", () => ({
     ListTabs: ({items, row, importData}: { items: (type: "UID") => [string, unknown][]; row: (type: "UID", item: [string, unknown], remove: () => void) => ReactNode; importData: ImportData }) => {
         captured.importData = importData;
         return <>{items("UID").map((item) => row("UID", item, () => undefined))}</>;

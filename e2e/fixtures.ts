@@ -12,7 +12,7 @@ import {type ListPage, openListPage} from "./pages/list";
 declare const chrome: typeof browser;
 
 const CHROME_EXTENSION = fileURLToPath(new URL("../.output/chrome-mv3", import.meta.url));
-const FIREFOX_EXTENSION = fileURLToPath(new URL("../.output/firefox-mv2", import.meta.url));
+const FIREFOX_EXTENSION = fileURLToPath(new URL("../.output/firefox-mv3", import.meta.url));
 /** IP·밴 DB 서버. */
 const IP_DB_HOST = "dcrefresher.green1052.com";
 const DCINSIDE = /^https:\/\/([a-z0-9-]+\.)*dcinside\.(com|co\.kr)$/;

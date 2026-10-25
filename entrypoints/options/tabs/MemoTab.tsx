@@ -15,10 +15,11 @@ import {normalizeMemoMap, ownMemo, randomColor, useMemosStore} from "@/stores/me
 import {SAVE_FAILED} from "@/utils/error";
 
 import {formatAppMemos, parseAppMemos} from "./appMemo";
-import {ImportDialog, useUsage} from "./Layout";
-import {ListRow, ListTabs} from "./ListTabs";
-import {copyText, notify} from "./optionsStore";
-import {RefresherSelect} from "./RefresherSelect";
+import {useUsage} from "../shared/hooks";
+import {ImportDialog} from "../shared/ImportDialog";
+import {ListRow, ListTabs} from "../lists/ListTabs";
+import {copyText, notify} from "../optionsStore";
+import {RefresherSelect} from "../shared/RefresherSelect";
 
 interface MemoFormState {
     type: MemoType;

@@ -1,8 +1,8 @@
 import {render, act} from "@/tests/helpers";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import {BlockTab} from "@/entrypoints/options/BlockTab";
-import {MemoTab} from "@/entrypoints/options/MemoTab";
+import {BlockTab} from "@/entrypoints/options/tabs/BlockTab";
+import {MemoTab} from "@/entrypoints/options/tabs/MemoTab";
 
 import {tick} from "../../../helpers";
 

@@ -15,8 +15,11 @@ import {backupStorage, dbMetaStorage} from "@/core/storage/items";
 import {friendlyMessage} from "@/utils/error";
 import {arrayIncludes, objectKeys} from "@/utils/typed";
 
-import {downloadJson, formatTime, ImportDialog, Section, useStorageItem} from "./Layout";
-import {type Done, notify, notifyDone} from "./optionsStore";
+import {downloadJson, formatTime} from "../shared/format";
+import {useStorageItem} from "../shared/hooks";
+import {ImportDialog} from "../shared/ImportDialog";
+import {Section} from "../shared/widgets";
+import {type Done, notify, notifyDone} from "../optionsStore";
 
 type RestoreMode = "replace" | "merge";
 

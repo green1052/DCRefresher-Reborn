@@ -10,8 +10,8 @@ import features from "@/features/meta";
 import {useModulesStore} from "@/stores/modules";
 import {SAVE_FAILED} from "@/utils/error";
 
-import {EmptyList, SearchInput} from "./Layout";
-import {notify} from "./optionsStore";
+import {EmptyList, SearchInput} from "../shared/widgets";
+import {notify} from "../optionsStore";
 import {SettingItem} from "./SettingItem";
 
 type SettingEntry = [key: string, schema: LabeledSetting];

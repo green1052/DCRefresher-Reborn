@@ -1,7 +1,7 @@
 import {describe, expect, it} from "vitest";
 
 import type {ModuleInfo} from "@/core/module/types";
-import {matchSettings} from "@/entrypoints/options/GeneralTab";
+import {matchSettings} from "@/entrypoints/options/tabs/GeneralTab";
 
 const GROUP = {name: "차단 프리셋", desc: "차단 키로 차단할 때 쓰는 값입니다."};
 

@@ -15,7 +15,7 @@ import type {SettingValue} from "@/core/storage/types";
 import {pressedKey} from "@/utils/event";
 import {cn} from "cn";
 
-import {RefresherSelect} from "./RefresherSelect";
+import {RefresherSelect} from "../shared/RefresherSelect";
 
 interface SettingItemProps {
     schema: LabeledSetting;

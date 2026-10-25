@@ -10,13 +10,13 @@ import {initMemosStore} from "@/stores/memos";
 import {ExtensionPageVars, initModulesStore} from "@/stores/modules";
 import {cn} from "cn";
 
-import {AboutTab} from "./AboutTab";
-import {BlockTab} from "./BlockTab";
-import {DataTab} from "./DataTab";
-import {GeneralTab} from "./GeneralTab";
-import {MemoTab} from "./MemoTab";
+import {AboutTab} from "./tabs/AboutTab";
+import {BlockTab} from "./tabs/BlockTab";
+import {DataTab} from "./tabs/DataTab";
+import {GeneralTab} from "./tabs/GeneralTab";
+import {MemoTab} from "./tabs/MemoTab";
 import {useOptionsStore} from "./optionsStore";
-import {ShortcutTab} from "./ShortcutTab";
+import {ShortcutTab} from "./tabs/ShortcutTab";
 
 // 디시콘 비는 드물게 열리므로 옵션 페이지를 열 때 같이 불러오지 않는다.
 const DcconRain = lazy(() => import("./DcconRain").then(({DcconRain}) => ({default: DcconRain})));

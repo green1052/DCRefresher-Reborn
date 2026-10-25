@@ -14,9 +14,11 @@ import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {friendlyMessage, SAVE_FAILED} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 
-import {downloadJson, EmptyList, ImportDialog, SearchInput} from "./Layout";
-import {copyText, notify, notifyDone} from "./optionsStore";
-import {RefresherSelect} from "./RefresherSelect";
+import {downloadJson} from "../shared/format";
+import {ImportDialog} from "../shared/ImportDialog";
+import {EmptyList, SearchInput} from "../shared/widgets";
+import {copyText, notify, notifyDone} from "../optionsStore";
+import {RefresherSelect} from "../shared/RefresherSelect";
 
 
 /** 오래 안 쓴 항목 거르기. 쓰인 시각은 이 기기에서 걸리거나(차단) 보인(메모) 때다. */

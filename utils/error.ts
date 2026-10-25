@@ -7,7 +7,7 @@ import {isHTTPError, isNetworkError} from "ky";
 const isNamed = (e: unknown, name: string): boolean => typeof e === "object" && e !== null && "name" in e && e.name === name;
 
 /**
- * 시간 초과 오류인지. ky의 TimeoutError(totalTimeout)와 core/http/client.ts의 limitedFetch가 끊은 DOMException 둘 다 이름이 TimeoutError다.
+ * 시간 초과 오류인지. ky의 TimeoutError(totalTimeout)와 fetch의 AbortSignal이 끊은 DOMException 둘 다 이름이 TimeoutError다.
  * ky의 isTimeoutError는 DOMException을 거짓으로 본다.
  */
 export const isTimeoutError = (e: unknown): boolean => isNamed(e, "TimeoutError");

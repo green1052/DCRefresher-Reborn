@@ -10,10 +10,10 @@ import {type BlockInputFields, blockKey, blockLabel, composeExtra, normalizeBloc
 import {SAVE_FAILED} from "@/utils/error";
 
 import {BlockDialog, DETECT_MODE_DESCRIPTIONS} from "./BlockDialog";
-import {useUsage} from "./Layout";
-import {ListRow, ListTabs} from "./ListTabs";
-import {notify} from "./optionsStore";
-import {RefresherSelect} from "./RefresherSelect";
+import {useUsage} from "../shared/hooks";
+import {ListRow, ListTabs} from "../lists/ListTabs";
+import {notify} from "../optionsStore";
+import {RefresherSelect} from "../shared/RefresherSelect";
 
 /**
  * 디시콘 이미지 주소. 묶음 정규식("^(a|b…)$", 하나뿐이면 "^(code)$")이면 첫 코드의 이미지를 쓴다.

@@ -11,7 +11,7 @@ import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {blockKey, type BlockInputFields, useBlocksStore} from "@/stores/blocks";
 import {messageOf, SAVE_FAILED} from "@/utils/error";
 
-import {RefresherSelect} from "./RefresherSelect";
+import {RefresherSelect} from "../shared/RefresherSelect";
 
 /** 모드마다 무엇을 가리는지. NOT_*는 한 유형의 불일치·불포함 항목을 묶은 허용 목록이라(core/block.ts) 나머지가 모두 가려진다. */
 export const DETECT_MODE_DESCRIPTIONS: Record<DetectMode, string> = {

@@ -1,7 +1,7 @@
 import {render, act} from "@/tests/helpers";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import {BlockTab} from "@/entrypoints/options/BlockTab";
+import {BlockTab} from "@/entrypoints/options/tabs/BlockTab";
 import {useBlocksStore} from "@/stores/blocks";
 
 type ImportData = (parsed: Record<string, unknown>) => Promise<number>;
@@ -9,7 +9,7 @@ const captured = vi.hoisted(() => ({importData: undefined as ImportData | undefi
 
 vi.mock("@/core/messaging/protocol", () => ({sendMessage: vi.fn(async () => ({}))}));
 // 목록 화면(Base UI)은 그리지 않고 가져오기 함수만 잡아 둔다.
-vi.mock("@/entrypoints/options/ListTabs", () => ({
+vi.mock("@/entrypoints/options/lists/ListTabs", () => ({
     ListTabs: ({importData}: { importData: ImportData }) => {
         captured.importData = importData;
         return null;

@@ -30,7 +30,7 @@ export const startDatabaseUpdates = (): ((force?: boolean) => Promise<void>) => 
         return force ? current : current.catch(console.error);
     };
 
-    // 시작할 때 한 번만 확인하면 배경이 상주하는 파이어폭스(MV2)는 세션 내내 다시 보지 않으므로 알람으로 확인한다.
+    // 시작할 때 한 번만 확인하면 배경이 언제든 멈출 수 있으므로 알람으로 확인한다.
     // 알람은 없거나 주기가 다를 때만 만든다. 워커가 깰 때마다 다시 만들면 주기가 처음부터 다시 세어져 울리지 않는다.
     if (import.meta.env.PROD) {
         void browser.alarms.get(DATABASE_ALARM).then((alarm) => {
