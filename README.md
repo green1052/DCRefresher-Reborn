@@ -48,7 +48,6 @@ Chrome 140(Edge·Whale 등 크로뮴 계열 포함), Firefox 144 이상에서 �
 | [레이아웃 수정](https://github.com/green1052/DCRefresher-Reborn/wiki/layout) | 좁은 화면용 컴팩트 모드와 페이지 요소 숨기기 |
 | [폰트 교체](https://github.com/green1052/DCRefresher-Reborn/wiki/fonts) | 페이지와 미리보기의 폰트·글자 크기를 바꿉니다 |
 | [이미지 검색](https://github.com/green1052/DCRefresher-Reborn/wiki/imagesearch) | 디시 이미지를 우클릭해 검색 엔진에서 찾습니다 |
-| [요청 제한](https://github.com/green1052/DCRefresher-Reborn/wiki/requests) | 한꺼번에 보내는 요청 수를 제한해 차단을 막습니다 |
 | [스텔스 모드](https://github.com/green1052/DCRefresher-Reborn/wiki/stealth) | 페이지의 이미지와 동영상을 가립니다 (기본 꺼짐) |
 | [검색](https://github.com/green1052/DCRefresher-Reborn/wiki/search) | 검색 결과를 이어 붙이고 아이디·IP로 글을 찾습니다 (기본 꺼짐) |
 | [글쓰기](https://github.com/green1052/DCRefresher-Reborn/wiki/write) | 쓰던 글을 지키고 올리는 이미지를 WebP로 바꿉니다 (기본 꺼짐) |
@@ -58,7 +57,7 @@ Chrome 140(Edge·Whale 등 크로뮴 계열 포함), Firefox 144 이상에서 �
 
 ## 문제 해결
 
-- `요청이 많아 디시인사이드가 잠시 접속을 막았습니다.`가 뜨면 잠시 기다린 뒤 새로고침하세요. [요청 제한](https://github.com/green1052/DCRefresher-Reborn/wiki/requests)의 동시 요청 수를 낮추면 덜 막힙니다.
+- `요청이 많아 디시인사이드가 잠시 접속을 막았습니다.`가 뜨면 잠시 기다린 뒤 새로고침하세요.
 - `확장 프로그램이 업데이트되었거나 꺼져서 이 페이지에서는 멈췄습니다.`가 뜨면 페이지를 새로고침하세요.
 - 그 밖의 문제는 [이슈](https://github.com/green1052/DCRefresher-Reborn/issues/new/choose)로 알려 주세요. 옵션 → **정보** → **진단 정보 복사** 결과를 붙여 주시면 원인을 찾기 쉽습니다.
 

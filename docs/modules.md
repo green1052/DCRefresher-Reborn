@@ -28,27 +28,27 @@
 
 ## 모듈 정의
 
-옵션·팝업이 그리는 데 필요한 정보는 `features/<id>/meta.ts`에서 `defineModuleMeta`로, 페이지에서 하는 일은 `features/<id>/index.ts`에서 `defineModule(meta, {setup, …})`으로 정의해 각각 default로 내보냅니다. 가장 작은 예는 `features/requests`입니다.
+옵션·팝업이 그리는 데 필요한 정보는 `features/<id>/meta.ts`에서 `defineModuleMeta`로, 페이지에서 하는 일은 `features/<id>/index.ts`에서 `defineModule(meta, {setup, …})`으로 정의해 각각 default로 내보냅니다. 설정만 있고 페이지에서 하는 일이 없으면 `index.ts`를 두지 않습니다(예: `features/fonts`).
 
 ```ts
 // meta.ts — 옵션·팝업·콘텐츠·배경이 모두 불러오므로 가벼운 것만 둔다. UI(lucide·React)는 불러오지 않는다 (단위 테스트가 확인한다)
 export default defineModuleMeta({
-    id: "requests",            // 저장소 키에 쓰인다. 바꾸면 사용자 설정이 끊긴다
+    id: "fonts",               // 저장소 키에 쓰인다. 바꾸면 사용자 설정이 끊긴다
     // urls: [BOARD_PAGE],     // 이 주소에서만 실행 (core/pages.ts). 없으면 모든 디시 페이지, []면 어디서도 실행하지 않음
     // defaultEnable: false,   // 저장된 on/off가 없을 때(새로 설치했거나 업데이트로 새로 생긴 모듈) 꺼 둘 모듈
 
     settings: {
-        concurrency: {type: "range", default: 4, min: 1, max: 10, step: 1, unit: "개"}
+        bodyFontSize: {type: "range", default: 13, min: 5, max: 30, step: 1, unit: "px"}
     }
 });
 
 // labels.ts — 옵션·팝업·단축키 설정에 보이는 글. 배경·콘텐츠 번들에 들어가지 않게 meta.ts와 따로 둔다
 // 설정·토글·명령마다 하나씩 있어야 하고 없는 키를 넣으면 타입 오류가 난다
 export default {
-    name: "요청 제한",
+    name: "폰트 교체",
     description: "…",
     settings: {
-        concurrency: {name: "동시 요청 수", desc: "…"}
+        bodyFontSize: {name: "글자 폰트 크기", desc: "…"}
     }
 } satisfies LabelsOf<typeof meta>;
 
@@ -56,13 +56,12 @@ export default {
 // 토글이 있으면 토글 id마다 하나씩: {module: Ban, toggles: {reveal: Eye}}
 export default {module: Gauge} satisfies IconsOf<typeof meta>;
 
-// index.ts — 콘텐츠 스크립트만 불러온다
+// index.ts — 콘텐츠 스크립트만 불러온다 (features/fonts)
 export default defineModule(meta, {
     setup(ctx) {
-        ctx.onRevoke(() => setRequestConcurrency(Number.POSITIVE_INFINITY));
+        ctx.onRevoke(apply(ctx));
 
-        setRequestConcurrency(ctx.settings.concurrency);
-        ctx.onSettingsChanged(() => setRequestConcurrency(ctx.settings.concurrency));
+        ctx.onSettingsChanged(() => apply(ctx));
     }
 });
 ```

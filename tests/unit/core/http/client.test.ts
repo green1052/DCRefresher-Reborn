@@ -1,7 +1,7 @@
 // @vitest-environment node
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import {ajax, BlockedError, formBody, http, setBlockedHandler, setRequestConcurrency} from "@/core/http/client";
+import {ajax, BlockedError, formBody, http, setBlockedHandler} from "@/core/http/client";
 import {isAbortError} from "@/utils/error";
 
 /** 클라이언트가 불러올 때 fetch를 잡아 두므로 그 전에 바꾼다. 응답은 테스트가 정한다. */
@@ -30,7 +30,6 @@ const pending = (request: Request): { promise: Promise<Response>; resolve: () =>
 afterEach(() => {
     network.requests.length = 0;
     network.respond = () => Promise.resolve(new Response("ok"));
-    setRequestConcurrency(Number.POSITIVE_INFINITY);
     setBlockedHandler(() => {});
 });
 
@@ -91,49 +90,7 @@ describe("임시 차단 검사", () => {
     });
 });
 
-describe("동시 요청 수", () => {
-    it("정한 수만큼만 동시에 보낸다", async () => {
-        setRequestConcurrency(1);
-        const responses: (() => void)[] = [];
-        network.respond = (request) => {
-            const {promise, resolve} = pending(request);
-            responses.push(resolve);
-            return promise;
-        };
-
-        const first = http.get("https://example.com/1", {retry: 0}).text();
-        const second = http.get("https://example.com/2", {retry: 0}).text();
-        await vi.waitFor(() => expect(network.requests).toHaveLength(1));
-        await new Promise((resolve) => setTimeout(resolve, 10));
-        expect(network.requests).toHaveLength(1);
-
-        responses[0]!();
-        await first;
-        await vi.waitFor(() => expect(network.requests).toHaveLength(2));
-        responses[1]!();
-        await second;
-    });
-
-    it("시간 제한은 차례를 받은 뒤부터 잰다", async () => {
-        vi.useFakeTimers();
-        setRequestConcurrency(1);
-        network.respond = (request) => pending(request).promise;
-
-        const first = http.get("https://example.com/1", {retry: 0}).text();
-        const second = http.get("https://example.com/2", {retry: 0}).text();
-        const firstFailed = expect(first).rejects.toMatchObject({name: "TimeoutError"});
-        const secondFailed = expect(second).rejects.toMatchObject({name: "TimeoutError"});
-
-        await vi.advanceTimersByTimeAsync(15_000);
-        await firstFailed;
-        // 두 번째 요청은 첫 요청이 끝난 뒤에 보냈으므로 아직 끊기지 않았다.
-        expect(network.requests).toHaveLength(2);
-        expect(network.requests[1]!.signal.aborted).toBe(false);
-
-        await vi.advanceTimersByTimeAsync(15_000);
-        await secondFailed;
-    });
-
+describe("시간 제한", () => {
     it("머리를 받은 뒤에는 시간 제한으로 끊지 않는다", async () => {
         vi.useFakeTimers();
         network.respond = async () => new Response("ok");
