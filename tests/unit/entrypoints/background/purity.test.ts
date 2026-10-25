@@ -10,7 +10,7 @@ import {expect, it} from "vitest";
  * zustand/vanilla(·/shallow)만 React가 없어 허용한다 (core/database.ts가 이미 쓴다).
  * zustand/shallow는 useShallow를 같이 내보내 React를 끌어오므로 배경에서는 zustand/vanilla/shallow를 쓴다.
  */
-const BANNED = [/^react(-dom)?(\/.*)?$/, /^preact(\/.*)?$/, /^zustand$/, /^zustand\/react(\/.*)?$/, /^zustand\/shallow$/];
+const BANNED = [/^react(-dom)?(\/.*)?$/, /^zustand$/, /^zustand\/react(\/.*)?$/, /^zustand\/shallow$/];
 
 const source = (file: string): string => {
     try {

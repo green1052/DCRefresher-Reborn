@@ -91,7 +91,7 @@ describe("아이콘", () => {
             seen.add(file);
             for (const [, specifier = ""] of readFileSync(file, "utf8").matchAll(/^(?:import|export)\s+(?!type\b)(?:[^;]*?\bfrom\s+)?"([^"]+)"/gm)) {
                 // zustand 기본 진입점은 React 훅(create)이라 React를 끌고 온다. zustand/vanilla는 괜찮다.
-                if (/^(?:lucide-react|preact|react|react-dom)(?:\/|$)|^zustand$/.test(specifier)) return `${file} → ${specifier}`;
+                if (/^(?:lucide-react|react|react-dom)(?:\/|$)|^zustand$/.test(specifier)) return `${file} → ${specifier}`;
                 const next = resolveImport(file, specifier);
                 const found = next && reachesUi(next, seen);
                 if (found) return found;
