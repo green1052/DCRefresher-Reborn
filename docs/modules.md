@@ -31,7 +31,7 @@
 옵션·팝업이 그리는 데 필요한 정보는 `features/<id>/meta.ts`에서 `defineModuleMeta`로, 페이지에서 하는 일은 `features/<id>/index.ts`에서 `defineModule(meta, {setup, …})`으로 정의해 각각 default로 내보냅니다. 가장 작은 예는 `features/requests`입니다.
 
 ```ts
-// meta.ts — 옵션·팝업·콘텐츠·배경이 모두 불러오므로 가벼운 것만 둔다. UI(lucide·Preact)는 불러오지 않는다 (단위 테스트가 확인한다)
+// meta.ts — 옵션·팝업·콘텐츠·배경이 모두 불러오므로 가벼운 것만 둔다. UI(lucide·React)는 불러오지 않는다 (단위 테스트가 확인한다)
 export default defineModuleMeta({
     id: "requests",            // 저장소 키에 쓰인다. 바꾸면 사용자 설정이 끊긴다
     // urls: [BOARD_PAGE],     // 이 주소에서만 실행 (core/pages.ts). 없으면 모든 디시 페이지, []면 어디서도 실행하지 않음
@@ -83,7 +83,7 @@ export default defineModule(meta, {
 | `onSettingsChanged(fn)` | 위 설명 참고. setup 안에서 등록한다 |
 | `onRevoke(fn)` | 위 설명 참고. 모듈을 끌 때 페이지를 되돌린다 |
 
-오버레이 컴포넌트(Preact)는 설정을 `useContentModuleSettings("모듈 id")`로 직접 읽습니다. 설정을 UI 스토어로 옮겨 적지 마세요. 설정 스토어는 콘텐츠 스크립트만 채우므로, 옵션·팝업과 같이 쓰는 컴포넌트는 `useModuleSettings`로 읽고 undefined일 때의 기본값을 정합니다(`components/dialogs.tsx`). 두 훅 모두 꺼진 모듈의 설정도 주므로, 다른 모듈이 이 페이지에서 돌 때만 그 설정을 따르는 UI(미리보기의 차단·배지)는 `useRunningModuleSettings("모듈 id")`로 읽습니다. 모듈이 돌지 않으면 undefined입니다. 컴포넌트 밖에서는 `core/module/registry.ts`의 `runningModuleSettings(id)`를 씁니다.
+오버레이 컴포넌트(React)는 설정을 `useContentModuleSettings("모듈 id")`로 직접 읽습니다. 설정을 UI 스토어로 옮겨 적지 마세요. 설정 스토어는 콘텐츠 스크립트만 채우므로, 옵션·팝업과 같이 쓰는 컴포넌트는 `useModuleSettings`로 읽고 undefined일 때의 기본값을 정합니다(`components/dialogs.tsx`). 두 훅 모두 꺼진 모듈의 설정도 주므로, 다른 모듈이 이 페이지에서 돌 때만 그 설정을 따르는 UI(미리보기의 차단·배지)는 `useRunningModuleSettings("모듈 id")`로 읽습니다. 모듈이 돌지 않으면 undefined입니다. 컴포넌트 밖에서는 `core/module/registry.ts`의 `runningModuleSettings(id)`를 씁니다.
 
 `addFilter`의 `fn`은 같은 요소에 여러 번 불릴 수 있습니다. 넣은 요소가 이미 있는지 보고 건너뛰게 만드세요. 예로는 글 목록 새로고침의 버튼이 있습니다.
 
@@ -151,6 +151,6 @@ getModuleApi("preview")?.archiveArticle() === true
 - 설치·업데이트 때 한 번만 할 일(옛 모듈 데이터 지우기 등)은 `listen()`에서 `browser.runtime.onInstalled`에 겁니다(`features/preview/background.ts`). `entrypoints/background/index.ts`에 모듈 코드를 넣지 않습니다.
 - 탭이 메시지로 요청한 일을 그 페이지(MAIN world)에서 할 때는 `hasTab`으로 탭에서 온 것인지 보고 `runInPage`로 실행합니다. 함수는 직렬화되어 import를 쓸 수 없으므로, 라이브러리가 필요하면 `entrypoints/<이름>.ts`에 `defineUnlistedScript`로 번들하고 `runFileInPage(sender, "/<이름>.js")`로 넣습니다(`entrypoints/upload-hook.ts`). unlisted script는 `web_accessible_resources`에 넣지 않아 디시 페이지가 불러올 수 없습니다.
 
-배경 번들에는 Preact가 들어가면 안 됩니다. `background.ts`는 `index.ts`·`icons.ts`·`labels.ts`를 불러오지 않습니다. `meta.ts`는 UI를 불러오지 않으므로(단위 테스트가 확인합니다) 그대로 불러오고, 배경과 같이 쓰는 값(`features/imagesearch`의 엔진 목록 등)도 `meta.ts`에 둡니다. 페이지에서 할 일이 없는 모듈은 `index.ts`를 두지 않습니다.
+배경 번들에는 React가 들어가면 안 됩니다. `background.ts`는 `index.ts`·`icons.ts`·`labels.ts`를 불러오지 않습니다. `meta.ts`는 UI를 불러오지 않으므로(단위 테스트가 확인합니다) 그대로 불러오고, 배경과 같이 쓰는 값(`features/imagesearch`의 엔진 목록 등)도 `meta.ts`에 둡니다. 페이지에서 할 일이 없는 모듈은 `index.ts`를 두지 않습니다.
 
 배경·옵션·팝업과 콘텐츠 스크립트가 같이 불러오는 파일(`core/`, `stores/` 등)은 모듈 최상위에서 던지면 안 됩니다. 한 곳에서 던지면 번들 전체가 멈춥니다([Firefox](firefox.md) 참고).

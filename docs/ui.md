@@ -1,11 +1,11 @@
 # UI
 
-오버레이(shadow DOM)와 CSS, Preact·shadcn(Base UI) 부품을 쓸 때 알아 둘 점입니다.
+오버레이(shadow DOM)와 CSS, React·shadcn(Base UI) 부품을 쓸 때 알아 둘 점입니다.
 
 ## 오버레이와 CSS
 
-- 콘텐츠 스크립트는 디시 CSS와 오버레이 CSS(Tailwind)가 서로 섞이지 않게 `refresher-root` shadow DOM 안에 Preact 루트(`components/overlay/ContentRoot.tsx`)를 띄웁니다. 포털은 `overlay.portal`입니다.
-- 오버레이는 그릴 것이 처음 생길 때 띄웁니다. UI를 그리는 스토어가 그 조건을 `needOverlayWhen(store, (state) => …)`로 등록합니다(`components/overlay/demands.ts`). 새 오버레이 UI는 자기 스토어의 조건에 상태를 더하면 됩니다(미리보기 UI는 `previewStore.ts`, 토스트·버블·메모는 `stores/ui.ts` 끝). react-dom·Base UI 등 오버레이 UI 청크도 이때 처음 읽습니다.
+- 콘텐츠 스크립트는 디시 CSS와 오버레이 CSS(Tailwind)가 서로 섞이지 않게 `refresher-root` shadow DOM 안에 React 루트(`components/overlay/ContentRoot.tsx`)를 띄웁니다. 포털은 `overlay.portal`입니다.
+- 오버레이는 그릴 것이 처음 생길 때 띄웁니다. UI를 그리는 스토어가 그 조건을 `needOverlayWhen(store, (state) => …)`로 등록합니다(`components/overlay/demands.ts`). 새 오버레이 UI는 자기 스토어의 조건에 상태를 더하면 됩니다(미리보기 UI는 `previewStore.ts`, 토스트·버블·메모는 `stores/ui.ts` 끝). react-dom·Base UI는 본문 청크에 정적으로 들어 와 있고 첫 렌더만 이때 일어납니다.
 - 디시 페이지 자체를 바꾸는 CSS는 기능 폴더의 `page.css`에 둡니다. `modules/feature-styles.ts`가 모아 `.wxt/page-styles.css`를 만들고 `entrypoints/page.content.css`(manifest로 따로 주입)가 불러옵니다. 여러 모듈이 같이 쓰는 가림 규칙(차단·깡계)만 `assets/styles/content.css`에 있습니다. dev 중에 `page.css`를 새로 만들었으면 dev를 다시 띄웁니다.
 - 콘텐츠 스크립트에서 import한 CSS는 manifest가 아니라 오버레이를 처음 띄울 때 shadow에 들어갑니다(`cssInjectionMode: "manual"`. `entrypoints/content/overlay.tsx`가 `content-scripts/content.css`를 읽어 `:root`를 `:host`로 바꿔 `createShadowRootUi`의 `css`로 넘긴다). 오버레이 안의 CSS는 `assets/styles/overlay.css`와 기능 폴더의 `overlay.css`입니다.
 - 오버레이의 Tailwind는 `overlay.css`가 `tailwind.css`를 불러와 만듭니다. 이때 옵션·팝업 폴더와 옵션·팝업만 쓰는 부품(`@source not` 목록)은 스캔하지 않아 오버레이 CSS가 작아집니다. 오버레이에서 그 부품을 쓰게 되면 목록에서 뺍니다. 빼지 않으면 `tests/unit/assets/styles/overlay.test.ts`가 실패합니다.
@@ -18,10 +18,10 @@
 
 ## 부품
 
-- 화면은 Preact로 그리지만 코드는 `react`에서 import합니다(`@preact/preset-vite`가 `preact/compat`으로 바꿉니다). 타입은 `@types/react`를 그대로 씁니다. tsconfig에서 `react` 타입을 `preact/compat`으로 바꾸면 Base UI와 ref·이벤트 타입이 맞지 않아 shadcn 부품마다 오류가 납니다.
-- Preact는 상태 변경을 다음 마이크로태스크에 그립니다. 누른 직후 새 창이 바로 DOM에 있다고 기대하지 않습니다(E2E는 옵션·팝업이면 `getByRole("dialog")`, 오버레이면 shadow 안의 `[data-slot=dialog-content]`로 찾습니다. `e2e/pages/`를 보세요).
-- Preact는 `autoFocus`로 포커스를 옮기지 않으므로 다이얼로그는 `ModalDialog`의 `focusOnOpen`에 ref를, 나중에 나타나는 입력칸은 `utils/focus.ts`의 `focusOnMount`를 씁니다.
-- Preact 11은 언마운트된 컴포넌트의 `useEffect` 정리를 다음 프레임으로 미룹니다. 그사이 Base UI의 문서 리스너(Esc·바깥 클릭)가 살아 있습니다. 그래서 `open`을 고정해 두고 언마운트로 닫는 창은 방금 닫혔어도 다음 키·클릭을 받습니다. 그런 창의 `onOpenChange`는 이미 닫혔으면 `details.cancel()`·`details.allowPropagation()`으로 흘려보냅니다(유저 버블, 미리보기 창).
+- 화면은 React 19로 그립니다. 코드가 처음부터 `react` import로 되어 있어(Preact 호환 시절의 흔적) 프레임워크 교체가 설정만으로 끝났습니다. 타입은 `@types/react`를 그대로 씁니다.
+- 새 창은 연 직후 바로 DOM에 있다고 기대하지 않습니다(E2E는 옵션·팝업이면 `getByRole("dialog")`, 오버레이면 shadow 안의 `[data-slot=dialog-content]`로 찾습니다. `e2e/pages/`를 보세요).
+- 다이얼로그의 첫 포커스는 `ModalDialog`의 `focusOnOpen`으로 정하고, 나중에 나타나는 입력칸은 `utils/focus.ts`의 `focusOnMount`로 옮깁니다.
+- 닫히는 애니메이션 동안에도 Base UI의 문서 리스너(Esc·바깥 클릭)가 살아 있습니다. 그래서 `open`을 고정해 두고 언마운트로 닫는 창은 방금 닫혔어도 다음 키·클릭을 받습니다. 그런 창의 `onOpenChange`는 이미 닫혔으면 `details.cancel()`·`details.allowPropagation()`으로 흘려보냅니다(유저 버블, 미리보기 창).
 - 부품은 shadcn(`components/ui`, Base UI)입니다. 손으로 만들지 않고 `bunx shadcn add <이름>`으로 추가합니다. shadcn CLI가 `.wxt/tsconfig.json`의 경로를 잘못 풀어 루트 `tsconfig.json`에 `@/*` 경로를 다시 적어 두었습니다. DB 워크플로(`db.yml`)도 `wxt prepare` 없이 이 경로로 `@/`를 풀므로 지우지 않습니다. `tailwind.css`는 `shadcn/tailwind.css`(Base UI 데이터 속성용 variant)를 불러와야 합니다.
 - `components/ui`에서 우리가 고친 곳: 포털을 쓰는 부품(dialog·alert-dialog·popover·select·tooltip)은 `container={overlay.portal}`로 오버레이 안에 그립니다. dialog·alert-dialog의 내용은 배경에 넘길 `overlayProps`를 받습니다(`useModal`이 `forceRender`와 흐림 끄기에 씁니다). popover의 내용은 `anchor`를 받아 Positioner에 넘깁니다(유저·디시콘 버블을 우클릭한 자리에 띄웁니다). slider는 손잡이에 이름을 달 `thumbProps`를 받습니다. spinner의 이름은 `aria-label="불러오는 중"`입니다. switch 트랙은 루트 글자 크기가 커져도 손잡이가 들어가게 px 대신 rem으로 잽니다. 부품을 다시 받을 때(`--overwrite`) 이 부분을 다시 넣습니다.
 - 다이얼로그는 `components/dialogs.tsx`의 `ModalDialog`(열 때만 마운트), `ConfirmDialog`, `Notice`, `DialogActions`, `SubmitForm`을 씁니다. `onClose`는 닫힘 애니메이션이 끝나 포커스가 돌아간 뒤에 불립니다. 일을 마친 창이 스스로 닫을 때는 `actionsRef.current.close()`를 씁니다.
