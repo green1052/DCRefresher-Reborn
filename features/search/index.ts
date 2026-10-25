@@ -6,6 +6,7 @@ import {checkboxFiller, highlightSearchResults, LIST_SELECTOR, notifyListReplace
 import {sendMessage} from "@/core/messaging/protocol";
 import {defineModule} from "@/core/module/define";
 import {BLOCKED_PAGE_MESSAGE, LIST_PAGE} from "@/core/pages";
+import {ownPreviewEntry} from "@/core/preview/history";
 import {reportFailure} from "@/stores/notify";
 import {type SelectedUser, useUiStore} from "@/stores/ui";
 import {whenDomReady, writeStyle} from "@/utils/dom";
@@ -137,7 +138,9 @@ export default defineModule(meta, {
             let count = own.length;
             if (count >= target) return;
 
-            const key = `${location.href}|${own.map((row) => row.dataset.no).join(",")}`;
+            // 미리보기가 열려 있으면 주소창은 글 주소다. 연 앞의 목록 주소(back)로 봐야 닫은 뒤에도 키가 맞는다.
+            const here = ownPreviewEntry(history.state)?.back?.url ?? location.href;
+            const key = `${here}|${own.map((row) => row.dataset.no).join(",")}`;
             if (!searching && lastFill?.key === key && Date.now() - lastFill.at < REUSE_TTL) {
                 // 1쪽에 올라온 다른 사람 글은 이미 이 목록에 있다.
                 const rows = lastFill.rows.filter((row) => !list.querySelector(`:scope > tr[data-no="${row.dataset.no}"]`));
