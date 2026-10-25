@@ -17,7 +17,7 @@ const DCCON_TTL = 10 * 60_000;
  */
 export const dcconPackages = new QuickLRU<string, DcinsideDcconPackage>({maxSize: 100, maxAge: DCCON_TTL});
 
-/** 내 디시콘 패키지 목록 캐시 (한 슬롯). 디시콘 선택 창이 닫았다 열아도 다시 받지 않게 쓴다. */
+/** 내 디시콘 패키지 목록 캐시 (한 슬롯). 디시콘 선택 창이 닫았다 열어도 다시 받지 않게 쓴다. */
 let dcconListCache: { list: DcinsideDcconDetailList[]; at: number } | null = null;
 
 export const cachedDcconList = (): DcinsideDcconDetailList[] | null =>
