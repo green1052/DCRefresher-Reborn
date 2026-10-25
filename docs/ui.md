@@ -18,7 +18,7 @@
 
 ## 부품
 
-- 화면은 React 19로 그립니다. 코드가 처음부터 `react` import로 되어 있어(Preact 호환 시절의 흔적) 프레임워크 교체가 설정만으로 끝났습니다. 타입은 `@types/react`를 그대로 씁니다.
+- 화면은 React 19로 그립니다. 타입은 `@types/react`를 그대로 씁니다.
 - 새 창은 연 직후 바로 DOM에 있다고 기대하지 않습니다(E2E는 옵션·팝업이면 `getByRole("dialog")`, 오버레이면 shadow 안의 `[data-slot=dialog-content]`로 찾습니다. `e2e/pages/`를 보세요).
 - 다이얼로그의 첫 포커스는 `ModalDialog`의 `focusOnOpen`으로 정하고, 나중에 나타나는 입력칸은 `utils/focus.ts`의 `focusOnMount`로 옮깁니다.
 - 닫히는 애니메이션 동안에도 Base UI의 문서 리스너(Esc·바깥 클릭)가 살아 있습니다. 그래서 `open`을 고정해 두고 언마운트로 닫는 창은 방금 닫혔어도 다음 키·클릭을 받습니다. 그런 창의 `onOpenChange`는 이미 닫혔으면 `details.cancel()`·`details.allowPropagation()`으로 흘려보냅니다(유저 버블, 미리보기 창).
