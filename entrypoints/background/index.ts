@@ -1,4 +1,4 @@
-import {onMessage, sendMessage} from "@/core/messaging/protocol";
+﻿import {onMessage, sendMessage} from "@/core/messaging/protocol";
 import {type BackgroundModule, startBackgroundModules} from "@/core/module/background";
 import {CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES} from "@/core/pages";
 import {dbMetaStorage} from "@/core/storage/items";
@@ -27,8 +27,9 @@ const hasContentScript = (url: string): boolean =>
 
 /**
  * 배경 스크립트. 서비스 워커(크롬)는 언제든 멈췄다 다시 뜨므로 리스너는 모두 여기서 동기로 걸고, 상태는 저장소에 둔다.
+ * type: "module"은 옵션·팝업과 청크를 공유해 총량을 줄인다 (크롬 MV3만 적용, 파이어폭스 MV2는 무시한다).
  */
-export default defineBackground(() => {
+export default defineBackground({type: "module", main: () => {
     // ===== 모듈의 배경 쪽 (이미지 검색 메뉴 등) =====
     // 크롬은 메뉴 같은 상태를 유지하므로 설치·브라우저 시작·설정 변경 때만 다시 맞춘다.
     const applyBackgroundModules = startBackgroundModules(backgroundModules);
@@ -72,4 +73,4 @@ export default defineBackground(() => {
     });
 
     startAutoBackup();
-});
+}});

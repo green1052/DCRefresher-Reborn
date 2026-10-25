@@ -109,8 +109,9 @@ export interface WriterFilter {
  */
 const loadedDocumentUrl = (): URL => {
     // vitest 가짜 타이머가 performance를 통째로 바꿔 이 메서드가 없어질 수 있어 선택 호출로 한다.
+    // 배경을 ESM으로 묶으면 WXT가 빌드 설정을 읽으러 이 모듈을 Node에서도 평가한다 — 그땐 location이 없다.
     const name = performance.getEntriesByType?.("navigation")[0]?.name ?? "";
-    return URL.parse(name) ?? new URL(location.href);
+    return URL.parse(name) ?? new URL(globalThis.location?.href ?? "https://gall.dcinside.com/");
 };
 
 /** 주소의 작성자 거르기. 없으면 null. 기본은 문서를 불러온 주소다 — 미리보기가 글 주소를 쌓아도 문서의 거르기를 그대로 준다. */
