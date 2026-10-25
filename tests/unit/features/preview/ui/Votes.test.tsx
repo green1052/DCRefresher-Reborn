@@ -9,7 +9,7 @@ import {usePreviewStore} from "@/features/preview/ui/previewStore";
 import {Votes} from "@/features/preview/ui/Votes";
 import {preData, tick} from "../../../../helpers";
 
-// Base UI·lucide는 변환되지 않아 진짜 React를 불러 그려지지 않으므로 평범한 요소로 바꾼다.
+// Base UI·lucide는 평범한 요소로 바꾼다(그리기·계산에 필요한 것만 남긴다).
 vi.mock("@/components/ui/button", () => ({
     Button: ({children, disabled, onClick, "aria-label": label}: { children?: ReactNode; disabled?: boolean; onClick?: () => void; "aria-label"?: string }) =>
         <button disabled={disabled} onClick={onClick} aria-label={label}>{children}</button>

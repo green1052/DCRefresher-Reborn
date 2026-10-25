@@ -31,7 +31,7 @@ const resolveLocal = (from: string, specifier: string): string | null => {
 const expandGlob = (from: string, pattern: string): string[] =>
     globSync(pattern, {cwd: dirname(from)}).map((file) => resolve(dirname(from), file));
 
-it("배경 시작 파일에서 닿는 모듈은 react·preact·zustand를 불러오지 않는다", () => {
+it("배경 시작 파일에서 닿는 모듈은 react·react-dom·zustand를 불러오지 않는다", () => {
     const visited = new Set<string>();
     const packages = new Set<string>();
     const queue = [resolve(process.cwd(), "entrypoints/background/index.ts")];

@@ -18,7 +18,7 @@ export const tick = (): Promise<void> => new Promise((resolve) => setTimeout(res
 // 컨테이너마다 루트를 하나만 들고 다시 그린다 (같은 칸에 createRoot를 두 번 부르면 경고가 난다).
 const roots = new WeakMap<HTMLElement, Root>();
 
-/** preact의 render(엘리먼트, 컨테이너)와 같은 모양으로 동기에 그린다. null이면 뗀다. */
+/** (엘리먼트, 컨테이너) 모양으로 그린 직후 DOM을 읽을 수 있게 동기에 그린다. null이면 뗀다. */
 export const render = (element: ReactNode, container: HTMLElement): void => {
     if (element === null || element === undefined) {
         roots.get(container)?.unmount();
@@ -30,7 +30,7 @@ export const render = (element: ReactNode, container: HTMLElement): void => {
         root = createRoot(container);
         roots.set(container, root);
     }
-    // React는 root.render가 비동기라 바로 돌려주지 않는다. 테스트는 preact처럼 그린 직후 DOM을 읽는다.
+    // React의 root.render는 비동기로 커밋한다. 테스트는 그린 직후 DOM을 읽으므로 flushSync로 기다린다.
     flushSync(() => root!.render(element));
 };
 

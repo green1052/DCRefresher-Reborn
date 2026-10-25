@@ -28,6 +28,7 @@
 - 포커스: 트리거 없이 여는 창(다이얼로그·버블)은 `useReturnFocus`(`components/useReturnFocus.ts`)가 연 요소에 포커스를 돌려줍니다. 오버레이(shadow DOM) 안에서는 Base UI의 포커스 가두기가 끝을 알아보지 못해 모달 창(`ModalDialog`·`ConfirmDialog`·`Notice`, 이미지 크게 보기)이 `keepTabInside`로 Tab을 직접 돌립니다.
 - 툴팁은 `components/WithTooltip.tsx`를 씁니다. 수천 줄을 그리는 목록(차단 목록 줄·댓글)에는 브라우저 기본(`title`)을 씁니다.
 - 같은 이유로 수천 번 그리는 자리(목록 줄·댓글·디시콘 칸)에는 Base UI `Button` 대신 맨 `<button>`에 `components/focusRing.ts`의 `FOCUS_RING`만 붙입니다(버튼마다 리스너를 여럿 달지 않으면서 키보드 포커스 표시는 남깁니다). 값은 `components/ui/button.tsx`의 `buttonVariants`에서 떼어 온 것이라 그쪽이 바뀌면 같이 맞춥니다.
+- 오버레이 없이 페이지에 직접 두는 단추(스텔스의 임시 보이기)는 react-dom을 끌어들이지 않게 `features/stealth/index.ts`에서 React 없이 그립니다.
 - 옵션의 설정 검색은 맞는 글자를 CSS Custom Highlight API(`CSS.highlights`, `pages.css`의 `::highlight(refresher-search)`)로 칠합니다(`entrypoints/options/GeneralTab.tsx`). 그린 글자 위에 범위만 얹으므로 이름·설명에 `<mark>`를 넣지 않습니다.
 - 단축키는 `utils/event.ts`의 `isTyping`이 모달 다이얼로그 배경(`[data-slot=dialog-overlay]`·`[data-slot=alert-dialog-overlay]`)이 떠 있으면 막습니다. 미리보기 창의 Esc 전달(`features/preview/ui/Frame.tsx`)은 같은 배경 선택자에 팝오버(`[data-slot=popover-content]`)를 더해 위에 뜬 창을 알아봅니다. 미리보기 안에서 연 창은 Base UI가 배경을 그리지 않으므로 `useModal`이 늘 `forceRender`로 그립니다. 배경을 바꾸면 이 선택자들도 맞춥니다.
 

@@ -92,7 +92,7 @@ const fetchPage = async (page: number, signal: AbortSignal): Promise<DcinsideDcc
 
 /**
  * 모든 쪽(0부터 max_page까지)의 패키지를 이어 붙여, 쪽을 넘기지 않고 가로로 훑어 고르게 한다.
- * 첫 쪽 뒤의 쪽은 한꺼번에 받는다 (동시 요청 수는 요청 제한을 따른다).
+ * 첫 쪽 뒤의 쪽은 한꺼번에 받는다.
  */
 export const fetchDcconList = async (signal: AbortSignal): Promise<DcconListResult> => {
     const first = await fetchPage(0, signal);
