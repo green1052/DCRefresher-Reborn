@@ -639,23 +639,33 @@ const controller = (ctx: Ctx) => {
     // 앞/뒤로 가기로 돌아왔는데 목록 문서가 bfcache에 없으면 브라우저는 미리보기가 쌓은 항목을 글 주소로 새로 불러온다(파이어폭스에서 잦다).
     // 목록 주소로 바꿔 다시 불러오고, 목록에서 그 글 미리보기를 연다. 새로고침(F5)은 글 페이지 그대로 둔다.
     // 다시 연 항목은 새로 쌓지 않고 이 문서 것으로 바꾼다. 쌓으면 목록 항목이 둘이 되어 뒤로 가기를 두 번 눌러야 한다.
+    // 기록 고치기가 실패해도(브라우저의 횟수 제한 등) setup은 끝낸다. 던지면 미리보기 모듈이 이 페이지에서 통째로 실패한다.
+    const replaceEntry = (state: unknown, url?: string): boolean => {
+        try {
+            history.replaceState(state, "", url);
+            return true;
+        } catch (e) {
+            console.error("미리보기 기록 고치기 실패:", e);
+            return false;
+        }
+    };
     const entry = previewEntry(history.state);
     if (entry && entry.doc !== historyDoc && entry.preData && entry.back) {
         const {preData, back} = entry;
         const navigation = performance.getEntriesByType("navigation")[0];
         if (entry.reopen) {
-            history.replaceState({...entry, doc: historyDoc, reopen: false}, "", preData.link);
+            replaceEntry({...entry, doc: historyDoc, reopen: false}, preData.link);
             savedHistory = back;
             whenDomReady(() => open(preData, false, true), ctx.signal);
         } else if (navigation instanceof PerformanceNavigationTiming && navigation.type === "back_forward" && document.readyState !== "complete") {
             // 문서를 불러오는 중일 때만 옮긴다. 미리보기를 끈 채 연 글 페이지에서 나중에 켜면(팝업·옵션·bfcache 동기화) setup이 다시 도는데,
             // 탐색 종류는 그대로 back_forward라 읽던 글이 목록으로 바뀌고 쓰던 댓글이 날아간다.
-            history.replaceState({...entry, reopen: true}, "", back.url);
-            location.reload();
+            // 주소를 못 바꿨으면 다시 불러와도 글 페이지 그대로라 새로고침하지 않는다.
+            if (replaceEntry({...entry, reopen: true}, back.url)) location.reload();
         } else if (navigation instanceof PerformanceNavigationTiming && (navigation.type === "reload" || navigation.type === "back_forward")) {
             // 새로고침했거나 다 불러온 뒤에 미리보기를 켠 글 페이지는 이제 진짜 글 항목이다. 미리보기 표시를 지운다.
             // 남겨 두면 목록으로 뒤로 갔다 앞으로 올 때 bfcache가 없으면 위 back_forward로 다시 목록·미리보기가 된다.
-            history.replaceState(null, "");
+            replaceEntry(null);
         }
     }
 

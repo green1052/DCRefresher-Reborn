@@ -40,9 +40,14 @@ export const cleanUpStaleInstance = (): string | undefined => {
     // 그대로 두면 새 미리보기를 닫을 때 그 항목으로 돌아가 옛 글이 다시 열린다.
     // doc이 다르면 미리보기를 연 채 새로고침한 실제 글 페이지이므로 건드리지 않는다.
     const back = ownPreviewEntry(history.state)?.back;
+    // 기록 고치기는 장식이라 삼킨다. 던지면 콘텐츠 스크립트 시작이 통째로 멈춘다.
     if (back) {
-        history.replaceState(back.state ?? null, "", back.url);
-        document.title = back.title;
+        try {
+            history.replaceState(back.state ?? null, "", back.url);
+            document.title = back.title;
+        } catch (e) {
+            console.error("죽은 인스턴스의 기록 되돌리기 실패:", e);
+        }
     }
     return draft;
 };

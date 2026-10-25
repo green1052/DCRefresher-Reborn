@@ -381,8 +381,13 @@ export default defineModule(meta, {
             ev.preventDefault();
 
             const newUrl = new URL(isViewPage ? mergeParamURL(location.href, anchor.href) : anchor.href, location.href).href;
-            // 지금 페이지를 다시 누르면 기록을 쌓지 않는다.
-            if (newUrl !== location.href) history.pushState(null, document.title, newUrl);
+            // 지금 페이지를 다시 누르면 기록을 쌓지 않는다. 쌓기가 실패해도(브라우저의 횟수 제한 등) 목록은 받는다.
+            // 기본 동작은 이미 막았으므로 여기서 끊기면 눌러도 아무 반응이 없다.
+            try {
+                if (newUrl !== location.href) history.pushState(null, document.title, newUrl);
+            } catch (e) {
+                console.error("페이지 이동 기록 쌓기 실패:", e);
+            }
 
             scrollAfter = newUrl;
             void loadNow(newUrl, true);
