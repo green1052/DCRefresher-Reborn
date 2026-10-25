@@ -39,10 +39,19 @@ scripts/                IP DB 빌드 스크립트
 
 `entrypoints/content/index.tsx`가 디시 페이지(`core/pages.ts`의 `CONTENT_MATCHES`)에서 `document_start`에 실행됩니다.
 
-`index.tsx`는 얇은 부트스트랩이라 배포 빌드에서는 `content-main.html`로 만든 `chunks/content-main.js`를 불러 `main.ts`의 `start`를 부르고(옵션·팝업과 청크를 공유해 총량이 작다), 개발 빌드는 청크가 디스크에 나오지 않아 번들 안에서 직접 씁니다. **본문 청크 안에서는 늦은 동적 import를 쓰지 않습니다** — 파이어폭스는 문서를 다시 읽은 뒤 콘텐츠 스크립트가 늦게 하는 청크 import가 실패합니다(버그 1803950 계열). 스크립트 시작(document_start)의 이 import는 믿을 수 있어 그대로 둡니다. 이 구조는 WXT 문서(ES Modules)가 안내하는 수동 구현으로, WXT가 공식 지원(이슈 #357, v1.1)을 내면 `type: "module"`로 바꿔 걷습니다. 비동기 로더라 `run_at: document_start`를 완전히는 지키지 못합니다(본문 시작이 페이지 파싱보다 늦을 수 있습니다). 청크 이름은 `wxt.config.ts`의 `vite:build:extendConfig` 훅이 고정합니다(부트스트랩이 런타임에 경로로 찾으므로 해시가 들어가면 안 됩니다). 청크와 `content-scripts/content.css`는 웹 페이지에서도 접근할 수 있어야 하므로 `web_accessible_resources`에 디시 페이지에만 열어 둡니다(파이어폭스는 MV2라 문자열 배열 모양입니다). 아래는 `main.ts`가 하는 일입니다.
+`index.tsx`는 얇은 부트스트랩입니다. 배포 빌드에서는 `content-main.html`이 만든 `chunks/content-main.js`를 불러 `main.ts`의 `start`를 부릅니다 — 옵션·팝업과 청크를 공유해 총량이 작아서입니다. 개발 빌드는 청크가 디스크에 나오지 않으므로 번들 안에서 직접 씁니다.
+
+**본문 청크 안에서는 늦은 동적 import를 쓰지 않습니다.** 파이어폭스는 문서를 다시 읽은 뒤 콘텐츠 스크립트가 늦게 하는 청크 import가 실패합니다(버그 1803950 계열). 반면 스크립트 시작(document_start)의 이 부트스트랩 import는 믿을 수 있어 그대로 둡니다.
+
+- 이 구조는 WXT 문서(ES Modules)가 안내하는 수동 구현입니다. WXT가 공식 지원(이슈 #357, v1.1)을 내면 `type: "module"`로 바꿔 걷습니다.
+- 비동기 로더라 `run_at: document_start`를 완전히는 지키지 못합니다(본문 시작이 페이지 파싱보다 늦을 수 있습니다).
+- 청크 이름은 `wxt.config.ts`의 `vite:build:extendConfig` 훅이 고정합니다(부트스트랩이 런타임에 경로로 찾으므로 해시가 들어가면 안 됩니다).
+- 청크와 `content-scripts/content.css`는 웹 페이지에서도 접근할 수 있어야 하므로 `web_accessible_resources`에 디시 페이지에만 열어 둡니다(파이어폭스는 MV2라 문자열 배열 모양입니다).
+
+아래는 `main.ts`가 하는 일입니다.
 
 1. Firefox가 재주입하며 남긴 옛 오버레이와 잠금을 걷어 내고(`stale.ts`), 단축키·팝업 메시지를 받을 준비를 합니다. 옛 오버레이에 입력하던 글(댓글 입력칸)이 있었으면 오버레이를 띄울 준비가 끝난 뒤 토스트로 알리고 복사 버튼을 줍니다.
-2. 저장소를 기다리기 전에 컨텍스트가 무효가 되면 모듈을 멈추는 처리를 겁니다. 확장이 정말 없어졌을 때만 새로고침 안내를 띄웁니다(`invalidated.ts`). WXT가 오버레이를 걷어 내기 전에 입력하던 글을 읽어 두고, 있으면 안내에 복사 버튼을 답니다.
+2. 저장소를 기다리기 전에 컨텍스트가 무효가 되면 모듈을 멈추는 처리를 겉니다(`stopAll`·`releaseDatabase`).
 3. 오버레이는 화면에 그릴 것이 처음 생길 때 띄웁니다(`overlay.tsx`, [UI](ui.md#오버레이와-css)).
 4. 글 목록·본문 페이지(`BOARD_PAGE`)면 차단·메모 스토어와 모듈 on/off·설정(`core/module/registry.ts`의 `loadAll`)을 동시에 읽습니다. 모듈의 `setup`은 차단·메모를 다 읽은 뒤에 돕니다.
 5. 가장 큰 IP DB는 콘텐츠 스크립트가 읽지 않고 유저 정보 모듈의 `setup`이 모듈 설정을 읽은 뒤 읽습니다(`core/database.ts`의 `initDatabase`). 저장소는 요청 순서대로 읽히기 때문입니다. 다만 IP 정보 표시(`ipInfoFilter`)가 "표시 안 함"(`none`)이 아니거나 갱차 조회(`checkPermBan`)가 켜져 있을 때만 읽고, 나중에 설정을 켜면 그때 읽습니다(`features/userinfo/index.ts`의 `needsDatabase`). 모듈이 꺼져 있거나 둘 다 꺼져 있으면 버블이 IP 정보를 처음 그릴 때 읽습니다(`subscribeDatabase`). 밴 DB는 처음 조회할 때 읽습니다.
@@ -103,9 +112,8 @@ scripts/                IP DB 빌드 스크립트
 
 - Firefox 콘텐츠 스크립트에서는 두 클라이언트 모두 `content.fetch`로 보냅니다. 페이지가 보낸 요청처럼 나가야 디시 ajax가 받아 줍니다.
 - 응답 머리의 시간 제한(15초)은 fetch를 부른 뒤부터 머리를 받을 때까지만 잽니다. ky의 `timeout`은 fetch를 부른 순간부터 재므로 머리가 늦게 오면 같이 끊어 버려 쓰지 않습니다(호출할 때도 주지 마세요). `AbortSignal.timeout`도 쓰지 않습니다([Firefox](firefox.md)).
-- 요청 전체(재시도·차단 검사·본문 읽기)에는 ky의 `totalTimeout`(60초)을 걸어 머리를 받은 뒤 본문이 멈춰도 요청이 끝나게 합니다. 본문은 ky의 `.text()`·`.json()`으로 읽어야 이 제한에 묶입니다. 더 짧게 끊을 요청은 호출할 때 `totalTimeout`을 줍니다(글 목록 새로고침의 `LIST_TIMEOUT`). IP/밴 DB 받기는 `totalTimeout: false`로 뺍니다.
-- 예외: 본문 이미지(`core/block.ts`의 `imageHash`)는 콘텐츠 스크립트 자체의 fetch가 필요해(파이어폭스의 `content.fetch`는 페이지 CORS에 걸립니다) `http`/`ajax` 대신 기본 ky로 받습니다. 임시 차단 검사는 거치지 않고 자기 제한(`fetchLimit`, 4개)과 전체 60초 상한(`totalTimeout`, ky `timeout`은 끔)을 씁니다. 본문은 같은 요청의 `.blob()`으로 읽습니다.
-- 재시도는 ky 기본값에 지터를 더하고 `Retry-After`는 최대 10초까지만 기다립니다. 시간 초과·`BlockedError`·POST는 재시도하지 않습니다.
-- 요청이 너무 많으면 디시는 200으로 빈 페이지를 줍니다. 클라이언트는 dcinside.com의 GET 응답과 `/board/comment/` 아래 요청이 비어 있을 때만 `BlockedError`를 던집니다. 콘텐츠 스크립트가 따로 안내를 띄우니 기능 쪽에서는 `isBlockedError(e)`일 때 자기 오류 토스트를 건너뜁니다(`stores/notify.ts`의 `reportFailure`가 이렇게 합니다). 배경을 거쳐 온 오류는 클래스를 잃으므로 `instanceof` 대신 이름으로 보는 `utils/error.ts`의 함수를 씁니다.
+- 요청 전체(재시도·본문 읽기)에는 ky의 `totalTimeout`(60초)을 걸어 머리를 받은 뒤 본문이 멈춰도 요청이 끝나게 합니다. 본문은 ky의 `.text()`·`.json()`으로 읽어야 이 제한에 묶입니다. 더 짧게 끊을 요청은 호출할 때 `totalTimeout`을 줍니다(글 목록 새로고침의 `LIST_TIMEOUT`). IP/밴 DB 받기는 `totalTimeout: false`로 뺍니다.
+- 예외: 본문 이미지(`core/block.ts`의 `imageHash`)는 콘텐츠 스크립트 자체의 fetch가 필요해(파이어폭스의 `content.fetch`는 페이지 CORS에 걸립니다) `http`/`ajax` 대신 기본 ky로 받습니다. 자기 제한(`fetchLimit`, 4개)과 전체 60초 상한(`totalTimeout`, ky `timeout`은 끔)을 씁니다. 본문은 같은 요청의 `.blob()`으로 읽습니다.
+- 재시도는 ky 기본값에 지터를 더하고 `Retry-After`는 최대 10초까지만 기다립니다. 시간 초과와 POST는 재시도하지 않습니다.
 - 갤러리 종류는 `core/http/urls.ts`의 `galleryKind(url)`로 다룹니다. 주소 경로와 `_GALLTYPE_` 값은 같은 파일의 표에만 두고 `galleryPath`·`galltypeOf`로 꺼냅니다.
 - 폼 본문은 `formBody({...})`로 만듭니다. 값이 `null`·`undefined`·`false`인 필드는 빠지고 빈 문자열은 들어갑니다. CSRF 토큰(`ci_t`)이 붙는 디시 요청은 `csrfBody({...})`(`core/http/cookie.ts`)를 씁니다. 끊은 요청인지는 `isAbortError(e)`(`utils/error.ts`)로 봅니다.
