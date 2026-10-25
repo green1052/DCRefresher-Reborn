@@ -1,14 +1,15 @@
+import {cn} from "cn";
 import {Fragment, type MouseEvent, type ReactNode, useSyncExternalStore} from "react";
 import {useShallow} from "zustand/react/shallow";
 
+import {FOCUS_RING} from "@/components/focusRing";
+import {useGallogActivity} from "@/components/overlay/gallogActivity";
 import {type BadgeKey, badgeViewOf, DEFAULT_BADGE_VIEW, showsUid} from "@/core/badges";
 import {banReasonsOf, databaseVersion, ipInfoOf, onDatabaseChange, passesIpFilter} from "@/core/database";
 import {useRunningModuleSettings} from "@/core/module/useModuleSettings";
 import type {User} from "@/core/preview/types";
 import {useUserMemo} from "@/stores/memos";
 import {isFresh, isLowActivity, useUiStore} from "@/stores/ui";
-import {useGallogActivity} from "@/components/overlay/gallogActivity";
-import {cn} from "cn";
 
 import {previewGallery, usePreviewStore} from "./previewStore";
 
@@ -75,7 +76,7 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
              onContextMenu={openMenu}>
             {/* 버블은 닉네임 바로 아래에 띄운다. 키보드로 열면 버블 안으로 포커스가 옮겨 간다 (components/overlay/UserBubble.tsx의 useReturnFocus). */}
             <button type="button" aria-haspopup="dialog" aria-expanded={expanded}
-                    className="cursor-pointer truncate rounded-sm text-sm font-bold outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                    className={cn(FOCUS_RING, "truncate text-sm font-bold")}
                     onClick={(ev) => {
                         const rect = ev.currentTarget.getBoundingClientRect();
                         openBubble(rect.left, rect.bottom);

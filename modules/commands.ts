@@ -23,7 +23,10 @@ export default defineWxtModule((wxt) => {
             for (const [name, {key}] of Object.entries(meta.commands ?? {})) {
                 if (name in commands) throw new Error(`단축키 이름이 겹칩니다: ${name} (${meta.id})`);
                 const label = labels[index];
-                commands[name] = {description: `${label?.name}: ${label?.commands?.[name]}`, ...(key ? {suggested_key: {default: key}} : {})};
+                // 없으면 브라우저 단축키 설정에 "undefined: undefined"가 보인다.
+                const description = label?.commands?.[name];
+                if (label?.name === undefined || description === undefined) throw new Error(`단축키 설명이 labels.ts에 없습니다: ${name} (${meta.id})`);
+                commands[name] = {description: `${label.name}: ${description}`, ...(key ? {suggested_key: {default: key}} : {})};
             }
         }
         // dev는 확장 다시 불러오기 명령(dev.reloadCommand)을 이미 넣어 두었으므로 덮지 않고 더한다.

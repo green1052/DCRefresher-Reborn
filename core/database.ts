@@ -27,7 +27,8 @@ const get = (url: string): Promise<string> => http.get(url, {retry: 0, cache: "n
 export const updateDatabase = async (force = false): Promise<void> => {
     const [version, meta] = await Promise.all([get(urls.database.version).then((text) => text.trim()), dbMetaStorage().getValue()]);
     // 저장 형식이 바뀌었으면(확장 업데이트) 같은 버전이어도 새 형식으로 다시 받는다.
-    if (!force && version && version === meta.version.trim() && meta.format === IP_FORMAT) {
+    // version이 없는 옛 메타가 남아 있으면 trim()이 던져 갱신이 영영 실패한다 (fallback은 값이 null일 때만 쓰인다).
+    if (!force && version && version === (meta.version ?? "").trim() && meta.format === IP_FORMAT) {
         await dbMetaStorage().setValue({...meta, lastUpdate: Date.now()});
         return;
     }

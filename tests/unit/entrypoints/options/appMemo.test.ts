@@ -14,6 +14,12 @@ describe("parseAppMemos", () => {
     it("빈 줄은 건너뛰고, '-'가 없거나 대상·메모가 빈 줄은 센다", () => {
         expect(parseAppMemos("\n  \nuser1\n-메모\nuser2- \nuser3-메모")).toEqual({memos: {UID: {user3: "메모"}, IP: {}}, skipped: 3});
     });
+
+    it("아이디가 __proto__여도 조용히 사라지지 않는다", () => {
+        const {memos} = parseAppMemos("__proto__-메모");
+        expect(Object.hasOwn(memos.UID, "__proto__")).toBe(true);
+        expect(memos.UID["__proto__"]).toBe("메모");
+    });
 });
 
 describe("formatAppMemos", () => {

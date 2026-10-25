@@ -118,6 +118,7 @@ export type Sample = [fingerprint: string, mirrored: string];
 
 const sampleOf = ([small, large]: Grids): Sample => [dHash(small) + pHash(large), dHash(mirror(small, 9)) + pHash(mirror(large, 32))];
 
+/** RGBA에서 바로 표본을 뜬다. jsdom에 ImageBitmap·VideoFrame이 없어 단위 테스트가 해시 계산을 이것으로 본다. */
 export const fingerprintsOf = (rgba: Uint8ClampedArray, width: number, height: number): Sample => sampleOf(lumaGrids(width, height, rgbaRows(rgba, width)));
 
 /**

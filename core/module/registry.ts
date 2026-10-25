@@ -2,7 +2,7 @@ import {addFilter} from "@/core/filtering";
 import {documentUrl} from "@/core/http/urls";
 import type {PageAction, PageState, PageToggleState} from "@/core/messaging/protocol";
 import {storage} from "wxt/utils/storage";
-import {shallow} from "zustand/shallow";
+import {shallow} from "zustand/vanilla/shallow";
 import {createStore} from "zustand/vanilla";
 
 import {MODULES_KEY, moduleSettingsKey} from "@/core/storage/items";

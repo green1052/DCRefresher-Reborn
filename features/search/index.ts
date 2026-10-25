@@ -2,7 +2,7 @@ import QuickLRU from "quick-lru";
 
 import {http} from "@/core/http/client";
 import {documentUrl, pageGallery, queryString, type WriterFilter, writerFilter} from "@/core/http/urls";
-import {checkboxFiller, highlightSearchResults, LIST_SELECTOR, notifyListReplaced, PAGING_SELECTOR} from "@/core/list";
+import {checkboxFiller, highlightSearchResults, LIST_SELECTOR, notifyListReplaced, PAGING_SELECTOR, writerSelector} from "@/core/list";
 import {sendMessage} from "@/core/messaging/protocol";
 import {defineModule} from "@/core/module/define";
 import {BLOCKED_PAGE_MESSAGE, LIST_PAGE} from "@/core/pages";
@@ -13,7 +13,7 @@ import {whenDomReady, writeStyle} from "@/utils/dom";
 import {isBlockedError} from "@/utils/error";
 
 import meta from "./meta";
-import {addWriterTypes, keepWriterFilter, removeWriterTypes, writerSearchUrl, writerSelector} from "./writer";
+import {addWriterTypes, keepWriterFilter, removeWriterTypes, writerSearchUrl} from "./writer";
 
 /**
  * 검색 결과 행: 글(data-no)과 그 아래 댓글 검색 행(data-cmt). 설문·AD 행은 뺀다.
@@ -121,9 +121,7 @@ export default defineModule(meta, {
             if (list.querySelector(`.${ADDED_ROW}`)) return;
 
             running?.abort();
-            const controller = new AbortController();
-            running = controller;
-            const signal = AbortSignal.any([ctx.signal, controller.signal]);
+            running = null;
 
             // 구간의 마지막 페이지에서만 잇는다. 중간 페이지에서 이으면 그 뒤 페이지를 건너뛴다.
             const paging = document.querySelector<HTMLElement>(PAGING_SELECTOR);
@@ -143,7 +141,7 @@ export default defineModule(meta, {
             const key = `${here}|${own.map((row) => row.dataset.no).join(",")}`;
             if (!searching && lastFill?.key === key && Date.now() - lastFill.at < REUSE_TTL) {
                 // 1쪽에 올라온 다른 사람 글은 이미 이 목록에 있다.
-                const rows = lastFill.rows.filter((row) => !list.querySelector(`:scope > tr[data-no="${row.dataset.no}"]`));
+                const rows = lastFill.rows.filter((row) => !list.querySelector(`:scope > tr[data-no="${CSS.escape(row.dataset.no ?? "")}"]`));
                 list.append(...rows);
                 paging.innerHTML = lastFill.paging;
                 if (filter) keepWriterFilter(paging, filter);
@@ -166,6 +164,11 @@ export default defineModule(meta, {
             // 검색 구간은 바뀌지 않지만 거르기만 하는 목록의 다음 쪽은 새 글이 들어올 때마다 밀린다.
             // 받아 둔 옛 쪽으로 이으면 1쪽에서 밀려난 글이 어디에도 없으므로 다시 받는다.
             if (!searching) pages.clear();
+
+            // 받으러 가기 직전에 만든다. 위 가드에서 돌아갈 때 ctx.signal에 합성 signal을 남기지 않는다.
+            const controller = new AbortController();
+            running = controller;
+            const signal = AbortSignal.any([ctx.signal, controller.signal]);
 
             try {
                 for (let step = 1; step <= max && count < target; step++) {
@@ -192,7 +195,7 @@ export default defineModule(meta, {
                     // 붙이면 노드가 옮겨 가므로 복제해 붙인다. 캐시의 행은 다른 모듈이 고치지 않은 채로 다시 이을 때 쓴다.
                     for (const cached of page.rows) {
                         // 목록 쪽은 그새 새 글이 올라와 앞 쪽의 행이 다음 쪽에 다시 온다.
-                        if (!searching && cached.dataset.no && list.querySelector(`:scope > tr[data-no="${cached.dataset.no}"]`)) continue;
+                        if (!searching && cached.dataset.no && list.querySelector(`:scope > tr[data-no="${CSS.escape(cached.dataset.no)}"]`)) continue;
                         const row = document.importNode(cached, true);
                         // 결과가 없는 구간의 표는 디시가 empty를 붙여 칸을 250px로 키운다. 그대로 두면 이어 붙인 행마다 그 높이가 된다.
                         const empty = list.closest<HTMLElement>("table.empty");
@@ -216,6 +219,7 @@ export default defineModule(meta, {
             } catch (e) {
                 if (!signal.aborted) reportFailure(e, "Search continuation failed:", "다음 검색 결과를 불러오지 못했습니다.");
             } finally {
+                if (running === controller) running = null;
                 status.remove();
                 if (added > 0) notifyListReplaced(gallery);
             }

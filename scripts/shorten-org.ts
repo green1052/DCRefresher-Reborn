@@ -182,8 +182,8 @@ export const shortenOrg = (name: string): string => {
     const base = name.replace(LEGAL_FORMS, "").replace(/\s+/g, " ").trim();
     if (!base) return name;
 
-    const preset = PRESETS[base];
-    if (preset) return preset;
+    // 기관 이름이 constructor·toString이면 프로토타입의 함수가 잡힌다.
+    if (Object.hasOwn(PRESETS, base)) return PRESETS[base]!;
 
     const prefix = PREFIXES.find(([from]) => base.startsWith(from));
     const withPrefix = prefix ? prefix[1] + base.slice(prefix[0].length) : base;

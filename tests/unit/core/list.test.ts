@@ -28,3 +28,16 @@ it("숨은 탭에선 목록을 몇 번 바꿔도 알리지 않다가 다시 보�
     await vi.waitFor(() => expect(details).toEqual(["a", "b"]));
     expect(sendMessage).toHaveBeenCalledTimes(2);
 });
+
+it("숨은 동안 갤러리가 바뀌면 다시 보일 때 마지막 갤러리로 알린다", async () => {
+    const details: unknown[] = [];
+    document.addEventListener(LIST_REPLACED_EVENT, (ev) => details.push(ev instanceof CustomEvent ? ev.detail : undefined));
+
+    const hidden = vi.spyOn(document, "hidden", "get").mockReturnValue(true);
+    notifyListReplaced("first");
+    notifyListReplaced("second");
+
+    hidden.mockReturnValue(false);
+    document.dispatchEvent(new Event("visibilitychange"));
+    await vi.waitFor(() => expect(details).toEqual(["second"]));
+});

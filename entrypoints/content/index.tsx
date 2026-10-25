@@ -6,6 +6,7 @@ import {documentUrl} from "@/core/http/urls";
 import {onMessage} from "@/core/messaging/protocol";
 import {loadAll, pageState, runPageToggle, runShortcut, settledPageState, stopAll} from "@/core/module/registry";
 import {BOARD_PAGE, CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES} from "@/core/pages";
+import {bindUsageContext} from "@/core/usage";
 import features from "@/features";
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
@@ -33,6 +34,7 @@ export default defineContentScript({
     noScriptStartedPostMessage: true,
     async main(ctx) {
         const staleDraft = cleanUpStaleInstance();
+        bindUsageContext(ctx.signal);
 
         // ===== 메시징 (배경·팝업→탭) =====
         // 스크립트가 다시 주입되면 이전 인스턴스가 남아 메시지를 계속 받는다. 멈춘 모듈의 빈 상태로 팝업에 먼저 답하지 않게 무효화될 때 푼다.

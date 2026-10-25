@@ -4,9 +4,6 @@ import {listUrl, WRITER_PARAMS, type WriterFilter, type WriterKind} from "@/core
 // 그래서 목록 주소에 이 값(core/http/urls.ts의 WRITER_PARAMS)을 얹어 두고 그 작성자가 아닌 행을 숨긴다.
 // 닉네임을 알면 글쓴이 검색으로 범위를 넓히고, 모르면 목록을 넘기며 거른다.
 
-/** 그 작성자의 작성자 칸 (디시 목록의 td.ub-writer[data-uid|data-ip]). */
-export const writerSelector = ({kind, value}: WriterFilter): string => `.ub-writer[data-${kind}="${CSS.escape(value)}"]`;
-
 const withFilter = (href: string, filter: WriterFilter): string => {
     const url = new URL(href);
     url.searchParams.set(WRITER_PARAMS[filter.kind], filter.value);
@@ -49,6 +46,8 @@ export const addWriterTypes = (filter: WriterFilter | null, search: (filter: Wri
     const button = document.querySelector(".bottom_search .bnt_search");
     if (!layer || !label || !input || !button) return;
 
+    // 파이어폭스 재주입 전 인스턴스가 더한 종류는 리스너가 죽어 있다. 갈아끼운다.
+    removeWriterTypes();
     for (const kind of ["uid", "ip"] as const) {
         const item = Object.assign(document.createElement("li"), {textContent: TYPE_NAMES[kind], className: ADDED_TYPE});
         item.dataset.kind = kind;

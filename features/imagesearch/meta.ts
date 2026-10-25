@@ -4,7 +4,7 @@ import {objectKeys} from "@/utils/typed";
 
 /** 이미지 주소를 붙이면 바로 검색되는 GET 주소 (url 뒤에 encodeURIComponent(이미지 주소)). */
 export const ENGINES = {
-    saucenao: {name: "SauceNao", url: "https://saucenao.com/search.php?url="},
+    saucenao: {name: "SauceNAO", url: "https://saucenao.com/search.php?url="},
     googleLens: {name: "Google Lens", url: "https://lens.google.com/uploadbyurl?url="},
     yandex: {name: "Yandex", url: "https://yandex.com/images/search?rpt=imageview&url="},
     ascii2d: {name: "ascii2d", url: "https://ascii2d.net/search/url/"},

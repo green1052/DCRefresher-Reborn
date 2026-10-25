@@ -353,6 +353,8 @@ describe("글댓비·깡계", () => {
         mountRows([{no: "1", uid: "seen"}]);
         const {stop} = await start({checkRatio: true});
         for (const listener of gallog.listeners) listener("seen", {article: 7, comment: 8});
+        // 받은 값은 모았다가 다음 마이크로태스크에 한 번에 넣는다.
+        await tick();
         expect(badges("1")).toEqual(["(seen)", "[7/8]"]);
         expect(useUiStore.getState().ratios?.cache.seen?.article).toBe(7);
 

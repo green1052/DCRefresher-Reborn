@@ -1,6 +1,8 @@
+import {cn} from "cn";
 import {useEffect, useId, useRef, useState} from "react";
 
 import {DialogCloseButton, ModalDialog} from "@/components/dialogs";
+import {FOCUS_RING} from "@/components/focusRing";
 import {Button} from "@/components/ui/button";
 import {DialogTitle} from "@/components/ui/dialog";
 import {Field, FieldLabel} from "@/components/ui/field";
@@ -131,7 +133,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                 {loading
                     ? Array.from({length: 36}, (_, index) => <Skeleton key={index} className="aspect-square w-full"/>)
                     : (active?.detail ?? []).map((dccon) => (
-                        <button type="button" key={dccon.detail_idx} title={dccon.title} className="cursor-pointer rounded-lg p-0.5 hover:bg-muted [&>img]:size-full [&>img]:object-contain aspect-square" onClick={() => clickDccon(dccon)}>
+                        <button type="button" key={dccon.detail_idx} title={dccon.title} className={cn(FOCUS_RING, "aspect-square rounded-lg p-0.5 hover:bg-muted [&>img]:size-full [&>img]:object-contain")} onClick={() => clickDccon(dccon)}>
                             <img src={dccon.list_img} alt={dccon.title} loading="lazy" decoding="async"/>
                         </button>
                     ))}

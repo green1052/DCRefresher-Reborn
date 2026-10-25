@@ -16,7 +16,6 @@ import {isTyping, pressedKey} from "@/utils/event";
 import {createDoublePress} from "@/utils/doublePress";
 import {isGalleryManager} from "@/utils/user";
 import {notifyManage} from "@/stores/notify";
-import {isRecord} from "@/utils/record";
 
 import {getEntry, postKey, setEntry} from "@/core/preview/cache";
 import {historyDoc, ownPreviewDepth, ownPreviewEntry, previewEntry, type PreviewEntry, type SavedHistory} from "@/core/preview/history";
@@ -345,8 +344,14 @@ const controller = (ctx: Ctx) => {
         // 방금 받은 댓글(COMMENTS_REUSE)은 그대로 쓰고 다시 받지 않는다. 캐시를 끄면 늘 받는다.
         const recent = ctx.settings.disableCache ? undefined : recentComments(preData);
         const early = !dir && !recent && preData.commentCount > 0 && esno && (ctx.settings.disableCache || !cachedPost(preData))
-            ? fetchComments(preData, {esno}, abort!.signal).catch(() => undefined)
+            // 임시 차단으로 실패했으면 삼키지 않는다. 곧바로 같은 요청을 다시 보내면 차단만 길어진다.
+            ? fetchComments(preData, {esno}, abort!.signal).catch((e: unknown) => {
+                if (isBlockedError(e)) throw e;
+                return undefined;
+            })
             : undefined;
+        // 본문을 받지 못해 given으로 쓰이지 않으면 처리되지 않은 거부가 된다.
+        void early?.catch(() => undefined);
 
         try {
             ({post, fresh, archived = false} = await getPost(preData));
@@ -372,7 +377,7 @@ const controller = (ctx: Ctx) => {
             if (!recent) {
                 // 미리 받은 댓글은 같은 요청이었을 때만 쓴다. 비어 있으면 다시 받는다.
                 const matches = post.esno === esno && (post.commentId ?? preData.gallery) === preData.gallery && (post.commentNo ?? preData.id) === preData.id;
-                const given = matches && early ? early.then((list) => (list?.list.length ? list : undefined)) : undefined;
+                const given = early?.then((list) => (matches && list?.list.length ? list : undefined));
                 // 방금 받은 본문이 댓글 0개면 받지 않는다. 보존해 둔 댓글이 있으면 삭제 여부를 비교해야 하므로 받는다.
                 // 이 갤러리의 댓글 허용을 아직 모르면 받는다 (멤버만 댓글이면 입력칸 대신 안내를 보여야 한다).
                 const skip = fresh && post.commentCount === 0 && !Object.keys(getEntry(preData)?.seen ?? {}).length && allowReplies.has(preData.gallery);
@@ -529,15 +534,9 @@ const controller = (ctx: Ctx) => {
         const toggled = (field: "notice" | "recommend", value: boolean): void => {
             const preData = {...target, [field]: value};
             store.setState({preData});
-            const state: unknown = history.state;
-            if (isRecord(state) && isRecord(state.preData) && state.preData.id === target.id) {
-                // 알림은 이미 떴다. 여기서 던지면 manage 끝의 목록 새로 고침을 건너뛰고 처리되지 않은 거부가 되므로 삼킨다.
-                try {
-                    history.replaceState({...state, preData}, "");
-                } catch (e) {
-                    console.error("미리보기 기록 고치기 실패:", e);
-                }
-            }
+            const entry = ownPreviewEntry(history.state);
+            // 알림은 이미 떴다. 기록 고치기가 던지면 manage 끝의 목록 새로 고침을 건너뛰므로 replaceEntry가 삼킨다.
+            if (entry?.preData?.id === target.id) replaceEntry({...entry, preData});
         };
 
         const failure = "처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";

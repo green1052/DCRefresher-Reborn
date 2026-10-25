@@ -1,13 +1,13 @@
 import {http} from "@/core/http/client";
 import {isViewPage, listUrl, mergeParamURL, pageGallery, queryString, writerFilter} from "@/core/http/urls";
-import {LIST_SELECTOR, notifyListReplaced, PAGING_SELECTOR} from "@/core/list";
+import {LIST_SELECTOR, notifyListReplaced, PAGING_SELECTOR, writerSelector} from "@/core/list";
 import {defineModule} from "@/core/module/define";
 import {getModuleApi} from "@/core/module/registry";
 import {ownPreviewEntry} from "@/core/preview/history";
 import {useUiStore} from "@/stores/ui";
 import {smoothScroll, whenDomReady} from "@/utils/dom";
 import {isBlockedError} from "@/utils/error";
-import {hasModifier} from "@/utils/event";
+import {hasModifier, isTyping} from "@/utils/event";
 import {sha256} from "@/utils/hash";
 
 import {clearNewPost, isWholeFirstPage, replaceList, syncPaging} from "./list";
@@ -197,7 +197,8 @@ export default defineModule(meta, {
                 const listHtml = end === -1 ? "" : response.slice(start, end);
                 const listHash = listHtml && await sha256(new TextEncoder().encode(listHtml));
                 // 그사이 주소가 바뀌었으면 지난 주소의 목록이라 버린다. finally에서 새 주소로 다시 받는다.
-                if (target !== originalLocation) return false;
+                // 해시를 구하는 사이 모듈을 껐으면 갈아끼우지 않는다. 끈 모듈이 목록을 갈아끼우면 onRevoke가 지운 삭제 표시 행이 다시 들어온다.
+                if (target !== originalLocation || ctx.signal.aborted) return false;
                 if (!customURL && listHash && listHash === lastListHash) {
                     failures = 0;
                     quiet = force ? 0 : quiet + 1;
@@ -209,7 +210,8 @@ export default defineModule(meta, {
 
                 // 자동 새로고침은 목록 표만 파싱한다(문서의 1/3). 강제·이동 로드, 검색 결과·작성자 거르기(검색 모듈이 페이징을 보고 다시 잇는다),
                 // 실패 뒤(페이징이 옛 페이지일 수 있다)에는 문서 전체를 파싱해 페이징도 맞춘다.
-                const writer = writerFilter(target) !== null;
+                const filter = writerFilter(target);
+                const writer = filter !== null;
                 const partial = !force && failures === 0 && !queryString("s_keyword") && !writer && listHtml;
                 const dom = new DOMParser().parseFromString(partial ? `<table class="gall_list">${listHtml}` : response, "text/html");
 
@@ -248,7 +250,9 @@ export default defineModule(meta, {
                 quiet = force || newPostList.length > 0 ? 0 : quiet + 1;
 
                 // 페이지를 넘긴 목록은 옛 목록과 겹치는 행이 없으면 전부 새 글로 잡히므로 알리지 않는다 (글댓비 조회가 몰린다).
-                if (!customURL && newPostList.length > 0) getModuleApi("userinfo")?.checkNewPosts(newPostList);
+                // 작성자 거르기 중에는 숨긴 다른 작성자의 행을 뺀다. 앞 10개만 조회하므로 그대로 넘기면 보이는 글은 조회되지도 않는다.
+                const checked = filter ? newPostList.filter((row) => row.querySelector(writerSelector(filter))) : newPostList;
+                if (!customURL && checked.length > 0) getModuleApi("userinfo")?.checkNewPosts(checked);
                 unseen.count(customURL ? [] : newPostList);
 
                 return true;
@@ -355,8 +359,9 @@ export default defineModule(meta, {
         document.addEventListener("visibilitychange", onVisibilityChange, {signal});
 
         // 사용자가 목록을 보고 있으면 늘린 주기를 원래대로 되돌린다. 늘어난 동안 한 번만 다시 잡는다 (주기가 계속 밀리지 않게).
+        // 글보기 페이지의 댓글 입력은 목록을 보는 것이 아니므로 세지 않는다 (타이핑마다 주기를 다시 잡게 된다).
         const onActivity = (ev: Event): void => {
-            if (quiet === 0 || (ev.type === "pointerover" && !(ev.target instanceof Element && ev.target.closest(".gall_list")))) return;
+            if (quiet === 0 || (ev.type === "pointerover" ? !(ev.target instanceof Element && ev.target.closest(".gall_list")) : isTyping(ev))) return;
             quiet = 0;
             armNext();
         };

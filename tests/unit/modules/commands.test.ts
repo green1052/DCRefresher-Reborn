@@ -57,4 +57,10 @@ describe("commands 모듈", () => {
         const {generateManifest} = setup([meta("a", {go: {description: ""}}), meta("b", {go: {description: ""}})]);
         await expect(generateManifest({})).rejects.toThrow("단축키 이름이 겹칩니다: go (b)");
     });
+
+    it("labels.ts에 설명이 없으면 던진다 (manifest에 \"undefined: undefined\"가 들어가지 않게)", async () => {
+        const {meta: broken, labels} = meta("a", {next: {description: "다음"}});
+        const {generateManifest} = setup([{meta: broken, labels: {...labels, commands: {}}}]);
+        await expect(generateManifest({})).rejects.toThrow("단축키 설명이 labels.ts에 없습니다: next (a)");
+    });
 });

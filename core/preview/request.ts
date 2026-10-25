@@ -10,7 +10,7 @@ import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} fro
 export {type BlockOptions, type ManageResult, adminDeleteComments, blockCommenters, blockUser, bump, captchaImage, deletePost, setNotice, setRecommend, userDeleteComment} from "./manage";
 export {submitComment} from "./submit";
 export {TXTCON_BACKGROUNDS, TXTCON_COLORS, normalizeTxtcon, submitTxtcon} from "./txtcon";
-export {addDcconPackage, dcconPackages, fetchDcconList, fetchDcconPackage} from "./dccon";
+export {addDcconPackage, dcconPackages, fetchDcconList, fetchDcconPackage, getDcconPackage} from "./dccon";
 export {type SubmitResult, resultMessage} from "./response";
 
 export const viewUrl = (link: string, gallery: string, id: string): string => `${urls.base}${galleryPath(link)}board/view/?id=${gallery}&no=${id}`;

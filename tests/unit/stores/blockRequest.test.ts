@@ -1,13 +1,13 @@
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
-import {fetchDcconPackage} from "@/core/preview/request";
+import {getDcconPackage} from "@/core/preview/request";
 import type {DcinsideDcconPackage} from "@/core/preview/types";
 import {handleBlockRequest} from "@/stores/blockRequest";
 import {normalizeBlockList} from "@/stores/blocks";
 
 import {setBlockLists, stored} from "../../helpers";
 
-vi.mock("@/core/preview/request", () => ({fetchDcconPackage: vi.fn()}));
+vi.mock("@/core/preview/request", () => ({getDcconPackage: vi.fn()}));
 
 beforeEach(() => setBlockLists());
 
@@ -51,7 +51,7 @@ describe("handleBlockRequest", () => {
     });
 
     it("디시콘 하나는 그 코드를 넣는다", async () => {
-        vi.mocked(fetchDcconPackage).mockResolvedValue(dcconPackage(["a", "b"]));
+        vi.mocked(getDcconPackage).mockResolvedValue(dcconPackage(["a", "b"]));
 
         await handleBlockRequest({target: "dccon"}, {dccon: "code1"});
 
@@ -59,7 +59,7 @@ describe("handleBlockRequest", () => {
     });
 
     it("패키지 묶음은 이스케이프한 경로를 정규식 하나로 넣는다", async () => {
-        vi.mocked(fetchDcconPackage).mockResolvedValue(dcconPackage(["a.b", "c+d"]));
+        vi.mocked(getDcconPackage).mockResolvedValue(dcconPackage(["a.b", "c+d"]));
 
         await handleBlockRequest({target: "dccon", dcconPackage: "bundle"}, {dccon: "code1"});
 

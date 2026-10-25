@@ -179,12 +179,13 @@ export function MemoTab() {
         try {
             for (const type of ["UID", "IP"] as const) {
                 // 새 메모의 색은 밖에서 정한다. updateMemos의 change는 두 번(스토어·저장소 값) 불려, 안에서 고르면 저장 뒤 색이 한 번 바뀐다.
-                const colors = new Map(Object.keys(parsed[type]).map((target) => [target, randomColor()]));
+                const incoming = Object.entries(parsed[type]).map(([target, text]) => [target, text, randomColor()] as const);
                 const added = Date.now();
                 await updateMemos(type, (current) => {
-                    const merged = {...current};
-                    for (const [target, memo] of Object.entries(parsed[type])) {
-                        merged[target] = {...(ownMemo(merged, target) ?? {color: colors.get(target) ?? randomColor(), added}), text: memo};
+                    // 보통 객체면 대상이 __proto__인 메모가 대입에서 조용히 사라진다 (parseAppMemos가 살려 온 값).
+                    const merged = Object.assign(Object.create(null) as typeof current, current);
+                    for (const [target, text, color] of incoming) {
+                        merged[target] = {...(ownMemo(merged, target) ?? {color, added}), text};
                     }
                     return merged;
                 });

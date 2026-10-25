@@ -1,4 +1,5 @@
 // 디시 글 목록 DOM 도우미. 목록을 갈아끼우거나 이어 붙이는 refresh·search 모듈과 행을 찾는 모듈이 같이 쓴다.
+import type {WriterFilter} from "@/core/http/urls";
 import {LIST_REPLACED_EVENT, sendMessage} from "@/core/messaging/protocol";
 
 /** 갈아끼울 글 목록 tbody. 검색 페이지 아래쪽 통합검색 목록(#kakao_seach_list)은 id가 있어 :not([id])로 빠진다. */
@@ -14,8 +15,11 @@ export const WRITER_ROW_SELECTOR = ".ub-content, .search_comment";
 /** 글 목록의 글 행. 글 보기 머리·댓글과 댓글 검색 결과의 댓글 행(.search_comment)은 들지 않는다. */
 export const LIST_ROW_SELECTOR = ".gall_list .ub-content";
 
-// 숨은 탭에서 미뤄 둔 알림이 있는지. 다시 보일 때 한 번만 보낸다.
-let deferred = false;
+/** 그 작성자의 작성자 칸 (디시 목록의 td.ub-writer[data-uid|data-ip]). 작성자 거르기(features/search)가 숨기는 행을 search·refresh가 같이 가린다. */
+export const writerSelector = ({kind, value}: WriterFilter): string => `.ub-writer[data-${kind}="${CSS.escape(value)}"]`;
+
+// 숨은 탭에서 미뤄 둔 갤러리 id. 다시 보일 때 한 번만 보낸다. 숨은 동안 갤러리가 바뀌면 마지막 것으로 보낸다.
+let deferred: string | undefined;
 
 // 페이지에 건 목록 다리. 페이지마다 한 번만 배경에 요청하고, 실패하면 다음에 다시 요청한다.
 let bridge: Promise<void> | undefined;
@@ -34,11 +38,13 @@ export const notifyListReplaced = (gallery: string): void => {
     // 숨은 탭은 다시 보일 때 한 번만 알린다. 숨은 탭 새로고침 주기(30초~)는 서비스 워커가 잠드는 30초보다 길어
     // 바뀔 때마다 보내면 잠든 워커를 매번 다시 띄운다. 숨은 동안엔 차단·메모 표시가 늦게 붙어도 보는 사람이 없다.
     if (document.hidden) {
-        if (deferred) return;
-        deferred = true;
+        const first = deferred === undefined;
+        deferred = gallery;
+        if (!first) return;
         document.addEventListener("visibilitychange", () => {
-            deferred = false;
-            notifyListReplaced(gallery);
+            const last = deferred;
+            deferred = undefined;
+            if (last !== undefined) notifyListReplaced(last);
         }, {once: true});
         return;
     }

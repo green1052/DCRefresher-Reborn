@@ -1,7 +1,9 @@
+import {cn} from "cn";
 import {ClipboardCopy, FileDown, Plus, Trash2, Upload} from "lucide-react";
 import {type ReactNode, useMemo, useRef, useState} from "react";
 
 import {ConfirmDialog} from "@/components/dialogs";
+import {FOCUS_RING} from "@/components/focusRing";
 import {TooltipButton} from "@/components/WithTooltip";
 import {focusPanel} from "@/components/useReturnFocus";
 import {Badge} from "@/components/ui/badge";
@@ -68,8 +70,7 @@ export const ListRow = ({head, label, info, used, onEdit, onRemove}: {
                 <TableHead scope="row" className="font-normal">
                     {/* 줄(tr)은 버튼이 될 수 없어 키보드·스크린 리더에는 첫 칸을 편집 버튼으로 알린다.
                         따로 onClick을 달지 않는다. 누르면(Enter/Space 포함) click이 줄로 올라가 편집이 열린다. */}
-                    <button type="button" title="수정"
-                            className="block w-full cursor-pointer rounded-sm text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+                    <button type="button" title="수정" className={cn(FOCUS_RING, "block w-full text-left")}>
                         {head}
                     </button>
                 </TableHead>
@@ -168,8 +169,10 @@ export const ListTabs = <T extends string, I>({
     const [gallery, setGallery] = useState("all");
     // 이만큼(일) 넘게 안 쓰인 항목만. 0이면 거르지 않는다.
     const [unusedDays, setUnusedDays] = useState("0");
-    // 표에 그리는 줄 수. 거르는 조건이 바뀌면 처음 PAGE줄로 돌린다.
-    const [limit, setLimit] = useState(PAGE);
+    // 표에 그리는 줄 수. 종류마다 따로 센다 (한 탭에서 펼친 뒤 탭을 바꿔도 그 탭이 PAGE줄로 시작한다).
+    // 거르는 조건이 바뀌면 모두 처음 PAGE줄로 돌린다.
+    const [limits, setLimits] = useState<Record<string, number>>({});
+    const resetLimits = (): void => setLimits({});
     // 걸르기(종류 전체 × searchText의 배열 할당)와 갤러리 목록은 조건이 바뀔 때만 한다.
     // 확인 창·가져오기 창·더 보기(그리는 줄 수)가 바뀔 때에는 다시 하지 않는다.
     const galleries = useMemo(
@@ -283,16 +286,17 @@ export const ListTabs = <T extends string, I>({
 
                     {types.map((type) => {
                         const {total, list} = shown.get(type)!;
+                        const limit = limits[type] ?? PAGE;
                         return (
                             <TabsContent key={type} value={type} className="tab-enter">
                                 <div ref={filterRow} className="flex flex-wrap items-center gap-2 pt-2">
                                     <RefresherSelect value={galleryFilter} options={galleryOptions} aria-label="갤러리" onChange={(value) => {
                                         setGallery(value);
-                                        setLimit(PAGE);
+                                        resetLimits();
                                     }}/>
                                     <RefresherSelect value={unusedDays} options={UNUSED_OPTIONS} aria-label="마지막 사용" onChange={(value) => {
                                         setUnusedDays(value);
-                                        setLimit(PAGE);
+                                        resetLimits();
                                     }}/>
                                     {filtering && list.length > 0 && (
                                         <Button variant="destructive" onClick={() => setConfirm({kind: "shown", type})}>
@@ -306,7 +310,7 @@ export const ListTabs = <T extends string, I>({
                                         <SearchInput className="w-[180px]" placeholder="검색" aria-label={`${label} 검색`} value={query}
                                                      onChange={(ev) => {
                                                          setQuery(ev.target.value);
-                                                         setLimit(PAGE);
+                                                         resetLimits();
                                                      }}/>
                                         {/* 검색 중에도 걸러진 것만이 아니라 이 종류 전부를 지우므로 확인 문구에 전체 개수를 적는다. */}
                                         <TooltipButton tip="전체 삭제" variant="destructive" size="icon" disabled={total === 0} onClick={() => setConfirm({kind: "clear", type})}>
@@ -317,7 +321,7 @@ export const ListTabs = <T extends string, I>({
                                             setQuery("");
                                             setGallery("all");
                                             setUnusedDays("0");
-                                            setLimit(PAGE);
+                                            resetLimits();
                                             onAdd(type);
                                         }}>
                                             <Plus/>
@@ -349,7 +353,7 @@ export const ListTabs = <T extends string, I>({
                                                 <Button variant="outline" onClick={(ev) => {
                                                     // 마지막 묶음을 펼치면 버튼이 사라지므로 포커스를 탭 패널로 옮겨 둔다.
                                                     if (list.length <= limit + PAGE) focusPanel(ev.currentTarget);
-                                                    setLimit(limit + PAGE);
+                                                    setLimits({...limits, [type]: limit + PAGE});
                                                 }}>
                                                     더 보기 (+{Math.min(PAGE, list.length - limit)})
                                                 </Button>

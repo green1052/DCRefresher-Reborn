@@ -53,3 +53,10 @@ it("작성자 거르기 중인 페이지면 그 종류와 값을 채워 두고, 
     removeWriterTypes();
     expect(Array.from(document.querySelectorAll("#searchTypeLayer > li"), (li) => li.textContent)).toEqual(["글쓴이"]);
 });
+
+it("다시 주입돼 또 불려도 종류가 한 벌만 남는다", () => {
+    addWriterTypes(null, search, controller.signal);
+    addWriterTypes(null, search, new AbortController().signal);
+
+    expect(Array.from(document.querySelectorAll("#searchTypeLayer > li"), (li) => li.textContent)).toEqual(["글쓴이", "아이디", "IP"]);
+});

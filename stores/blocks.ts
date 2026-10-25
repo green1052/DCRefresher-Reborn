@@ -1,5 +1,5 @@
 import {create} from "zustand";
-import {shallow} from "zustand/shallow";
+import {shallow} from "zustand/vanilla/shallow";
 
 import {BLOCK_DEFAULTS_KEY, BLOCK_TYPES, blockDefaultsStorage, blockListKey} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";

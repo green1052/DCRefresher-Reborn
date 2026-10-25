@@ -308,6 +308,8 @@ export const isImageBlocked = async (media: HTMLImageElement | HTMLVideoElement,
     if (threshold === undefined) return exact;
     // 같은 파일이어도 비슷한 이미지 항목을 마저 봐서 걸린 항목을 모두 쓰였다고 적는다.
     const near = read.hashes.then((hashes) => !!hashes?.similar && isSimilarBlocked(hashes.similar, gallery, threshold));
+    // exact면 near를 기다리지 않고 돌려주므로 거부를 여기서 받아 둔다 (돌려준 near의 거부는 부른 쪽이 그대로 받는다).
+    void near.catch(() => {});
     return exact || near;
 };
 

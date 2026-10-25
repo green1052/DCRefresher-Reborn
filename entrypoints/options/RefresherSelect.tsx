@@ -5,8 +5,8 @@ interface RefresherSelectProps<T extends string> {
     /** 값 → 표시 이름. 넣은 순서대로 보인다. */
     options: Record<T, string>;
     disabled?: boolean;
-    /** 스크린 리더용 이름. 옆에 둔 글자는 label로 연결되지 않으므로 따로 넘긴다. */
-    "aria-label"?: string;
+    /** 스크린 리더용 이름. 옆에 둔 글자는 label로 연결되지 않으므로 반드시 따로 넘긴다. */
+    "aria-label": string;
     "aria-describedby"?: string;
     onChange: (value: T) => void;
 }

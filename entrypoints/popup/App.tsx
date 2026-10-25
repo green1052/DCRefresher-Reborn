@@ -1,5 +1,5 @@
 import {Ban, type LucideIcon, NotebookPen, Puzzle, Settings} from "lucide-react";
-import {type ReactNode, useEffect, useId, useLayoutEffect, useState} from "react";
+import {type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState} from "react";
 
 import {Badge} from "@/components/ui/badge";
 import {Button} from "@/components/ui/button";
@@ -101,7 +101,13 @@ function PageSection({tabId, gallery, state: initial, toggled}: Page & { toggled
         };
     }, [tabId, toggled]);
 
-    const act = (action: PageAction): void => void sendMessage("refresher:pageAction", action, tabId).then(setState, () => setState(null));
+    // 위 효과와 같이 늦게 온 이전 응답은 버린다. 빠르게 두 번 누르면 먼저 보낸 응답이 나중에 올 수 있다.
+    const latest = useRef(0);
+    const act = (action: PageAction): void => {
+        const id = ++latest.current;
+        const apply = (next: PageState | null): void => void (latest.current === id && setState(next));
+        void sendMessage("refresher:pageAction", action, tabId).then(apply, () => apply(null));
+    };
 
     const visible = (entry: { gallery?: string }): boolean => !entry.gallery || entry.gallery === gallery;
     const blockCount = Object.values(blocks).flat().filter(visible).length;

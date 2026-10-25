@@ -7,7 +7,8 @@ type AppMemos = Record<"UID" | "IP", Record<string, string>>;
 
 /** 공앱 메모 글 → 대상별 메모 글. 형식이 아닌 줄(빈 줄, "-"가 없거나 대상·메모가 빈 줄)은 세어 돌려준다. */
 export const parseAppMemos = (text: string): { memos: AppMemos; skipped: number } => {
-    const memos: AppMemos = {UID: {}, IP: {}};
+    // 아이디가 __proto__면 보통 객체에는 넣어도 조용히 사라진다 (stores/memos.ts의 ownMemo와 같은 이유).
+    const memos: AppMemos = {UID: Object.create(null) as Record<string, string>, IP: Object.create(null) as Record<string, string>};
     let skipped = 0;
 
     for (const line of text.split(/\r?\n/)) {

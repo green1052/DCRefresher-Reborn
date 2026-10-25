@@ -1,7 +1,7 @@
 // 유저 버블의 "차단" 처리. 차단 모듈이 꺼져 있어도 차단 목록(stores/blocks.ts)에는 넣으므로 모듈이 아닌 stores에 둔다.
 import {imageHash, pairedMediaUrl} from "@/core/block";
 import {runningModuleSettings} from "@/core/module/registry";
-import {fetchDcconPackage} from "@/core/preview/request";
+import {getDcconPackage} from "@/core/preview/request";
 import {TYPE_NAMES} from "@/core/storage/items";
 import type {BlockType} from "@/core/storage/types";
 import {type BlockInputFields, useBlocksStore} from "@/stores/blocks";
@@ -37,7 +37,7 @@ const blockDccon = async (selected: SelectedUser, dcconPackage?: DcconPackageMod
     const code = selected.dccon;
     if (!code) return;
 
-    const response = await fetchDcconPackage(code);
+    const response = await getDcconPackage(code);
 
     const extra = `${response.info.title} [${response.info.package_idx}]`;
     const mode = defaultDetectMode("DCCON");

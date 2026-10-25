@@ -25,7 +25,8 @@ vi.mock("@/core/preview/request", async (importOriginal) => ({
     blockUser: request.blockUser
 }));
 
-const preData = (id: string) => makePreData({id, link: `/board/view/?id=test&no=${id}`});
+// 기록에 쌓은 글 정보는 디시 주소일 때만 다시 읽힌다 (core/preview/history.ts의 isGalleryPreData).
+const preData = (id: string) => makePreData({id, link: `https://gall.dcinside.com/board/view/?id=test&no=${id}`});
 
 const press = (key: string, target: EventTarget = window): void =>
     void target.dispatchEvent(new KeyboardEvent("keydown", {key, code: `Key${key.toUpperCase()}`, bubbles: true, cancelable: true}));

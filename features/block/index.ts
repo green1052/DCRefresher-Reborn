@@ -160,7 +160,9 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
             const box = repeats === 0 ? replyBoxOf(item) : null;
             if (box) foldedBoxes.add(box);
         }
-        const groups = groupDuplicates(shown.filter((item) => ![...foldedBoxes].some((box) => box.contains(item))), textOf, duplicate);
+        // 댓글마다 Set을 다시 펼치지 않는다.
+        const boxes = [...foldedBoxes];
+        const groups = groupDuplicates(shown.filter((item) => !boxes.some((box) => box.contains(item))), textOf, duplicate);
         for (const item of all) {
             const repeats = groups.get(item);
             item.classList.toggle("refresherDuplicate", repeats === 0);

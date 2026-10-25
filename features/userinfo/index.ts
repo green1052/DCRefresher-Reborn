@@ -290,8 +290,15 @@ export default defineModule(meta, {
         };
 
         // 미리보기·버블·새 글 조회가 갤로그에서 새로 받은 값을 모두 저장한다. 이미 받은 사람을 다시 묻지 않는다.
+        // 새 글 조회는 한 번에 최대 10명을 받아 uid마다 불린다. 모아서 한 번만 올리고 다시 그린다 (notifyRowsHidden과 같은 식).
+        let incoming: (readonly [string, GallogActivity])[] = [];
         ctx.addCleanup(onGallogActivity((uid, activity) => {
-            if (ctx.settings.checkRatio) storeRatios([[uid, activity]]);
+            if (!ctx.settings.checkRatio || incoming.push([uid, activity]) > 1) return;
+            queueMicrotask(() => {
+                const batch = incoming;
+                incoming = [];
+                if (!signal.aborted) storeRatios(batch);
+            });
         }));
 
         // 조회 중인 uid. 응답이 새로고침 주기보다 늦어도 다음 새로고침이 같은 요청을 또 보내지 않게 한다.

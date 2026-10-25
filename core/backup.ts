@@ -104,8 +104,9 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
     const bytes = await gzip(JSON.stringify(await collectLocalData()));
     const encoded = bytes.toBase64();
 
-    const all = await browser.storage.sync.get(null);
-    const other = all[SLOT_KEYS[slot === "manual" ? "auto" : "manual"]];
+    // get(null)은 두 칸의 base64 조각(최대 100KB)까지 끌어온다. 여기선 다른 칸의 메타와 이 칸의 키 목록만 있으면 된다.
+    const otherKey = SLOT_KEYS[slot === "manual" ? "auto" : "manual"];
+    const other = (await browser.storage.sync.get(otherKey))[otherKey];
     const otherSize = isMeta(other) ? other.size : 0;
     if (encoded.length + otherSize > TOTAL_CHARS) {
         const kb = (chars: number): number => Math.ceil(chars / 1024);
@@ -122,9 +123,10 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
     };
 
     // 이 칸에서 이번에 쓰지 않는 조각(전보다 줄어든 몫)은 쓴 뒤에 지운다. 쓰기가 실패하면 이전 메타가 여전히 그 조각을 가리킨다.
-    const stale = Object.keys(all).filter((key) => !(key in items) && isSlotKey(slot, key));
+    const stale = (await browser.storage.sync.getKeys()).filter((key) => !(key in items) && isSlotKey(slot, key));
     await browser.storage.sync.set(items);
-    if (stale.length > 0) await browser.storage.sync.remove(stale);
+    // 지우기가 실패해도(쓰기 한도 등) 백업은 이미 끝났다. 남은 조각은 다음 백업이 덮거나 지운다.
+    if (stale.length > 0) await browser.storage.sync.remove(stale).catch((e: unknown) => void console.warn("오래된 백업 조각을 지우지 못했습니다:", e));
 };
 
 interface SlotStatus {
@@ -142,10 +144,11 @@ export interface CloudBackupStatus {
 
 /** 클라우드 백업 상태. 다른 기기가 올린 백업도 메타로 알 수 있다. */
 export const readCloudBackupStatus = async (): Promise<CloudBackupStatus> => {
-    const all = await browser.storage.sync.get(null);
+    // 메타 두 개만 읽는다. get(null)은 base64 조각까지 끌어온다.
+    const metas = await browser.storage.sync.get(Object.values(SLOT_KEYS));
     const device = await backupStorage.device().getValue();
     const slotStatus = (slot: BackupSlot): SlotStatus | undefined => {
-        const meta = all[SLOT_KEYS[slot]];
+        const meta = metas[SLOT_KEYS[slot]];
         return isMeta(meta) ? {createdAt: meta.createdAt, size: meta.size, other: meta.device !== device} : undefined;
     };
 
@@ -168,13 +171,15 @@ interface CloudBackup {
 
 /** 한 칸의 백업을 읽는다. 없으면 null. */
 export const readCloudBackup = async (slot: BackupSlot): Promise<CloudBackup | null> => {
-    const all = await browser.storage.sync.get(null);
-    const meta = all[SLOT_KEYS[slot]];
+    // 메타를 먼저 읽고 이 칸의 조각만 읽는다. get(null)은 다른 칸의 조각까지 끌어온다.
+    const meta = (await browser.storage.sync.get(SLOT_KEYS[slot]))[SLOT_KEYS[slot]];
 
     if (!isMeta(meta)) return null;
     if (meta.format > FORMAT) throw new Error("새 버전 확장에서 만든 백업입니다. 확장을 업데이트해 주세요.");
 
-    const chunks = Array.from({length: meta.chunks}, (_, index) => all[chunkKey(slot, index)]);
+    const keys = Array.from({length: meta.chunks}, (_, index) => chunkKey(slot, index));
+    const stored = await browser.storage.sync.get(keys);
+    const chunks = keys.map((key) => stored[key]);
     if (chunks.some((chunk) => typeof chunk !== "string")) {
         throw new Error("백업 조각이 빠져 있습니다. 다른 기기에서 동기화가 아직 끝나지 않았을 수 있습니다.");
     }
