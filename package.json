@@ -21,7 +21,7 @@
     },
     "dependencies": {
         "@base-ui/react": "^1.9.0",
-        "@webext-core/messaging": "^4.0.0",
+        "@webext-core/messaging": "^4.0.1",
         "class-variance-authority": "^0.7.1",
         "cn": "^0.5.0",
         "dompurify": "^3.4.17",

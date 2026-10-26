@@ -6,7 +6,7 @@
       "name": "dcrefresher-reborn",
       "dependencies": {
         "@base-ui/react": "^1.9.0",
-        "@webext-core/messaging": "^4.0.0",
+        "@webext-core/messaging": "^4.0.1",
         "class-variance-authority": "^0.7.1",
         "cn": "^0.5.0",
         "dompurify": "^3.4.17",
@@ -418,7 +418,7 @@
 
     "@webext-core/match-patterns": ["@webext-core/match-patterns@2.0.0", "", {}, "sha512-EsyMMKfQuSE4rWCjP/TifwvUWlhC/OhiGn5OK3p9F0d57UmtLib0nzguzPKyxM1/kZV7SkE+jYXkE8gsdPRLmw=="],
 
-    "@webext-core/messaging": ["@webext-core/messaging@4.0.0", "", { "dependencies": { "@aklinker1/zero-serialize-error": "^1.0.2" }, "peerDependencies": { "@types/chrome": "*" }, "optionalPeers": ["@types/chrome"] }, "sha512-1GWLsiWeIRJ/LpSlI87jU3e4KCDhyTadQEwyhMlLSwXOt5/ui2xkVcE96/clxjxqp/FcUBA00c5iT5I3crjlTQ=="],
+    "@webext-core/messaging": ["@webext-core/messaging@4.0.1", "", { "dependencies": { "@aklinker1/zero-serialize-error": "^1.0.2" }, "peerDependencies": { "@types/chrome": "*" }, "optionalPeers": ["@types/chrome"] }, "sha512-sgsj3r42zfgC16Uaz6wXb0KvbkCQvlmOqyMIDbdx4ErRVCP98jpJjkVRoACldV7/oKHY9ITl20ld2pwKvAHSsQ=="],
 
     "@wxt-dev/auto-icons": ["@wxt-dev/auto-icons@1.1.2", "", { "dependencies": { "defu": "^6.1.4", "sharp": "^0.35.3" }, "peerDependencies": { "wxt": ">=0.19.0" } }, "sha512-tLBTgvAAPj5n9VTrNVgbkqSvcuKTZjppgrpGq6YnZ+oOj69bqOWQdFRMhHutTcs4tvIvhgJ80LmhwQXhUyyTxA=="],
 
