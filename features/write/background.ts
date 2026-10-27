@@ -9,7 +9,8 @@ export default defineBackgroundModule(meta, {
         onMessage("refresher:hookUploads", async ({sender}) => {
             if (!hasTab(sender)) return;
 
-            await runFileInPage(sender, "/upload-hook.js").catch(console.error);
+            // 실패를 그대로 던진다. 콘텐츠 스크립트가 거절을 받아야 다음 설정 바뀜 때 다시 요청한다 (page.ts와 같은 규칙).
+            await runFileInPage(sender, "/upload-hook.js");
         });
     }
 });
