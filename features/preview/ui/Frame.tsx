@@ -369,7 +369,8 @@ export const Frame = () => {
                         </div>
                     )}
 
-                    {post && (allowReply ? <WriteComment/> : (
+                    {/* 아카이브 글은 서버가 이미 없는 글이므로 댓글을 받지 않는다. */}
+                    {post && !archived && (allowReply ? <WriteComment/> : (
                         <p className="px-8 pt-3 pb-6 text-muted-foreground">멤버만 댓글을 쓸 수 있습니다.</p>
                     ))}
                     </Fragment>
