@@ -49,6 +49,17 @@ describe("isBlocked", () => {
         expect(isBlocked("TITLE", "광고")).toBe(true);
     });
 
+    it("IP 포함은 숫자 경계에서만 맞는다", () => {
+        setBlockLists({IP: [entry("1.2.3.4", {mode: "CONTAIN"})]});
+        expect(isBlocked("IP", "1.2.3.4")).toBe(true);
+        expect(isBlocked("IP", "11.2.3.45")).toBe(false);
+        expect(isBlocked("IP", "1.2.3.45")).toBe(false);
+        setBlockLists({IP: [entry("1.2.3", {mode: "CONTAIN"})]});
+        expect(isBlocked("IP", "1.2.3.4")).toBe(true);
+        expect(isBlocked("IP", "1.2.34.5")).toBe(false);
+        expect(isBlocked("IP", "21.2.3.4")).toBe(false);
+    });
+
     it("빈 내용은 막지 않는다", () => {
         setBlockLists({TITLE: [entry("")]});
         expect(isBlocked("TITLE", "")).toBe(false);

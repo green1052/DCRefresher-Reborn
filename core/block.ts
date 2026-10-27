@@ -37,10 +37,28 @@ const compile = (entry: BlockEntry): Compiled | null => {
     return compiled;
 };
 
-/** 일치·포함 검사. NOT_*도 뒤집지 않고 SAME/CONTAIN으로 본다. 잘못된 정규식은 맞지 않는다. */
-const matches = (entry: BlockEntry, mode: DetectMode, content: string): boolean => {
+/** IP 포함 검사용 패턴: 이스케이프에 숫자 경계를 붙인다. "1.2.3.4"가 "11.2.3.45"·"1.2.3.45"를 잡지 않게 한다. */
+const ipPatternCache = new WeakMap<BlockEntry, RegExp>();
+const ipPattern = (entry: BlockEntry): RegExp => {
+    let pattern = ipPatternCache.get(entry);
+    if (!pattern) {
+        // 항목 끝이 숫자일 때만 그쪽 경계를 붙여 "1.2.3."처럼 점으로 끝나는 접두사 항목도 그대로 쓰게 한다.
+        const lead = /^\d/.test(entry.content) ? "(?<![0-9])" : "";
+        const trail = /\d$/.test(entry.content) ? "(?![0-9])" : "";
+        pattern = new RegExp(`${lead}${RegExp.escape(entry.content)}${trail}`);
+        ipPatternCache.set(entry, pattern);
+    }
+    return pattern;
+};
+
+/** 일치·포함 검사. NOT_*도 뒤집지 않고 SAME/CONTAIN으로 본다. 잘못된 정규식은 맞지 않는다. IP의 CONTAIN은 숫자 경계에서만 포함한다. */
+const matches = (entry: BlockEntry, mode: DetectMode, content: string, type: BlockType): boolean => {
     const whole = mode.endsWith("SAME");
-    if (!entry.isRegex) return whole ? entry.content === content : content.includes(entry.content);
+    if (!entry.isRegex) {
+        if (whole) return entry.content === content;
+        if (type === "IP") return ipPattern(entry).test(content);
+        return content.includes(entry.content);
+    }
 
     const compiled = compile(entry);
     return compiled !== null && (whole ? compiled.anchored : compiled.regex).test(content);
@@ -97,12 +115,12 @@ const scan = (lists: BlockLists, type: BlockType, content: string, gallery: stri
 
         const mode = entry.mode ?? lists.defaults[type];
         if (!mode.startsWith("NOT_")) {
-            if (!matches(entry, mode, content)) continue;
+            if (!matches(entry, mode, content, type)) continue;
             blocked = true;
             onEntry?.(entry, "hit");
         } else if (!entry.isRegex || compile(entry)) {
             hasAllowList = true;
-            const hit = matches(entry, mode, content);
+            const hit = matches(entry, mode, content, type);
             allowed ||= hit;
             onEntry?.(entry, hit ? "allow" : "miss");
         }
