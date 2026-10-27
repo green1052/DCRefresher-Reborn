@@ -139,6 +139,8 @@ export const WriteComment = () => {
             if (post.requireCommentCaptcha) {
                 code = await st.openCaptcha(captchaImage(preData, "comment"));
                 if (!code) return;
+                // 캡차를 푸는 사이 다른 글로 넘어갔으면 이 글에 보내지 않는다.
+                if (usePreviewStore.getState().signalId !== st.signalId) return;
             }
 
             const user = {name: login ? "" : nick, pw: login ? undefined : password};
@@ -154,6 +156,8 @@ export const WriteComment = () => {
                     (config) => (usePreviewStore.getState().signalId === st.signalId ? st.openTurnstile(config) : Promise.resolve(undefined))
                 );
                 if (!turnstile) return;
+                // 토큰이 묻지 않고 바로 와도 넘어간 글에는 보내지 않는다.
+                if (usePreviewStore.getState().signalId !== st.signalId) return;
             }
             const outcome = await postComment(preData, post, user, {text, dccons, bigDccon, txtcon: txtcon ? txtconColors : undefined}, sentReply, code, turnstile);
 
