@@ -137,5 +137,10 @@ export const parseImport = (input: string): Record<string, unknown> => {
         /^refresher:(module:.+:(enable|setting:.+)|block:[A-Z]+:mode)$/.test(key) ||
         (/^refresher:(block|memo):[A-Z]+$/.test(key) && typeof value === "string"));
     if (isV5) throw new Error("v5 데이터는 가져올 수 없습니다.");
+    // 값 형태가 정해진 키에 다른 형태가 오면 그대로 쓰여 이 기기의 목록·메모·설정을 지운다. 형태가 다르면 가져오기를 막는다.
+    for (const [key, value] of Object.entries(parsed)) {
+        if (isBlockListKey(key) && !Array.isArray(value)) throw new Error(`설정 값의 형태가 올바르지 않습니다: ${key}`);
+        if ((key.startsWith("refresher:memo:") || isMapKey(key)) && !isRecord(value)) throw new Error(`설정 값의 형태가 올바르지 않습니다: ${key}`);
+    }
     return parsed;
 };

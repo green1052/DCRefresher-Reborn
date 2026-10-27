@@ -227,4 +227,16 @@ describe("parseImport", () => {
         expect(() => parseImport("{\"refresher:memo:UID\":\"{}\"}")).toThrow("v5 데이터");
         expect(parseImport(`{"${SETTINGS}":{},"${DEFAULTS}":{},"${NICK}":[]}`)).toEqual({[SETTINGS]: {}, [DEFAULTS]: {}, [NICK]: []});
     });
+
+    it("값 형태가 잘못된 키는 던진다", () => {
+        // 차단 목록은 배열이, 메모·설정 객체는 객체가 아닌 값이 오면 그대로 쓰여 이 기기 값을 지운다.
+        expect(() => parseImport(`{"${NICK}":42}`)).toThrow("형태가 올바르지 않습니다");
+        expect(() => parseImport(`{"${MODULES}":42}`)).toThrow("형태가 올바르지 않습니다");
+        expect(() => parseImport(`{"${SETTINGS}":42}`)).toThrow("형태가 올바르지 않습니다");
+        expect(() => parseImport(`{"${DEFAULTS}":42}`)).toThrow("형태가 올바르지 않습니다");
+        expect(() => parseImport("{\"refresher:memo:UID\":42}")).toThrow("형태가 올바르지 않습니다");
+        // 배열은 객체(isRecord)가 아니다.
+        expect(() => parseImport("{\"refresher:memo:UID\":[]}")).toThrow("형태가 올바르지 않습니다");
+        expect(parseImport("{\"refresher:memo:UID\":{}}")).toEqual({"refresher:memo:UID": {}});
+    });
 });
