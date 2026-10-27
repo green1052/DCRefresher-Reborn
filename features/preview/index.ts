@@ -402,15 +402,26 @@ const controller = (ctx: Ctx) => {
             // 미리보기가 쌓은 만큼 뒤로 간다. 새로 쌓으면 열고 닫을 때마다 두 칸씩 늘어 갤러리 전의 기록이 밀려난다.
             // 쌓은 기록이 아닌데 주소가 바뀌어 있으면(창을 연 채 설정을 바꾼 경우 등) 원래 주소를 쌓는다.
             // 기록 조작은 장식이라 삼킨다. 던지면 close가 중간에 끊겨 창이 닫히지도 않고 Esc도 먹지 않는다.
+            const {title} = savedHistory;
             const depth = ownPreviewDepth();
             try {
-                if (!fromHistory && depth > 0) history.go(-depth);
-                else if (!fromHistory && location.href !== savedHistory.url) history.pushState(savedHistory.state, savedHistory.title, savedHistory.url);
+                if (!fromHistory && depth > 0) {
+                    history.go(-depth);
+                    // go는 비동기다. 제목을 지금 되돌리면 브라우저가 아직 현재 항목인 마지막 미리보기 글 항목의 제목을
+                    // 목록 제목으로 갱신해 방문 기록에 글 제목이 남지 않는다. 이동이 끝난 popstate 뒤에 되돌린다.
+                    window.addEventListener("popstate", () => { document.title = title; }, {once: true, signal: ctx.signal});
+                } else {
+                    try {
+                        if (!fromHistory && location.href !== savedHistory.url) history.pushState(savedHistory.state, title, savedHistory.url);
+                    } catch (e) {
+                        console.error("미리보기 기록 되돌리기 실패:", e);
+                    }
+                    // popstate는 제목을 되돌리지 않는다.
+                    document.title = title;
+                }
             } catch (e) {
                 console.error("미리보기 기록 되돌리기 실패:", e);
             }
-            // popstate는 제목을 되돌리지 않는다.
-            document.title = savedHistory.title;
         }
 
         savedHistory = null;
