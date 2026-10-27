@@ -334,6 +334,17 @@ describe("submitComment", () => {
         expect(sent[0]?.body.get("check_6")).toBe("c6");
     });
 
+    it("폼 필드와 같은 이름은 폼 자리에서 이 값으로 바꾼다", async () => {
+        const sent = serve(fetchMock, () => "1234");
+        const info = post({commentForm: {fields: [["service_code", "x"], ["name", "숨겨진이름"], ["check_6", "c6"], ["gallery_no", "evil"]], serviceCode: "abc0123456789", dValue: dValue("207,277,508,373,409,363,349,260.5,239,166"), checks: {}}});
+        expect(await submit(info)).toEqual({result: "1234", message: undefined, detail: undefined});
+        // service_code·gallery_no는 폼에서 빼고, name은 폼 자리 그대로 우리 값으로 들어간다.
+        expect([...sent[0]!.body].map(([key]) => key)).toEqual([
+            "t_vch2", "t_vch2_chk", "name", "check_6", "service_code", "c_gall_id", "c_gall_no", "id", "no", "password", "use_gall_nick", "g-recaptcha-response", "memo"
+        ]);
+        expect(sent[0]?.body.get("name")).toBe("ㅇㅇ");
+    });
+
     it("값이 없거나 숫자로 풀리지 않으면 보내지 않고 알린다", async () => {
         serve(fetchMock, () => "1234");
         for (const value of [undefined, dValue("x07,277"), dValue("207,abc,508"), "!!!!"]) {
