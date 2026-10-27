@@ -68,6 +68,12 @@ export const BLOCK_DEFAULTS_KEY = "local:refresher:block:defaults";
 export const memoMapKey = (type: MemoType): `local:refresher:memo:${MemoType}` => `local:refresher:memo:${type}`;
 export const MODULES_KEY = "local:refresher:modules";
 
+/**
+ * 목록·설정 쓰기의 Web Locks 이름. 스토어(stores/blocks·memos·modules)와 설정 옮기기(core/settings-transfer.ts)가 같은 이름을 써야 서로 직렬되므로 한곳에 둔다.
+ * 잠금은 같은 출처끼리만 서진다 (core/storage/sync.ts 참고).
+ */
+export const LIST_LOCKS = {blocks: "refresher:blocks", memos: "refresher:memos", moduleSettings: "refresher:module-settings"} as const;
+
 /** 기본 차단 모드 항목 (쓰기용). */
 export const blockDefaultsStorage = lazyItem<Record<BlockType, DetectMode>>(BLOCK_DEFAULTS_KEY, {...DEFAULT_DETECT_MODE});
 

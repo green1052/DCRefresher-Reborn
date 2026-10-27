@@ -1,7 +1,7 @@
 import {useEffect} from "react";
 import {create} from "zustand";
 
-import {MEMO_TYPES, memoMapKey} from "@/core/storage/items";
+import {LIST_LOCKS, MEMO_TYPES, memoMapKey} from "@/core/storage/items";
 import {typedListSync} from "@/core/storage/sync";
 import type {MemoEntry, MemoType} from "@/core/storage/types";
 import {markUsed, memoUsageKey} from "@/core/usage";
@@ -105,7 +105,7 @@ const lists = typedListSync({
     get: (): Record<MemoType, MemoMap> => useMemosStore.getState().memos,
     set: (memos) => useMemosStore.setState({memos}),
     failure: "메모를 저장하지 못했습니다.",
-    lock: "refresher:memos"
+    lock: LIST_LOCKS.memos
 });
 
 /** 저장소 값을 읽고 변경(다른 탭·옵션 페이지)을 감시한다. 여러 번 불러도 한 번만 한다. signal은 콘텐츠 스크립트 컨텍스트의 것이다. */

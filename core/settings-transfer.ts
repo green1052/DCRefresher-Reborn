@@ -4,7 +4,7 @@
  */
 import {isBackupTarget, readBackupTargets} from "@/core/backup";
 import {blockKey, normalizeBlockList, normalizeDefaults} from "@/core/block-list";
-import {BLOCK_DEFAULTS_KEY, BLOCK_TYPES, backupStorage, blockListKey, isBlockListKey, MODULES_KEY, rawKey, settingsKeyModule} from "@/core/storage/items";
+import {BLOCK_DEFAULTS_KEY, BLOCK_TYPES, backupStorage, blockListKey, isBlockListKey, LIST_LOCKS, MODULES_KEY, rawKey, settingsKeyModule} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {isRecord} from "@/utils/record";
 
@@ -31,7 +31,17 @@ export const pinDefaultMode = (list: BlockEntry[], from: DetectMode, local: Dete
  *   설정 객체(isMapKey)도 기존 값에 얕게 합쳐, 설정 몇 개만 든 JSON이 나머지 설정을 기본값으로 돌리지 않게 한다.
  * 쓰다가 실패하면 이전 값으로 되돌린다. 다 쓰면 이전 값을 backupStorage.undo에 남겨 데이터 탭에서 되돌릴 수 있게 하고 그 시각을 돌려준다.
  */
-export const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "merge"): Promise<number | undefined> => {
+/**
+ * 스토어 쓰기와 같은 잠금 세 개를 모두 잡고 실행한다. 복원·가져오기·초기화는 읽고-고쳐-쓰기 창이 길어
+ * 같은 창의 스토어 쓰기(팝업 토글, 설정 정리)와 서로를 덮지 않게 옵션 출처 안에서 한 줄로 세운다.
+ * 디시 탭과는 출처가 달라 잠금이 서지 않는다 (한계는 core/storage/sync.ts 참고).
+ */
+const withListLocks = <T>(run: () => Promise<T>): Promise<T> => {
+    const locks = navigator.locks;
+    return locks.request(LIST_LOCKS.blocks, () => locks.request(LIST_LOCKS.memos, () => locks.request(LIST_LOCKS.moduleSettings, run)));
+};
+
+export const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "merge"): Promise<number | undefined> => withListLocks(async () => {
     // 아래에서 쓰는 이전 값(기본 차단 모드·설정 객체·지울 키·되돌릴 키)은 백업 대상 키다.
     const previous = await readBackupTargets();
     if (mode === "replace") {
@@ -87,7 +97,8 @@ export const writeSettings = async (data: Record<string, unknown>, mode: "replac
     } catch (e) {
         console.error(e);
     }
-};
+    return undefined;
+});
 
 /**
  * 백업을 지금 데이터에 합친다. 겹치면 지금 것이 이긴다.

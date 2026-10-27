@@ -1,7 +1,7 @@
 import {create} from "zustand";
 import {shallow} from "zustand/vanilla/shallow";
 
-import {BLOCK_DEFAULTS_KEY, BLOCK_TYPES, blockDefaultsStorage, blockListKey} from "@/core/storage/items";
+import {BLOCK_DEFAULTS_KEY, BLOCK_TYPES, blockDefaultsStorage, blockListKey, LIST_LOCKS} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {typedListSync} from "@/core/storage/sync";
 import {saveOrReload} from "@/utils/error";
@@ -89,7 +89,7 @@ const lists = typedListSync({
             if (!shallow(defaults, useBlocksStore.getState().defaults)) useBlocksStore.setState({defaults});
         }
     },
-    lock: "refresher:blocks"
+    lock: LIST_LOCKS.blocks
 });
 
 /** 저장소 값을 읽고 변경(다른 탭·옵션 페이지)을 감시한다. 여러 번 불러도 한 번만 한다. signal은 콘텐츠 스크립트 컨텍스트의 것이다. */
