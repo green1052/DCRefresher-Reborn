@@ -128,6 +128,31 @@ export const hookUploads = (): void => {
         return transfer;
     };
 
+    // 변환이 끝나기 전에 파일 선택칸을 다시 고르면 옛 결과가 새 파일을 덮지 않게 한다 (마지막 것이 이긴다).
+    let picking = 0;
+    /** 원본 파일을 그대로 실어 보낸다. 변환이 실패해도 막아 둔 올리기를 흘리지 않을 때 쓴다. */
+    const sendOriginal = (files: File[], send: (transfer: DataTransfer) => void): void => {
+        const transfer = new DataTransfer();
+        for (const file of files) transfer.items.add(file);
+        send(transfer);
+    };
+    /** 파일 선택칸: 변환이 끝나면 결과로 되돌린다. 그사이 다시 고르면 무시하고, 실패하면 원본을 보낸다. */
+    const convertPicked = (files: File[], options: ImageOptions, send: (transfer: DataTransfer) => void): void => {
+        const mine = ++picking;
+        void convertAll(files, options).then(
+            (transfer) => {
+                if (mine === picking) send(transfer);
+            },
+            () => {
+                if (mine === picking) sendOriginal(files, send);
+            },
+        );
+    };
+    /** 붙여넣기·끌어 놓기: 각자 변환해 각자 보낸다. 실패하면 원본을 보낸다. */
+    const convertPasted = (files: File[], options: ImageOptions, send: (transfer: DataTransfer) => void): void => {
+        void convertAll(files, options).then(send, () => sendOriginal(files, send));
+    };
+
     /** 바꿀 파일이 있으면 파일 목록과 그때의 설정을 돌려준다. */
     const pending = (files: FileList | null | undefined): [File[], ImageOptions] | null => {
         const options = readOptions();
@@ -142,7 +167,7 @@ export const hookUploads = (): void => {
         if (!found) return;
 
         ev.stopImmediatePropagation();
-        void convertAll(...found).then((transfer) => {
+        convertPicked(...found, (transfer) => {
             input.files = transfer.files;
             input.dispatchEvent(new Event("change", {bubbles: true}));
         });
@@ -159,10 +184,10 @@ export const hookUploads = (): void => {
 
         ev.preventDefault();
         ev.stopImmediatePropagation();
-        void convertAll(...found).then((dataTransfer) => {
-            if (dropzone) dropzone.dispatchEvent(new DragEvent("drop", {dataTransfer, bubbles: true, cancelable: true}));
+        convertPasted(...found, (transfer) => {
+            if (dropzone) dropzone.dispatchEvent(new DragEvent("drop", {dataTransfer: transfer, bubbles: true, cancelable: true}));
             else if (input) {
-                input.files = dataTransfer.files;
+                input.files = transfer.files;
                 input.dispatchEvent(new Event("change", {bubbles: true}));
             }
         });

@@ -154,6 +154,24 @@ describe("파일 선택칸", () => {
         expect(received[0]?.[0]).toBe(file);
     });
 
+    it("받는 중에 다시 고르면 마지막으로 고른 파일만 올라간다", async () => {
+        createImageBitmap
+            .mockImplementationOnce(async () => {
+                await new Promise((resolve) => setTimeout(resolve, 10));
+                return {width: 1, height: 1, close: () => {}};
+            })
+            .mockImplementationOnce(async () => ({width: 1, height: 1, close: () => {}}));
+        setOptions({webp: true, quality: 0.5, rename: false, concurrency: 1});
+        choose([png("1.png", ["IHDR", "IDAT"])]);
+        // 첫 변환이 끝나기 전에 다시 고른다.
+        choose([png("2.png", ["IHDR", "IDAT"])]);
+        await vi.waitFor(() => expect(received).toHaveLength(1));
+        // 늦게 끝난 옛 변환이 새 파일을 덮으면 안 된다.
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        expect(received).toHaveLength(1);
+        expect(received[0]?.map((file) => file.name)).toEqual(["2.webp"]);
+    });
+
     it("한꺼번에 바꾸는 이미지 수를 설정만큼으로 제한하고, 고른 순서대로 넘긴다", async () => {
         let active = 0;
         let peak = 0;
