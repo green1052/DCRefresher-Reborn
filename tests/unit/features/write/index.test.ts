@@ -131,6 +131,15 @@ describe("나가기 방지", () => {
         expect(blocksExit()).toBe(false);
     });
 
+    it("나가기 확인 뒤 다시 쓰면 다시 막는다", async () => {
+        await start();
+        subject().value = "제목";
+        document.querySelector<HTMLButtonElement>("#leave_confirm_box .btn_blue")!.click();
+        // 새 탭 등으로 실제 나가기에 실패해 페이지에 남아 계속 쓰는 경우.
+        type(subject());
+        expect(blocksExit()).toBe(true);
+    });
+
     it("설정을 끄면 막지 않는다", async () => {
         const {change} = await start();
         subject().value = "제목";

@@ -66,7 +66,9 @@ export default defineModule(meta, {
         };
 
         const onInput = (): void => {
+            // 나가기 확인 뒤 계속 쓰면 막기를 다시 건다. leaving이 남아 있으면 확인 뒤에 쓴 글이 확인 없이 날아간다.
             submitting = false;
+            leaving = false;
             if (!edited) markEdited();
         };
 
