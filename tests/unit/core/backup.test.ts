@@ -106,6 +106,32 @@ describe("runBackup / readCloudBackup", () => {
         await expect(readCloudBackup("manual")).rejects.toThrow("백업 조각이 빠져 있습니다");
     });
 
+    it("지우기 전에 다른 기기가 백업을 올렸으면 남는 조각을 그대로 둔다", async () => {
+        await browser.storage.local.set({"refresher:modules": {big: noise(6000)}});
+        await runBackup("manual");
+        await browser.storage.local.set({"refresher:modules": {small: true}});
+
+        // 두 번째 백업이 조각을 쓴 뒤 지우기 전에, 다른 기기가 새 백업(다른 메타)을 올린 상황을 흉내 낸다.
+        const original = browser.storage.sync.set.bind(browser.storage.sync);
+        let planted = false;
+        const set = vi.spyOn(browser.storage.sync, "set").mockImplementation(async (items) => {
+            await original(items);
+            if (!planted && isRecord(items) && "backup" in items) {
+                planted = true;
+                await original({backup: {...(items.backup as Record<string, unknown>), createdAt: 999, hash: "다른 기기"}});
+            }
+        });
+        const remove = vi.spyOn(browser.storage.sync, "remove").mockResolvedValue(undefined);
+        await runBackup("manual");
+
+        expect(remove).not.toHaveBeenCalled();
+        // 다음 백업이 그때 남은 조각을 치운다.
+        set.mockRestore();
+        remove.mockRestore();
+        await runBackup("manual");
+        expect((await syncKeys()).filter((key) => key.startsWith("backup:"))).toEqual(["backup:0"]);
+    });
+
     it("조각이 메타와 맞지 않으면 던진다", async () => {
         await browser.storage.local.set({"refresher:modules": {a: true}});
         await runBackup("manual");

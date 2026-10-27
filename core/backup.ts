@@ -125,8 +125,11 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
     // 이 칸에서 이번에 쓰지 않는 조각(전보다 줄어든 몫)은 쓴 뒤에 지운다. 쓰기가 실패하면 이전 메타가 여전히 그 조각을 가리킨다.
     const stale = (await browser.storage.sync.getKeys()).filter((key) => !(key in items) && isSlotKey(slot, key));
     await browser.storage.sync.set(items);
+    // 지우기 전에 이 칸의 메타가 아직 이번 백업인지 다시 본다. 그사이 다른 기기가 새 백업을 올렸으면 그 백업이 쓴 조각을 지워 깨진다.
+    const current = (await browser.storage.sync.get(SLOT_KEYS[slot]))[SLOT_KEYS[slot]];
+    const stillMine = isMeta(current) && current.createdAt === meta.createdAt && current.hash === meta.hash;
     // 지우기가 실패해도(쓰기 한도 등) 백업은 이미 끝났다. 남은 조각은 다음 백업이 덮거나 지운다.
-    if (stale.length > 0) await browser.storage.sync.remove(stale).catch((e: unknown) => void console.warn("오래된 백업 조각을 지우지 못했습니다:", e));
+    if (stale.length > 0 && stillMine) await browser.storage.sync.remove(stale).catch((e: unknown) => void console.warn("오래된 백업 조각을 지우지 못했습니다:", e));
 };
 
 interface SlotStatus {
