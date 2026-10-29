@@ -67,7 +67,10 @@ const COMMENTS_REUSE = 10_000;
 
 const recentComments = (preData: GalleryPreData): CommentListResponse | undefined => {
     const entry = getEntry(preData);
-    return entry?.comments && Date.now() - (entry.commentsAt ?? 0) < COMMENTS_REUSE ? entry.comments : undefined;
+    if (!entry?.comments || Date.now() - (entry.commentsAt ?? 0) >= COMMENTS_REUSE) return undefined;
+    // 목록의 댓글 수가 받은 목록보다 많으면 새 댓글이 달린 것이므로 다시 받는다. 줄어듦은 지워진 댓글이 목록 수에서는 빠져
+    // 받은 목록보다 적게 나오는 글이 늘 있어 목록 개수로는 알 수 없다 (fetchComments 주석). 1000개까지만 받은 글은 비교 못 한다.
+    return !entry.comments.truncated && preData.commentCount > entry.comments.list.length ? undefined : entry.comments;
 };
 
 // 차단 모듈 설정에서 가공 결과가 읽는 값만 뽑은 비교 키 (아래 구독). 모듈이 꺼져 있으면 빈 문자열이다.

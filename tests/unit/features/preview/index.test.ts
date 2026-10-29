@@ -77,3 +77,41 @@ it("창을 닫으면 상태를 비우고 늦게 온 댓글도 그리지 않는�
     await new Promise((resolve) => setTimeout(resolve));
     expect(usePreviewStore.getState().comments).toBeUndefined();
 });
+
+it("받은 지 10초 안에 다시 열면 댓글을 다시 받지 않는다", async () => {
+    request.fetchComments.mockImplementation(async () => ({list: [comment("첫")], allowReply: true}));
+    usePreviewStore.getState().requestOpen(preData("5"));
+    await vi.waitFor(() => expect(names()).toEqual(["첫"]));
+    usePreviewStore.getState().requestClose();
+    request.fetchComments.mockClear();
+
+    usePreviewStore.getState().requestOpen(preData("5"));
+    await vi.waitFor(() => expect(names()).toEqual(["첫"]));
+    expect(request.fetchComments).not.toHaveBeenCalled();
+});
+
+it("목록의 댓글 수가 줄었으면 10초 안에 다시 열어도 댓글을 다시 받지 않는다 (줄어듦은 감지 못 함)", async () => {
+    request.fetchComments
+        .mockImplementationOnce(async () => ({list: [comment("첫"), comment("지워질")], allowReply: true}))
+        .mockImplementation(async () => ({list: [comment("첫")], allowReply: true}));
+    usePreviewStore.getState().requestOpen({...preData("7"), commentCount: 2});
+    await vi.waitFor(() => expect(names()).toEqual(["첫", "지워질"]));
+    usePreviewStore.getState().requestClose();
+
+    usePreviewStore.getState().requestOpen({...preData("7"), commentCount: 1});
+    await vi.waitFor(() => expect(names()).toEqual(["첫", "지워질"]));
+    expect(request.fetchComments).toHaveBeenCalledTimes(1);
+});
+
+it("목록의 댓글 수가 늘었으면 10초 안에 다시 열어도 댓글을 다시 받는다", async () => {
+    request.fetchComments
+        .mockImplementationOnce(async () => ({list: [comment("첫")], allowReply: true}))
+        .mockImplementation(async () => ({list: [comment("첫"), comment("새")], allowReply: true}));
+    usePreviewStore.getState().requestOpen(preData("6"));
+    await vi.waitFor(() => expect(names()).toEqual(["첫"]));
+    usePreviewStore.getState().requestClose();
+
+    usePreviewStore.getState().requestOpen({...preData("6"), commentCount: 2});
+    await vi.waitFor(() => expect(names()).toEqual(["첫", "새"]));
+    expect(request.fetchComments).toHaveBeenCalledTimes(2);
+});
