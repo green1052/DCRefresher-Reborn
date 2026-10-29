@@ -120,6 +120,7 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
                            // 자동 새로고침으로 새로 들어온 댓글 (previewStore의 freshComments). 강조색으로 깔았다가 걷는다.
                            fresh && "animate-fresh-comment",
                            threadOpen && THREAD_OPEN, depth === 1 && REPLY, depth === 1 && !lastReply && REPLY_CONTINUES)}
+             data-no={comment.no}
              data-deleted={isDeleted || undefined} data-blocked={comment.blocked} data-low-activity={comment.lowActivity} data-duplicate={comment.duplicates === 0 || undefined} data-fresh={fresh || undefined}>
             <div className="flex items-center justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-1">

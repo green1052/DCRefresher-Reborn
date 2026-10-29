@@ -1,5 +1,5 @@
 import {Ban, Trash2} from "lucide-react";
-import {Fragment, memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState} from "react";
+import {Fragment, memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type MouseEvent} from "react";
 
 import {ConfirmDialog} from "@/components/dialogs";
 import {Button} from "@/components/ui/button";
@@ -190,6 +190,21 @@ export const groupReplies = (replies: ProcessedComment[], prev?: ReadonlyMap<str
     return grouped;
 };
 
+/**
+ * 멘션 문자열(@닉(IP) 또는 회원 @닉)이 가리키는 댓글. 답글의 멘션은 누른 댓글보다 앞선 같은 작성자의 가장 최근 댓글이다.
+ * 유동은 항상 (IP)가 붙어 오고, 회원 멘션(@닉)은 같은 닉의 회원 댓글에만 맞춘다 (유동으로 엉뚱하게 가지 않게).
+ */
+export const mentionTarget = (comments: ProcessedComment[], from: string, mention: string): ProcessedComment | undefined => {
+    const [, nick, ip] = mention.match(/^@(.+?)(?:\(([^()]*)\))?$/) ?? [];
+    if (nick === undefined) return undefined;
+    const fromIndex = comments.findIndex((comment) => comment.no === from);
+    for (let i = (fromIndex === -1 ? comments.length : fromIndex) - 1; i >= 0; i--) {
+        const comment = comments[i]!;
+        if (comment.name === nick && (ip ? comment.ip === ip : comment.user_id)) return comment;
+    }
+    return undefined;
+};
+
 /** 스레드별 댓글과 접을 수 있는 답글. */
 export const CommentList = ({comments}: { comments: ProcessedComment[] }) => {
     const pageRevealed = useUiStore((s) => s.blockRevealed);
@@ -253,8 +268,40 @@ export const CommentList = ({comments}: { comments: ProcessedComment[] }) => {
         scroller.scrollTop = scroller.scrollHeight;
     }, [unfinished]);
 
+    // 멘션(@닉(IP))을 누르면 가리키는 댓글로 간다. 목록 전체를 아는 곳이 여기뿐이고 댓글마다 data-no가 있어 위임으로 받는다.
+    const root = useRef<HTMLDivElement>(null);
+    const jumpMention = (ev: MouseEvent<HTMLDivElement>): void => {
+        const anchor = ev.target instanceof Element ? ev.target.closest("a.mention") : null;
+        if (!anchor) return;
+        const from = anchor.closest("[data-no]")?.getAttribute("data-no") ?? "";
+        const target = mentionTarget(comments, from, anchor.textContent?.trim() ?? "");
+        // 숨김 차단 등으로 그리지 않은 댓글로는 갈 수 없다.
+        if (!target || !shown.has(target)) return;
+
+        // 접힌 답글이면 펼치고, 아직 그리지 않았으면 다 그린다(End 키와 같다).
+        if (target.depth > 0 && (repliesOf.get(target.c_no)?.length ?? 0) > 1 && usePreviewStore.getState().collapsed.has(target.c_no)) {
+            usePreviewStore.getState().toggleCollapse(target.c_no);
+        }
+        if (parents.findIndex((p) => p.no === target.no || p.no === target.c_no) >= count) setLimit(Infinity);
+
+        // 펼치고 더 그린 뒤에 찾는다 (몇 프레임 걸릴 수 있다). 바로 굴린다: 지나는 댓글이 어림 높이에서 실제 높이로 바뀌며 부드러운 굴림이 도중에 멈춘다.
+        // 강조는 새 댓글(freshComments)과 같은 깜빡임을 쓴다.
+        let tries = 0;
+        const step = (): void => {
+            const el = root.current?.querySelector(`[data-no="${CSS.escape(target.no)}"]`);
+            if (!el) {
+                if (++tries < 60) requestAnimationFrame(step);
+                return;
+            }
+            el.scrollIntoView({block: "center"});
+            el.classList.add("animate-fresh-comment");
+            el.addEventListener("animationend", () => el.classList.remove("animate-fresh-comment"), {once: true});
+        };
+        requestAnimationFrame(step);
+    };
+
     return (
-        <div className="py-1" data-comments-revealed={postRevealed || undefined}>
+        <div className="py-1" ref={root} onClick={jumpMention} data-comments-revealed={postRevealed || undefined}>
             {isAdmin && (
                 <SelectionTools shownSelectable={comments.filter((comment) => shown.has(comment) && comment.is_delete !== "1")}
                                 foldable={new Set(parents.filter((parent) => shown.has(parent) && (repliesOf.get(parent.no)?.length ?? 0) > 1).map((parent) => parent.no))}/>

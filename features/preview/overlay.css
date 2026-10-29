@@ -75,6 +75,11 @@
         margin-bottom: 3px;
     }
 
+    /* 누르면 가리키는 댓글로 간다 (CommentList). */
+    .mention {
+        cursor: pointer;
+    }
+
     /* 인라인 width(본문 틀 900px, 표 등)가 창보다 넓어도 창 안에 들어오게 한다 (utils/sanitize.ts가 남긴 서식). */
     * {
         max-width: 100%;

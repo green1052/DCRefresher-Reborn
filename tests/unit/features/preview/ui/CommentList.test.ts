@@ -1,7 +1,7 @@
 import {describe, expect, it} from "vitest";
 
 import type {ProcessedComment} from "@/core/preview/comments";
-import {groupReplies, summaryOf, threadParents} from "@/features/preview/ui/CommentList";
+import {groupReplies, mentionTarget, summaryOf, threadParents} from "@/features/preview/ui/CommentList";
 
 import {dcComment as comment} from "../../../../helpers";
 
@@ -44,6 +44,39 @@ describe("summaryOf", () => {
     it("깡계로 가린 댓글은 차단과 따로 센다", () => {
         const hidden = [comment(1, {blocked: "hide"}), comment(2, {blocked: "hide", lowActivity: true}), comment(3, {blocked: "blur", lowActivity: true})];
         expect(summaryOf(hidden).hidden).toBe("차단 1개, 깡계 2개");
+    });
+});
+
+describe("mentionTarget", () => {
+    // 유동 1(1.1), 회원 2, 유동 3(1.1), 다른 유동 4(2.2), 3에 단 유동 5(3.3)의 답글.
+    const comments = [
+        comment(1, {name: "유동", ip: "1.1"}),
+        comment(2, {name: "회원", user_id: "member1"}),
+        comment(3, {name: "유동", ip: "1.1"}),
+        comment(4, {name: "유동", ip: "2.2"}),
+        comment(5, {c_no: "3", depth: 1, name: "유동", ip: "3.3"})
+    ];
+
+    it("유동 멘션은 누른 댓글보다 앞선 같은 닉·IP의 가장 최근 댓글로 간다", () => {
+        expect(mentionTarget(comments, "5", "@유동(1.1)")?.no).toBe("3");
+    });
+
+    it("IP가 붙은 멘션은 그 IP의 댓글로 간다, 사이의 같은 닉 다른 IP는 건너뛴다", () => {
+        expect(mentionTarget(comments, "5", "@유동(2.2)")?.no).toBe("4");
+    });
+
+    it("회원 멘션(@닉)은 앞선 회원 댓글로 간다", () => {
+        expect(mentionTarget(comments, "5", "@회원")?.no).toBe("2");
+    });
+
+    it("회원 멘션인데 앞선 회원 댓글이 없으면 같은 닉의 유동으로 가지 않는다", () => {
+        expect(mentionTarget(comments, "5", "@유동")).toBeUndefined();
+    });
+
+    it("멘션 모양이 아니거나 맞는 댓글이 없으면 가지 않는다", () => {
+        expect(mentionTarget(comments, "5", "그냥 글")).toBeUndefined();
+        expect(mentionTarget(comments, "5", "@없는닉")).toBeUndefined();
+        expect(mentionTarget(comments, "5", "@유동(9.9)")).toBeUndefined();
     });
 });
 
