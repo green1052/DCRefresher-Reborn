@@ -41,7 +41,7 @@
         "@types/react-dom": "^19.3.0",
         "@wxt-dev/auto-icons": "^1.1.2",
         "jsdom": "^31.0.0",
-        "mmdb-lib": "^3.0.4",
+        "mmdb-lib": "^3.0.5",
         "netmask": "^2.1.1",
         "shadcn": "^4.23.0",
         "tailwindcss": "^4.3.5",
