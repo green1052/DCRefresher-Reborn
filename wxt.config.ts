@@ -4,7 +4,6 @@ import {defineConfig} from "wxt";
 import {CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES, IMAGE_HOST_ORIGINS} from "./core/pages";
 
 export default defineConfig({
-    // Chrome과 Firefox 모두 MV3 (Firefox의 MV2 기본값을 덮어쓴다).
     manifestVersion: 3,
     modules: ["@wxt-dev/auto-icons"],
     vite: () => ({
@@ -15,12 +14,6 @@ export default defineConfig({
         ],
         build: {
             cssTarget: ["chrome140", "firefox144"],
-            rolldownOptions: {
-                // 한글이 한 글자라도 있으면 V8이 스크립트 소스 전체를 2바이트 문자열로 둔다. \uXXXX로 바꿔 ASCII만
-                // 내보내면 1바이트 문자열이 되어 탭마다 실리는 본문 청크(content-main.js)의 메모리가 절반쯤로 준다.
-                // 파일은 20KB쯤 커진다.
-                output: {minify: {compress: true, mangle: true, codegen: {asciiOnly: true}}}
-            },
             // 최소 버전(Chrome 140, Firefox 144)은 modulepreload를 지원해 Vite의 polyfill이 필요 없다.
             modulePreload: {polyfill: false}
         }
