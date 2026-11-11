@@ -27,6 +27,11 @@
             filter: invert(1);
         }
 
+        /* 전체화면은 최상위층에 그려져 상자 반전을 벗어나 나가므로 재반전도 끈다 — 아니면 반전이 한 번만 남어 색이 뒤집힌다. */
+        :is(img, video, iframe, embed, object):fullscreen {
+            filter: none;
+        }
+
         /* 글자콘 상자 — dark.css가 .writing_view_box .coment_dccon_txt를 다시 뒤집는 것과 같다. */
         .coment_dccon_txt {
             filter: invert(1);
