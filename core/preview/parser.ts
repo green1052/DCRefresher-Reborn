@@ -123,8 +123,8 @@ export const parsePostInfo = (html: string): PostInfo | undefined => {
     if (dom.querySelector(".writing_view_box .mini_pwcheck")) throw new Error(SECRET_ERROR);
 
     restoreImageSources(dom);
-    // 본문 위 짤방(갤러리 기본 이미지)·광고 자리는 글 내용이 아니다. 동영상 설정 팁 상자(tip_video)도 디시 UI다.
-    for (const element of dom.querySelectorAll(".writing_view_box #zzbang_div, .writing_view_box #ad_nv_slot, .writing_view_box .tip_box2.tip_video")) element.remove();
+    // 본문 위 짤방(갤러리 기본 이미지)·광고 자리는 글 내용이 아니다.
+    for (const element of dom.querySelectorAll(".writing_view_box #zzbang_div, .writing_view_box #ad_nv_slot, .writing_view_box #tip_video")) element.remove();
     numberImages(dom);
 
     // 제목 안 <script>의 글자가 textContent에 섞이므로 먼저 지운다. 제목은 말머리처럼 평문으로 꺼내 화면에 텍스트로 넣는다.
