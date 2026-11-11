@@ -50,19 +50,8 @@
 
     /* 최대 폭은 아래 * 규칙이 준다. */
     :is(img, video, iframe, embed) {
+        border: 0;
         border-radius: var(--radius);
-    }
-
-    /* iframe·embed는 원래 크기가 없어 height: auto면 150px로 줄어든다. height 속성(유튜브 315 등)을 그대로 쓴다. */
-    img,
-    video {
-        height: auto;
-    }
-
-    /* 유튜브는 16:9로 맞춘다. 높이 속성(315)만 쓰면 너비가 100%이거나 창이 좁을 때 납작하거나 길쭉해진다. */
-    iframe[src*="youtube"] {
-        aspect-ratio: 16 / 9;
-        height: auto;
     }
 
     a {
