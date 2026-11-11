@@ -50,7 +50,7 @@ test.describe("미리보기", () => {
             await page.keyboard.press("Escape");
             await expect(frame).toHaveCount(0);
 
-            // 페이지를 늘려 스크롤바를 세운다 (fixtures에서 크로미엄의 스크롤바 숨김을 끈다).
+            // 페이지를 늘려 스크롤바를 세운다 (fixtures에서 Chromium의 스크롤바 숨김을 끈다).
             await page.evaluate(() => document.body.style.setProperty("min-height", "300vh"));
             const long = await layout();
             expect(long.width).toBeLessThan(short.width);
@@ -498,7 +498,7 @@ test.describe("미리보기 댓글", () => {
     });
 
     test.describe(() => {
-        test.skip(({browserName}) => browserName === "firefox", "요소의 리스너는 크로미움 CDP로만 센다.");
+        test.skip(({browserName}) => browserName === "firefox", "요소의 리스너는 Chromium CDP로만 센다.");
 
         test("댓글마다 되풀이되는 버튼은 클릭 리스너 하나만 단다", async ({listPage}) => {
             await listPage.openPreview();

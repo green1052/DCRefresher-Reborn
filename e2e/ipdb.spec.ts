@@ -2,7 +2,7 @@ import {expect, test} from "./fixtures";
 import {openOptions} from "./pages/extension";
 
 // 배경이 가짜 IP DB를 받아 저장하고, 페이지가 그것을 읽어 배지를 붙이는 흐름.
-// 파이어폭스는 배경 요청을 route로 가로채지 못해(OFFLINE_PREFS) 크로미엄에서만 돈다.
+// 파이어폭스는 배경 요청을 route로 가로채지 못해(OFFLINE_PREFS) Chromium에서만 돈다.
 test.describe("IP/밴 데이터베이스", () => {
     test.use({serveIpDb: true});
     test.skip(({browserName}) => browserName === "firefox", "파이어폭스는 배경의 IP DB 요청을 가로채지 못한다.");

@@ -1,6 +1,6 @@
 import type {BrowserContext, Page} from "@playwright/test";
 
-/** 확장 페이지(옵션, 팝업)는 크로미엄에서만 연다. 플레이라이트의 파이어폭스는 moz-extension:// 페이지로 이동하지 못한다. */
+/** 확장 페이지(옵션, 팝업)는 Chromium에서만 연다. 플레이라이트의 파이어폭스는 moz-extension:// 페이지로 이동하지 못한다. */
 const extensionUrl = (extensionId: string, file: string): string => `chrome-extension://${extensionId}/${file}`;
 
 type OptionsTab = "general" | "block" | "memo" | "data";
