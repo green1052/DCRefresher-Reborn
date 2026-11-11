@@ -9,11 +9,8 @@
     </p>
     <p>
         <a href="https://chromewebstore.google.com/detail/pmfifcbendahnkeojgpfppklgioemgon"><b>Chrome에 설치</b></a>
-        , 
         <a href="https://addons.mozilla.org/ko/firefox/addon/dcrefresher-reborn"><b>Firefox에 설치</b></a>
-        , 
         <a href="https://github.com/green1052/DCRefresher-Reborn/wiki">위키</a>
-        , 
         <a href="https://github.com/green1052/DCRefresher-Reborn/issues">버그 제보</a>
     </p>
     <a href="https://www.buymeacoffee.com/green1052"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" width="150" height="42" alt="Buy Me a Coffee로 후원하기"></a>
