@@ -70,7 +70,7 @@ export const ListRow = ({head, label, info, used, onEdit, onRemove}: {
         <>
             <TableRow className="cursor-pointer [content-visibility:auto] [contain-intrinsic-size:auto_45px]" onClick={onEdit}>
                 <TableHead scope="row" className="font-normal">
-                    {/* 줄(tr)은 버튼이 될 수 없어 키보드·스크린 리더에는 첫 칸을 편집 버튼으로 알린다.
+                    {/* 줄(tr)은 버튼이 될 수 없어 키보드, 스크린 리더에는 첫 칸을 편집 버튼으로 알린다.
                         따로 onClick을 달지 않는다. 누르면(Enter/Space 포함) click이 줄로 올라가 편집이 열린다. */}
                     <button type="button" title="수정" className={cn(FOCUS_RING, "block w-full text-left")}>
                         {head}
@@ -110,7 +110,7 @@ export const ListRow = ({head, label, info, used, onEdit, onRemove}: {
 };
 
 /**
- * 차단/메모 탭 공용 틀. 종류별 탭, 검색, 클립보드·파일 내보내기/가져오기, 전체 삭제/추가, 빈 목록 안내, 표 머리를 그린다.
+ * 차단/메모 탭 공용 틀. 종류별 탭, 검색, 클립보드, 파일 내보내기/가져오기, 전체 삭제/추가, 빈 목록 안내, 표 머리를 그린다.
  * 줄(ListRow)은 row가 그린다.
  */
 export const ListTabs = <T extends string, I>({
@@ -136,7 +136,7 @@ export const ListTabs = <T extends string, I>({
                                               }: {
     types: readonly T[];
     names: Record<T, string>;
-    /** "차단 목록", "메모" 등. 알림·확인 문구에 쓴다. */
+    /** "차단 목록", "메모" 등. 알림, 확인 문구에 쓴다. */
     label: string;
     /** 파일로 내보낼 때 이름 앞부분 (뒤에 날짜가 붙는다). */
     fileName: string;
@@ -178,7 +178,7 @@ export const ListTabs = <T extends string, I>({
     const [limits, setLimits] = useState<Record<string, number>>({});
     const resetLimits = (): void => setLimits({});
     // 걸르기(종류 전체 × searchText의 배열 할당)와 갤러리 목록은 조건이 바뀔 때만 한다.
-    // 확인 창·가져오기 창·더 보기(그리는 줄 수)가 바뀔 때에는 다시 하지 않는다.
+    // 확인 창, 가져오기 창, 더 보기(그리는 줄 수)가 바뀔 때에는 다시 하지 않는다.
     const galleries = useMemo(
         () => [...new Set(types.flatMap((type) => items(type).map(galleryOf)).filter((id): id is string => Boolean(id)))].sort(),
         [types, items, galleryOf]
@@ -198,7 +198,7 @@ export const ListTabs = <T extends string, I>({
     };
     // items가 오래된 것부터 주므로 뒤집어 최신순으로 보여 준다(저장 순서는 그대로).
     // 종류마다 한 번만 걸러 탭 배지와 표가 같이 쓴다. total은 거르기 전 개수다.
-    // visible은 나열한 조건(needle·galleryFilter·cutoff)만 보므로 같은 조건이면 다시 걸르지 않는다.
+    // visible은 나열한 조건(needle, galleryFilter, cutoff)만 보므로 같은 조건이면 다시 걸르지 않는다.
     const shown = useMemo(() => new Map(types.map((type) => {
         const all = items(type);
         return [type, {total: all.length, list: all.filter((item) => visible(type, item)).reverse()}];

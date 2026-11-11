@@ -22,7 +22,7 @@ beforeEach(() => {
 
 afterEach(() => controller.abort());
 
-it("아이디·IP를 고르면 디시 검색 대신 search를 부르고, 디시 종류를 고르면 디시 검색으로 돌아간다", () => {
+it("아이디, IP를 고르면 디시 검색 대신 search를 부르고, 디시 종류를 고르면 디시 검색으로 돌아간다", () => {
     addWriterTypes(null, search, controller.signal);
     item("IP").click();
     expect(label()).toBe("IP");

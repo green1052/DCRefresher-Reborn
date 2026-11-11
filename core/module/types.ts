@@ -19,14 +19,14 @@ export interface SettingLabel {
 
 export type SettingSchema =
     | { type: "check"; default: boolean }
-    /** maxLength: 글자 수 상한. 입력칸이 막고, 저장된 값·가져온 값은 그 길이로 자른다. */
+    /** maxLength: 글자 수 상한. 입력칸이 막고, 저장된 값, 가져온 값은 그 길이로 자른다. */
     | { type: "text"; default: string; maxLength?: number }
     | { type: "range"; default: number; min: number; max: number; step: number; unit: string }
     | { type: "option"; default: string; items: Record<string, string> }
     /** default가 readonly여야 defineModule의 const 추론(readonly 튜플)을 받을 수 있다. */
     | { type: "order"; default: readonly string[]; items: Record<string, string> }
     | { type: "color"; default: string }
-    /** 키 하나 (소문자 영문·숫자). */
+    /** 키 하나 (소문자 영문, 숫자). */
     | { type: "key"; default: string };
 
 /** 표시 문구를 붙인 설정 (옵션 화면이 그린다). */
@@ -35,7 +35,7 @@ export type LabeledSetting = SettingSchema & SettingLabel;
 /** 모듈의 설정 스키마 (설정 키 → 스키마). */
 export type SettingsSchema = Record<string, SettingSchema>;
 
-/** 스키마 하나의 값 타입. option·order는 고를 수 있는 항목 키로 좁힌다. */
+/** 스키마 하나의 값 타입. option, order는 고를 수 있는 항목 키로 좁힌다. */
 type SettingValueOf<T extends SettingSchema> =
     T extends { type: "check" } ? boolean
         : T extends { type: "range" } ? number
@@ -60,15 +60,15 @@ export interface ModuleContext<S extends SettingsSchema = SettingsSchema> {
 
     /**
      * 켜져 있는 동안 설정이 바뀌면 바뀐 키들로 한 번 부른다 (새 값은 ctx.settings[key]). 모듈이 멈추면 더 부르지 않는다.
-     * 가져오기·초기화처럼 여러 키가 한꺼번에 바뀌어도 한 번이라 다시 그리는 일을 키마다 하지 않는다.
+     * 가져오기, 초기화처럼 여러 키가 한꺼번에 바뀌어도 한 번이라 다시 그리는 일을 키마다 하지 않는다.
      * setup 안에서 등록해 setup이 만든 상태를 그대로 쓴다. await 전에 등록해야 그사이 바뀐 설정도 받는다.
      */
     onSettingsChanged(listener: (keys: ReadonlySet<keyof S & string>) => void): void;
 
     /**
-     * 사용자가 모듈을 끌 때 부를 정리 함수(페이지에 넣은 DOM·클래스·스타일 되돌리기)를 등록한다. 리스너(signal)·cleanup이 풀린 뒤에 부른다.
+     * 사용자가 모듈을 끌 때 부를 정리 함수(페이지에 넣은 DOM, 클래스, 스타일 되돌리기)를 등록한다. 리스너(signal), cleanup이 풀린 뒤에 부른다.
      * 콘텐츠 스크립트 컨텍스트가 무효화될 때(stopAll)는 부르지 않아 페이지를 그대로 둔다 (확장 업데이트 때 가린 내용이 드러나지 않게).
-     * 이미 꺼진 뒤에 등록하면(setup이 await하는 사이 꺼짐) 바로 부른다. 던져도 오류만 남기고 다른 정리·모듈은 이어진다.
+     * 이미 꺼진 뒤에 등록하면(setup이 await하는 사이 꺼짐) 바로 부른다. 던져도 오류만 남기고 다른 정리, 모듈은 이어진다.
      */
     onRevoke(revoke: () => void): void;
 }
@@ -83,21 +83,21 @@ export type ToggleKeyOf<M extends AnyModuleMeta> = NonNullable<M["toggles"]>[num
 export type CommandKeyOf<M extends AnyModuleMeta> = keyof NonNullable<M["commands"]> & string;
 
 /**
- * 옵션·팝업이 그리는 아이콘 (features/<id>/icons.ts의 default). 토글이 있으면 메타 toggles의 id마다 하나씩 둔다.
- * meta.ts는 배경·콘텐츠 번들에도 들어가므로 lucide 아이콘(과 React)을 meta.ts에 두지 않는다. features/meta.ts(옵션·팝업)만 이것을 모은다.
+ * 옵션, 팝업이 그리는 아이콘 (features/<id>/icons.ts의 default). 토글이 있으면 메타 toggles의 id마다 하나씩 둔다.
+ * meta.ts는 배경, 콘텐츠 번들에도 들어가므로 lucide 아이콘(과 React)을 meta.ts에 두지 않는다. features/meta.ts(옵션, 팝업)만 이것을 모은다.
  */
 export type IconsOf<M extends AnyModuleMeta> = { module: LucideIcon } &
     ([ToggleKeyOf<M>] extends [never] ? { toggles?: never } : { toggles: Record<ToggleKeyOf<M>, LucideIcon> });
 
-/** 옵션·팝업이 모듈 아이콘을 모아 다룰 때의 타입. 토글이 없는 모듈은 toggles도 없다. */
+/** 옵션, 팝업이 모듈 아이콘을 모아 다룰 때의 타입. 토글이 없는 모듈은 toggles도 없다. */
 export interface AnyModuleIcons {
     module: LucideIcon;
     toggles?: Partial<Record<string, LucideIcon>>;
 }
 
 /**
- * 옵션·팝업과 브라우저 단축키 설정이 보이는 글 (features/<id>/labels.ts의 default). 설정·토글·명령마다 하나씩 둔다.
- * meta.ts는 배경·콘텐츠 번들에도 들어가므로 그쪽에서 쓰지 않는 글은 meta.ts에 두지 않는다. features/meta.ts(옵션·팝업)와 빌드(modules/commands.ts)만 이것을 모은다.
+ * 옵션, 팝업과 브라우저 단축키 설정이 보이는 글 (features/<id>/labels.ts의 default). 설정, 토글, 명령마다 하나씩 둔다.
+ * meta.ts는 배경, 콘텐츠 번들에도 들어가므로 그쪽에서 쓰지 않는 글은 meta.ts에 두지 않는다. features/meta.ts(옵션, 팝업)와 빌드(modules/commands.ts)만 이것을 모은다.
  * toggles는 팝업 토글 이름, commands는 단축키 설명이다 (manifest에 "모듈 이름: 설명"으로 들어간다).
  */
 export type LabelsOf<M extends AnyModuleMeta> = { name: string; description: string } &
@@ -114,7 +114,7 @@ export interface AnyModuleLabels {
     commands?: Partial<Record<string, string>>;
 }
 
-/** 옵션·팝업이 다루는 모듈 (features/meta.ts). 메타에 표시 문구(labels.ts)와 아이콘(icons.ts)을 합치고, 설정마다 표시 문구를 붙인다. */
+/** 옵션, 팝업이 다루는 모듈 (features/meta.ts). 메타에 표시 문구(labels.ts)와 아이콘(icons.ts)을 합치고, 설정마다 표시 문구를 붙인다. */
 export interface ModuleInfo extends Omit<AnyModuleMeta, "settings"> {
     name: string;
     description: string;
@@ -139,11 +139,11 @@ interface PageToggle<Api = unknown> extends PageToggleImpl<Api> {
 }
 
 /**
- * 옵션·팝업이 그리는 데 필요한 모듈 정보. features/<id>/meta.ts에 두고 index.ts가 setup 등과 합친다(defineModule(meta, {setup})).
- * 옵션·팝업은 meta.ts만 불러와, 모듈의 setup이 쓰는 HTTP 클라이언트·캐시·DOM 코드가 그 번들에 딸려 가지 않게 한다.
+ * 옵션, 팝업이 그리는 데 필요한 모듈 정보. features/<id>/meta.ts에 두고 index.ts가 setup 등과 합친다(defineModule(meta, {setup})).
+ * 옵션, 팝업은 meta.ts만 불러와, 모듈의 setup이 쓰는 HTTP 클라이언트, 캐시, DOM 코드가 그 번들에 딸려 가지 않게 한다.
  */
 export interface ModuleMeta<S extends SettingsSchema = SettingsSchema, T extends string = string, C extends string = string> {
-    /** 아스키 id. storage 키(refresher:module:<id>:…)와 저장값의 키로 쓰인다. 표시명·설명은 labels.ts에 둔다. */
+    /** 아스키 id. storage 키(refresher:module:<id>:…)와 저장값의 키로 쓰인다. 표시명, 설명은 labels.ts에 둔다. */
     id: string;
     /** 모듈이 돌 URL. 없으면 모든 페이지, []면 어느 페이지에서도 돌지 않는다(설정도 읽지 않는다). */
     urls?: RegExp[];
@@ -151,7 +151,7 @@ export interface ModuleMeta<S extends SettingsSchema = SettingsSchema, T extends
     defaultEnable?: boolean;
     /** 설정 스키마 (옵션 페이지가 그린다). */
     settings?: S;
-    /** 팝업 '현재 페이지' 토글 id. index.ts의 pageToggles가 id마다 동작을, icons.ts·labels.ts가 아이콘·이름을 붙인다. */
+    /** 팝업 '현재 페이지' 토글 id. index.ts의 pageToggles가 id마다 동작을, icons.ts, labels.ts가 아이콘, 이름을 붙인다. */
     toggles?: readonly T[];
 
     /**
@@ -161,15 +161,15 @@ export interface ModuleMeta<S extends SettingsSchema = SettingsSchema, T extends
      */
     commands?: Record<C, { key?: string }>;
 
-    /** 모듈이 켜져 있을 때 확장 페이지(옵션·팝업)의 <html>에 넣을 CSS 변수 (폰트 교체 등). 디시 페이지에는 setup이 따로 적용한다. */
+    /** 모듈이 켜져 있을 때 확장 페이지(옵션, 팝업)의 <html>에 넣을 CSS 변수 (폰트 교체 등). 디시 페이지에는 setup이 따로 적용한다. */
     extensionPageVars?(settings: SettingValues<S>): Record<`--${string}`, string>;
 }
 
 /**
- * index.ts가 메타에 붙이는 동작 (defineModule(meta, impl)). M은 메타, Api는 setup()의 리턴값으로 단축키·팝업 토글에 넘어간다.
- * 메타에 명령·토글이 있으면 shortcuts·pageToggles에 이름마다 하나씩 있어야 하고, 없으면 두지 않는다.
+ * index.ts가 메타에 붙이는 동작 (defineModule(meta, impl)). M은 메타, Api는 setup()의 리턴값으로 단축키, 팝업 토글에 넘어간다.
+ * 메타에 명령, 토글이 있으면 shortcuts, pageToggles에 이름마다 하나씩 있어야 하고, 없으면 두지 않는다.
  * 있어야 하는지는 Api를 쓰지 않는 뒤쪽 조건부 타입이 정한다. Api가 든 멤버를 조건부 타입에 넣으면 setup에서 Api를 추론하지 못한다.
- * 객체 리터럴에서 setup을 shortcuts·pageToggles보다 앞에 둔다. Api를 setup에서 먼저 추론해야 뒤쪽 함수의 인자 타입이 정해진다.
+ * 객체 리터럴에서 setup을 shortcuts, pageToggles보다 앞에 둔다. Api를 setup에서 먼저 추론해야 뒤쪽 함수의 인자 타입이 정해진다.
  */
 export type ModuleImpl<M extends AnyModuleMeta, Api> = ModuleImplBase<M, Api>
     & ([CommandKeyOf<M>] extends [never] ? { shortcuts?: never } : { shortcuts: object })
@@ -230,13 +230,13 @@ export type ModuleSettingsMap<M> = {
     K extends { settings?: infer S } ? (NonNullable<S> extends SettingsSchema ? SettingValues<NonNullable<S>> : never) : never;
 };
 
-/** 모듈 id·api를 모아 ModuleApis 모양으로 만든다. api가 없는(void) 모듈은 뺀다. */
+/** 모듈 id, api를 모아 ModuleApis 모양으로 만든다. api가 없는(void) 모듈은 뺀다. */
 export type ModuleApiMap<M> = {
     [K in M as K extends DefinedModule<string, infer Api> ? ([Api] extends [void] ? never : K["id"]) : never]: K extends DefinedModule<string, infer Api> ? Api : never;
 };
 
-/** 레지스트리가 모듈을 모아 다룰 때의 타입. 모듈별 설정·api 타입은 defineModule에서 지운다. */
+/** 레지스트리가 모듈을 모아 다룰 때의 타입. 모듈별 설정, api 타입은 defineModule에서 지운다. */
 export type AnyModule = ModuleDefinition<SettingsSchema, unknown>;
 
-/** 옵션·팝업이 모듈 메타를 모아 다룰 때의 타입. */
+/** 옵션, 팝업이 모듈 메타를 모아 다룰 때의 타입. */
 export type AnyModuleMeta = ModuleMeta<SettingsSchema>;

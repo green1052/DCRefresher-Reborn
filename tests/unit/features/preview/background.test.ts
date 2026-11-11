@@ -124,7 +124,7 @@ it("페이지가 15초 안에 토큰을 주지 않으면 토큰 없이 돌려준
     vi.useRealTimers();
 });
 
-it("설치·업데이트 때 예전 읽은 글 기록을 지운다", async () => {
+it("설치, 업데이트 때 예전 읽은 글 기록을 지운다", async () => {
     await fakeBrowser.storage.local.set({"refresher:module:preview:data": [1]});
     background.listen?.();
 

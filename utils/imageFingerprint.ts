@@ -2,7 +2,7 @@
  * 비슷한 이미지 지문: 밝기의 dHash(64비트)와 pHash(64비트)를 이은 32자 16진수. 이미지 차단 항목의 similar다.
  * 두 해시가 모두 기준 안이어야 비슷하다고 본다 (isSimilar). 하나만 보면 서로 다른 이미지가 가깝게 나오는 일이 잦다.
  * 브라우저가 줄이면 크롬과 파이어폭스의 화소가 달라지므로 원본 크기로 디코딩해 직접 면적 평균으로 줄인다. 그러면 두 브라우저의 지문이 같다.
- * 움짤(mp4, 움직이는 gif·webp)은 정해 둔 시각의 장면 몇 개를 표본으로 지문을 구한다 (항목의 similar와 frames).
+ * 움짤(mp4, 움직이는 gif, webp)은 정해 둔 시각의 장면 몇 개를 표본으로 지문을 구한다 (항목의 similar와 frames).
  */
 import pLimit from "p-limit";
 
@@ -92,7 +92,7 @@ const COS = Float64Array.from({length: 8 * 32}, (_, i) => Math.cos(((2 * (i % 32
 
 /** pHash: 32×32 칸의 2차원 DCT-II에서 왼쪽 위 8×8 계수가 DC를 뺀 63개의 중앙값보다 크면 1. */
 const pHash = (grid: Float64Array): string => {
-    // 가로 방향 먼저: rowsByFrequency[v * 32 + y] = Σx cos(v, x)·grid[y][x]
+    // 가로 방향 먼저: rowsByFrequency[v * 32 + y] = Σx cos(v, x), grid[y][x]
     const rowsByFrequency = new Float64Array(8 * 32);
     for (let v = 0; v < 8; v++) {
         for (let y = 0; y < 32; y++) {
@@ -118,7 +118,7 @@ export type Sample = [fingerprint: string, mirrored: string];
 
 const sampleOf = ([small, large]: Grids): Sample => [dHash(small) + pHash(large), dHash(mirror(small, 9)) + pHash(mirror(large, 32))];
 
-/** RGBA에서 바로 표본을 뜬다. jsdom에 ImageBitmap·VideoFrame이 없어 단위 테스트가 해시 계산을 이것으로 본다. */
+/** RGBA에서 바로 표본을 뜬다. jsdom에 ImageBitmap, VideoFrame이 없어 단위 테스트가 해시 계산을 이것으로 본다. */
 export const fingerprintsOf = (rgba: Uint8ClampedArray, width: number, height: number): Sample => sampleOf(lumaGrids(width, height, rgbaRows(rgba, width)));
 
 /**
@@ -127,7 +127,7 @@ export const fingerprintsOf = (rgba: Uint8ClampedArray, width: number, height: n
  */
 const SAMPLE_TIMES = [0, 0.505, 1.505, 3.005];
 
-/** 밝기가 거의 고른 장면(검은 화면·흰 화면). 어느 움짤의 앞뒤에나 있어 표본으로 쓰지 않는다. */
+/** 밝기가 거의 고른 장면(검은 화면, 흰 화면). 어느 움짤의 앞뒤에나 있어 표본으로 쓰지 않는다. */
 const isFlat = ([small]: Grids): boolean => Math.max(...small) - Math.min(...small) < 8;
 
 /** 흰 바탕에 그려 RGBA로 읽은 그리드. 바탕이 없으면 반투명한 곳의 값이 브라우저마다 다르다. 그리기 전에 돌아오면 source를 닫지 않으니 부른 쪽도 닫는다. */
@@ -146,7 +146,7 @@ const drawnGrids = (source: ImageBitmap | VideoFrame, width: number, height: num
 const frameGrids = async (frame: VideoFrame): Promise<Grids | undefined> => {
     const {format, visibleRect} = frame;
     if ((format !== "I420" && format !== "I420A" && format !== "NV12") || !visibleRect) return drawnGrids(frame, frame.displayWidth, frame.displayHeight);
-    // copyTo는 visibleRect만 옮기고 그 배치(offset·stride)를 돌려준다.
+    // copyTo는 visibleRect만 옮기고 그 배치(offset, stride)를 돌려준다.
     const buffer = new Uint8Array(frame.allocationSize());
     const [plane] = await frame.copyTo(buffer);
     return plane && lumaGrids(visibleRect.width, visibleRect.height, planeRows(buffer, plane.offset, plane.stride));
@@ -209,7 +209,7 @@ const videoGrids = async (file: Blob): Promise<Grids[]> => {
 };
 
 /**
- * 움직이는 gif·webp의 그리드들. 프레임을 앞에서부터 풀며 각 시각을 덮는 프레임을 읽고, 마지막 시각을 지나면 멈춘다.
+ * 움직이는 gif, webp의 그리드들. 프레임을 앞에서부터 풀며 각 시각을 덮는 프레임을 읽고, 마지막 시각을 지나면 멈춘다.
  * 프레임이 하나뿐이거나 ImageDecoder가 없으면 undefined라 정지 이미지로 본다 (첫 프레임).
  */
 const animationGrids = async (file: Blob, type: string): Promise<Grids[] | undefined> => {
@@ -275,7 +275,7 @@ const animatedSamples = (grids: Grids[]): Sample[] | undefined => {
 const fingerprint = async (file: Blob): Promise<Sample[] | undefined> => {
     try {
         const kind = await kindOf(file);
-        // ftyp로 시작하는 정지 이미지(AVIF·HEIC)도 있어, 동영상으로 열지 못하면 정지 이미지로 본다.
+        // ftyp로 시작하는 정지 이미지(AVIF, HEIC)도 있어, 동영상으로 열지 못하면 정지 이미지로 본다.
         const video = kind === "video" ? animatedSamples(await videoGrids(file).catch(() => [])) : undefined;
         if (video) return video;
 

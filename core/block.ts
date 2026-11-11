@@ -37,7 +37,7 @@ const compile = (entry: BlockEntry): Compiled | null => {
     return compiled;
 };
 
-/** IP 포함 검사용 패턴: 이스케이프에 숫자 경계를 붙인다. "1.2.3.4"가 "11.2.3.45"·"1.2.3.45"를 잡지 않게 한다. */
+/** IP 포함 검사용 패턴: 이스케이프에 숫자 경계를 붙인다. "1.2.3.4"가 "11.2.3.45", "1.2.3.45"를 잡지 않게 한다. */
 const ipPatternCache = new WeakMap<BlockEntry, RegExp>();
 const ipPattern = (entry: BlockEntry): RegExp => {
     let pattern = ipPatternCache.get(entry);
@@ -51,7 +51,7 @@ const ipPattern = (entry: BlockEntry): RegExp => {
     return pattern;
 };
 
-/** 일치·포함 검사. NOT_*도 뒤집지 않고 SAME/CONTAIN으로 본다. 잘못된 정규식은 맞지 않는다. IP의 CONTAIN은 숫자 경계에서만 포함한다. */
+/** 일치, 포함 검사. NOT_*도 뒤집지 않고 SAME/CONTAIN으로 본다. 잘못된 정규식은 맞지 않는다. IP의 CONTAIN은 숫자 경계에서만 포함한다. */
 const matches = (entry: BlockEntry, mode: DetectMode, content: string, type: BlockType): boolean => {
     const whole = mode.endsWith("SAME");
     if (!entry.isRegex) {
@@ -70,9 +70,9 @@ type BlockValues = Partial<Record<BlockType, string | null | undefined>>;
 interface Index {
     /** 만들 때의 기본 모드. 바뀌면 모드 없는 항목이 일치 항목인지가 달라져 다시 만든다. */
     defaultMode: DetectMode;
-    /** 정규식이 아닌 SAME 항목: 내용 → 항목들. 가져오기로 수천 개 넣은 닉네임·아이디를 하나씩 비교하지 않고 찾는다. */
+    /** 정규식이 아닌 SAME 항목: 내용 → 항목들. 가져오기로 수천 개 넣은 닉네임, 아이디를 하나씩 비교하지 않고 찾는다. */
     exact: Map<string, BlockEntry[]>;
-    /** 나머지 항목 (CONTAIN·NOT_*·정규식). 목록 순서대로 하나씩 본다. */
+    /** 나머지 항목 (CONTAIN, NOT_*, 정규식). 목록 순서대로 하나씩 본다. */
     rest: BlockEntry[];
 }
 
@@ -93,9 +93,9 @@ const indexFor = (lists: BlockLists, type: BlockType): Index => {
 
 /**
  * 한 유형의 항목으로 내용이 막히는지 판정한다 (갤러리 한정 항목은 그 갤러리에서만). SAME/CONTAIN은 맞는 항목마다 막는다.
- * NOT_*(불일치·불포함)는 한 유형의 항목을 묶어 허용 목록으로 본다: 어느 것에도 맞지 않으면 그 항목들 전부로 막는다.
+ * NOT_*(불일치, 불포함)는 한 유형의 항목을 묶어 허용 목록으로 본다: 어느 것에도 맞지 않으면 그 항목들 전부로 막는다.
  * 항목마다 뒤집으면 둘만 돼도 서로를 막아 모두 막힌다. 잘못된 정규식은 NOT_*로도 걸지 않는다.
- * onEntry: 맞은 SAME/CONTAIN("hit"), 맞은 NOT_*("allow"), 맞지 않은 NOT_*("miss"). 목록 행·댓글마다 불리므로 판정만 할 때는 배열을 만들지 않는다.
+ * onEntry: 맞은 SAME/CONTAIN("hit"), 맞은 NOT_*("allow"), 맞지 않은 NOT_*("miss"). 목록 행, 댓글마다 불리므로 판정만 할 때는 배열을 만들지 않는다.
  * 정규식이 아닌 SAME 항목은 색인에서 찾아 먼저 넘긴다.
  */
 const scan = (lists: BlockLists, type: BlockType, content: string, gallery: string | undefined, onEntry?: (entry: BlockEntry, kind: "hit" | "allow" | "miss") => void): boolean => {
@@ -154,7 +154,7 @@ export const dcconCode = (element: HTMLElement): string | undefined => {
     return src ? URL.parse(src, location.href)?.searchParams.get("no") || undefined : undefined;
 };
 
-/** 이미지 차단이 보는 디시 본문 이미지(viewimage.php). 디시콘(dccon.php)·외부 이미지는 보지 않는다. */
+/** 이미지 차단이 보는 디시 본문 이미지(viewimage.php). 디시콘(dccon.php), 외부 이미지는 보지 않는다. */
 const VIEW_IMAGE = /^https:\/\/[^/]+\.dcinside\.(?:com|co\.kr)\/viewimage\.php/;
 
 /** 한 주소를 읽은 것. 파일 해시(file)는 지문(hashes.similar)보다 먼저 나와, 같은 파일은 지문을 기다리지 않고 막는다 (isImageBlocked). */
@@ -201,7 +201,7 @@ const readImage = async (url: string, {retry = false, similar = false}: { retry?
     const cached = imageReads.get(url);
     // 지문이 끝나기를 기다리지 않고 돌려준다. 같은 파일은 파일 해시가 나오자마자 막는다 (isImageBlocked).
     if (cached && !retry && (cached.similar || !similar)) return cached;
-    // 읽은 것이 없으면 기다리지 않고 곧바로 등록한다. await undefined도 양보라 같은 주소를 한 번에 여럿 판정하면 저마다 받고 해시·지문을 구한다.
+    // 읽은 것이 없으면 기다리지 않고 곧바로 등록한다. await undefined도 양보라 같은 주소를 한 번에 여럿 판정하면 저마다 받고 해시, 지문을 구한다.
     const previous = cached ? await cached.hashes : undefined;
     // 지문 없이 읽어 둔 것은 지문이 필요해지면 다시 읽는다 (비슷한 이미지 설정을 켰을 때). 읽지 못한 것은 retry일 때만 다시 읽는다.
     if (cached && (previous ? !similar || previous.similar !== undefined : !retry)) return cached;
@@ -219,7 +219,7 @@ const readImage = async (url: string, {retry = false, similar = false}: { retry?
 
 /**
  * 이미지 파일의 SHA-256과, similar면 비슷한 이미지 지문. 파일 해시는 이미지 차단 항목의 내용이다. 읽지 못하면(이미지 호스트 권한이 없는 등) undefined다.
- * 배경의 규칙이 이 요청(같은 문서의 다른 fetch·XHR도)에 CORS 헤더를 붙인다 (features/block/background.ts).
+ * 배경의 규칙이 이 요청(같은 문서의 다른 fetch, XHR도)에 CORS 헤더를 붙인다 (features/block/background.ts).
  * 캐시에 없으면 이미지를 한 번 더 받는다. retry면 앞서 읽지 못한 것도 다시 읽는다 (권한을 막 받은 뒤의 우클릭 차단).
  */
 export const imageHash = async (url: string, options: { retry?: boolean; similar?: boolean } = {}): Promise<ImageHashes | undefined> =>
@@ -247,17 +247,17 @@ const rememberPair = (video: HTMLVideoElement): void => {
 /** 차단 모듈 설정의 가리는 방식. 흐리게 처리를 켜면 흐리게, 아니면 숨긴다. */
 export const blockMode = (settings: ModuleSettings["block"]): "blur" | "hide" => (settings.blur ? "blur" : "hide");
 
-/** 차단 모듈 설정의 비슷한 이미지 기준 (dHash·pHash가 각각 다를 수 있는 비트 수). 끄면 undefined다. 페이지(차단 모듈)와 미리보기가 같이 쓴다. */
+/** 차단 모듈 설정의 비슷한 이미지 기준 (dHash, pHash가 각각 다를 수 있는 비트 수). 끄면 undefined다. 페이지(차단 모듈)와 미리보기가 같이 쓴다. */
 export const similarImageThreshold = (settings: ModuleSettings["block"]): number | undefined =>
     settings.similarImages ? settings.similarThreshold : undefined;
 
-// 표본(imageReads가 주소마다 같은 배열을 준다) → 지난 판정. 움짤은 반복 재생할 때마다(크롬은 seeked·canplaythrough 둘 다) 다시 보므로
-// 목록(스토어는 바뀌면 새 배열을 만든다)·기본 모드·갤러리·기준이 그대로면 다시 훑지 않고, 걸린 항목만 다시 쓰였다고 적는다.
+// 표본(imageReads가 주소마다 같은 배열을 준다) → 지난 판정. 움짤은 반복 재생할 때마다(크롬은 seeked, canplaythrough 둘 다) 다시 보므로
+// 목록(스토어는 바뀌면 새 배열을 만든다), 기본 모드, 갤러리, 기준이 그대로면 다시 훑지 않고, 걸린 항목만 다시 쓰였다고 적는다.
 const similarHits = new WeakMap<Sample[], { entries: BlockEntry[]; mode: DetectMode; gallery: string | undefined; threshold: number; hits: BlockEntry[] }>();
 
 /**
  * 표본이 비슷한 이미지 항목에 걸리는지 (isSimilarSet). 걸린 항목은 모두 쓰였다고 적는다. 지문이 없는 항목(지문이 생기기 전에 넣었거나 디코딩하지 못한 이미지)은 보지 않는다.
- * 불일치·불포함(NOT_*) 항목은 허용 목록이라 비슷한 이미지로 넓히지 않는다.
+ * 불일치, 불포함(NOT_*) 항목은 허용 목록이라 비슷한 이미지로 넓히지 않는다.
  */
 const isSimilarBlocked = (samples: Sample[], gallery: string | undefined, threshold: number): boolean => {
     const {entries, defaults} = useBlocksStore.getState();
@@ -277,12 +277,12 @@ const isSimilarBlocked = (samples: Sample[], gallery: string | undefined, thresh
 
 /**
  * 움짤(<video>)을 다시 볼 이벤트. 더 받을 때(progress), 받기를 멈출 때(suspend), 반복 재생으로 처음으로 돌아갈 때(seeked).
- * 파이어폭스는 다 받은 뒤 progress·suspend 없이 끝나기도 해 반복 재생 때 다시 본다.
+ * 파이어폭스는 다 받은 뒤 progress, suspend 없이 끝나기도 해 반복 재생 때 다시 본다.
  */
 export const VIDEO_CHECK_EVENTS = ["progress", "suspend", "canplaythrough", "seeked"];
 
 /**
- * 다 받은 본문 이미지·움짤의 화소 수. 받기 전에 읽으면 확장이 따로 받아 캐시를 쓰지 못하므로 그때는 undefined다.
+ * 다 받은 본문 이미지, 움짤의 화소 수. 받기 전에 읽으면 확장이 따로 받아 캐시를 쓰지 못하므로 그때는 undefined다.
  * 움짤(<video>)은 파일 전체가 버퍼에 들어온 뒤다. 일부만 받은 mp4를 읽으면 나머지를 다시 받는다.
  */
 const loadedPixels = (media: HTMLImageElement | HTMLVideoElement): number | undefined => {
@@ -293,8 +293,8 @@ const loadedPixels = (media: HTMLImageElement | HTMLVideoElement): number | unde
 };
 
 /**
- * 이미지·움짤이 차단 목록(IMAGE)에 든 파일인지. similar(기준 비트 수)를 주면 좌우 반전을 포함해 비슷한 이미지·움짤도 막는다.
- * 다 받은 것만 본다 (loadedPixels). 지연 로딩·원본 보기로 주소가 바뀌거나 움짤을 더 받으면 load·progress 때 다시 부른다.
+ * 이미지, 움짤이 차단 목록(IMAGE)에 든 파일인지. similar(기준 비트 수)를 주면 좌우 반전을 포함해 비슷한 이미지, 움짤도 막는다.
+ * 다 받은 것만 본다 (loadedPixels). 지연 로딩, 원본 보기로 주소가 바뀌거나 움짤을 더 받으면 load, progress 때 다시 부른다.
  */
 export const isImageBlocked = async (media: HTMLImageElement | HTMLVideoElement, gallery?: string, similar?: number): Promise<boolean> => {
     const url = media.currentSrc;
@@ -306,7 +306,7 @@ export const isImageBlocked = async (media: HTMLImageElement | HTMLVideoElement,
     const fingerprintable = pixels <= MAX_PIXELS && entries.some((entry) => entry.similar);
     const threshold = fingerprintable ? similar : undefined;
     const read = await readImage(url, {similar: threshold !== undefined});
-    // 지문은 한 번에 하나씩 구해 앞선 이미지·움짤이 많으면 늦으므로, 같은 파일은 파일 해시가 나오자마자 막는다.
+    // 지문은 한 번에 하나씩 구해 앞선 이미지, 움짤이 많으면 늦으므로, 같은 파일은 파일 해시가 나오자마자 막는다.
     const file = await read.file;
     if (!file) return false;
     // isBlocked가 NOT_* 항목(허용 목록)까지 판정한다.
@@ -349,15 +349,15 @@ export const isAnyBlocked = (values: BlockValues, gallery?: string): boolean =>
 export const BLURRED_ROW_SELECTOR = ".refresherBlur, .refresherLowActivityBlur";
 
 /**
- * 확장이 가린 행 (차단 숨김·블러, userinfo의 깡계 숨김·흐림). 같은 댓글 접기는 이 안의 댓글을 세지 않는다.
+ * 확장이 가린 행 (차단 숨김, 블러, userinfo의 깡계 숨김, 흐림). 같은 댓글 접기는 이 안의 댓글을 세지 않는다.
  * 클래스는 assets/styles/content.css가 그린다.
  */
 export const HIDDEN_ROW_SELECTOR = `.refresherBlocked, .refresherLowActivityHide, ${BLURRED_ROW_SELECTOR}`;
 
-/** userinfo가 깡계 숨김·흐림을 이미 그려진 행에서 바꿨을 때 document에 보내는 이벤트. 차단 모듈이 받아 같은 댓글을 다시 접는다. */
+/** userinfo가 깡계 숨김, 흐림을 이미 그려진 행에서 바꿨을 때 document에 보내는 이벤트. 차단 모듈이 받아 같은 댓글을 다시 접는다. */
 export const ROWS_HIDDEN_EVENT = "refresher:rowsHidden";
 
-/** 본문 차단 안내 문구. 페이지(block 모듈)와 미리보기(창·미니)가 같이 쓴다. */
+/** 본문 차단 안내 문구. 페이지(block 모듈)와 미리보기(창, 미니)가 같이 쓴다. */
 export const BLOCKED_TEXT = "게시글 내용이 차단되었습니다.";
 
 /** 차단 모듈 설정의 같은 댓글 접기 기준. 끄면 null이다. 페이지(차단 모듈)와 미리보기가 같이 쓴다. */

@@ -26,7 +26,7 @@ describe("commands 모듈", () => {
 
         const manifest = await generateManifest({commands: {"wxt:reload-extension": {description: "dev"}}});
 
-        // meta.ts가 있는 폴더의 meta.ts·labels.ts만 한 번에 불러온다.
+        // meta.ts가 있는 폴더의 meta.ts, labels.ts만 한 번에 불러온다.
         expect(importEntrypoints).toHaveBeenCalledTimes(1);
         expect(importEntrypoints).toHaveBeenCalledWith([
             join(root, "features", "a", "meta.ts"), join(root, "features", "b", "meta.ts"),

@@ -2,14 +2,14 @@ import {defineModuleMeta} from "@/core/module/define";
 import type {ModuleContext, SettingSchema, SettingsSchema} from "@/core/module/types";
 import {objectKeys} from "@/utils/typed";
 
-/** 체크하면 숨기는 영역. 설정과 <style> 규칙을 모두 여기서 만들므로 새 항목은 여기 한 줄과 labels.ts의 이름·설명만 추가하면 된다. */
+/** 체크하면 숨기는 영역. 설정과 <style> 규칙을 모두 여기서 만들므로 새 항목은 여기 한 줄과 labels.ts의 이름, 설명만 추가하면 된다. */
 export const HIDE_OPTIONS = {
     hideGalleryView: {selector: ".issue_wrap, #visit_history"},
     hideUselessView: {selector: "section.right_content article"},
     hideGalleryImage: {selector: "#zzbang_div"},
     removeNotice: {selector: "tr:has(em[class*=icon_notice])"},
     removeDCNotice: {
-        // 설문·광고 행은 user_name 칸, 운영자 글은 식별 코드·IP가 빈 운영자 작성자 칸.
+        // 설문, 광고 행은 user_name 칸, 운영자 글은 식별 코드, IP가 빈 운영자 작성자 칸.
         selector: "tr[class*=ub-content]:has(> td[user_name=운영자]), tr.ub-content:has(> .ub-writer[data-nick=운영자][data-uid=\"\"][data-ip=\"\"])"
     },
     removeGamemeca: {

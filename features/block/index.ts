@@ -16,7 +16,7 @@ import meta, {type Ctx} from "./meta";
 /** 보기 방식(블러)만 바꾸는 설정. 이것만 바뀌면 다시 판정하지 않는다. */
 const BLUR_KEYS = new Set<keyof Ctx["settings"]>(["blurReveal", "blurStrength"]);
 
-/** 블러 강도·마우스 오버 보기는 <html>의 변수·클래스로만 건다 (assets/styles/content.css). 행마다 JS를 붙이지 않아도 새로 그려진 행에 그대로 먹는다. */
+/** 블러 강도, 마우스 오버 보기는 <html>의 변수, 클래스로만 건다 (assets/styles/content.css). 행마다 JS를 붙이지 않아도 새로 그려진 행에 그대로 먹는다. */
 const applyBlurStyle = (ctx: Ctx): void => {
     const root = document.documentElement;
     root.style.setProperty("--refresher-blur", `${ctx.settings.blurStrength}px`);
@@ -30,10 +30,10 @@ const applyBlurStyle = (ctx: Ctx): void => {
 const REVEAL_CLASS = "refresherBlockReveal";
 const isRevealed = (): boolean => document.documentElement.classList.contains(REVEAL_CLASS);
 
-/** 이 모듈이 요소를 가릴 때 다는 클래스 (차단 숨김·블러·같은 댓글 접기). */
+/** 이 모듈이 요소를 가릴 때 다는 클래스 (차단 숨김, 블러, 같은 댓글 접기). */
 const HIDDEN_CLASSES = ["refresherBlocked", "refresherBlur", "refresherDuplicate"];
 const HIDDEN_SELECTOR = HIDDEN_CLASSES.map((name) => `.${name}`).join(", ");
-/** '가린 내용 보기'가 보이는 요소. userinfo의 깡계 흐림·숨김도 같이 보인다 (assets/styles/content.css). */
+/** '가린 내용 보기'가 보이는 요소. userinfo의 깡계 흐림, 숨김도 같이 보인다 (assets/styles/content.css). */
 const REVEALED_SELECTOR = `${HIDDEN_ROW_SELECTOR}, .refresherDuplicate`;
 
 /** 미리보기도 '가린 내용 보기'를 따르게 알린다. 가리는 방식은 미리보기가 이 모듈의 설정에서 바로 읽는다. */
@@ -74,7 +74,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
         const read = (type: BlockType, value: () => string | null | undefined): string | null => (entries[type].length > 0 ? value() || null : null);
         if (!WRITER_TYPES.some((type) => entries[type].length > 0)) return;
 
-        // 제목·말머리는 작성자 칸이 아니라 같은 행의 다른 칸에 있다. 글 보기 머리(.gallview_head)도 ub-content다.
+        // 제목, 말머리는 작성자 칸이 아니라 같은 행의 다른 칸에 있다. 글 보기 머리(.gallview_head)도 ub-content다.
         const row = element.closest<HTMLElement>(WRITER_ROW_SELECTOR);
         const {nick, uid, ip} = element.dataset;
 
@@ -106,7 +106,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
         else hide(element);
     };
 
-    // 본문 이미지·움짤(<video>) 차단. 파일 해시로 보므로 다 받은 뒤에 본다. 지연 로딩·디시의 가린 이미지 보기로 주소가 바뀌면 load 때,
+    // 본문 이미지, 움짤(<video>) 차단. 파일 해시로 보므로 다 받은 뒤에 본다. 지연 로딩, 디시의 가린 이미지 보기로 주소가 바뀌면 load 때,
     // 움짤은 VIDEO_CHECK_EVENTS 때 다시 본다. 디시가 움짤을 gif <img>로 바꾸면 그 <img>는 필터가 따로 본다.
     const watchedImages = new WeakSet<HTMLElement>();
     const checkImage = (element: HTMLElement): void => {
@@ -125,11 +125,11 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
     };
 
     // 본문 차단은 본문이 다 읽힌 뒤 한 번만 본다. 작성자 필터에서 보면 아래 글 목록 행마다 본문을 다시 읽고,
-    // .write_div 필터에서 보면 파싱 중인 본문 일부로 판정해 NOT_*·SAME 항목이 오탐한다.
+    // .write_div 필터에서 보면 파싱 중인 본문 일부로 판정해 NOT_*, SAME 항목이 오탐한다.
     const checkText = (): void => {
         const writeDiv = document.querySelector<HTMLElement>(".write_div");
         if (!writeDiv) return;
-        // 글 보기 머리(작성자·제목·말머리)가 차단됐으면 본문도 가린다. 머리 필터는 본문이 그려지기 전에 돌아 여기서 본다.
+        // 글 보기 머리(작성자, 제목, 말머리)가 차단됐으면 본문도 가린다. 머리 필터는 본문이 그려지기 전에 돌아 여기서 본다.
         const headBlocked = document.querySelector(".gallview_head:is(.refresherBlocked, .refresherBlur)") !== null;
         if (!headBlocked && !isBlocked("TEXT", writeDiv.textContent?.trim() ?? "", gallery)) return;
 
@@ -142,7 +142,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
     };
 
     // 같은 댓글 접기. 댓글 목록은 페이지를 넘기거나 새로 고칠 때마다 통째로 다시 그려져 필터로 다시 불린다.
-    // 차단·깡계로 가린 댓글(대댓글은 감싼 칸이 가려진다)은 세지 않는다(core/preview/comments도 같다). 세면 가려진 댓글이 배지를 가져가 같은 내용의 다른 댓글까지 모두 사라진다.
+    // 차단, 깡계로 가린 댓글(대댓글은 감싼 칸이 가려진다)은 세지 않는다(core/preview/comments도 같다). 세면 가려진 댓글이 배지를 가져가 같은 내용의 다른 댓글까지 모두 사라진다.
     // 지난 판정의 표시는 맞춰 떼되 결과가 같으면 DOM을 건드리지 않는다. 배지를 넣거나 빼면 조상인 목록에 필터가 다시 불려 끝없이 돈다.
     const foldDuplicates = (list: HTMLElement): void => {
         const duplicate = duplicateOf(ctx.settings);
@@ -217,7 +217,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
 
 const setupSelection = (ctx: Ctx): void => {
     const onContextMenu = (ev: MouseEvent): void => {
-        // Shift+우클릭은 유저 버블 대신 브라우저 기본 메뉴를 연다 (링크 복사·요소 검사 등이 막히지 않게).
+        // Shift+우클릭은 유저 버블 대신 브라우저 기본 메뉴를 연다 (링크 복사, 요소 검사 등이 막히지 않게).
         // 작성자 칸을 유저 정보 모듈이 먼저 받아 버블을 열었으면 defaultPrevented다.
         if (ev.shiftKey || ev.defaultPrevented) return;
 

@@ -6,14 +6,14 @@ import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {typedListSync} from "@/core/storage/sync";
 import {saveOrReload} from "@/utils/error";
 
-// 검사·정규화는 core/block-list에 두고 여기서 다시 꺼낸다. 옵션·테스트가 stores/blocks에서 그대로 찾는다.
+// 검사, 정규화는 core/block-list에 두고 여기서 다시 꺼낸다. 옵션, 테스트가 stores/blocks에서 그대로 찾는다.
 export {blockKey, composeExtra, normalizeBlockList, normalizeDefaults, type BlockInputFields} from "@/core/block-list";
 import {blockKey, normalizeBlockList, normalizeDefaults, type BlockInputFields} from "@/core/block-list";
 
 interface BlocksState {
     entries: Record<BlockType, BlockEntry[]>;
     defaults: Record<BlockType, DetectMode>;
-    /** 저장소의 현재 값에 change를 붙여 쓴다 (가져오기·여러 개 지우기). */
+    /** 저장소의 현재 값에 change를 붙여 쓴다 (가져오기, 여러 개 지우기). */
     updateEntries: (type: BlockType, change: (entries: BlockEntry[]) => BlockEntry[]) => Promise<void>;
     addEntry: (type: BlockType, fields: BlockInputFields) => Promise<void>;
     /** 여러 항목을 한 번의 쓰기로. */
@@ -29,7 +29,7 @@ export const blockLabel = (type: BlockType, entry: BlockEntry): string => (type 
 /** 유형마다 빈 차단 목록. 유형을 늘리면 여기서 타입 오류가 난다. */
 export const emptyEntries = (): Record<BlockType, BlockEntry[]> => ({COMMENT: [], DCCON: [], ID: [], IMAGE: [], IP: [], NICK: [], TAB: [], TEXT: [], TITLE: []});
 
-/** 차단 목록/기본 모드의 단일 출처. 콘텐츠·옵션 모두 이 스토어를 쓰고 저장소와 양방향 동기화된다. */
+/** 차단 목록/기본 모드의 단일 출처. 콘텐츠, 옵션 모두 이 스토어를 쓰고 저장소와 양방향 동기화된다. */
 export const useBlocksStore = create<BlocksState>((set, get) => ({
     entries: emptyEntries(),
     defaults: normalizeDefaults(null),
@@ -74,7 +74,7 @@ export const useBlocksStore = create<BlocksState>((set, get) => ({
     }
 }));
 
-// 값이 없으면 null이고, normalize가 빈 목록·기본 모드로 맞춘다.
+// 값이 없으면 null이고, normalize가 빈 목록, 기본 모드로 맞춘다.
 const lists = typedListSync({
     types: BLOCK_TYPES,
     keyOf: blockListKey,
@@ -92,5 +92,5 @@ const lists = typedListSync({
     lock: LIST_LOCKS.blocks
 });
 
-/** 저장소 값을 읽고 변경(다른 탭·옵션 페이지)을 감시한다. 여러 번 불러도 한 번만 한다. signal은 콘텐츠 스크립트 컨텍스트의 것이다. */
+/** 저장소 값을 읽고 변경(다른 탭, 옵션 페이지)을 감시한다. 여러 번 불러도 한 번만 한다. signal은 콘텐츠 스크립트 컨텍스트의 것이다. */
 export const initBlocksStore = lists.start;

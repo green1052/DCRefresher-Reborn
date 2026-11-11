@@ -41,7 +41,7 @@ const goToAdjacent = (dir: number): void => {
     if (next) st.requestOpen(next, false, dir);
 };
 
-/** 그 방향에 넘어갈 글이 있는지. 목록 처음·끝 글에서는 스크롤 끝 넘기기를 안내하지 않는다. */
+/** 그 방향에 넘어갈 글이 있는지. 목록 처음, 끝 글에서는 스크롤 끝 넘기기를 안내하지 않는다. */
 const hasAdjacent = (dir: number): boolean => {
     const {preData} = usePreviewStore.getState();
     return preData !== null && adjacentPreData(preData, dir) !== null;
@@ -77,8 +77,8 @@ const SkipHint = ({dir}: { dir: number }) => (
 );
 
 /**
- * 미리보기 본문 칸. 댓글만 보기·오류일 때는 빠지고 글마다(Frame의 Fragment key) 새로 마운트되며, 창을 닫으면 페이드가 끝난 뒤 빠진다.
- * 그래서 넣은 HTML이 바뀔 때만 다시 보면 되고, 떨어진 영상의 감시·받기는 언마운트 정리가 끊는다.
+ * 미리보기 본문 칸. 댓글만 보기, 오류일 때는 빠지고 글마다(Frame의 Fragment key) 새로 마운트되며, 창을 닫으면 페이드가 끝난 뒤 빠진다.
+ * 그래서 넣은 HTML이 바뀔 때만 다시 보면 되고, 떨어진 영상의 감시, 받기는 언마운트 정리가 끊는다.
  */
 const PostContents = () => {
     const post = usePreviewStore((s) => s.post);
@@ -91,7 +91,7 @@ const PostContents = () => {
     const hideText = post?.textBlocked === "hide" && !revealed;
     const html = hideText ? BLOCKED_TEXT : post?.contents ?? "";
 
-    // 본문이 새로 들어오면 다시 본다. hideText가 풀려도 동영상·이미지가 새로 들어온다.
+    // 본문이 새로 들어오면 다시 본다. hideText가 풀려도 동영상, 이미지가 새로 들어온다.
     usePreviewMedia(contentsBox, html, gallery);
     // 이미지 크게 보기와 디시콘 정보 창을 키보드로도 연다 (pressContents).
     useEffect(() => {
@@ -132,8 +132,8 @@ export const Frame = () => {
     const listTitle = usePreviewStore((s) => s.preData?.title);
     const scroller = useRef<HTMLDivElement>(null);
     const commentsSection = useRef<HTMLDivElement>(null);
-    // 창은 비모달이라(아래 Dialog.Root) 포커스를 가두지 않는다. 연 동안 뒤 페이지를 inert로 막아 Tab·스크린 리더가 목록으로 나가지 않게 한다.
-    // 오버레이(refresher-root: 버블·토스트·관리 패널)와 body에 붙인 확장 UI(data-refresher-ui)는 남긴다.
+    // 창은 비모달이라(아래 Dialog.Root) 포커스를 가두지 않는다. 연 동안 뒤 페이지를 inert로 막아 Tab, 스크린 리더가 목록으로 나가지 않게 한다.
+    // 오버레이(refresher-root: 버블, 토스트, 관리 패널)와 body에 붙인 확장 UI(data-refresher-ui)는 남긴다.
     // 키보드로 열었을 때(:focus-visible)만 닫으며 연 요소로 포커스를 돌려준다. 마우스로 연 창까지 돌려주면 Esc로 닫을 때
     // 제목 링크에 포커스 링이 생겨 새로고침 모듈이 자동 갱신을 멈춘다. 연 요소는 아래 스크롤 칸 포커스 효과보다 먼저 읽어야 한다.
     useEffect(() => {
@@ -157,7 +157,7 @@ export const Frame = () => {
         };
     }, [visible]);
 
-    // 열거나 글을 바꾸면 스크롤 칸에 포커스를 줘 방향키·스페이스로 바로 스크롤되게 한다.
+    // 열거나 글을 바꾸면 스크롤 칸에 포커스를 줘 방향키, 스페이스로 바로 스크롤되게 한다.
     useEffect(() => {
         if (visible) scroller.current?.focus({preventScroll: true});
     }, [visible, postKey]);
@@ -178,12 +178,12 @@ export const Frame = () => {
         const onKey = (ev: KeyboardEvent): void => {
             // Ctrl+PageUp/Down(탭 전환) 같은 조합키는 브라우저에 맡긴다.
             if (hasModifier(ev) || isTyping(ev)) return;
-            // 디시콘 정보 창·크게 보기가 떠 있으면 그 창이 키를 받는다. 옆 글로 넘어가면 창이 닫힌다.
+            // 디시콘 정보 창, 크게 보기가 떠 있으면 그 창이 키를 받는다. 옆 글로 넘어가면 창이 닫힌다.
             if (usePreviewStore.getState().dcconInfo || usePreviewStore.getState().viewer) return;
             // 누른 버튼이 로딩으로 막히거나 사라져 포커스가 body로 빠졌으면 스크롤 칸으로 되돌린다 (Tab은 브라우저의 이어가기 위치에 맡긴다).
             if (ev.key !== "Tab" && focusedElement() === document.body) scroller.current?.focus({preventScroll: true});
 
-            // key로 본다. NumLock을 끈 숫자패드 9·3은 code가 Numpad9·Numpad3이다.
+            // key로 본다. NumLock을 끈 숫자패드 9, 3은 code가 Numpad9, Numpad3이다.
             if (ev.key === "PageUp" || ev.key === "PageDown") {
                 ev.preventDefault();
                 // 누르고 있을 때의 반복 입력으로는 넘기지 않는다. 지나가는 글마다 본문 요청이 나가 임시 차단된다.
@@ -207,7 +207,7 @@ export const Frame = () => {
     const hasComments = comments !== undefined || (post !== undefined && visible);
 
     return (
-        // 비모달 창이다. 스크롤 잠금과 PageUp/Down 이동은 직접 처리한다. 바깥 클릭 닫기는 아래 click이 맡는다(위에 뜬 팝업·버블을 눌러도 닫히지 않게).
+        // 비모달 창이다. 스크롤 잠금과 PageUp/Down 이동은 직접 처리한다. 바깥 클릭 닫기는 아래 click이 맡는다(위에 뜬 팝업, 버블을 눌러도 닫히지 않게).
         <Dialog.Root
             open
             modal={false}
@@ -220,7 +220,7 @@ export const Frame = () => {
                     details.allowPropagation();
                     return;
                 }
-                // Esc는 위에 뜬 것(유저 버블·다이얼로그)부터 닫는다. 그것들은 따로 그려져 Base UI는 미리보기를 맨 위로 본다.
+                // Esc는 위에 뜬 것(유저 버블, 다이얼로그)부터 닫는다. 그것들은 따로 그려져 Base UI는 미리보기를 맨 위로 본다.
                 // 버블은 여기서 닫는다. Base UI는 Esc 리스너를 effect로 걸므로 막 뜬 버블은 아직 Esc를 받지 못한다.
                 if (details.reason === "escape-key" && useUiStore.getState().bubble) {
                     details.cancel();

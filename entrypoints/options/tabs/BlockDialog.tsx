@@ -13,12 +13,12 @@ import {messageOf, SAVE_FAILED} from "@/utils/error";
 
 import {RefresherSelect} from "../shared/RefresherSelect";
 
-/** 모드마다 무엇을 가리는지. NOT_*는 한 유형의 불일치·불포함 항목을 묶은 허용 목록이라(core/block.ts) 나머지가 모두 가려진다. */
+/** 모드마다 무엇을 가리는지. NOT_*는 한 유형의 불일치, 불포함 항목을 묶은 허용 목록이라(core/block.ts) 나머지가 모두 가려진다. */
 export const DETECT_MODE_DESCRIPTIONS: Record<DetectMode, string> = {
     SAME: "값과 똑같으면 가립니다.",
     CONTAIN: "값이 들어 있으면 가립니다.",
-    NOT_SAME: "값과 똑같은 것만 남기고 나머지를 모두 가립니다. 불일치·불포함 항목이 여럿이면 하나에만 맞아도 남깁니다.",
-    NOT_CONTAIN: "값이 들어 있는 것만 남기고 나머지를 모두 가립니다. 불일치·불포함 항목이 여럿이면 하나에만 맞아도 남깁니다."
+    NOT_SAME: "값과 똑같은 것만 남기고 나머지를 모두 가립니다. 불일치, 불포함 항목이 여럿이면 하나에만 맞아도 남깁니다.",
+    NOT_CONTAIN: "값이 들어 있는 것만 남기고 나머지를 모두 가립니다. 불일치, 불포함 항목이 여럿이면 하나에만 맞아도 남깁니다."
 };
 
 const IMAGE_HINT = "보통은 본문 이미지를 우클릭해 '이 이미지 차단'으로 넣습니다.";
@@ -64,7 +64,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
             return;
         }
 
-        // 같은 값·갤러리 항목은 저장소에서 하나로 합쳐져 별명·지문을 잃은 채 덮이므로 막는다. 고치려면 목록에서 수정한다.
+        // 같은 값, 갤러리 항목은 저장소에서 하나로 합쳐져 별명, 지문을 잃은 채 덮이므로 막는다. 고치려면 목록에서 수정한다.
         const key = blockKey({content: value, isRegex, gallery: gallery.trim() || undefined});
         if (useBlocksStore.getState().entries[type].some((entry) => entry.id !== initial?.id && blockKey(entry) === key)) {
             setError("이미 같은 차단 항목이 있습니다.");

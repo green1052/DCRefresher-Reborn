@@ -1,5 +1,5 @@
 /**
- * IP 대역(a.b) → 후보(조직명·국가·VPN) 데이터.
+ * IP 대역(a.b) → 후보(조직명, 국가, VPN) 데이터.
  * 저장 형식(CompactIpData)은 DB 워크플로(scripts/build-db.ts)가 encodeIpData로 만들어 data 브랜치 ip.json으로 올리고,
  * 확장은 받은 문자열을 그대로 저장해 createIpLookup으로 읽는다. 쓰는 쪽과 읽는 쪽을 한 파일에 둔다.
  */
@@ -45,7 +45,7 @@ export const candidateKey = ({org, country, vpn}: IpCandidate): string => `${org
 
 /**
  * 대역(a*256+b) → 후보들(유력한 순) → 저장 형식. 대역 순으로 넘기면 결과가 늘 같다.
- * 자주 나오는 후보가 앞 번호를 받게 해 meta·lists의 JSON을 줄인다.
+ * 자주 나오는 후보가 앞 번호를 받게 해 meta, lists의 JSON을 줄인다.
  */
 export const encodeIpData = (prefixes: ReadonlyMap<number, readonly IpCandidate[]>): CompactIpData => {
     const frequency = new Map<string, { candidate: IpCandidate; count: number }>();
@@ -120,8 +120,8 @@ export const parseIpData = (text: string): CompactIpData | null => {
 export const parseStoredIpData = (text: string): CompactIpData => JSON.parse(text);
 
 /**
- * 모양까지 본다. 받은 파일은 그대로 저장되고 페이지마다 읽히므로, 필드 하나만 틀려도 배지·미리보기가 깨진다.
- * 번호가 범위를 벗어나면 다른 기관·국가가 조용히 보이므로 meta·lists의 번호도 본다.
+ * 모양까지 본다. 받은 파일은 그대로 저장되고 페이지마다 읽히므로, 필드 하나만 틀려도 배지, 미리보기가 깨진다.
+ * 번호가 범위를 벗어나면 다른 기관, 국가가 조용히 보이므로 meta, lists의 번호도 본다.
  */
 const isCompactIpData = (data: unknown): data is CompactIpData => {
     if (!isRecord(data) || typeof data.runs !== "string" || (data.version !== undefined && typeof data.version !== "string")) return false;
@@ -147,7 +147,7 @@ export const createIpLookup = (data: CompactIpData): ((ip: string) => IpCandidat
     if (runs.length % 2 !== 0) throw new Error("IP 데이터 형식이 올바르지 않습니다.");
     const count = runs.length / 2;
 
-    // 시작점이 늘지 않거나 값(=후보 번호+1)이 meta·lists 범위 밖이면 표·조회가 조용히 어긋나므로 여기서 던진다.
+    // 시작점이 늘지 않거나 값(=후보 번호+1)이 meta, lists 범위 밖이면 표, 조회가 조용히 어긋나므로 여기서 던진다.
     const total = data.meta.length / 3 + data.lists.length;
     for (let run = 0; run < count; run++) {
         if ((run > 0 && runs[run]! <= runs[run - 1]!) || runs[count + run]! - 1 >= total) throw new Error("IP 데이터 형식이 올바르지 않습니다.");
@@ -158,7 +158,7 @@ export const createIpLookup = (data: CompactIpData): ((ip: string) => IpCandidat
 
     // 조회에 쓰는 필드만 클로저에 남긴다. data를 통째로 잡으면 이미 디코드한 base64 문자열이 탭마다 남는다.
     // meta와 lists는 작은 JS 배열 1만 개쯤이라 탭마다 0.5MB를 차지한다. 형식화 배열 하나로 이어 두면 그 10분의 1이다.
-    // 번호는 모두 표 값(Uint16) 범위 안이다. orgs·countries도 쓰이는 것만 담기므로 후보 수(65535개)를 넘지 않는다.
+    // 번호는 모두 표 값(Uint16) 범위 안이다. orgs, countries도 쓰이는 것만 담기므로 후보 수(65535개)를 넘지 않는다.
     const {orgs, countries} = data;
     const meta = Uint16Array.from(data.meta);
     const metaCount = meta.length / 3;

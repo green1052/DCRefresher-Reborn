@@ -65,7 +65,7 @@ describe("Ctrl+클릭 삭제", () => {
         }
     });
 
-    it("관리하지 않는 갤러리, 설정을 끈 때, 체크박스 칸·댓글 수는 지우지 않고 클릭을 그대로 둔다", async () => {
+    it("관리하지 않는 갤러리, 설정을 끈 때, 체크박스 칸, 댓글 수는 지우지 않고 클릭을 그대로 둔다", async () => {
         mountList(false);
         await start({deleteViaCtrl: true});
         expect(ctrlClick(row().querySelector(".gall_tit a")!)).toBe(true);
@@ -131,7 +131,7 @@ describe("이미지 출처", () => {
 });
 
 describe("같은 제목 찾기", () => {
-    /** 디시 글 머리: 작성자 칸 안에 닉네임·날짜(.fl)와 조회·추천 수(.fr)가 있다. */
+    /** 디시 글 머리: 작성자 칸 안에 닉네임, 날짜(.fl)와 조회, 추천 수(.fr)가 있다. */
     const mountView = (title = "같은 제목"): void => {
         document.body.innerHTML = `<div class="gallview_head"><h3><span class="title_subject">${title}</span></h3>` +
             "<div class=\"gall_writer\"><div class=\"fl\"><span class=\"nickname\">닉</span></div><div class=\"fr\"><span class=\"gall_count\">조회 1</span></div></div></div>";

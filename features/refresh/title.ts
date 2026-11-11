@@ -29,7 +29,7 @@ export const setTitleCount = (count: number): void => {
 /** '여기까지 읽음' 구분선을 그을 행. 탭을 떠날 때 맨 위에 있던 글이다. */
 const READ_MARK_CLASS = "refresherReadMark";
 
-/** 목록 맨 위의 보이는 글(공지·설문·AD 빼고) 번호. */
+/** 목록 맨 위의 보이는 글(공지, 설문, AD 빼고) 번호. */
 const topPostNo = (): string | undefined => {
     for (const row of document.querySelectorAll<HTMLElement>(`${LIST_SELECTOR} > tr`)) {
         const no = rowPostNo(row);
@@ -42,8 +42,8 @@ const topPostNo = (): string | undefined => {
 const isWatching = (): boolean => !document.hidden && document.hasFocus();
 
 /**
- * 이 탭을 보지 않는 동안 들어온 새 글 수를 탭 제목에 붙이고(titleCount), 돌아오면(창 포커스·탭 표시) 지운다.
- * 가린 글(차단·깡계 숨김과 흐리게)은 세지 않는다. 필터는 행을 넣은 뒤(MutationObserver)에 돌므로 한 차례 뒤에 센다.
+ * 이 탭을 보지 않는 동안 들어온 새 글 수를 탭 제목에 붙이고(titleCount), 돌아오면(창 포커스, 탭 표시) 지운다.
+ * 가린 글(차단, 깡계 숨김과 흐리게)은 세지 않는다. 필터는 행을 넣은 뒤(MutationObserver)에 돌므로 한 차례 뒤에 센다.
  * 돌아왔을 때 센 글이 있거나 숨긴 탭에서 돌아온 뒤 첫 로드에 새 글이 있으면, 떠날 때 맨 위에 있던 글에
  * 다음에 돌아올 때까지 '여기까지 읽음' 선을 긋는다(readMark).
  */
@@ -114,7 +114,7 @@ export const createUnseenCounter = (ctx: Ctx) => {
     window.addEventListener("focus", onFocusChange, {signal: ctx.signal});
     window.addEventListener("blur", onFocusChange, {signal: ctx.signal});
     document.addEventListener("visibilitychange", onFocusChange, {signal: ctx.signal});
-    // 제목·읽음 선은 문서 상태를 바꾼 것이므로 onRevoke(사용자가 모듈을 끈 때)에만 되돌린다. addCleanup은
+    // 제목, 읽음 선은 문서 상태를 바꾼 것이므로 onRevoke(사용자가 모듈을 끈 때)에만 되돌린다. addCleanup은
     // stopAll(확장 업데이트)에서도 도는데 그때 되돌리면 새 인스턴스가 붙인 수와 구분할 표시(COUNTED_ATTRIBUTE)가 필요해진다.
     ctx.onRevoke(() => {
         clearTitle();

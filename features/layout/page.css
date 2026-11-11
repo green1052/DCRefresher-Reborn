@@ -2,7 +2,7 @@
 
 /*
  * 컴팩트 모드 (html.refresherCompact): 창이 좁을 때 디시의 1160px 고정폭 레이아웃을 창 폭에 맞춘다.
- * 고정폭 상자는 auto로 풀고, 오른쪽 사이드바·큰 머리글·줄어들지 않는 광고는 숨긴다.
+ * 고정폭 상자는 auto로 풀고, 오른쪽 사이드바, 큰 머리글, 줄어들지 않는 광고는 숨긴다.
  */
 .refresherCompact {
     /* 머리글, 최근 방문 줄, 본문이 같이 쓰는 최대 폭. */
@@ -28,7 +28,7 @@
         min-width: 0 !important;
     }
 
-    /* 머리글: 로고·파란 메뉴줄을 빼고 오른쪽 위 링크 한 줄과 통합검색 창만. */
+    /* 머리글: 로고, 파란 메뉴줄을 빼고 오른쪽 위 링크 한 줄과 통합검색 창만. */
     .dchead {
         width: auto !important;
         max-width: var(--refresher-compact-width) !important;
@@ -36,7 +36,7 @@
         padding: 8px 12px !important;
     }
 
-    /* 숨기는 것: 머리글 로고·파란 메뉴줄, 목록 위아래 상자, 창 폭에 맞춰 줄지 않는 광고. 날개 광고는 파일 끝에서 숨긴다. */
+    /* 숨기는 것: 머리글 로고, 파란 메뉴줄, 목록 위아래 상자, 창 폭에 맞춰 줄지 않는 광고. 날개 광고는 파일 끝에서 숨긴다. */
     .dc_logo,
     .gnb_bar,
     .dc_all,
@@ -44,7 +44,7 @@
     .minor_ranking_box,
     .issue_contentbox,
     .ad_bottom_list,
-    /* 더보기 버튼이 여는 상자는 마이너·미니 갤에선 이 목록으로 숨고, 일반 갤에선 컴팩트 폭에서 항목이 겹친다. */
+    /* 더보기 버튼이 여는 상자는 마이너, 미니 갤에선 이 목록으로 숨고, 일반 갤에선 컴팩트 폭에서 항목이 겹친다. */
     .page_head button[onclick^="gt_toggle_issue"],
     ins.adsbygoogle,
     /* 글 보기 파워링크 광고 (min-width 970px). */
@@ -106,7 +106,7 @@
         padding: 0 12px !important;
     }
 
-    /* 최근 방문 줄, .wrap_inner 없는 페이지(글쓰기·갤 메인)의 본문, 푸터 두 줄(.info_policy·.copyright)도 머리글과 같은 최대 폭을 쓴다. */
+    /* 최근 방문 줄, .wrap_inner 없는 페이지(글쓰기, 갤 메인)의 본문, 푸터 두 줄(.info_policy, .copyright)도 머리글과 같은 최대 폭을 쓴다. */
     .visit_bookmark,
     .dcwrap > #container,
     .info_policy,
@@ -160,7 +160,7 @@
 
     /* 목록: 사이드바를 빼고 목록이 폭을 다 쓴다. */
     /* display: none 대신 visibility로 숨긴다. 사이드바 로그인 상자 안의 알림 창(#alarmList, #alarmConf)만 visibility를 되돌려 머리글 알림 버튼으로 열 수 있다 (#270). */
-    /* 갤러리 관리 페이지(.minor_uadmin_wrap)는 메뉴·설정 칸에 같은 클래스를 쓰고, #top에 width1160이 없는 메인 계열 페이지는 고정 폭 상자가 사이드바 옆에 붙어 있어 둘 다 그대로 둔다. */
+    /* 갤러리 관리 페이지(.minor_uadmin_wrap)는 메뉴, 설정 칸에 같은 클래스를 쓰고, #top에 width1160이 없는 메인 계열 페이지는 고정 폭 상자가 사이드바 옆에 붙어 있어 둘 다 그대로 둔다. */
     .right_content:not(.minor_uadmin_wrap *, .dcwrap:not(.width1160) *) {
         position: absolute !important;
         width: 0 !important;
@@ -193,7 +193,7 @@
         font-size: 23px !important;
     }
 
-    /* 갤러리 제목 옆 링크(설정·새로고침…)가 좁으면 두 줄이 되는데 머리가 37px 고정이라 밑줄을 덮는다. */
+    /* 갤러리 제목 옆 링크(설정, 새로고침…)가 좁으면 두 줄이 되는데 머리가 37px 고정이라 밑줄을 덮는다. */
     .page_head {
         height: auto !important;
     }
@@ -209,7 +209,7 @@
         white-space: nowrap !important;
     }
 
-    /* 글 보기: 본문·댓글 칸의 고정폭 float를 푼다. 폭을 줄일 수 없는 광고는 숨긴다. */
+    /* 글 보기: 본문, 댓글 칸의 고정폭 float를 푼다. 폭을 줄일 수 없는 광고는 숨긴다. */
     .writing_view_box,
     .write_div,
     .cmt_txtbox,
@@ -274,14 +274,14 @@
         float: none !important;
     }
 
-    /* border-box로 바꾸면 여백·테두리까지 78px 안에 들어가 입력칸이 작아지므로 원래 높이 106px로 다시 지정한다. */
+    /* border-box로 바꾸면 여백, 테두리까지 78px 안에 들어가 입력칸이 작아지므로 원래 높이 106px로 다시 지정한다. */
     .cmt_txt_cont textarea {
         width: 100% !important;
         height: 106px !important;
         box-sizing: border-box !important;
     }
 
-    /* 글쓰기: float된 닉네임·비밀번호 칸 아래로 내린다. 아니면 제목 안내 문구가 닉네임 칸을 덮는다. */
+    /* 글쓰기: float된 닉네임, 비밀번호 칸 아래로 내린다. 아니면 제목 안내 문구가 닉네임 칸을 덮는다. */
     /* 디시가 728px로 고정해 두어서 좁은 글쓰기 상자 밖으로 나가고 페이지가 가로로 넘친다. 넓을 때는 원래 폭을 지킨다. */
     .input_write_tit {
         float: none !important;

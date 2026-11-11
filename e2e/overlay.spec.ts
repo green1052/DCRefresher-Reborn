@@ -81,7 +81,7 @@ test.describe("메모", () => {
         await expect(input).toBeFocused();
         await input.fill("테스트 메모");
 
-        // 오버레이(shadow DOM) 안에서도 Tab·Shift+Tab이 디시 페이지로 나가지 않는다.
+        // 오버레이(shadow DOM) 안에서도 Tab, Shift+Tab이 디시 페이지로 나가지 않는다.
         const focusInside = () => dialog.evaluate((element) => document.activeElement?.tagName === "REFRESHER-ROOT" && element.contains((element.getRootNode() as ShadowRoot).activeElement));
         for (const key of ["Tab", "Shift+Tab"]) {
             for (let i = 0; i < 12; i++) {

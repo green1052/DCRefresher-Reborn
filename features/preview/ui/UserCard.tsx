@@ -16,14 +16,14 @@ import {previewGallery, usePreviewStore} from "./previewStore";
 /**
  * 작성자 표시. 우클릭하거나 닉네임을 누르면(키보드 포함) 유저 버블을 연다.
  * fetchRatio: 글댓비가 캐시에 없으면 갤로그에서 받는다. 댓글마다 받으면 요청이 너무 많아 글쓴이에게만 켠다.
- * op: 글쓴이가 단 댓글. v5처럼 작성자 칸을 파랗게 칠한다. 닉네임만 칩 색으로, 배지(아이디·IP·글댓비·갱차·메모)는 설정한 색 그대로 둔다.
+ * op: 글쓴이가 단 댓글. v5처럼 작성자 칸을 파랗게 칠한다. 닉네임만 칩 색으로, 배지(아이디, IP, 글댓비, 갱차, 메모)는 설정한 색 그대로 둔다.
  */
 export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: boolean; op?: boolean }) => {
-    // 배지 순서·표시 조건·색은 페이지와 같게 userinfo 설정을 따른다. 모듈이 꺼져 있으면 기본값이고 색이 없다.
+    // 배지 순서, 표시 조건, 색은 페이지와 같게 userinfo 설정을 따른다. 모듈이 꺼져 있으면 기본값이고 색이 없다.
     const userinfo = useRunningModuleSettings("userinfo");
     const view = userinfo ? badgeViewOf(userinfo) : DEFAULT_BADGE_VIEW;
-    // DB를 읽을 때마다 오르는 번호를 구독해 다시 그린다. 0이면 아직 읽지 않아 IP·밴을 찾지 않는다.
-    // 읽기는 시작하지 않는다(onDatabaseChange). IP·갱차 배지를 그릴 설정이면 userinfo setup이 이미 읽고, 아니면 읽어도 쓸 데가 없다.
+    // DB를 읽을 때마다 오르는 번호를 구독해 다시 그린다. 0이면 아직 읽지 않아 IP, 밴을 찾지 않는다.
+    // 읽기는 시작하지 않는다(onDatabaseChange). IP, 갱차 배지를 그릴 설정이면 userinfo setup이 이미 읽고, 아니면 읽어도 쓸 데가 없다.
     const dbVersion = useSyncExternalStore(onDatabaseChange, databaseVersion);
     const ipInfo = dbVersion > 0 && !user.id && user.ip ? ipInfoOf(user.ip) : undefined;
     const ipColor = ipInfo ? userinfo?.[`${ipInfo.category}Color`] : undefined;
@@ -57,7 +57,7 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
         openBubble(ev.clientX, ev.clientY);
     };
 
-    // 설정한 색이 없으면 아이디·IP는 회색, IP 정보는 파랑이다.
+    // 설정한 색이 없으면 아이디, IP는 회색, IP 정보는 파랑이다.
     const identityClass = cn("truncate text-xs", !uidColor && "text-muted-foreground");
 
     const badges: Record<BadgeKey, ReactNode> = {
@@ -87,7 +87,7 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
             {/* 유동 IP는 디시가 닉 옆에 바로 보여 주는 값이라 배지 순서와 상관없이 여기 둔다. */}
             {user.ip && <span className={identityClass} style={{color: uidColor}}>({user.ip})</span>}
             {view.order.map((key) => <Fragment key={key}>{badges[key]}</Fragment>)}
-            {/* 페이지처럼 배지 뒤에 붙인다. 흐리게·숨기기는 댓글을 가린다 (core/preview/comments.ts). */}
+            {/* 페이지처럼 배지 뒤에 붙인다. 흐리게, 숨기기는 댓글을 가린다 (core/preview/comments.ts). */}
             {lowActivity && action === "tag" && <span className="truncate text-xs" style={{color: userinfo?.ratioAlarmColor}} title={`글댓합 ${alarm}개 이하`}>[깡계]</span>}
         </div>
     );

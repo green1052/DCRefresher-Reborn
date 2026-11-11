@@ -66,6 +66,6 @@ export const dcComment = (no: number, fields: Partial<ProcessedComment> = {}): P
 /** 차단 목록 항목. 주지 않으면 id는 내용이고 정규식이 아니다. */
 export const blockEntry = (content: string, fields: Partial<BlockEntry> = {}): BlockEntry => ({id: content, content, isRegex: false, ...fields});
 
-/** 차단 스토어에 목록·기본 모드를 저장소를 거치지 않고 넣는다. 주지 않은 유형은 비고, 기본 모드는 기본값이다. */
+/** 차단 스토어에 목록, 기본 모드를 저장소를 거치지 않고 넣는다. 주지 않은 유형은 비고, 기본 모드는 기본값이다. */
 export const setBlockLists = (lists: Partial<Record<BlockType, BlockEntry[]>> = {}, defaults: Partial<Record<BlockType, DetectMode>> = {}): void =>
     useBlocksStore.setState({entries: {...emptyEntries(), ...lists}, defaults: {...DEFAULT_DETECT_MODE, ...defaults}});

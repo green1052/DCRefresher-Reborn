@@ -1,7 +1,7 @@
 /**
  * 단위 테스트 공통 준비 (vitest.config.ts의 setupFiles). 테스트 파일마다 먼저 돈다.
- * 목·스파이는 vitest.config.ts의 mockReset·restoreMocks가 테스트마다 되돌린다.
- * 아래 polyfill은 jsdom·fake-browser에만 없는 것이다. 확장이 도는 브라우저에는 다 있다.
+ * 목, 스파이는 vitest.config.ts의 mockReset, restoreMocks가 테스트마다 되돌린다.
+ * 아래 polyfill은 jsdom, fake-browser에만 없는 것이다. 확장이 도는 브라우저에는 다 있다.
  */
 import {URLPattern} from "node:url";
 
@@ -44,7 +44,7 @@ if (typeof window !== "undefined") {
         addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}
     });
     Element.prototype.scrollIntoView ??= () => undefined;
-    // Web Locks (stores/modules·core/storage/sync). 한 탭뿐이므로 차례대로 잇기만 한다.
+    // Web Locks (stores/modules, core/storage/sync). 한 탭뿐이므로 차례대로 잇기만 한다.
     if (!("locks" in navigator)) {
         let queue: Promise<unknown> = Promise.resolve();
         Object.defineProperty(navigator, "locks", {

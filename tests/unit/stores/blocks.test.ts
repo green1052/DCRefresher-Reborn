@@ -26,7 +26,7 @@ describe("normalizeBlockList", () => {
         expect(list.map((item) => item.id)).toEqual(["1"]);
     });
 
-    it("이미지 지문(similar·frames)은 32자 16진수만, frames는 8개까지 받는다", () => {
+    it("이미지 지문(similar, frames)은 32자 16진수만, frames는 8개까지 받는다", () => {
         const print = "0".repeat(32);
         const list = normalizeBlockList([
             {id: "1", content: "x", isRegex: false, similar: print, frames: [print, print]},
@@ -55,7 +55,7 @@ describe("normalizeBlockList", () => {
 });
 
 describe("composeExtra", () => {
-    it("정규식·갤러리·모드 순으로 붙인다", () => {
+    it("정규식, 갤러리, 모드 순으로 붙인다", () => {
         expect(composeExtra({isRegex: true, gallery: "g", mode: "NOT_SAME"})).toBe("[정규식] [갤러리: g] [불일치]");
         expect(composeExtra({isRegex: false})).toBe("");
     });
@@ -141,7 +141,7 @@ describe("useBlocksStore", () => {
         expect(useBlocksStore.getState().defaults.NICK).toBe("SAME");
     });
 
-    it("initBlocksStore는 목록·기본 모드를 읽고 변경을 따른다", async () => {
+    it("initBlocksStore는 목록, 기본 모드를 읽고 변경을 따른다", async () => {
         await fakeBrowser.storage.local.set({"refresher:block:ID": [entry("u")], "refresher:block:defaults": {ID: "CONTAIN"}});
 
         await initBlocksStore();

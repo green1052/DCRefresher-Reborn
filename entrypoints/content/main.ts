@@ -20,7 +20,7 @@ import {mountOverlayWhenNeeded} from "./overlay";
 export const start = async (ctx: ContentScriptContext): Promise<void> => {
     bindUsageContext(ctx.signal);
 
-    // ===== 메시징 (배경·팝업→탭) =====
+    // ===== 메시징 (배경, 팝업→탭) =====
     // 스크립트가 다시 주입되면 이전 인스턴스가 남아 메시지를 계속 받는다. 멈춘 모듈의 빈 상태로 팝업에 먼저 답하지 않게 무효화될 때 푼다.
     ctx.onInvalidated(onMessage("refresher:executeShortcut", ({data: command}) => runShortcut(command)));
 
@@ -30,7 +30,7 @@ export const start = async (ctx: ContentScriptContext): Promise<void> => {
         return pageState();
     }));
 
-    // 확장을 끄거나 업데이트해도 이 스크립트는 남아 새로고침 폴링·저장소 호출을 하다 실패하므로 모듈을 멈춘다.
+    // 확장을 끄거나 업데이트해도 이 스크립트는 남아 새로고침 폴링, 저장소 호출을 하다 실패하므로 모듈을 멈춘다.
     // 부트스트랩의 await보다 먼저 등록한다. 저장소를 읽는 중에 무효화되면 그 호출이 실패하거나 끝나지 않아 await 뒤의 등록까지 가지 못한다.
     ctx.onInvalidated(() => {
         stopAll();
@@ -44,7 +44,7 @@ export const start = async (ctx: ContentScriptContext): Promise<void> => {
     mountOverlayWhenNeeded(ctx);
 
     // ===== 모듈 부트스트랩 =====
-    // 차단·메모는 글 목록·본문(BOARD_PAGE)에서만 읽는다.
+    // 차단, 메모는 글 목록, 본문(BOARD_PAGE)에서만 읽는다.
     // 가장 큰 IP/밴 DB는 여기서 읽지 않는다. 필요할 때 유저 정보 모듈(needsDatabase)이나 버블이 처음 그릴 때 읽는다 (core/database의 subscribeDatabase).
     const board = BOARD_PAGE.test(documentUrl.pathname);
     await loadAll(features, ctx.signal, board ? Promise.all([initBlocksStore(ctx.signal), initMemosStore(ctx.signal)]) : undefined);

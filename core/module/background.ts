@@ -19,20 +19,20 @@ interface BackgroundImpl<S extends SettingsSchema> {
     listen?(): void;
 
     /**
-     * 켜기/끄기·설정 변경·설치·브라우저 시작 때 그 시점의 상태에 맞춘다. 모듈마다 앞의 호출이 끝난 뒤에 다음을 부른다.
+     * 켜기/끄기, 설정 변경, 설치, 브라우저 시작 때 그 시점의 상태에 맞춘다. 모듈마다 앞의 호출이 끝난 뒤에 다음을 부른다.
      * 맞출 상태가 없는(listen만 하는) 모듈은 apply를 두지 않는다.
      */
     apply?(state: { enabled: boolean; settings: SettingValues<S> }): Promise<void> | void;
 }
 
-/** 배경 스크립트가 모아 돌리는 모듈. on/off·설정은 메타의 id·defaultEnable·settings로 읽는다. */
+/** 배경 스크립트가 모아 돌리는 모듈. on/off, 설정은 메타의 id, defaultEnable, settings로 읽는다. */
 export interface BackgroundModule extends Pick<AnyModuleMeta, "id" | "defaultEnable" | "settings">, BackgroundImpl<SettingsSchema> {}
 
 /** 모듈의 배경 쪽. features/<id>/background.ts가 default로 내보내면 배경 스크립트가 glob으로 모아 돌린다. */
 export const defineBackgroundModule = <M extends AnyModuleMeta>(meta: M, impl: BackgroundImpl<SchemaOf<M>>): BackgroundModule =>
     ({id: meta.id, defaultEnable: meta.defaultEnable, settings: meta.settings, ...impl});
 
-/** 탭에서 온 메시지의 보낸 쪽. 팝업·옵션 같은 확장 페이지는 tab이 없다. */
+/** 탭에서 온 메시지의 보낸 쪽. 팝업, 옵션 같은 확장 페이지는 tab이 없다. */
 type TabSender = Browser.runtime.MessageSender & { tab: { id: number } };
 
 export const hasTab = (sender: Browser.runtime.MessageSender): sender is TabSender => sender.tab?.id !== undefined;
@@ -45,7 +45,7 @@ export const hasTab = (sender: Browser.runtime.MessageSender): sender is TabSend
 const senderTarget = ({tab: {id: tabId}, frameId, documentId}: TabSender) =>
     documentId ? {tabId, documentIds: [documentId]} : {tabId, frameIds: [frameId ?? 0]};
 
-/** 메시지를 보낸 문서의 페이지(MAIN world)에서 func를 실행한다. func는 직렬화되므로 바깥 변수·import를 쓸 수 없다. */
+/** 메시지를 보낸 문서의 페이지(MAIN world)에서 func를 실행한다. func는 직렬화되므로 바깥 변수, import를 쓸 수 없다. */
 export const runInPage = <Args extends unknown[], Result>(sender: TabSender, func: (...args: Args) => Result, args: Args) =>
     browser.scripting.executeScript({target: senderTarget(sender), world: "MAIN", func, args});
 
@@ -53,7 +53,7 @@ export const runInPage = <Args extends unknown[], Result>(sender: TabSender, fun
 export const runFileInPage = (sender: TabSender, file: ScriptPublicPath) =>
     browser.scripting.executeScript({target: senderTarget(sender), world: "MAIN", files: [file]});
 
-/** 배경 모듈을 시작한다. 모든 모듈을 지금 상태에 다시 맞추는 함수를 돌려준다 (설치·브라우저 시작 때 배경이 부른다). */
+/** 배경 모듈을 시작한다. 모든 모듈을 지금 상태에 다시 맞추는 함수를 돌려준다 (설치, 브라우저 시작 때 배경이 부른다). */
 export const startBackgroundModules = (modules: BackgroundModule[]): (() => Promise<void>) => {
     const appliers = modules.map((module) => {
         // 한 모듈의 listen이 던져도 다른 모듈과 배경의 나머지 리스너는 건다. 리스너를 다 걸지 못한 모듈은 맞추지 않는다.
@@ -66,10 +66,10 @@ export const startBackgroundModules = (modules: BackgroundModule[]): (() => Prom
         const applyState = module.apply?.bind(module);
         if (!applyState) return async () => {};
 
-        // apply가 겹치면 메뉴 지우기·만들기 같은 비동기 작업이 엇갈리므로 줄 세운다.
+        // apply가 겹치면 메뉴 지우기, 만들기 같은 비동기 작업이 엇갈리므로 줄 세운다.
         const applies = pLimit(1);
         const apply = (): Promise<void> => applies(async () => {
-            // on/off·설정 읽기와 해석은 콘텐츠 레지스트리와 같은 함수로 한다.
+            // on/off, 설정 읽기와 해석은 콘텐츠 레지스트리와 같은 함수로 한다.
             const {enables, settings} = await readModuleStorage([module.id]);
             await applyState({
                 enabled: isModuleEnabled(module, enables),
@@ -77,7 +77,7 @@ export const startBackgroundModules = (modules: BackgroundModule[]): (() => Prom
             });
         }).catch(console.error);
 
-        // 옵션 페이지·팝업은 저장소에 직접 쓰므로 저장소를 감시해 바로 다시 맞춘다.
+        // 옵션 페이지, 팝업은 저장소에 직접 쓰므로 저장소를 감시해 바로 다시 맞춘다.
         storage.watch<Record<string, unknown>>(MODULES_KEY, (next, prev) => {
             if (next?.[module.id] !== prev?.[module.id]) void apply();
         });

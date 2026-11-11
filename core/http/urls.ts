@@ -27,7 +27,7 @@ export const urls = {
 /**
  * 갤러리 종류별 주소 경로 접두사, 디시 요청의 _GALLTYPE_ 값, 관리 API 접두사(<manager>_manager_board_ajax). 디시가 정한 값이라 바꾸면 안 된다.
  * 관리 접두사는 디시 get_gall_type_name()처럼 경로 첫 칸을 쓰고 mgallery만 minor로 바꾼다. 일반 갤러리엔 관리 기능이 없어 minor로 둔다.
- * 코드에서는 종류 이름(GalleryKind)으로 다루고, 이 값들은 주소·요청을 만들 때만 꺼낸다.
+ * 코드에서는 종류 이름(GalleryKind)으로 다루고, 이 값들은 주소, 요청을 만들 때만 꺼낸다.
  */
 const GALLERIES = {
     normal: {path: "", galltype: "G", manager: "minor"},
@@ -39,7 +39,7 @@ const GALLERIES = {
 type GalleryKind = keyof typeof GALLERIES;
 
 /**
- * https 디시 주소면 그 주소, 아니면 undefined. 페이지·본문에서 읽은 주소로 이동하거나 새 탭을 열기 전에 거친다.
+ * https 디시 주소면 그 주소, 아니면 undefined. 페이지, 본문에서 읽은 주소로 이동하거나 새 탭을 열기 전에 거친다.
  * javascript:나 다른 사이트 주소가 섞여 들어와도 따라가지 않는다.
  */
 export const dcinsideHref = (url: string | URL | null | undefined): string | undefined => {
@@ -56,14 +56,14 @@ export const galleryKind = (url: string): GalleryKind => {
 /** URL의 갤러리 경로 접두사 ("", "mgallery/", "mini/", "person/"). */
 export const galleryPath = (url: string): string => GALLERIES[galleryKind(url)].path;
 
-/** 댓글·관리·캡차 요청에 넣는 _GALLTYPE_ 값. */
+/** 댓글, 관리, 캡차 요청에 넣는 _GALLTYPE_ 값. */
 export const galltypeOf = (url: string): string => GALLERIES[galleryKind(url)].galltype;
 
 /** 관리 API 주소 (ajax/<접두사>_manager_board_ajax/<action>). */
 export const managerAjaxUrl = (url: string, action: string): string => `${urls.base}ajax/${GALLERIES[galleryKind(url)].manager}_manager_board_ajax/${action}`;
 
 /**
- * 게시글/목록 URL → 같은 갤러리·쿼리의 목록 URL.
+ * 게시글/목록 URL → 같은 갤러리, 쿼리의 목록 URL.
  * 같은 목록이면 같은 문자열이 되도록 글 보기 전용 값(no, t)과 page=1을 빼고 쿼리를 정렬한다.
  * 글 주소는 목록과 쿼리가 같을 때만 원래 목록과 같은 값이 나온다. 미리보기가 쌓는 행 링크는 목록 주소의 기본값 쿼리
  * (sort_type=N, 빈 search_pos 등)가 빠져 다를 수 있다.
@@ -90,7 +90,7 @@ export const postSearchUrl = (query: string): string =>
 
 /**
  * 검색 모듈의 작성자 거르기(features/search/writer.ts)가 목록 주소에 얹는 쿼리 이름. 디시 글쓴이 검색(search_name)은 닉네임만 찾아,
- * 아이디·IP는 이 값으로 얹어 두고 그 작성자가 아닌 행을 숨긴다. 새로고침 모듈도 거르는 목록인지 볼 때 읽는다.
+ * 아이디, IP는 이 값으로 얹어 두고 그 작성자가 아닌 행을 숨긴다. 새로고침 모듈도 거르는 목록인지 볼 때 읽는다.
  */
 export const WRITER_PARAMS = {uid: "rf_uid", ip: "rf_ip"} as const;
 
@@ -102,8 +102,8 @@ export interface WriterFilter {
 }
 
 /**
- * 지금 판단에 쓸 문서 주소. 문서를 불러온 주소(내비게이션 항목)가 있으면 그것으로 본다 — 미리보기·페이지 넘김이
- * pushState로 주소창을 바꿔도 이 문서가 보여 주는 목록·검색은 그대로다. 항목이 없으면(파이어폭스 확장 페이지처럼
+ * 지금 판단에 쓸 문서 주소. 문서를 불러온 주소(내비게이션 항목)가 있으면 그것으로 본다 — 미리보기, 페이지 넘김이
+ * pushState로 주소창을 바꿔도 이 문서가 보여 주는 목록, 검색은 그대로다. 항목이 없으면(파이어폭스 확장 페이지처럼
  * 이름이 주소가 아니거나 테스트 환경) 지금 주소로 본다. 호출마다 읽는 것은 테스트(vi.spyOn) 때문이고, 브라우저에서는
  * 문서 수명 내내 같은 값이다.
  */
@@ -128,9 +128,9 @@ export const writerFilter = (href = loadedDocumentUrl().href): WriterFilter | nu
 export const queryString = (name: string): string | null => loadedDocumentUrl().searchParams.get(name);
 
 /**
- * 이 문서를 불러온 주소. 미리보기·페이지 넘김이 pushState로 주소를 바꿔도 이 문서가 보여 주는 페이지는 그대로다.
+ * 이 문서를 불러온 주소. 미리보기, 페이지 넘김이 pushState로 주소를 바꿔도 이 문서가 보여 주는 페이지는 그대로다.
  * 지금 주소가 아니라 내비게이션 항목에서 읽는다. 파이어폭스는 확장을 업데이트하면 미리보기가 바꿔 둔 글 주소에서 스크립트를 다시 주입한다.
- * 파이어폭스 확장 페이지(배경·옵션·팝업)는 항목 이름이 URL이 아니라 "document"라 파싱되지 않으면 지금 주소를 쓴다 (던지면 번들 전체가 멈춘다).
+ * 파이어폭스 확장 페이지(배경, 옵션, 팝업)는 항목 이름이 URL이 아니라 "document"라 파싱되지 않으면 지금 주소를 쓴다 (던지면 번들 전체가 멈춘다).
  */
 export const documentUrl = loadedDocumentUrl();
 export const isViewPage = VIEW_PAGE.test(documentUrl.pathname);

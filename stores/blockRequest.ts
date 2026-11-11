@@ -57,7 +57,7 @@ const blockDccon = async (selected: SelectedUser, dcconPackage?: DcconPackageMod
 };
 
 /**
- * 이미지·움짤 우클릭 메뉴의 "이 이미지 차단" (features/block/background.ts). 같은 파일이면 다른 글에 다시 올려도 가린다.
+ * 이미지, 움짤 우클릭 메뉴의 "이 이미지 차단" (features/block/background.ts). 같은 파일이면 다른 글에 다시 올려도 가린다.
  * 비슷한 이미지 지문도 늘 넣어 둔다. 나중에 그 설정을 켜도 이미 넣은 항목이 비슷한 이미지를 막는다.
  */
 export const blockImage = async (url: string): Promise<void> => {

@@ -29,7 +29,7 @@ const installListBridge = (eventName: string): void => {
         // 목록을 바꿀 때마다 불리므로 찾으면 멈춘다 (배열로 펼쳐 map하면 페이지의 인라인 스크립트를 모두 훑는다).
         const loaded = Iterator.from(document.scripts).map((script) => /chk_user_block\('([^']*)'\)/.exec(script.textContent ?? "")?.[1]).find((id) => id !== undefined);
         if (typeof window.chk_user_block === "function") window.chk_user_block(loaded ?? gallery);
-        // null이면 디시가 처음 그릴 때 등록한 범위(목록·글 머리)를 다시 그린다.
+        // null이면 디시가 처음 그릴 때 등록한 범위(목록, 글 머리)를 다시 그린다.
         if (typeof window.UserMemo?.renderWriterMemoBadges === "function") window.UserMemo.renderWriterMemoBadges(null);
     });
 };

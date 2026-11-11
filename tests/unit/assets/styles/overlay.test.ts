@@ -7,14 +7,14 @@ import {describe, expect, it} from "vitest";
 const overlayCss = readFileSync("assets/styles/overlay.css", "utf8");
 const excluded = /@source not "\.\.\/\.\.\/components\/ui\/\{([^}]+)\}\.tsx";/.exec(overlayCss)?.[1]?.split(",") ?? [];
 
-// 옵션·팝업 밖에서 오버레이 CSS로 그려질 수 있는 소스.
+// 옵션, 팝업 밖에서 오버레이 CSS로 그려질 수 있는 소스.
 const sources = import.meta.glob<string>([
     "../../../../{components,features,stores,core,utils}/**/*.{ts,tsx}",
     "../../../../entrypoints/content/**/*.{ts,tsx}"
 ], {query: "?raw", import: "default", eager: true});
 
 describe("오버레이 CSS 스캔 제외", () => {
-    it("옵션·팝업 밖의 소스는 뺀 부품과 옵션·팝업 폴더를 불러오지 않는다", () => {
+    it("옵션, 팝업 밖의 소스는 뺀 부품과 옵션, 팝업 폴더를 불러오지 않는다", () => {
         expect(excluded).toContain("card");
         expect(Object.keys(sources).length).toBeGreaterThan(0);
         const banned = new RegExp(`["']@/(components/ui/(${excluded.join("|")})|entrypoints/(options|popup))["'/]`);

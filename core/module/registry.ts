@@ -16,7 +16,7 @@ import type {AnyModule, ModuleApis, ModuleContext, ModuleSettings} from "./types
 interface ModuleInstance {
     def: AnyModule;
     settings: Record<string, SettingValue>;
-    /** 실행 중일 때만 있다. ready는 setup이 끝나 api가 준비됐다는 뜻이며, 단축키·팝업 토글은 그때부터 받는다. */
+    /** 실행 중일 때만 있다. ready는 setup이 끝나 api가 준비됐다는 뜻이며, 단축키, 팝업 토글은 그때부터 받는다. */
     running?: { ctx: ModuleContext; controller: AbortController; ready: boolean; api?: unknown; setup?: Promise<void>; listeners: ((keys: ReadonlySet<string>) => void)[]; revokers: (() => void)[] };
     /** setup이 던졌다. 켜짐 값이 그대로면 다시 시작하지 않는다 (다른 모듈을 켜고 끌 때마다 실패를 되풀이한다). 껐다 켜면 다시 시도한다. */
     failed?: boolean;
@@ -49,7 +49,7 @@ export const runningModuleSettings = <Id extends keyof ModuleSettings>(id: Id): 
     runningModulesStore.getState()[id] ? moduleSettings(id) : undefined;
 
 /**
- * stopAll 뒤에는 다시 켜지 않는다. 감시는 컨텍스트 signal로 풀리지만 불러오는 중이던 register·sync는 끝까지 돌아,
+ * stopAll 뒤에는 다시 켜지 않는다. 감시는 컨텍스트 signal로 풀리지만 불러오는 중이던 register, sync는 끝까지 돌아,
  * 켜면 새로 주입된 스크립트의 모듈과 두 벌로 돈다.
  */
 let stopped = false;
@@ -59,7 +59,7 @@ const start = async (instance: ModuleInstance): Promise<void> => {
     if (stopped) return;
     if (instance.running) return instance.running.setup;
 
-    // 이 실행의 수명. setup이 await하는 사이 중지되면 이미 abort된 상태라, 그 뒤에 등록하는 필터·cleanup은 바로 해제한다.
+    // 이 실행의 수명. setup이 await하는 사이 중지되면 이미 abort된 상태라, 그 뒤에 등록하는 필터, cleanup은 바로 해제한다.
     const controller = new AbortController();
     const {signal} = controller;
     const addCleanup = (dispose: () => void): void => {
@@ -129,7 +129,7 @@ const runRevoke = (instance: ModuleInstance, revoke: () => void): void => {
     }
 };
 
-/** keepDom이면 onRevoke 없이 리스너·타이머만 푼다. abort를 onRevoke보다 먼저 해서 정리 함수가 던져도 리스너가 남지 않게 한다. */
+/** keepDom이면 onRevoke 없이 리스너, 타이머만 푼다. abort를 onRevoke보다 먼저 해서 정리 함수가 던져도 리스너가 남지 않게 한다. */
 const stop = (instance: ModuleInstance, keepDom = false): void => {
     const running = instance.running;
     if (!running) return;
@@ -238,7 +238,7 @@ export const runPageToggle = ({module, id}: PageAction): void => {
 
 /**
  * 모든 모듈 중지 (콘텐츠 스크립트 컨텍스트가 무효화됐을 때). 해제 함수 하나가 던져도 abort 리스너라 나머지는 계속 돈다.
- * onRevoke는 부르지 않고 페이지를 지금 모습대로 둔다. 부르면 확장을 업데이트할 때 열린 탭마다 차단·스텔스·레이아웃이 풀려
+ * onRevoke는 부르지 않고 페이지를 지금 모습대로 둔다. 부르면 확장을 업데이트할 때 열린 탭마다 차단, 스텔스, 레이아웃이 풀려
  * 새로고침 전까지 가린 내용이 드러난다.
  */
 export const stopAll = (): void => {
@@ -246,7 +246,7 @@ export const stopAll = (): void => {
     for (const instance of instances.values()) stop(instance, true);
 };
 
-/** on/off 값에 맞춰 모듈을 시작·중지하고, 시작하는 모듈의 setup을 기다린다. */
+/** on/off 값에 맞춰 모듈을 시작, 중지하고, 시작하는 모듈의 setup을 기다린다. */
 const sync = async (enables: Record<string, unknown>): Promise<void> => {
     const starts: Promise<void>[] = [];
     for (const instance of instances.values()) {
@@ -262,7 +262,7 @@ const sync = async (enables: Record<string, unknown>): Promise<void> => {
 
 /**
  * 모듈을 일괄 등록하고, 옵션 페이지의 on/off(저장소)를 감시해 시작/중지한다. signal은 콘텐츠 스크립트 컨텍스트의 것이다.
- * setup은 ready(차단·메모 스토어 초기화)가 끝난 뒤에 돈다.
+ * setup은 ready(차단, 메모 스토어 초기화)가 끝난 뒤에 돈다.
  */
 const load = async (defs: AnyModule[], signal: AbortSignal, ready?: Promise<void[]>): Promise<void> => {
     // UI가 읽는 설정(useModuleSettings)은 모든 모듈의 기본값으로 먼저 채운다. 이 페이지에 등록하지 않는 모듈(미리보기가 없는 글쓰기 페이지 등)도
@@ -271,7 +271,7 @@ const load = async (defs: AnyModule[], signal: AbortSignal, ready?: Promise<void
     // 이 문서의 주소(documentUrl)는 바뀌지 않으므로 urls가 이 페이지를 빼는 모듈은 끝내 돌지 않는다. 설정을 읽거나 감시하지 않게 등록하지 않는다.
     // 경로만 본다. 주소 전체를 보면 검색어(s_keyword)에 든 "/board/write" 같은 글자에 걸린다.
     defs = defs.filter((def) => !def.urls || def.urls.some((re) => re.test(documentUrl.pathname)));
-    // on/off·모듈 설정을 한 번에 읽고 ready와 같이 기다린다. 차례로 기다리면 저장소 왕복이 쌓여 모듈이 늦게 뜬다.
+    // on/off, 모듈 설정을 한 번에 읽고 ready와 같이 기다린다. 차례로 기다리면 저장소 왕복이 쌓여 모듈이 늦게 뜬다.
     // 설정 감시는 읽기 전에 건다 (storageSync와 같다). 등록 전에 온 값은 모아 두었다가 읽은 값 대신 쓴다.
     const early = new Map<string, unknown>();
     for (const def of defs) {
@@ -292,11 +292,11 @@ const load = async (defs: AnyModule[], signal: AbortSignal, ready?: Promise<void
     for (const [index, result] of results.entries()) {
         if (result.status === "rejected") console.error(`Failed to load module: ${defs[index]?.id}`, result.reason);
     }
-    // 차단·메모를 못 읽었으면 여기서 멈춘다. 아래 sync가 차단 목록 없이 모듈을 켜지 않게 한다.
+    // 차단, 메모를 못 읽었으면 여기서 멈춘다. 아래 sync가 차단 목록 없이 모듈을 켜지 않게 한다.
     await enables;
 
     watchStorage(MODULES_KEY, (next) => void sync(enablesOf(next)), signal);
-    // bfcache에서 돌아온 탭은 그사이의 on/off·설정 변경을 받지 못했다. 다시 시작하는 모듈이 새 값을 보도록 설정을 먼저 맞춘다.
+    // bfcache에서 돌아온 탭은 그사이의 on/off, 설정 변경을 받지 못했다. 다시 시작하는 모듈이 새 값을 보도록 설정을 먼저 맞춘다.
     onBfcacheRestore(async () => {
         const stored = await readAll(defs);
         for (const instance of instances.values()) {

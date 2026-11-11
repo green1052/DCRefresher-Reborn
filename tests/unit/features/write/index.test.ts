@@ -85,7 +85,7 @@ describe("나가기 방지", () => {
         expect(blocksExit()).toBe(false);
     });
 
-    it("제목·본문 글자·본문 이미지가 있으면 막는다", async () => {
+    it("제목, 본문 글자, 본문 이미지가 있으면 막는다", async () => {
         await start();
         subject().value = "제목";
         expect(blocksExit()).toBe(true);
@@ -98,7 +98,7 @@ describe("나가기 방지", () => {
         expect(blocksExit()).toBe(true);
     });
 
-    it("디시가 넣은 자동 짤방·작성 가이드는 쓴 글로 보지 않는다", async () => {
+    it("디시가 넣은 자동 짤방, 작성 가이드는 쓴 글로 보지 않는다", async () => {
         editor().innerHTML = "<div id=\"auto_zzal_img_div\"><img src=\"z.png\">짤방</div><div class=\"wrt_guide_preview_inn\">가이드</div>";
         await start();
         expect(blocksExit()).toBe(false);

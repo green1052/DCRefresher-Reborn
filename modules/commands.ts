@@ -7,7 +7,7 @@ import {featureFolders} from "./lib/features";
 
 /**
  * 모듈 메타(features/<id>/meta.ts)의 commands를 모아 manifest commands로 넣는다.
- * 단축키를 추가할 때 메타·labels.ts와 index.ts의 shortcuts만 고치면 된다. 설명은 labels.ts의 "모듈 이름: 명령 설명"으로 브라우저 단축키 설정에 보인다.
+ * 단축키를 추가할 때 메타, labels.ts와 index.ts의 shortcuts만 고치면 된다. 설명은 labels.ts의 "모듈 이름: 명령 설명"으로 브라우저 단축키 설정에 보인다.
  */
 export default defineWxtModule((wxt) => {
     wxt.hook("build:manifestGenerated", async (wxt, manifest) => {

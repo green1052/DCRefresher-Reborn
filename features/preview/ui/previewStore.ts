@@ -11,7 +11,7 @@ export interface ErrorState {
     detail: string;
     /** HTTP 상태 코드 (HTTPError일 때). */
     status?: number;
-    /** 성인 인증이 필요한 글 (비로그인·미인증이면 본문 대신 인증 안내가 온다). */
+    /** 성인 인증이 필요한 글 (비로그인, 미인증이면 본문 대신 인증 안내가 온다). */
     adult?: boolean;
     /** 미니 갤러리 비밀글 (비밀번호는 원문에서만 넣을 수 있다). */
     secret?: boolean;
@@ -19,10 +19,10 @@ export interface ErrorState {
 
 export type ManageKind = "notice" | "recommend" | "delete" | "bump";
 
-/** 댓글 스레드 순서: 등록순·최신순·답글순 (CommentList.tsx의 threadParents). */
+/** 댓글 스레드 순서: 등록순, 최신순, 답글순 (CommentList.tsx의 threadParents). */
 export type CommentOrderValue = "oldest" | "newest" | "replies";
 
-/** 공지·개념글 [등록, 해제] 동작. 관리 패널의 확인 문구와 결과 알림이 같이 쓴다. */
+/** 공지, 개념글 [등록, 해제] 동작. 관리 패널의 확인 문구와 결과 알림이 같이 쓴다. */
 export const MANAGE_LABELS = {notice: ["공지로 등록", "공지를 해제"], recommend: ["개념글로 등록", "개념글을 해제"]} as const;
 
 type Reply = { commentNo: string | null; replyNo: string | null };
@@ -50,10 +50,10 @@ interface PostState {
     comments: ProcessedComment[] | undefined;
     /** 댓글을 받지 못했다. comments가 없는 동안 받는 중 표시 대신 '다시 시도' 안내를 보인다. */
     commentsFailed: boolean;
-    /** 댓글·답글 쓰기 허용. 멤버만 댓글을 쓸 수 있는 갤러리면 댓글 응답의 allow_reply가 0이다. */
+    /** 댓글, 답글 쓰기 허용. 멤버만 댓글을 쓸 수 있는 갤러리면 댓글 응답의 allow_reply가 0이다. */
     allowReply: boolean;
     collapsed: Set<string>;
-    /** 이 글에서만 가린 댓글(숨김 차단·접힌 같은 댓글) 보기. 댓글 머리의 요약에서 켜고 끈다. 페이지의 '가린 내용 보기'와 따로다. */
+    /** 이 글에서만 가린 댓글(숨김 차단, 접힌 같은 댓글) 보기. 댓글 머리의 요약에서 켜고 끈다. 페이지의 '가린 내용 보기'와 따로다. */
     commentsRevealed: boolean;
     /** 댓글 새로고침으로 새로 들어온 댓글 번호. 잠깐 강조한다 (Comment.tsx의 animate-fresh-comment). */
     freshComments: ReadonlySet<string>;
@@ -238,7 +238,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     commentOrder: "oldest",
 
     open: (preData, patch) => {
-        // 이전 글의 캡차·Turnstile 창은 닫는다. 남아 있으면 입력한 코드가 이전 글로 간다.
+        // 이전 글의 캡차, Turnstile 창은 닫는다. 남아 있으면 입력한 코드가 이전 글로 간다.
         get().captcha?.resolve("");
         get().turnstile?.resolve(undefined);
         set({...freshPost(), ...patch, visible: true, fading: false, preData, signalId: ++signalSeq, mini: null, captcha: null, turnstile: null, dcconInfo: null});
@@ -268,7 +268,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
 }));
 
 /**
- * 미리보기에서 연 유저 버블·메모 창이 갤러리 한정 차단·메모에 쓰는 갤러리 (SelectedUser.gallery). 미리보기가 떠 있지 않으면 undefined라 이 문서의 갤러리를 쓴다.
+ * 미리보기에서 연 유저 버블, 메모 창이 갤러리 한정 차단, 메모에 쓰는 갤러리 (SelectedUser.gallery). 미리보기가 떠 있지 않으면 undefined라 이 문서의 갤러리를 쓴다.
  */
 export const previewGallery = (): string | undefined => {
     const {visible, preData} = usePreviewStore.getState();

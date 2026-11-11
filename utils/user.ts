@@ -1,4 +1,4 @@
-/** 고정닉 닉콘 파일명(대소문자 구분). 관리자·부관리자 닉콘도 fix_ 접두사가 있으면 고정닉이다. */
+/** 고정닉 닉콘 파일명(대소문자 구분). 관리자, 부관리자 닉콘도 fix_ 접두사가 있으면 고정닉이다. */
 const FIXED_ICONS = new Set([
     "fix_managernik.gif",
     "fix_sub_managernik.gif",

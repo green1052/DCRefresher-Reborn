@@ -20,7 +20,7 @@ import {saveNonmember, savedNonmember} from "../nonmember";
 import {DcconPopup} from "./DcconPopup";
 import {NO_REPLY, refreshCommentsOf, usePreviewStore} from "./previewStore";
 
-/** 비회원 댓글 비밀번호 (영문 소문자·숫자 8자). */
+/** 비회원 댓글 비밀번호 (영문 소문자, 숫자 8자). */
 const randomPassword = (): string => Array.from(crypto.getRandomValues(new Uint8Array(8)), (byte) => (byte % 36).toString(36)).join("");
 
 /** 글자콘 색 스와치. ToggleGroup 안에 둔다. */
@@ -76,7 +76,7 @@ export const WriteComment = () => {
     const [txtconColors, setTxtconColors] = useState({bg: "3b4890", txt: "ffffff"});
     const [showInputs, setShowInputs] = useState(false);
     const box = useRef<HTMLDivElement>(null);
-    // 닉네임·비밀번호 칸을 열고 닫기 전 이 영역의 아래 끝 (화면 좌표).
+    // 닉네임, 비밀번호 칸을 열고 닫기 전 이 영역의 아래 끝 (화면 좌표).
     const bottomBefore = useRef<number | null>(null);
 
     const toggleInputs = (): void => {
@@ -84,7 +84,7 @@ export const WriteComment = () => {
         setShowInputs((v) => !v);
     };
 
-    // 입력칸 위에 닉네임·비밀번호 칸이 생기면 입력칸과 아래 줄이 밀려 창 밖으로 나간다.
+    // 입력칸 위에 닉네임, 비밀번호 칸이 생기면 입력칸과 아래 줄이 밀려 창 밖으로 나간다.
     // 늘어난 만큼 스크롤해 아래 끝을 제자리에 두고, 새 칸은 위로 펼친다.
     useLayoutEffect(() => {
         const before = bottomBefore.current;
@@ -167,10 +167,10 @@ export const WriteComment = () => {
                     if (textarea.current?.value === raw) textarea.current.value = "";
                     if (drafts.get(key) === raw) drafts.delete(key);
                 }
-                // 보내는 사이 새로 고른 디시콘·켠 글자콘·답글 대상은 다음 댓글 것이라 보낸 것만 비운다.
+                // 보내는 사이 새로 고른 디시콘, 켠 글자콘, 답글 대상은 다음 댓글 것이라 보낸 것만 비운다.
                 setDccon((current) => (current.list === dccons ? NO_DCCON : current));
                 if (txtcon) setTxtcon(false);
-                // 디시처럼 쓴 닉네임·비밀번호를 기억한다. 만든 비밀번호도 저장해야 나중에 자기 댓글을 지울 수 있다.
+                // 디시처럼 쓴 닉네임, 비밀번호를 기억한다. 만든 비밀번호도 저장해야 나중에 자기 댓글을 지울 수 있다.
                 if (!login) saveNonmember(nick, password);
                 // 답글 버튼은 누를 때마다 새 대상을 넣으므로, 그새 다른 글로 넘어갔거나 다른 댓글을 골랐으면 같지 않다.
                 usePreviewStore.setState((current) => (current.reply === sentReply ? {reply: NO_REPLY} : current));

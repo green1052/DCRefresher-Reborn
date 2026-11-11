@@ -17,7 +17,7 @@ import {previewGallery, usePreviewStore} from "./previewStore";
 const close = (): void => usePreviewStore.setState({dcconInfo: null});
 
 /**
- * 본문·댓글에서 누른 디시콘의 정보 창을 연다. 디시콘을 눌렀으면 true.
+ * 본문, 댓글에서 누른 디시콘의 정보 창을 연다. 디시콘을 눌렀으면 true.
  * 차단으로 가린 디시콘은 '가린 내용 보기' 동안이거나 흐림이 풀려 있는 동안(blurReveal)만 연다 (isBlockedHidden, 큰 이미지와 같은 기준).
  */
 export const openDcconInfo = (ev: MouseEvent<HTMLElement>): boolean => {
@@ -41,7 +41,7 @@ const openBlockBubble = (ev: MouseEvent<HTMLElement>): void => {
     useUiStore.getState().openBubble({dccon: code, gallery: previewGallery()}, ev.clientX, ev.clientY);
 };
 
-/** 제작·태그 줄 앞의 작은 딱지 (디시 정보창의 tbox). */
+/** 제작, 태그 줄 앞의 작은 딱지 (디시 정보창의 tbox). */
 const Label = ({children}: { children: string }) => (
     <Badge variant="outline" className="rounded-sm text-muted-foreground">{children}</Badge>
 );
@@ -50,7 +50,7 @@ const ShopLink = ({href, children}: { href: string; children: string }) => (
     <a href={href} target="_blank" rel="noopener noreferrer" className="text-link underline-offset-4 hover:underline">{children}</a>
 );
 
-/** 댓글·본문의 디시콘을 눌렀을 때 그 디시콘이 든 패키지 정보를 보여 준다 (디시 '디시콘 보기' 창). */
+/** 댓글, 본문의 디시콘을 눌렀을 때 그 디시콘이 든 패키지 정보를 보여 준다 (디시 '디시콘 보기' 창). */
 export const DcconInfoPopup = ({code}: { code: string }) => {
     const [dccon, setDccon] = useState(() => dcconPackages.get(code) ?? null);
     const [sending, setSending] = useState(false);

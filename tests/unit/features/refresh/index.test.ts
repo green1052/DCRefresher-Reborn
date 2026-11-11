@@ -66,7 +66,7 @@ afterEach(() => {
 
 const toasts = (): string[] => useUiStore.getState().toasts.map((toast) => toast.content);
 
-describe("제어 버튼·일시정지", () => {
+describe("제어 버튼, 일시정지", () => {
     it("버튼으로 자동 새로고침을 멈추고 다시 켠다", async () => {
         const {api} = await start();
         const button = document.querySelector<HTMLButtonElement>(".gall_issuebox button[data-refresher-refresh]")!;
@@ -484,7 +484,7 @@ describe("페이지 이동 시 목록만 교체", () => {
     });
 });
 
-describe("탭 제목 새 글 수·여기까지 읽음", () => {
+describe("탭 제목 새 글 수, 여기까지 읽음", () => {
     const marked = (): string[] => Array.from(document.querySelectorAll<HTMLElement>(".refresherReadMark"), (tr) => tr.dataset.no ?? "");
 
     it("떠난 동안 새 글이 들어왔으면 돌아올 때 떠날 때 맨 위 글에 선을 긋고, 목록을 갈아끼워도 다시 붙인다", async () => {

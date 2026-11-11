@@ -73,10 +73,10 @@ export class FakeSite {
     /** 댓글 허용. 0이면 멤버만 댓글을 쓸 수 있는 갤러리다. */
     allowReply: 0 | 1 = 1;
 
-    /** 글이 정한 댓글 대상 ($(document).data('comment_id'·'comment_no')). 없으면 그 글이다. */
+    /** 글이 정한 댓글 대상 ($(document).data('comment_id', 'comment_no')). 없으면 그 글이다. */
     commentTarget: { id: string; no: string } | null = null;
 
-    /** 받은 쓰기 요청 (댓글 작성·삭제, 디시콘 댓글, 관리자 글 삭제). fcmToken은 그 머리의 값이다. */
+    /** 받은 쓰기 요청 (댓글 작성, 삭제, 디시콘 댓글, 관리자 글 삭제). fcmToken은 그 머리의 값이다. */
     readonly submitted: { path: string; body: URLSearchParams; fcmToken?: string }[] = [];
 
     /**
@@ -150,7 +150,7 @@ export class FakeSite {
                 return json({result: "success"});
             }
             case "/dccon/package_detail": {
-                // 디시콘 하나의 패키지 정보 (정보 창·디시콘 버블). 목록의 path가 그 디시콘의 코드(dccon.php?no=)다. 81은 둘째 패키지의 디시콘이다.
+                // 디시콘 하나의 패키지 정보 (정보 창, 디시콘 버블). 목록의 path가 그 디시콘의 코드(dccon.php?no=)다. 81은 둘째 패키지의 디시콘이다.
                 const second = form().get("code") === "81";
                 return json({info: {package_idx: second ? "8" : DCCON.package_idx, code: "", title: second ? "둘째콘" : "테스트콘", description: second ? "인사 모음" : "웃는 얼굴 모음",
                     seller_name: "판매자", reg_date_short: "2026.10.01", main_img_path: second ? "81" : DCCON.detail_idx, register: false, residual: false},
@@ -163,9 +163,9 @@ export class FakeSite {
                     {package_idx: "8", title: "둘째콘", main_img_url: "https://dcimg5.dcinside.com/dccon.php?no=81", detail: [{package_idx: "8", detail_idx: "81", title: "인사", list_img: "https://dcimg5.dcinside.com/dccon.php?no=81"}]}
                 ]});
         }
-        // 갤로그 글/댓글 수 (유저 버블·글댓비). POST지만 읽기다.
+        // 갤로그 글/댓글 수 (유저 버블, 글댓비). POST지만 읽기다.
         if (url.pathname.startsWith("/api/gallog_user_layer")) return text("12,34");
-        // 그 밖의 쓰기(추천·관리 등)는 나가면 안 된다. 바로 실패로 보이게 500을 준다.
+        // 그 밖의 쓰기(추천, 관리 등)는 나가면 안 된다. 바로 실패로 보이게 500을 준다.
         if (request.method() !== "GET") return route.fulfill({status: 500, body: "unexpected write request"});
         // 이미지 등.
         return route.fulfill({contentType: "image/gif", body: GIF});
@@ -200,7 +200,7 @@ const listPage = (rows: FakeRow[], page: string, manager: boolean): string => `<
 </div><div class="bottom_paging_box">${paging(page)}</div></article></div>
 </body></html>`;
 
-/** 갤러리 관리 페이지. 디시는 왼쪽 메뉴·오른쪽 설정 칸에 목록 사이드바와 같은 클래스를 쓴다. */
+/** 갤러리 관리 페이지. 디시는 왼쪽 메뉴, 오른쪽 설정 칸에 목록 사이드바와 같은 클래스를 쓴다. */
 const MANAGE_PAGE = `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>갤러리 관리</title></head><body>
 <div id="top" class="dcwrap"><div class="wrap_inner"><main id="container"><div class="minor_uadmin_wrap">
 <div class="left_content"><ul class="minor_uadmin_menu"><li><a class="on">기본 설정</a></li><li><a>차단 목록</a></li></ul></div>
@@ -208,7 +208,7 @@ const MANAGE_PAGE = `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8">
 </div></main></div></div>
 </body></html>`;
 
-/** 글 페이지에 디시가 그려 둔 댓글. 차단·같은 댓글 접기 같은 페이지 모듈이 본다. */
+/** 글 페이지에 디시가 그려 둔 댓글. 차단, 같은 댓글 접기 같은 페이지 모듈이 본다. */
 const pageCommentList = (comments: FakeComment[]): string => (comments.length === 0 ? "" : `
 <div class="comment_box"><ul class="cmt_list">${comments.map(({no, name, user_id, ip, memo, txtcon}) => `
 <li id="comment_li_${no}" class="ub-content"><div class="cmt_info clear">

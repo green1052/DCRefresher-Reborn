@@ -9,7 +9,7 @@ vi.mock("@/core/messaging/protocol", () => ({sendMessage}));
 const HOUR = 60 * 60 * 1000;
 const START = 100 * HOUR;
 
-/** 모듈 상태(보낸 기록·모으는 묶음·타이머)를 테스트마다 새로 시작한다. */
+/** 모듈 상태(보낸 기록, 모으는 묶음, 타이머)를 테스트마다 새로 시작한다. */
 const load = async (): Promise<typeof import("@/core/usage")["markUsed"]> => {
     vi.resetModules();
     return (await import("@/core/usage")).markUsed;

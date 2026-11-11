@@ -17,7 +17,7 @@ import {RefresherSelect} from "../shared/RefresherSelect";
 
 /**
  * 디시콘 이미지 주소. 묶음 정규식("^(a|b…)$", 하나뿐이면 "^(code)$")이면 첫 코드의 이미지를 쓴다.
- * 묶을 때 쓴 RegExp.escape는 첫 글자가 영문·숫자면 "\x36…"처럼 바꾸므로 되돌린다.
+ * 묶을 때 쓴 RegExp.escape는 첫 글자가 영문, 숫자면 "\x36…"처럼 바꾸므로 되돌린다.
  */
 export const dcconImage = (entry: BlockEntry): string => {
     const first = entry.isRegex ? entry.content.match(/^\^\(((?:\\x[0-9a-f]{2})?\w+)[|)]/)?.[1] : undefined;
@@ -27,7 +27,7 @@ export const dcconImage = (entry: BlockEntry): string => {
 
 /**
  * 이미지 호스트 권한이 있는지와 그 권한을 묻는 함수. 우클릭 차단이 처음 묻지만,
- * 백업 복원·가져오기로 들어온 이미지 항목은 권한 없이 가리지 못하므로 여기서도 확인한다.
+ * 백업 복원, 가져오기로 들어온 이미지 항목은 권한 없이 가리지 못하므로 여기서도 확인한다.
  */
 const useImageHostAccess = (): [granted: boolean | undefined, request: () => void] => {
     const [granted, setGranted] = useState<boolean>();
@@ -46,7 +46,7 @@ const useImageHostAccess = (): [granted: boolean | undefined, request: () => voi
 };
 
 /** 정보 칸 텍스트. 필드로 만든 플래그와 별명(extra)을 이어 붙인다. */
-const entryInfo = (entry: BlockEntry): string => [composeExtra(entry), entry.extra].filter(Boolean).join(" · ") || "—";
+const entryInfo = (entry: BlockEntry): string => [composeExtra(entry), entry.extra].filter(Boolean).join(", ") || "—";
 
 export function BlockTab() {
     const entries = useBlocksStore((state) => state.entries);
@@ -61,7 +61,7 @@ export function BlockTab() {
     const ids = useMemo(() => BLOCK_TYPES.flatMap((type) => entries[type].map((entry) => entry.id)), [entries]);
     const used = useUsage("block", ids);
 
-    // ListTabs의 걸르기 메모는 이 넷의 참조가 바뀔 때만 다시 한다. 인라인 화살표면 알림·창 등 다른 이유의
+    // ListTabs의 걸르기 메모는 이 넷의 참조가 바뀔 때만 다시 한다. 인라인 화살표면 알림, 창 등 다른 이유의
     // 다시 그림에도 전체 목록을 다시 훑는다 (수천 항목에서 수십 ms).
     const items = useCallback((type: BlockType): readonly BlockEntry[] => entries[type], [entries]);
     const searchText = useCallback((entry: BlockEntry): (string | undefined)[] => [entry.content, entry.gallery, entry.extra], []);
@@ -119,7 +119,7 @@ export function BlockTab() {
                                 options={DETECT_MODE_NAMES}
                             />
                         </div>
-                        {/* 모드를 '기본값'으로 둔 항목이 따르는 모드라, 불일치·불포함으로 바꾸면 그 항목들이 곧바로 허용 목록이 된다. */}
+                        {/* 모드를 '기본값'으로 둔 항목이 따르는 모드라, 불일치, 불포함으로 바꾸면 그 항목들이 곧바로 허용 목록이 된다. */}
                         <p id={modeDescId} className="max-w-md text-sm text-muted-foreground">
                             모드가 '기본값'인 항목에 씁니다. {DETECT_MODE_DESCRIPTIONS[defaults[type]]}
                         </p>
@@ -152,7 +152,7 @@ export function BlockTab() {
                             <img src={dcconImage(entry)} alt={entry.extra || entry.content} loading="lazy" decoding="async"
                                  className="block h-10"/>
                         ) : type === "IMAGE" ? (
-                            // 파일 해시(64자)는 표를 넓히므로 앞부분만 보인다. 전체는 툴팁·수정 창에서 본다.
+                            // 파일 해시(64자)는 표를 넓히므로 앞부분만 보인다. 전체는 툴팁, 수정 창에서 본다.
                             <span className="block max-w-40 truncate font-mono" title={entry.content}>{entry.content}</span>
                         ) : (
                             <span className="font-medium">{entry.content}</span>

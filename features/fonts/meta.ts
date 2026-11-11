@@ -27,7 +27,7 @@ const toFontFamily = (value: string): string => {
     return fonts.join(", ");
 };
 
-/** customFonts 설정값 → font-family (빈칸이면 기본 폰트). 디시 페이지(index.ts)와 옵션·팝업(extensionPageVars)이 같이 쓴다. */
+/** customFonts 설정값 → font-family (빈칸이면 기본 폰트). 디시 페이지(index.ts)와 옵션, 팝업(extensionPageVars)이 같이 쓴다. */
 export const fontFamilyOf = (customFonts: string): string => toFontFamily(customFonts.trim() || DEFAULT_FONTS);
 
 export const settings = {
@@ -42,6 +42,6 @@ export default defineModuleMeta({
     id: "fonts",
     settings,
 
-    // 옵션·팝업도 같은 폰트로 (assets/styles/tailwind.css의 --font-sans가 --refresher-font를 쓴다).
+    // 옵션, 팝업도 같은 폰트로 (assets/styles/tailwind.css의 --font-sans가 --refresher-font를 쓴다).
     extensionPageVars: (settings) => ({"--refresher-font": fontFamilyOf(settings.customFonts)})
 });

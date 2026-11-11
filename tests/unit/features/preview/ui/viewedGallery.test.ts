@@ -6,7 +6,7 @@ import {selectedGallery} from "@/stores/ui";
 
 import {preData} from "../../../../helpers";
 
-describe("버블·메모 창의 갤러리", () => {
+describe("버블, 메모 창의 갤러리", () => {
     afterEach(() => {
         usePreviewStore.getState().close();
         history.replaceState(null, "", "/board/lists/?id=test");

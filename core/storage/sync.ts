@@ -28,7 +28,7 @@ export const readItems = async (keys: readonly StorageItemKey[]): Promise<Map<St
     new Map((await storage.getItems([...keys])).map(({key, value}) => [key, value]));
 
 /**
- * 저장소 키 여러 개를 한 번의 storage.local.get으로 읽어 apply에 넘기고, 바뀌면(다른 탭·옵션 페이지·이 탭의 쓰기) 다시 넘긴다.
+ * 저장소 키 여러 개를 한 번의 storage.local.get으로 읽어 apply에 넘기고, 바뀌면(다른 탭, 옵션 페이지, 이 탭의 쓰기) 다시 넘긴다.
  * 항목(defineItem)은 만드는 순간 키마다 한 번 더 읽으므로 키로 읽고 감시한다 (core/storage/items.ts). 값이 없으면 null이다.
  * - load: 다시 읽는다 (저장 실패 뒤 되돌리기 등).
  * - start: 감시를 걸고 읽는다. 여러 번 불러도 한 번만 한다. 옛 값으로 쓰면 다른 탭의 변경을 덮으므로 bfcache에서 돌아오면 다시 읽는다.
@@ -88,11 +88,11 @@ const canonical = (value: unknown): string =>
 const sizeOf = (value: unknown): number | undefined => (Array.isArray(value) ? value.length : isRecord(value) ? Object.keys(value).length : undefined);
 
 /**
- * 유형마다 키 하나에 저장하는 목록(차단 목록·메모)을 스토어와 양방향으로 맞춘다.
+ * 유형마다 키 하나에 저장하는 목록(차단 목록, 메모)을 스토어와 양방향으로 맞춘다.
  * - update: 스토어에 먼저 반영하고 저장한다. 실패하면 저장소 값으로 되돌리고 던진다 (saveOrReload).
- * - 저장소가 바뀌면(다른 탭·옵션 페이지, 이 탭의 쓰기도 돌아온다) normalize한 값을 넣는다. 값이 같으면 스토어를 건드리지 않아 구독자를 깨우지 않는다.
- * - extra: 같은 읽기·감시에 함께 묶을 다른 키 (차단의 기본 모드 등).
- * load·start는 storageSync와 같다. 이 탭의 쓰기가 남아 있는 동안 돌아오는 값은 넣지 않는다 (storageSync의 save).
+ * - 저장소가 바뀌면(다른 탭, 옵션 페이지, 이 탭의 쓰기도 돌아온다) normalize한 값을 넣는다. 값이 같으면 스토어를 건드리지 않아 구독자를 깨우지 않는다.
+ * - extra: 같은 읽기, 감시에 함께 묶을 다른 키 (차단의 기본 모드 등).
+ * load, start는 storageSync와 같다. 이 탭의 쓰기가 남아 있는 동안 돌아오는 값은 넣지 않는다 (storageSync의 save).
  */
 export const typedListSync = <T extends string, V>(options: {
     types: readonly T[];
@@ -106,7 +106,7 @@ export const typedListSync = <T extends string, V>(options: {
     /**
      * Web Locks 이름. 목록 쓰기는 읽고-고쳐-쓰기라 여러 창이 동시에 쓰면 앞의 쓰기를 덮는다.
      * 잠금은 같은 출처끼리만 서진다: 옵션↔팝업(확장 출처)끼리와 디시 탭끼리는 서진다.
-     * 디시 탭과 옵션·팝업 사이는 출처가 달라 서지 않는다 — 교차 출처 쓰기를 막으려면 배경을 거쳐야 한다.
+     * 디시 탭과 옵션, 팝업 사이는 출처가 달라 서지 않는다 — 교차 출처 쓰기를 막으려면 배경을 거쳐야 한다.
      */
     lock?: string;
 }) => {

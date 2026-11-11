@@ -19,7 +19,7 @@ const isSuccess = (result: unknown): boolean => result === "success" || result =
 type ManageAction = "update_bump" | "delete_list" | "delete_comment" | "update_avoid_list" | "set_notice" | "set_recommend";
 
 /**
- * 관리 요청. 관리 API 접두사는 갤러리 종류를 따른다 (일반·마이너 minor_, 미니 mini_, 인물 person_).
+ * 관리 요청. 관리 API 접두사는 갤러리 종류를 따른다 (일반, 마이너 minor_, 미니 mini_, 인물 person_).
  * 필드는 공통 필드(ci_t, _GALLTYPE_) 뒤에 준 순서대로 붙는다. 배열은 같은 이름으로 여러 번 붙인다 (jQuery가 보내는 nos[]=1&nos[]=2).
  */
 const manage = async (target: Pick<GalleryPreData, "link">, action: ManageAction, fields: Record<string, string | string[]>): Promise<ManageResult> => {
@@ -39,7 +39,7 @@ const manage = async (target: Pick<GalleryPreData, "link">, action: ManageAction
         // 아래 텍스트 분기로.
     }
 
-    // JSON 객체가 아니면 "false||메시지" 같은 텍스트다. 맨 'true'·'false'도 JSON.parse가 원시값으로 읽어 여기로 온다.
+    // JSON 객체가 아니면 "false||메시지" 같은 텍스트다. 맨 'true', 'false'도 JSON.parse가 원시값으로 읽어 여기로 온다.
     const response = submitResult(text);
     return {success: isSuccess(response.result), message: resultMessage(response)};
 };
@@ -47,7 +47,7 @@ const manage = async (target: Pick<GalleryPreData, "link">, action: ManageAction
 /** 끌올. */
 export const bump = (preData: GalleryPreData): Promise<ManageResult> => manage(preData, "update_bump", {id: preData.gallery, "nos[]": preData.id});
 
-/** 게시글 삭제. manage 모듈의 Ctrl+클릭은 목록 행에서 얻은 갤러리·글 번호·주소만 있어 GalleryPreData 전체를 받지 않는다. */
+/** 게시글 삭제. manage 모듈의 Ctrl+클릭은 목록 행에서 얻은 갤러리, 글 번호, 주소만 있어 GalleryPreData 전체를 받지 않는다. */
 export const deletePost = (target: Pick<GalleryPreData, "gallery" | "id" | "link">): Promise<ManageResult> =>
     manage(target, "delete_list", {id: target.gallery, "nos[]": target.id});
 
@@ -99,7 +99,7 @@ export const adminDeleteComments = (preData: GalleryPreData, commentIds: string[
     manage(preData, "delete_comment", {id: preData.gallery, pno: preData.id, "cmt_nos[]": commentIds});
 
 /**
- * 유저 댓글 삭제. 댓글 목록·작성과 같이 글의 댓글 갤러리(comment_id)로 보낸다. no는 디시처럼 글 번호 그대로다.
+ * 유저 댓글 삭제. 댓글 목록, 작성과 같이 글의 댓글 갤러리(comment_id)로 보낸다. no는 디시처럼 글 번호 그대로다.
  * 디시 comment.js처럼 reCAPTCHA 키 쌍(rc_key)을 보내고, 'false||captcha||v3'의 재전송에는 그 쌍으로 받은 토큰을 붙인다.
  * 응답은 JSON이 아닌 'true' 또는 'false||메시지' 텍스트다.
  */

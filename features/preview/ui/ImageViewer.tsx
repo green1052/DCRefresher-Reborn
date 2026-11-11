@@ -18,7 +18,7 @@ const LONG_RATIO = 2.5;
 
 
 /**
- * 본문 이미지 크게 보기 (imageViewer 설정). 본문 이미지를 누르면 Frame이 연다. ←/→로 넘기고 Esc·바깥 클릭으로 닫는다.
+ * 본문 이미지 크게 보기 (imageViewer 설정). 본문 이미지를 누르면 Frame이 연다. ←/→로 넘기고 Esc, 바깥 클릭으로 닫는다.
  * 미리보기 창 위의 모달이라 Esc는 이 창만 닫는다 (위에 뜬 것부터 닫는다).
  */
 export const ImageViewer = ({images, index}: { images: ViewerImage[]; index: number }) => {

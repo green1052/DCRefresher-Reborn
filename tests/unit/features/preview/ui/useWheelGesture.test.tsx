@@ -33,7 +33,7 @@ it("끝에서 새로 한 번 더 굴리면 옆 글로 넘어간다", () => {
     expect(goToAdjacent).toHaveBeenCalledWith(1);
 });
 
-it("그 방향에 넘어갈 글이 없으면(목록 처음·끝) 안내하지 않는다", () => {
+it("그 방향에 넘어갈 글이 없으면(목록 처음, 끝) 안내하지 않는다", () => {
     const goToAdjacent = vi.fn();
     act(() => render(<Box goToAdjacent={goToAdjacent} canGo={(dir) => dir > 0}/>, document.body));
     const box = document.body.firstElementChild!;

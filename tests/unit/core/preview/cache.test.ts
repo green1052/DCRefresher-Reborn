@@ -90,7 +90,7 @@ describe("restoreArchive", () => {
     it("잘린 목록은 가장 오래된 스레드 이전을 지우지 않는다", () => {
         const pre = nextPost();
         restoreArchive(pre, [comment(1), comment(2, {c_no: "1", depth: 1}), comment(5), comment(6, {c_no: "5", depth: 1}), comment(8), comment(9)]);
-        // 받은 것 중 가장 오래된 스레드는 6의 스레드(5)다. 1·2·5는 범위 밖으로 밀렸을 수 있고 8만 지워졌다.
+        // 받은 것 중 가장 오래된 스레드는 6의 스레드(5)다. 1, 2, 5는 범위 밖으로 밀렸을 수 있고 8만 지워졌다.
         expect(nos(restoreArchive(pre, [comment(6, {c_no: "5", depth: 1}), comment(9)], true))).toEqual(["6", "8x", "9"]);
     });
 

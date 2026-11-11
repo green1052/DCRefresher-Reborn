@@ -7,7 +7,7 @@ import {setting, testModule, tick} from "../../../helpers";
 
 type Registry = typeof import("@/core/module/registry");
 
-// 레지스트리는 모듈 상태(등록된 모듈·stopAll 여부)를 들고 있으므로 테스트마다 새로 불러온다.
+// 레지스트리는 모듈 상태(등록된 모듈, stopAll 여부)를 들고 있으므로 테스트마다 새로 불러온다.
 let registry: Registry;
 // 앞 테스트의 레지스트리가 bfcache 리스너로 되살아나지 않게 테스트가 끝나면 컨텍스트를 끝낸다.
 let context: AbortController;
@@ -21,7 +21,7 @@ afterEach(() => context.abort());
 const setEnables = (value: Record<string, boolean>) => fakeBrowser.storage.local.set({"refresher:modules": value});
 const setSettings = (id: string, value: unknown) => fakeBrowser.storage.local.set({[`refresher:module:${id}:settings`]: value});
 const load = (defs: Parameters<Registry["loadAll"]>[0], signal = context.signal, ready?: Promise<void[]>) => registry.loadAll(defs, signal, ready);
-/** 저장소 변경 알림을 막는다. 감시가 놓친 변경(bfcache·감시 전 쓰기)을 흉내 낸다. */
+/** 저장소 변경 알림을 막는다. 감시가 놓친 변경(bfcache, 감시 전 쓰기)을 흉내 낸다. */
 const muteWatchers = () => vi.spyOn(fakeBrowser.storage.local.onChanged, "trigger").mockResolvedValue([]);
 
 const size = setting({type: "range", default: 5, min: 1, max: 10, step: 1, unit: ""});
@@ -94,7 +94,7 @@ describe("loadAll", () => {
         expect(setup).not.toHaveBeenCalled();
     });
 
-    it("on/off·설정을 못 읽으면 아무 모듈도 켜지 않는다", async () => {
+    it("on/off, 설정을 못 읽으면 아무 모듈도 켜지 않는다", async () => {
         vi.spyOn(fakeBrowser.storage.local, "get").mockRejectedValueOnce(new Error("invalidated"));
         const setup = vi.fn();
         await expect(load([testModule({id: "a", setup})])).rejects.toThrow("invalidated");
@@ -313,7 +313,7 @@ describe("설정 변경", () => {
     });
 });
 
-describe("켜기·끄기", () => {
+describe("켜기, 끄기", () => {
     it("끄자마자 다시 켜면 앞 setup이 끝난 뒤에 새 setup을 시작한다", async () => {
         const {promise: blocker, resolve: release} = Promise.withResolvers<void>();
         const log: string[] = [];
@@ -498,7 +498,7 @@ describe("stopAll", () => {
     });
 });
 
-describe("단축키·페이지 토글", () => {
+describe("단축키, 페이지 토글", () => {
     const toggled = vi.fn();
     const withToggles = (id: string, defaultEnable = true) => testModule({
         id,

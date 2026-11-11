@@ -21,9 +21,9 @@ const FIRST_THREADS = 60;
 const MORE_THREADS = 150;
 
 /**
- * 스레드 첫 댓글로 그릴 댓글. 10쪽 제한으로 부모를 받지 못한 답글도 넣는다. 빠뜨리면 머리의 스레드·총 댓글 수와 어긋난다.
+ * 스레드 첫 댓글로 그릴 댓글. 10쪽 제한으로 부모를 받지 못한 답글도 넣는다. 빠뜨리면 머리의 스레드, 총 댓글 수와 어긋난다.
  * 댓글은 번호(등록)순이다. 최신순은 스레드만 거꾸로, 답글순은 답글이 많은 스레드부터(같으면 등록순) 세운다.
- * 답글은 어느 순서든 첫 댓글 아래에 등록순으로 남는다 (디시 본문의 최신순·답글순과 같다).
+ * 답글은 어느 순서든 첫 댓글 아래에 등록순으로 남는다 (디시 본문의 최신순, 답글순과 같다).
  */
 export const threadParents = (comments: ProcessedComment[], order: CommentOrderValue = "oldest"): ProcessedComment[] => {
     const topNos = new Set(comments.filter((comment) => comment.depth === 0).map((comment) => comment.no));
@@ -38,7 +38,7 @@ export const threadParents = (comments: ProcessedComment[], order: CommentOrderV
     return parents;
 };
 
-/** 댓글 머리의 개수 요약. hidden은 가린 댓글 수(차단·깡계·접은 같은 댓글)로, 0이 아닌 것만 적고 없으면 빈 글자다. */
+/** 댓글 머리의 개수 요약. hidden은 가린 댓글 수(차단, 깡계, 접은 같은 댓글)로, 0이 아닌 것만 적고 없으면 빈 글자다. */
 export const summaryOf = (comments: ProcessedComment[]): { counts: string; hidden: string } => {
     const blocked = comments.filter((comment) => comment.blocked && !comment.lowActivity).length;
     const lowActivity = comments.filter((comment) => comment.lowActivity).length;
@@ -74,7 +74,7 @@ export const CommentSummary = ({comments}: { comments: ProcessedComment[] }) => 
 const ORDER_NAMES: Record<CommentOrderValue, string> = {oldest: "등록순", newest: "최신순", replies: "답글순"};
 const isOrder = (value: string | undefined): value is CommentOrderValue => value !== undefined && value in ORDER_NAMES;
 
-/** 댓글 머리의 등록순·최신순·답글순 고르기. 순서는 여기와 CommentList만 구독한다. Frame이 구독하면 고를 때마다 본문까지 다시 그린다. */
+/** 댓글 머리의 등록순, 최신순, 답글순 고르기. 순서는 여기와 CommentList만 구독한다. Frame이 구독하면 고를 때마다 본문까지 다시 그린다. */
 export const CommentOrder = () => {
     const order = usePreviewStore((s) => s.commentOrder);
 
@@ -96,7 +96,7 @@ const NO_REPLIES: ProcessedComment[] = [];
  * memo로 감싸 목록이 스레드를 더 그릴 때 이미 그린 스레드(Collapsible이 높이를 다시 잰다)는 건너뛴다. replies는 목록이 useMemo로 유지한다.
  */
 const Thread = memo(({parent, replies, isAdmin}: { parent: ProcessedComment; replies: ProcessedComment[]; isAdmin: boolean }) => {
-    // 펼치기 버튼은 답글이 둘 이상일 때만 있다. 접은 뒤 답글이 하나로 줄면(삭제·차단) 펼칠 수 없게 갇히므로 펼쳐 둔다.
+    // 펼치기 버튼은 답글이 둘 이상일 때만 있다. 접은 뒤 답글이 하나로 줄면(삭제, 차단) 펼칠 수 없게 갇히므로 펼쳐 둔다.
     const isCollapsed = usePreviewStore((s) => replies.length > 1 && s.collapsed.has(parent.no));
 
     const children = replies.map((child, index) => (
@@ -121,7 +121,7 @@ const Thread = memo(({parent, replies, isAdmin}: { parent: ProcessedComment; rep
 });
 
 /**
- * 관리자가 고른 댓글을 한 번에 지우거나 작성자를 차단한다 (디시 댓글 목록 아래의 댓글 삭제·차단 버튼).
+ * 관리자가 고른 댓글을 한 번에 지우거나 작성자를 차단한다 (디시 댓글 목록 아래의 댓글 삭제, 차단 버튼).
  * 고른 것과 접힘은 따로 구독한다. 목록이 구독하면 하나를 고르거나 접을 때마다 댓글 전부를 다시 그린다.
  * shownSelectable: 보이고 지우지 않은 댓글. 새로고침으로 사라진 댓글은 골라 두었어도 세지 않는다.
  * foldable: 답글을 접을 수 있는 스레드의 첫 댓글 번호. 접힌 스레드의 답글은 체크박스가 그려지지 않으므로 고르지 않는다.
@@ -226,7 +226,7 @@ export const CommentList = ({comments}: { comments: ProcessedComment[] }) => {
     const isAdmin = isGalleryManager();
 
     // 스레드가 많으면 처음엔 앞의 일부만 그리고 그린 뒤마다 더 그린다. 천 개를 한 번에 그리면 수백 ms 동안 창이 멈춘다.
-    // 개수 요약·전체 선택·삭제 창은 DOM이 아니라 comments를 보므로 다 그리기 전에도 맞다.
+    // 개수 요약, 전체 선택, 삭제 창은 DOM이 아니라 comments를 보므로 다 그리기 전에도 맞다.
     const [limit, setLimit] = useState(FIRST_THREADS);
     // 답글 버튼은 맨 아래 입력칸으로 데려간다. 그 뒤에 위에서 댓글이 늘면 입력칸이 밀려 내려가므로 다 그린 채로 데려간다.
     // 답글을 취소해도 다시 줄이지 않는다.
@@ -242,7 +242,7 @@ export const CommentList = ({comments}: { comments: ProcessedComment[] }) => {
         return () => window.clearTimeout(timer);
     }, [count, parents.length]);
     // 다 그리기 전에 누른 End는 다 그린 뒤 직접 끝으로 굴린다. 기본 동작에 맡기면 파이어폭스는 키를 받은 때의 높이로 끝을 정해 그때까지 그린 끝에 멈춘다.
-    // 그리자마자 누른 키도 받게 useLayoutEffect로 건다. 캡처로 받는다: Base UI 다이얼로그(창)가 화살표·Home·End의 전파를 멈춰 window까지 올라오지 않는다.
+    // 그리자마자 누른 키도 받게 useLayoutEffect로 건다. 캡처로 받는다: Base UI 다이얼로그(창)가 화살표, Home, End의 전파를 멈춰 window까지 올라오지 않는다.
     const unfinished = count < parents.length;
     const endScroller = useRef<Element | null>(null);
     useLayoutEffect(() => {

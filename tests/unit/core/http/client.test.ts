@@ -53,7 +53,7 @@ describe("ajax", () => {
 });
 
 describe("formBody", () => {
-    it("null·undefined·false는 빼고 빈 문자열은 넣는다", () => {
+    it("null, undefined, false는 빼고 빈 문자열은 넣는다", () => {
         expect(formBody({a: "1", b: "", c: null, d: undefined, e: false}).toString()).toBe("a=1&b=");
     });
 });

@@ -5,7 +5,7 @@ import {afterEach, expect, it, vi} from "vitest";
 import {fetchDcconList} from "@/core/preview/request";
 import {DcconPopup} from "@/features/preview/ui/DcconPopup";
 
-// Base UI는 변환되지 않아 진짜 React를 불러 그려지지 않으므로 창·토글을 평범한 요소로 바꾼다.
+// Base UI는 변환되지 않아 진짜 React를 불러 그려지지 않으므로 창, 토글을 평범한 요소로 바꾼다.
 vi.mock("@/components/dialogs", () => ({
     ModalDialog: ({children}: { children?: ReactNode }) => <div>{children}</div>,
     DialogCloseButton: () => null
@@ -63,7 +63,7 @@ it("세로 휠로 패키지 줄을 옆으로 부드럽게 넘기고, 굴러가�
     scrolledTo(strip, 200);
 });
 
-it("Shift·Ctrl·가로 휠은 브라우저에 맡긴다", async () => {
+it("Shift, Ctrl, 가로 휠은 브라우저에 맡긴다", async () => {
     const strip = await openStrip();
     for (const init of [{deltaY: 100, shiftKey: true}, {deltaY: 100, ctrlKey: true}, {deltaX: 100, deltaY: 10}]) {
         expect(wheel(strip, init).defaultPrevented).toBe(false);

@@ -175,7 +175,7 @@ export function MemoTab() {
     const [form, setForm] = useState<MemoFormState | null>(null);
     const [appImport, setAppImport] = useState(false);
 
-    /** 공앱 메모를 합친다. 이미 있는 대상은 글만 바꾸고 색·갤러리는 그대로 둔다. */
+    /** 공앱 메모를 합친다. 이미 있는 대상은 글만 바꾸고 색, 갤러리는 그대로 둔다. */
     const importAppMemos = async (text: string): Promise<string | undefined> => {
         const {memos: parsed, skipped} = parseAppMemos(text);
         const count = Object.keys(parsed.UID).length + Object.keys(parsed.IP).length;
@@ -185,7 +185,7 @@ export function MemoTab() {
         }
         try {
             for (const type of ["UID", "IP"] as const) {
-                // 새 메모의 색은 밖에서 정한다. updateMemos의 change는 두 번(스토어·저장소 값) 불려, 안에서 고르면 저장 뒤 색이 한 번 바뀐다.
+                // 새 메모의 색은 밖에서 정한다. updateMemos의 change는 두 번(스토어, 저장소 값) 불려, 안에서 고르면 저장 뒤 색이 한 번 바뀐다.
                 const incoming = Object.entries(parsed[type]).map(([target, text]) => [target, text, randomColor()] as const);
                 const added = Date.now();
                 await updateMemos(type, (current) => {
@@ -207,7 +207,7 @@ export function MemoTab() {
     const copyAppMemos = async (): Promise<void> => {
         const {text, count, skipped} = formatAppMemos(memos);
         if (count === 0) {
-            notify("공앱으로 옮길 아이디·IP 메모가 없습니다.");
+            notify("공앱으로 옮길 아이디, IP 메모가 없습니다.");
             return;
         }
         await copyText(text, `공앱 형식으로 메모 ${count}개를 복사했습니다.${skipped ? ` 닉네임 메모 ${skipped}개는 공앱에 없는 종류라 뺐습니다.` : ""}`, "복사하지 못했습니다.");

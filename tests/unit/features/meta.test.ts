@@ -8,7 +8,7 @@ import type {AnyModuleMeta} from "@/core/module/types";
 import features from "@/features/index";
 import metas from "@/features/meta";
 
-/** 폴더 이름 → 메타 id. 저장소 키와 빌드(modules/commands)가 폴더·id를 같은 것으로 본다. */
+/** 폴더 이름 → 메타 id. 저장소 키와 빌드(modules/commands)가 폴더, id를 같은 것으로 본다. */
 const folders = Object.entries(import.meta.glob<{ default: { id: string } }>("../../../features/*/meta.ts", {eager: true}))
     .map(([path, module]) => [/features\/([^/]+)\/meta\.ts$/.exec(path)?.[1], module.default.id]);
 
@@ -44,7 +44,7 @@ describe("단축키", () => {
         expect(new Set(names).size).toBe(names.length);
     });
 
-    it("기본 키는 Ctrl·Alt를 포함한 브라우저 단축키 형식이고 겹치지 않는다", () => {
+    it("기본 키는 Ctrl, Alt를 포함한 브라우저 단축키 형식이고 겹치지 않는다", () => {
         const keys = commands.flatMap((command) => (command.key ? [command.key] : []));
         expect(keys.length).toBeGreaterThan(0);
         for (const key of keys) {
@@ -78,8 +78,8 @@ describe("아이콘", () => {
         expect(icons).toEqual(Object.keys(import.meta.glob("/features/*/meta.ts")));
     });
 
-    it("meta.ts는 UI(lucide·React)를 불러오지 않는다", () => {
-        // 배경·콘텐츠 번들이 meta.ts를 불러온다. 거기서 UI로 이어지면 lucide·React가 배경 번들에 딸려 간다.
+    it("meta.ts는 UI(lucide, React)를 불러오지 않는다", () => {
+        // 배경, 콘텐츠 번들이 meta.ts를 불러온다. 거기서 UI로 이어지면 lucide, React가 배경 번들에 딸려 간다.
         // 값으로 불러오는 것(import type 제외)을 프로젝트 안에서 따라가며 본다.
         const root = process.cwd();
         const resolveImport = (from: string, specifier: string): string | undefined => {
@@ -108,13 +108,13 @@ describe("아이콘", () => {
 
 describe("표시 문구", () => {
     it("모듈마다 labels.ts가 있다", () => {
-        // 설정·토글·명령마다 문구가 있는지는 labels.ts의 satisfies LabelsOf가 본다. 파일이 없으면 features/meta.ts가 id로 그린다.
+        // 설정, 토글, 명령마다 문구가 있는지는 labels.ts의 satisfies LabelsOf가 본다. 파일이 없으면 features/meta.ts가 id로 그린다.
         const labels = Object.keys(import.meta.glob("/features/*/labels.ts")).map((path) => path.replace(/labels\.ts$/, "meta.ts"));
         expect(labels).toEqual(Object.keys(import.meta.glob("/features/*/meta.ts")));
     });
 
     it("meta.ts에는 표시 문구가 없다", () => {
-        // meta.ts는 배경·콘텐츠 번들에 들어가므로 옵션·팝업만 보이는 글은 labels.ts에 둔다.
+        // meta.ts는 배경, 콘텐츠 번들에 들어가므로 옵션, 팝업만 보이는 글은 labels.ts에 둔다.
         const raw = Object.values(import.meta.glob<AnyModuleMeta>("/features/*/meta.ts", {eager: true, import: "default"}));
         expect(raw.length).toBeGreaterThan(0);
         for (const meta of raw) {

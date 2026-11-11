@@ -1,5 +1,5 @@
 /**
- * 차단 목록 값의 검사·정규화. zustand 스토어(stores/blocks.ts) 없이 core(설정 옮기기 등)에서도 쓴다 —
+ * 차단 목록 값의 검사, 정규화. zustand 스토어(stores/blocks.ts) 없이 core(설정 옮기기 등)에서도 쓴다 —
  * core에서 stores를 불러오면 zustand의 React 바인딩이 React를 배경 번들에 딸려 보낸다 (entrypoints/background/blocks.ts).
  */
 import {BLOCK_TYPES, DEFAULT_DETECT_MODE, DETECT_MODE_NAMES, DETECT_MODES} from "@/core/storage/items";
@@ -16,7 +16,7 @@ const MAX_FRAMES = 8;
 
 const isBlockEntry = (value: unknown): value is Omit<BlockEntry, "id"> & { id?: unknown } =>
     isRecord(value) &&
-    // 빈 내용은 포함 검사에서 모든 글에 맞는다. 다이얼로그는 막지만 가져오기·옛 데이터로 들어올 수 있다.
+    // 빈 내용은 포함 검사에서 모든 글에 맞는다. 다이얼로그는 막지만 가져오기, 옛 데이터로 들어올 수 있다.
     typeof value.content === "string" &&
     value.content.trim() !== "" &&
     typeof value.isRegex === "boolean" &&
@@ -41,8 +41,8 @@ export const composeExtra = (fields: { isRegex: boolean; gallery?: string; mode?
 export const blockKey = ({content, gallery}: BlockInputFields): string => JSON.stringify([content, gallery ?? ""]);
 
 /**
- * 저장소·가져오기 값에서 유효한 항목만 남긴다. id가 없거나 겹치면 새로 준다 (겹친 id는 삭제·수정이 그 항목 모두에 걸린다).
- * known: id 없는 항목(백업·내보내기는 id를 뺀다)이 같은 content+gallery 항목의 id를 이어받을 목록. 새 id면 그 항목의 사용 기록(core/usage.ts)이 사라진다.
+ * 저장소, 가져오기 값에서 유효한 항목만 남긴다. id가 없거나 겹치면 새로 준다 (겹친 id는 삭제, 수정이 그 항목 모두에 걸린다).
+ * known: id 없는 항목(백업, 내보내기는 id를 뺀다)이 같은 content+gallery 항목의 id를 이어받을 목록. 새 id면 그 항목의 사용 기록(core/usage.ts)이 사라진다.
  */
 export const normalizeBlockList = (value: unknown, known: BlockEntry[] = []): BlockEntry[] => {
     if (!Array.isArray(value)) return [];
@@ -58,7 +58,7 @@ export const normalizeBlockList = (value: unknown, known: BlockEntry[] = []): Bl
     });
 };
 
-/** 저장소·백업의 기본 차단 모드. 가져오기·복원 값은 검증 없이 들어오므로 모르는 모드(소문자 등)는 버리고 그 유형은 기본 모드로 둔다. */
+/** 저장소, 백업의 기본 차단 모드. 가져오기, 복원 값은 검증 없이 들어오므로 모르는 모드(소문자 등)는 버리고 그 유형은 기본 모드로 둔다. */
 export const normalizeDefaults = (value: unknown): Record<BlockType, DetectMode> => {
     const defaults = {...DEFAULT_DETECT_MODE};
     if (!isRecord(value)) return defaults;

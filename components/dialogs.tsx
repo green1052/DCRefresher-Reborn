@@ -40,7 +40,7 @@ export const keepTabInside = (ev: KeyboardEvent<HTMLDivElement>): void => {
     }
 };
 
-/** 열 때만 마운트하는 창(ModalDialog·ConfirmDialog)의 열림 상태와 Root·Popup에 넘길 포커스·배경 흐림. */
+/** 열 때만 마운트하는 창(ModalDialog, ConfirmDialog)의 열림 상태와 Root, Popup에 넘길 포커스, 배경 흐림. */
 const useModal = (onClose: () => void, focusOnOpen: AutoFocus) => {
     const [open, setOpen] = useState(true);
     const popup = useRef<HTMLDivElement>(null);
@@ -62,7 +62,7 @@ const useModal = (onClose: () => void, focusOnOpen: AutoFocus) => {
         popup: {
             ref: popup,
             onKeyDown: keepTabInside,
-            // 미리보기 안에서 연 창(디시콘·확인 창 등)은 Base UI가 겹친 창으로 보고 바깥 배경을 그리지 않으므로 늘 그린다.
+            // 미리보기 안에서 연 창(디시콘, 확인 창 등)은 Base UI가 겹친 창으로 보고 바깥 배경을 그리지 않으므로 늘 그린다.
             // 단축키 막기(isTyping)와 미리보기의 Esc 전달이 이 배경으로 창이 떠 있는지 안다. 흐리지 않을 때는 흐림만 뺀다.
             overlayProps: {forceRender: true, className: blur ? undefined : "supports-backdrop-filter:backdrop-blur-none"},
             initialFocus: typeof focusOnOpen === "object" ? focusOnOpen : focusOnOpen === "first" || focus.keyboard,
@@ -72,7 +72,7 @@ const useModal = (onClose: () => void, focusOnOpen: AutoFocus) => {
 };
 
 /**
- * 열 때만 마운트하는 다이얼로그. Esc·바깥 클릭·닫기 버튼이 닫고, 닫으면 연 요소로 포커스를 돌려준다.
+ * 열 때만 마운트하는 다이얼로그. Esc, 바깥 클릭, 닫기 버튼이 닫고, 닫으면 연 요소로 포커스를 돌려준다.
  * onClose는 닫힘 애니메이션이 끝나 포커스가 돌아간 뒤에 불린다. 그 안에서 알림 창을 띄워도 알림이 닫히면 연 요소로 돌아온다.
  * 부모가 언마운트해 닫아도 된다 (저장한 뒤 등). dismissible이 false면(가져오는 중 등) 닫지 않는다.
  * 오버레이(shadow DOM)에서는 그 안의 포털 칸에 그린다 (components/ui/dialog.tsx). 폭은 className으로 준다 (sm:max-w-[480px] 등).
@@ -83,7 +83,7 @@ export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true,
     dismissible?: boolean;
     /** 바깥 클릭으로 닫지 않는다 (Esc로는 닫힌다). 창 밖에 뜬 버블을 누를 때 등. */
     disablePointerDismissal?: boolean;
-    /** 창 안의 일이 끝나 스스로 닫을 때 쓴다 (actionsRef.current.close()). 닫기 애니메이션·포커스 돌려주기를 거친다. */
+    /** 창 안의 일이 끝나 스스로 닫을 때 쓴다 (actionsRef.current.close()). 닫기 애니메이션, 포커스 돌려주기를 거친다. */
     actionsRef?: RefObject<DialogPrimitive.Root.Actions | null>;
     className?: string;
     children: ReactNode;
@@ -122,7 +122,7 @@ export const SubmitForm = ({onSubmit, className, children}: { onSubmit: () => un
     </form>
 );
 
-/** 제목 줄 오른쪽 닫기(X) 버튼. 아래 버튼 줄 없이 보기만 하거나 고르면 바로 닫히는 창(디시콘 정보·선택)에 둔다. */
+/** 제목 줄 오른쪽 닫기(X) 버튼. 아래 버튼 줄 없이 보기만 하거나 고르면 바로 닫히는 창(디시콘 정보, 선택)에 둔다. */
 export const DialogCloseButton = () => (
     <DialogClose render={<Button variant="ghost" size="icon-sm" aria-label="닫기"/>}>
         <X/>
@@ -146,7 +146,7 @@ export const ConfirmDialog = ({title, confirmLabel = "확인", cancelLabel = "�
 
     return (
         <AlertDialog {...modal.root} onOpenChange={(next) => !next && modal.close()}>
-            {/* 생김새는 다른 창(DialogContent·DialogTitle)과 맞춘다. */}
+            {/* 생김새는 다른 창(DialogContent, DialogTitle)과 맞춘다. */}
             <AlertDialogContent {...modal.popup} className="text-sm data-[size=default]:max-w-[calc(100%-2rem)] data-[size=default]:sm:max-w-[440px]">
                 {/* 이미지 해시처럼 띄어쓰기 없는 긴 값도 창 안에서 줄을 바꾼다. */}
                 <AlertDialogTitle className="text-sm leading-snug wrap-anywhere">{title}</AlertDialogTitle>

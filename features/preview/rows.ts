@@ -13,12 +13,12 @@ export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
     const href = anchor.getAttribute("href");
     if (!href) return null;
 
-    // 잘못된 주소 하나가 던지면 목록 전체의 키보드 이동·앞뒤 글 넘기기가 멈춘다.
+    // 잘못된 주소 하나가 던지면 목록 전체의 키보드 이동, 앞뒤 글 넘기기가 멈춘다.
     const url = URL.parse(href, location.href);
     if (!url) return null;
     // 운영자 '이슈' 행은 http:// 링크다. 출처가 다르면 pushState가 SecurityError를 던지므로 페이지 프로토콜로 맞춘다.
     if (url.host === location.host) url.protocol = location.protocol;
-    // 디시 글 주소만 연다. 이 주소로 이동(O 키·키 반전 우클릭)하므로 javascript:나 다른 사이트 주소가 섞이면 안 된다.
+    // 디시 글 주소만 연다. 이 주소로 이동(O 키, 키 반전 우클릭)하므로 javascript:나 다른 사이트 주소가 섞이면 안 된다.
     if (!dcinsideHref(url)) return null;
     let gallery = url.searchParams.get("id") ?? undefined;
     let id = url.searchParams.get("no") ?? undefined;
@@ -41,7 +41,7 @@ export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
         title: anchor.textContent?.trim() || undefined,
         link: url.href,
         notice: classes?.includes("icon_notice") ?? false,
-        // 이미지·텍스트·동영상 개념글 (icon_recomimg, icon_recomtxt, icon_recomovie).
+        // 이미지, 텍스트, 동영상 개념글 (icon_recomimg, icon_recomtxt, icon_recomovie).
         recommend: classes?.includes("icon_recom") ?? false,
         type: classes?.split(" ").at(-1) ?? "icon_txt",
         // 칸 글자는 [댓글 수] 또는 [댓글 수/음성 댓글 수]다.
@@ -49,7 +49,7 @@ export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
     };
 };
 
-/** 차단 모듈이나 깡계 흐리게(userinfo)로 가린 행인지. 화면에는 남아 있지만 '가린 내용 보기' 중이 아니면 넘기기·미니로 열지 않는다. */
+/** 차단 모듈이나 깡계 흐리게(userinfo)로 가린 행인지. 화면에는 남아 있지만 '가린 내용 보기' 중이 아니면 넘기기, 미니로 열지 않는다. */
 export const isBlurHidden = (element: Element): boolean =>
     !useUiStore.getState().blockRevealed && element.closest(BLURRED_ROW_SELECTOR) !== null;
 
@@ -59,7 +59,7 @@ export interface ListRow {
 }
 
 /**
- * 화면에 보이는 목록 행을 글마다 하나씩. 차단·운영자 숨김으로 안 보이는 행과, 설문·AD·외부 뉴스처럼 글로 열 수 없는 행은 뺀다.
+ * 화면에 보이는 목록 행을 글마다 하나씩. 차단, 운영자 숨김으로 안 보이는 행과, 설문, AD, 외부 뉴스처럼 글로 열 수 없는 행은 뺀다.
  * 댓글 검색은 맞은 댓글마다 같은 글 행을 되풀이한다. 글마다 첫 행만 남겨야 넘기기가 같은 글에 멈추거나 되돌아가지 않는다.
  */
 export const listRows = (): ListRow[] => {

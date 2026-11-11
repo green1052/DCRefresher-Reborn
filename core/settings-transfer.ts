@@ -1,6 +1,6 @@
 /**
- * 설정 옮기기: 클라우드 복원·합치기, JSON 가져오기, 초기화가 저장소에 쓰는 규칙. 옵션 페이지의 데이터 탭이 쓴다.
- * 키는 storage.local의 이름(local: 없이)이다. 백업·내보내기와 같은 모양이다.
+ * 설정 옮기기: 클라우드 복원, 합치기, JSON 가져오기, 초기화가 저장소에 쓰는 규칙. 옵션 페이지의 데이터 탭이 쓴다.
+ * 키는 storage.local의 이름(local: 없이)이다. 백업, 내보내기와 같은 모양이다.
  */
 import {isBackupTarget, readBackupTargets} from "@/core/backup";
 import {blockKey, normalizeBlockList, normalizeDefaults} from "@/core/block-list";
@@ -25,14 +25,14 @@ export const pinDefaultMode = (list: BlockEntry[], from: DetectMode, local: Dete
     from === local ? list : list.map((entry) => (entry.mode ? entry : {...entry, mode: from}));
 
 /**
- * 설정(백업 대상 키)을 저장소에 쓴다. IP/밴 DB·백업 상태·모듈 캐시는 건드리지 않는다.
- * - replace(클라우드 복원·초기화): 백업은 완전한 스냅숏이므로 거기 없는 설정 키는 지운다. 없어진 모듈이 남긴 설정도 지운다.
+ * 설정(백업 대상 키)을 저장소에 쓴다. IP/밴 DB, 백업 상태, 모듈 캐시는 건드리지 않는다.
+ * - replace(클라우드 복원, 초기화): 백업은 완전한 스냅숏이므로 거기 없는 설정 키는 지운다. 없어진 모듈이 남긴 설정도 지운다.
  * - merge(가져오기): 붙여넣은 JSON은 일부만 담을 수 있으므로 든 키만 쓴다. 설정만 든 JSON이 차단/메모 목록을 지우지 않게 한다.
  *   설정 객체(isMapKey)도 기존 값에 얕게 합쳐, 설정 몇 개만 든 JSON이 나머지 설정을 기본값으로 돌리지 않게 한다.
  * 쓰다가 실패하면 이전 값으로 되돌린다. 다 쓰면 이전 값을 backupStorage.undo에 남겨 데이터 탭에서 되돌릴 수 있게 하고 그 시각을 돌려준다.
  */
 /**
- * 스토어 쓰기와 같은 잠금 세 개를 모두 잡고 실행한다. 복원·가져오기·초기화는 읽고-고쳐-쓰기 창이 길어
+ * 스토어 쓰기와 같은 잠금 세 개를 모두 잡고 실행한다. 복원, 가져오기, 초기화는 읽고-고쳐-쓰기 창이 길어
  * 같은 창의 스토어 쓰기(팝업 토글, 설정 정리)와 서로를 덮지 않게 옵션 출처 안에서 한 줄로 세운다.
  * 디시 탭과는 출처가 달라 잠금이 서지 않는다 (한계는 core/storage/sync.ts 참고).
  */
@@ -42,7 +42,7 @@ const withListLocks = <T>(run: () => Promise<T>): Promise<T> => {
 };
 
 export const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "merge"): Promise<number | undefined> => withListLocks(async () => {
-    // 아래에서 쓰는 이전 값(기본 차단 모드·설정 객체·지울 키·되돌릴 키)은 백업 대상 키다.
+    // 아래에서 쓰는 이전 값(기본 차단 모드, 설정 객체, 지울 키, 되돌릴 키)은 백업 대상 키다.
     const previous = await readBackupTargets();
     if (mode === "replace") {
         // 없어진 모듈의 설정은 백업 대상이 아니지만 replace에서는 지운다. 되돌릴 수 있게 값도 읽어 둔다.
@@ -55,7 +55,7 @@ export const writeSettings = async (data: Record<string, unknown>, mode: "replac
     // JSON에 기본 모드가 없으면 그 기기는 기본값을 썼다. 이 기기 기본 모드를 따르게 두면 가져온 'ㅋ'이 일치 검사가 되는 등 검사 방식이 바뀐다.
     const localDefaults = normalizeDefaults(previous[DEFAULTS_KEY]);
     const importDefaults = normalizeDefaults(next[DEFAULTS_KEY]);
-    // 백업·내보내기는 용량 때문에 차단 항목 id를 빼므로 저장할 때 다시 붙인다. 이 기기에 같은 항목이 있으면 그 id를 이어 써 사용 기록을 지킨다.
+    // 백업, 내보내기는 용량 때문에 차단 항목 id를 빼므로 저장할 때 다시 붙인다. 이 기기에 같은 항목이 있으면 그 id를 이어 써 사용 기록을 지킨다.
     // JSON에 없는 목록은 만들지 않는다. 만들면 merge가 빈 목록으로 이 기기의 차단 목록을 지운다.
     for (const [key, type] of BLOCK_LIST_TYPES) {
         if (!(key in next)) continue;
@@ -102,7 +102,7 @@ export const writeSettings = async (data: Record<string, unknown>, mode: "replac
 
 /**
  * 백업을 지금 데이터에 합친다. 겹치면 지금 것이 이긴다.
- * 차단 목록은 백업에만 있는 항목(내용+갤러리)을 뒤에 붙이고, 메모·설정 객체는 백업에만 있는 키를 더한다. 그 밖의 값은 지금 없을 때만 백업 값을 쓴다.
+ * 차단 목록은 백업에만 있는 항목(내용+갤러리)을 뒤에 붙이고, 메모, 설정 객체는 백업에만 있는 키를 더한다. 그 밖의 값은 지금 없을 때만 백업 값을 쓴다.
  */
 export const mergeBackup = (current: Record<string, unknown>, backup: Record<string, unknown>): Record<string, unknown> => {
     // 기본 모드는 이 기기 것을 남기고, 백업에서 온 모드 없는 항목에는 백업의 기본 모드를 적는다 (pinDefaultMode).
@@ -132,12 +132,12 @@ export const parseImport = (input: string): Record<string, unknown> => {
     if (!Object.keys(parsed).some((key) => key.startsWith("refresher:"))) {
         throw new Error("설정 데이터가 아닙니다.");
     }
-    // v5 내보내기는 읽지 않는다. 그대로 쓰면 모듈·차단 모드 키는 조용히 빠지고, 초기 v5의 문자열 목록은 이 기기 목록을 비우는데도 "가져왔습니다"가 뜬다.
+    // v5 내보내기는 읽지 않는다. 그대로 쓰면 모듈, 차단 모드 키는 조용히 빠지고, 초기 v5의 문자열 목록은 이 기기 목록을 비우는데도 "가져왔습니다"가 뜬다.
     const isV5 = Object.entries(parsed).some(([key, value]) =>
         /^refresher:(module:.+:(enable|setting:.+)|block:[A-Z]+:mode)$/.test(key) ||
         (/^refresher:(block|memo):[A-Z]+$/.test(key) && typeof value === "string"));
     if (isV5) throw new Error("v5 데이터는 가져올 수 없습니다.");
-    // 값 형태가 정해진 키에 다른 형태가 오면 그대로 쓰여 이 기기의 목록·메모·설정을 지운다. 형태가 다르면 가져오기를 막는다.
+    // 값 형태가 정해진 키에 다른 형태가 오면 그대로 쓰여 이 기기의 목록, 메모, 설정을 지운다. 형태가 다르면 가져오기를 막는다.
     for (const [key, value] of Object.entries(parsed)) {
         if (isBlockListKey(key) && !Array.isArray(value)) throw new Error(`설정 값의 형태가 올바르지 않습니다: ${key}`);
         if ((key.startsWith("refresher:memo:") || isMapKey(key)) && !isRecord(value)) throw new Error(`설정 값의 형태가 올바르지 않습니다: ${key}`);

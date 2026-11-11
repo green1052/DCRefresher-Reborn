@@ -16,11 +16,11 @@ const restoreImageSources = (dom: Document): void => {
     }
 };
 
-/** 디시가 순서 번호를 다는 본문 미디어 (첨부 이미지·동영상). 다른 갤러리 이미지 알림의 번호도 같은 것만 센다 (features/manage/view.ts). */
+/** 디시가 순서 번호를 다는 본문 미디어 (첨부 이미지, 동영상). 다른 갤러리 이미지 알림의 번호도 같은 것만 센다 (features/manage/view.ts). */
 export const NUMBERED_SOURCE = /dcimg\d\.dcinside\.(com|co\.kr)\/viewimage\.php/;
 
 /**
- * 첨부 이미지·동영상에 디시처럼 순서 번호를 단다 (3개 이상일 때만). 번호는 감싼 span의 data-num을 CSS가 띄운다 (features/preview/overlay.css).
+ * 첨부 이미지, 동영상에 디시처럼 순서 번호를 단다 (3개 이상일 때만). 번호는 감싼 span의 data-num을 CSS가 띄운다 (features/preview/overlay.css).
  * 디시 글 페이지의 번호 끄기(img_numbering 쿠키가 1이 아님)를 따른다.
  */
 const numberImages = (dom: Document): void => {
@@ -123,7 +123,7 @@ export const parsePostInfo = (html: string): PostInfo | undefined => {
     if (dom.querySelector(".writing_view_box .mini_pwcheck")) throw new Error(SECRET_ERROR);
 
     restoreImageSources(dom);
-    // 본문 위 짤방(갤러리 기본 이미지)·광고 자리는 글 내용이 아니다.
+    // 본문 위 짤방(갤러리 기본 이미지), 광고 자리는 글 내용이 아니다.
     for (const element of dom.querySelectorAll(".writing_view_box #zzbang_div, .writing_view_box #ad_nv_slot, .writing_view_box #tip_video")) element.remove();
     numberImages(dom);
 
@@ -131,8 +131,8 @@ export const parsePostInfo = (html: string): PostInfo | undefined => {
     const subject = dom.querySelector<HTMLElement>(".title_subject");
     for (const script of subject?.querySelectorAll("script") ?? []) script.remove();
 
-    // 본문을 먼저 꺼내고 문서에서 뗀다. 아래 값(댓글 폼·추천 코드 등)은 문서 전체에서 찾으므로,
-    // 본문이 남아 있으면 본문에 넣은 같은 이름의 입력칸·스크립트가 먼저 걸린다.
+    // 본문을 먼저 꺼내고 문서에서 뗀다. 아래 값(댓글 폼, 추천 코드 등)은 문서 전체에서 찾으므로,
+    // 본문이 남아 있으면 본문에 넣은 같은 이름의 입력칸, 스크립트가 먼저 걸린다.
     const body = dom.querySelector<HTMLElement>(".writing_view_box");
     const contents = body?.innerHTML;
     const writeText = dom.querySelector(".write_div")?.textContent?.trim();
@@ -167,7 +167,7 @@ export const parsePostInfo = (html: string): PostInfo | undefined => {
             const input = dom.querySelector<HTMLInputElement>("#adult_article + input");
             return input?.name ? {name: input.name, value: input.value} : undefined;
         })(),
-        // 댓글·추천에 쓸 값도 여기서 꺼내 둔다. 문서를 들고 있으면 캐시가 글마다 수천 노드짜리 문서를 붙잡는다.
+        // 댓글, 추천에 쓸 값도 여기서 꺼내 둔다. 문서를 들고 있으면 캐시가 글마다 수천 노드짜리 문서를 붙잡는다.
         esno: dom.querySelector<HTMLInputElement>("#e_s_n_o")?.value,
         recommendCode: dom.querySelector<HTMLInputElement>("input[name=code_recommend]")?.value,
         writeText,
@@ -175,7 +175,7 @@ export const parsePostInfo = (html: string): PostInfo | undefined => {
         commentDeleteFields: Array.from(dom.querySelectorAll<HTMLInputElement>("#_cmt_del_form_ > input"), (input): [string, string] => [input.name, input.value])
     };
 
-    // <video>·<audio>가 든 문서는 크롬에서 해제되지 않는다 (재생 관련 보류 작업이 문서를 붙잡는다). 값을 다 꺼냈으니 떼어 낸다.
+    // <video>, <audio>가 든 문서는 크롬에서 해제되지 않는다 (재생 관련 보류 작업이 문서를 붙잡는다). 값을 다 꺼냈으니 떼어 낸다.
     for (const media of dom.querySelectorAll("video, audio")) media.remove();
     return info;
 };

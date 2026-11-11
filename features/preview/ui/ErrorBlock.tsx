@@ -9,14 +9,14 @@ import {type ErrorState, usePreviewStore} from "./previewStore";
 export const ErrorBlock = ({error}: { error: ErrorState }) => {
     const preData = usePreviewStore((s) => s.preData);
     const {detail, status, adult, secret} = error;
-    // 성인 인증·비밀글 비밀번호는 원문 페이지에서만 된다. 원문에서 푼 뒤 다시 시도하면 미리보기로 볼 수 있다.
+    // 성인 인증, 비밀글 비밀번호는 원문 페이지에서만 된다. 원문에서 푼 뒤 다시 시도하면 미리보기로 볼 수 있다.
     const original = adult || secret;
     // 삭제된 글은 다시 받아도 같다.
     const deleted = status === 404;
     const limited = status === 403 || status === 429;
 
     let text: string;
-    // 원문 열기 버튼. 원문에서만 풀 수 있는 글과, 원문에서 확인하라고 안내하는 읽지 못한 글(로그인이 필요한 글·옮긴 글 등)에 둔다.
+    // 원문 열기 버튼. 원문에서만 풀 수 있는 글과, 원문에서 확인하라고 안내하는 읽지 못한 글(로그인이 필요한 글, 옮긴 글 등)에 둔다.
     let showOriginal = original;
     if (adult) text = "성인 인증이 필요한 글입니다. 원문에서 확인해 주세요.";
     else if (secret) text = "비밀글입니다. 원문에서 비밀번호를 입력해 주세요.";

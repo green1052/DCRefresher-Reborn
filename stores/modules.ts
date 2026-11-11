@@ -28,11 +28,11 @@ const resolveEnables = (stored: Record<string, unknown>): Record<string, boolean
     Object.fromEntries(features.map((feature) => [feature.id, isModuleEnabled(feature, stored)]));
 
 // 쓰기가 읽고-고쳐-쓰기라 동시에 바꾸면 둘 다 옛 값을 읽어 앞의 쓰기를 덮는다. 한 줄로 세운다.
-// 옵션·팝업 창은 확장 출처를 같이 쓰므로 Web Locks로 창 여러 개에 걸쳐 세운다 (설정 정리가 다른 창의 변경을 덮지 않게).
+// 옵션, 팝업 창은 확장 출처를 같이 쓰므로 Web Locks로 창 여러 개에 걸쳐 세운다 (설정 정리가 다른 창의 변경을 덮지 않게).
 const enqueue = (write: () => Promise<void>): Promise<void> => navigator.locks.request(LIST_LOCKS.moduleSettings, write);
 
 /**
- * 옵션·팝업용 모듈 상태. 저장소에 직접 읽고 쓰며, 열린 디시 탭의 레지스트리가 저장소를 감시해 반영한다.
+ * 옵션, 팝업용 모듈 상태. 저장소에 직접 읽고 쓰며, 열린 디시 탭의 레지스트리가 저장소를 감시해 반영한다.
  * 그래서 디시 탭이 없어도 설정할 수 있다.
  */
 export const useModulesStore = create<ModulesState>((set) => ({
@@ -57,7 +57,7 @@ export const useModulesStore = create<ModulesState>((set) => ({
 }));
 
 /**
- * 켜진 모듈의 extensionPageVars를 이 페이지(옵션·팝업)의 <html>에 넣는다. 모듈을 끄거나 설정을 바꾸면 따라간다.
+ * 켜진 모듈의 extensionPageVars를 이 페이지(옵션, 팝업)의 <html>에 넣는다. 모듈을 끄거나 설정을 바꾸면 따라간다.
  * 그리는 것 없는 컴포넌트다. 설정 전체를 구독하므로 훅으로 App에서 부르면 설정 하나를 바꿀 때마다 화면 전체를 다시 그린다.
  */
 export const ExtensionPageVars = (): null => {
@@ -80,7 +80,7 @@ export const ExtensionPageVars = (): null => {
 };
 
 /**
- * 없어진 모듈·설정의 값과 없어진 모듈의 캐시를 저장소에서 지운다. 남겨 두면 설정은 백업·내보내기에 계속 실려 다니고, 캐시는 공간만 차지한다.
+ * 없어진 모듈, 설정의 값과 없어진 모듈의 캐시를 저장소에서 지운다. 남겨 두면 설정은 백업, 내보내기에 계속 실려 다니고, 캐시는 공간만 차지한다.
  * 지울 게 있을 때만 쓰고, 설정 쓰기와 같은 enqueue 줄에 세워 옵션에서 바꾼 값을 덮지 않는다.
  */
 const pruneStaleSettings = async (): Promise<void> => {
@@ -133,7 +133,7 @@ const sync = storageSync([MODULES_KEY, ...[...withSettings.values()].map((featur
 });
 const persist = (write: () => Promise<void>): Promise<void> => sync.save(() => enqueue(write), "모듈 설정을 저장하지 못했습니다.");
 
-/** 옵션·팝업에서 저장소 값을 읽고 변경을 감시한다. 여러 번 불러도 한 번만 한다. */
+/** 옵션, 팝업에서 저장소 값을 읽고 변경을 감시한다. 여러 번 불러도 한 번만 한다. */
 export const initModulesStore = once(async () => {
     await sync.start();
 

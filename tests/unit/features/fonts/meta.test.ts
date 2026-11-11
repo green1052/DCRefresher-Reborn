@@ -16,7 +16,7 @@ describe("fontFamilyOf", () => {
         expect(fontFamilyOf("A\nB,\tC\u0000")).toBe(`"AB", "C", sans-serif`);
     });
 
-    it("따옴표·역슬래시로 문자열을 끝내 규칙을 덧붙일 수 없다", () => {
+    it("따옴표, 역슬래시로 문자열을 끝내 규칙을 덧붙일 수 없다", () => {
         // 입력: a\"; } b{ — 역슬래시와 따옴표를 모두 이스케이프해 한 문자열 안에 남는다.
         expect(fontFamilyOf(String.raw`a\"; } b{`)).toBe(String.raw`"a\\\"; } b{", sans-serif`);
     });

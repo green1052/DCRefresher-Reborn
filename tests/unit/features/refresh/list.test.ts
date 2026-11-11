@@ -15,7 +15,7 @@ const row = (no: string, {title = `글 ${no}`, count = 1, replies = 0, notice = 
     `<td class="gall_tit"><a href="/board/view/?id=test&no=${no}">${title}</a><a class="reply_numbox"><span class="reply_num">[${replies}]</span></a></td>` +
     `<td class="gall_count">${count}</td><td class="gall_recommend">0</td></tr>`;
 
-/** 번호 없는 설문·AD 행. */
+/** 번호 없는 설문, AD 행. */
 const adRow = (label: string): string => `<tr class="ub-content"><td class="gall_num">${label}</td><td class="gall_tit">광고</td></tr>`;
 
 const tbody = (rows: string[], head = "<th>번호</th>"): HTMLElement => {
@@ -53,7 +53,7 @@ describe("replaceList", () => {
         expect(nos(list)).toEqual(["n", "5", "4", "3", "2"]);
         expect(added.map((element) => element.dataset.no)).toEqual(["5", "4"]);
         expect(changed).toBe(true);
-        // 그대로인 행은 같은 요소로 남는다 (hover·리스너 유지).
+        // 그대로인 행은 같은 요소로 남는다 (hover, 리스너 유지).
         expect(list.children[0]).toBe(notice);
         expect(list.children[3]).toBe(three);
         expect(list.children[4]).toBe(two);
@@ -96,7 +96,7 @@ describe("replaceList", () => {
         expect(list.children[1]).toBe(second);
     });
 
-    it("페이지가 처음 그린 행은 제목·작성자가 같으면 첫 교체에서도 그대로 두고, 제목이 바뀌었으면 갈아끼운다", () => {
+    it("페이지가 처음 그린 행은 제목, 작성자가 같으면 첫 교체에서도 그대로 두고, 제목이 바뀌었으면 갈아끼운다", () => {
         const list = tbody([row("2"), row("1")]);
         document.body.append(list.closest("table")!);
         const [second, first] = list.children;
@@ -105,7 +105,7 @@ describe("replaceList", () => {
         expect(list.children[1]).not.toBe(first);
     });
 
-    it("페이지가 처음 그린 행에 댓글이 처음 달리거나 다 지워지면 조회·추천 칸이 밀리지 않게 갈아끼운다", () => {
+    it("페이지가 처음 그린 행에 댓글이 처음 달리거나 다 지워지면 조회, 추천 칸이 밀리지 않게 갈아끼운다", () => {
         // 디시는 댓글이 없으면 댓글 수 칸을 그리지 않는다.
         const noReplies = (no: string) => row(no, {count: 7}).replace(/<a class="reply_numbox">.*?<\/a>/, "");
         const list = tbody([noReplies("2"), row("1", {replies: 2})]);

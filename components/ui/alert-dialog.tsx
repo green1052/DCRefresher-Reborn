@@ -10,7 +10,7 @@ function AlertDialog({ ...props }: AlertDialogPrimitive.Root.Props) {
 }
 
 function AlertDialogPortal({ ...props }: AlertDialogPrimitive.Portal.Props) {
-  // 오버레이(shadow DOM)에서는 그 안의 포털 칸에 그린다. 옵션·팝업에서는 overlay.portal이 없어 body다.
+  // 오버레이(shadow DOM)에서는 그 안의 포털 칸에 그린다. 옵션, 팝업에서는 overlay.portal이 없어 body다.
   return (
     <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" container={overlay.portal} {...props} />
   )

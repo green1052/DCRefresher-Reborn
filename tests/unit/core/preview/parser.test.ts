@@ -5,7 +5,7 @@ import type {PostInfo} from "@/core/preview/types";
 
 const IMG = (n: number) => `https://dcimg8.dcinside.co.kr/viewimage.php?id=a&no=${n}`;
 
-/** 디시 글 페이지의 뼈대. 본문(.writing_view_box)과 그 밖(head·tail)을 바꿔 넣는다. */
+/** 디시 글 페이지의 뼈대. 본문(.writing_view_box)과 그 밖(head, tail)을 바꿔 넣는다. */
 const page = ({head = "", body = "<div class=\"write_div\">본문</div>", tail = ""}: { head?: string; body?: string; tail?: string } = {}) => `<html><body>
 <div class="view_content_wrap">
   <div class="gallview_head">

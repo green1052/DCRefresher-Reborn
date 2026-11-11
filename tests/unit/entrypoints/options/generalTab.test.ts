@@ -18,13 +18,13 @@ const feature = {
 const keys = (needle: string) => matchSettings(feature, needle)?.map(([key]) => key);
 
 describe("matchSettings", () => {
-    it("검색어가 비거나 모듈 이름·설명에 맞으면 설정을 전부 남긴다", () => {
+    it("검색어가 비거나 모듈 이름, 설명에 맞으면 설정을 전부 남긴다", () => {
         const all = ["listKeyboard", "blockPresetDay", "blockPresetDelete"];
         expect(keys("")).toEqual(all);
         expect(keys("미리보기")).toEqual(all);
     });
 
-    it("설정 이름·설명에 맞는 설정만 남긴다 (대소문자 무시)", () => {
+    it("설정 이름, 설명에 맞는 설정만 남긴다 (대소문자 무시)", () => {
         expect(keys("키보드")).toEqual(["listKeyboard"]);
         expect(keys("j/k")).toEqual(["listKeyboard"]);
         expect(keys("삭제")).toEqual(["blockPresetDelete"]);

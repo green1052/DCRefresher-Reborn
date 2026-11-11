@@ -4,7 +4,7 @@ import {hash53} from "@/utils/hash";
 
 import {COUNT_CELLS, COUNT_TEXT, NOTICE_ICON} from "./markup";
 
-// 받아온 목록을 지금 목록 자리에 넣는 일. 요청·주기와 상관없이 DOM만 다룬다.
+// 받아온 목록을 지금 목록 자리에 넣는 일. 요청, 주기와 상관없이 DOM만 다룬다.
 
 /** 새 글 등장 효과(refresherNewPost와 그 지연)를 뗀다. */
 export const clearNewPost = (row: HTMLElement): void => {
@@ -12,12 +12,12 @@ export const clearNewPost = (row: HTMLElement): void => {
     row.style.removeProperty("animation-delay");
 };
 
-/** 새 글 판정용 행 키. 번호 없는 행(설문·AD, 다른 갤러리 공지)은 번호 칸 글자로 구분한다. */
+/** 새 글 판정용 행 키. 번호 없는 행(설문, AD, 다른 갤러리 공지)은 번호 칸 글자로 구분한다. */
 const rowKey = (row: HTMLElement): string => rowPostNo(row) ?? row.querySelector(".gall_num")?.textContent ?? "";
 
 /**
- * 받아온 행의 원래 HTML(체크박스 칸·강조·효과를 입히기 전)에서 수 칸 글자를 비운 틀. 틀이 같은 행은 갈아끼우지 않고 수만 고친다.
- * 갈아끼우면 필터·차단 검사·배지·리스너가 다시 돌고 hover가 풀린다. 정규식이 못 비우면 달라 보여 갈아끼울 뿐이다.
+ * 받아온 행의 원래 HTML(체크박스 칸, 강조, 효과를 입히기 전)에서 수 칸 글자를 비운 틀. 틀이 같은 행은 갈아끼우지 않고 수만 고친다.
+ * 갈아끼우면 필터, 차단 검사, 배지, 리스너가 다시 돌고 hover가 풀린다. 정규식이 못 비우면 달라 보여 갈아끼울 뿐이다.
  * 틀은 해시로만 둔다. HTML을 그대로 두면 목록 탭마다 행 HTML(약 150KB)을 계속 들고 있는다.
  */
 const rowFrames = new WeakMap<Element, number>();
@@ -49,7 +49,7 @@ const keepDeletedRows = (oldRows: HTMLTableRowElement[], newKeys: Set<string>, n
     for (let index = oldRows.length - 1; index >= 0; index--) {
         const row = oldRows[index]!;
         const no = rowPostNo(row);
-        // 번호 없는 행(설문·AD)과 공지는 늘 새로 받는다. 공지에서 내린 글은 지워진 것이 아니다.
+        // 번호 없는 행(설문, AD)과 공지는 늘 새로 받는다. 공지에서 내린 글은 지워진 것이 아니다.
         if (!no || row.querySelector(NOTICE_ICON) || newKeys.has(no) || index >= oldRows.length - newPostCount) {
             next = newRows.get(rowKey(row)) ?? next;
             continue;
@@ -70,7 +70,7 @@ const keepDeletedRows = (oldRows: HTMLTableRowElement[], newKeys: Set<string>, n
 
 /**
  * 새 목록이 옛 목록의 한 자리(at)에 행 count개가 끼어들고 그만큼 아래가 잘린 모양이면 그 자리와 개수, 아니면 null.
- * 순서가 같으면 count는 0이다. 자리로 짝지으므로 키가 겹치는 행(번호 없는 설문·AD)도 된다.
+ * 순서가 같으면 count는 0이다. 자리로 짝지으므로 키가 겹치는 행(번호 없는 설문, AD)도 된다.
  */
 const insertionOf = (oldKeys: string[], newKeys: string[]): { at: number; count: number } | null => {
     let at = 0;
@@ -91,7 +91,7 @@ export const syncPaging = (dom: Document): void => {
 };
 
 interface ReplaceOptions {
-    /** 주소를 바꾼 로드(페이지 넘김·뒤로 가기)다. 다른 목록이라 새 글 효과·삭제된 글 보존을 하지 않는다. */
+    /** 주소를 바꾼 로드(페이지 넘김, 뒤로 가기)다. 다른 목록이라 새 글 효과, 삭제된 글 보존을 하지 않는다. */
     navigated: boolean;
     /** 검색 결과 목록이면 검색어 (강조할 값). */
     search: string | undefined;
@@ -103,7 +103,7 @@ interface ReplaceOptions {
 }
 
 /**
- * 거르지 않은 목록(개념글·공지·말머리·작성자 거르기가 아닌)의 1페이지인지. 새 글이 들어오고, 빠진 글이 지워진 글인 목록이다.
+ * 거르지 않은 목록(개념글, 공지, 말머리, 작성자 거르기가 아닌)의 1페이지인지. 새 글이 들어오고, 빠진 글이 지워진 글인 목록이다.
  * 작성자 거르기(features/search)는 다음 쪽 글을 이어 붙이므로, 1쪽에 없다고 지워진 글이 아니다.
  */
 export const isWholeFirstPage = (url: string): boolean => {
@@ -113,7 +113,7 @@ export const isWholeFirstPage = (url: string): boolean => {
 
 /**
  * 같은 자리의 같은 글 행인지 제목과 작성자로 본다. 틀이 없는 행(페이지가 처음 그린 행)을 견줄 때 쓴다.
- * 수 칸 개수도 같아야 한다. 댓글이 처음 달리거나 다 지워지면 댓글 수 칸이 생기거나 없어져, syncCounts가 자리로 짝지은 조회·추천 칸이 밀린다.
+ * 수 칸 개수도 같아야 한다. 댓글이 처음 달리거나 다 지워지면 댓글 수 칸이 생기거나 없어져, syncCounts가 자리로 짝지은 조회, 추천 칸이 밀린다.
  */
 const sameRow = (a: Element, b: Element): boolean => {
     const title = (row: Element) => row.querySelector(".gall_tit > a")?.textContent;
@@ -178,8 +178,8 @@ export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigat
     }
 
     // 행 순서가 같거나 한 자리(공지 아래)에 새 글이 끼어들고 그만큼 아래가 밀려난 것뿐이면 제자리에서 고친다.
-    // 그대로인 행은 hover·리스너가 남고 필터·배치도 다시 돌지 않는다.
-    // 검색 결과는 강조와 글·댓글 행 짝이 얽혀 있어 통째로 바꾼다. 남긴 삭제된 글 행(복제본)도 새 목록의 행으로 친다.
+    // 그대로인 행은 hover, 리스너가 남고 필터, 배치도 다시 돌지 않는다.
+    // 검색 결과는 강조와 글, 댓글 행 짝이 얽혀 있어 통째로 바꾼다. 남긴 삭제된 글 행(복제본)도 새 목록의 행으로 친다.
     const rows = keepDeleted ? Array.from(newList.querySelectorAll<HTMLTableRowElement>(":scope > tr")) : newRows;
     const shift = !navigated && search === undefined ? insertionOf(oldKeys, rows.map(rowKey)) : null;
     if (shift) {
@@ -192,7 +192,7 @@ export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigat
         for (const [index, row] of rows.entries()) {
             if (index >= at && index < at + count) continue;
             const old = oldRows[index < at ? index : index - count]!;
-            // 페이지가 처음 그린 행은 틀이 없다(다른 모듈이 이미 고쳐 원래 HTML을 모른다). 제목·작성자가 같으면 받아온 행의 틀을 물려준다.
+            // 페이지가 처음 그린 행은 틀이 없다(다른 모듈이 이미 고쳐 원래 HTML을 모른다). 제목, 작성자가 같으면 받아온 행의 틀을 물려준다.
             if (!rowFrames.has(old) && sameRow(old, row)) rowFrames.set(old, rowFrames.get(row) ?? -1);
             if (rowFrames.get(old) === rowFrames.get(row)) {
                 // 남긴 행은 원래 행과 틀이 같아 그대로 둔다. 지웠던 글이 다시 받아지면 붉은 표시를 받아온 행에 맞춰 뗀다.

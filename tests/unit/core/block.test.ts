@@ -228,7 +228,7 @@ describe("dcconCode", () => {
         expect(dcconCode(element("<img src='' data-src='/dccon.php?no=v2'>"))).toBe("v2");
     });
 
-    it("src가 없는 요소는 안의 img·source를 본다", () => {
+    it("src가 없는 요소는 안의 img, source를 본다", () => {
         expect(dcconCode(element("<span><img src='/dccon.php?no=i1'></span>"))).toBe("i1");
         expect(dcconCode(element("<video><source src='/dccon.php?no=s1'></video>"))).toBe("s1");
     });
@@ -282,7 +282,7 @@ describe("이미지 차단", () => {
     const imageUrl = (): string => `https://dcimg8.dcinside.co.kr/viewimage.php?id=x&no=${seq++}`;
     const FINGERPRINT = "0".repeat(32);
     const MIRRORED = "f".repeat(32);
-    // dHash·pHash가 각각 4비트 다르다.
+    // dHash, pHash가 각각 4비트 다르다.
     const NEAR = `${"0".repeat(15)}f${"0".repeat(15)}f`;
 
     const image = (url: string, size = 100): HTMLImageElement => {
@@ -424,7 +424,7 @@ describe("이미지 차단", () => {
             vi.mocked(imageFingerprints).mockReturnValue(new Promise(() => {}));
 
             expect(await isImageBlocked(image(url), undefined, 12)).toBe(true);
-            // 차단 목록이 바뀌어 다시 판정해도(recheck·미리보기를 다시 열 때) 밀린 지문을 기다리지 않는다.
+            // 차단 목록이 바뀌어 다시 판정해도(recheck, 미리보기를 다시 열 때) 밀린 지문을 기다리지 않는다.
             expect(await isImageBlocked(image(url), undefined, 12)).toBe(true);
         });
 

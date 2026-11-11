@@ -16,7 +16,7 @@ const backgroundModules = Object.values(import.meta.glob<{ default: BackgroundMo
 
 /**
  * 콘텐츠 스크립트가 도는 주소인지. manifest와 같은 core/pages.ts 상수를 쓴다.
- * 브라우저 내장 URLPattern이라 wxt의 MatchPattern을 번들에 넣지 않는다 (Chrome 95·Firefox 142부터).
+ * 브라우저 내장 URLPattern이라 wxt의 MatchPattern을 번들에 넣지 않는다 (Chrome 95, Firefox 142부터).
  * match pattern의 "*.dcinside.com"은 dcinside.com 자체도 맞으므로 "{*.}?"로 바꿔 하위 도메인을 선택으로 둔다.
  */
 const toUrlPattern = (pattern: string): URLPattern => new URLPattern(pattern.replace("//*.", "//{*.}?"));
@@ -28,11 +28,11 @@ const hasContentScript = (url: string): boolean =>
 /**
  * 배경 스크립트. 크롬은 서비스 워커, 파이어폭스는 이벤트 페이지 — 양쪽 다 언제든 멈췄다 다시 뜨므로
  * 리스너는 모두 여기서 동기로 걸고, 상태는 저장소에 둔다.
- * type: "module"은 옵션·팝업과 청크를 공유해 총량을 줄인다.
+ * type: "module"은 옵션, 팝업과 청크를 공유해 총량을 줄인다.
  */
 export default defineBackground({type: "module", main: () => {
     // ===== 모듈의 배경 쪽 (이미지 검색 메뉴 등) =====
-    // 크롬은 메뉴 같은 상태를 유지하므로 설치·브라우저 시작·설정 변경 때만 다시 맞춘다.
+    // 크롬은 메뉴 같은 상태를 유지하므로 설치, 브라우저 시작, 설정 변경 때만 다시 맞춘다.
     const applyBackgroundModules = startBackgroundModules(backgroundModules);
     // 파이어폭스는 메뉴를 유지하지 않고, 확장을 껐다 켜면 onStartup/onInstalled 없이 배경만 다시 뜨므로 뜰 때마다 맞춘다.
     // 브라우저 시작도 여기서 맞추므로 onStartup은 크롬만 건다 (둘 다 걸면 시작할 때 두 번 돈다).
@@ -40,18 +40,18 @@ export default defineBackground({type: "module", main: () => {
     else browser.runtime.onStartup.addListener(() => void applyBackgroundModules());
 
     // ===== Commands: 단축키 → 활성 탭에만 전송 =====
-    // 단축키 기능은 '이번 페이지' 단위라 모든 탭에 보내면 탭마다 토글·토스트·목록 요청이 한꺼번에 일어난다.
+    // 단축키 기능은 '이번 페이지' 단위라 모든 탭에 보내면 탭마다 토글, 토스트, 목록 요청이 한꺼번에 일어난다.
     browser.commands.onCommand.addListener(async (command, tab) => {
         // tabs 권한이 없어 url은 호스트 권한이 있는 탭에서만 보인다. @webext-core/messaging은 탭으로 보낼 때 lastError를 읽지 않아,
         // 받는 쪽이 없는 탭에 보내면 거절을 잡아도 크롬이 "Unchecked runtime.lastError"를 남기므로 먼저 거른다.
-        // 설치·업데이트 전에 열린 디시 탭은 미리 알 수 없어 거절만 삼킨다.
+        // 설치, 업데이트 전에 열린 디시 탭은 미리 알 수 없어 거절만 삼킨다.
         if (!tab?.id || !tab.url || !hasContentScript(tab.url)) return;
         await sendMessage("refresher:executeShortcut", command, {tabId: tab.id}).catch(() => {});
     });
 
     listenPageMessages();
 
-    // ===== 차단·메모 사용 기록 (core/usage). 탭·옵션이 따로 쓰면 서로 덮으므로 여기서 차례로 쓴다 =====
+    // ===== 차단, 메모 사용 기록 (core/usage). 탭, 옵션이 따로 쓰면 서로 덮으므로 여기서 차례로 쓴다 =====
     onMessage("refresher:markUsed", ({data}) => recordUsage(data));
     onMessage("refresher:syncUsage", ({data: {kind, ids, prune}}) => syncUsage(kind, ids, prune));
 
@@ -63,7 +63,7 @@ export default defineBackground({type: "module", main: () => {
     }));
 
     browser.runtime.onInstalled.addListener(async () => {
-        // 파이어폭스는 설치·업데이트 때도 배경이 새로 떠 위에서 이미 맞췄다.
+        // 파이어폭스는 설치, 업데이트 때도 배경이 새로 떠 위에서 이미 맞췄다.
         if (import.meta.env.BROWSER !== "firefox") await applyBackgroundModules();
         await fillMissingBlockIds();
 

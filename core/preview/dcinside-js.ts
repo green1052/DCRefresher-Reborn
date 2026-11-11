@@ -5,10 +5,10 @@ import type {CommentRcKey} from "@/core/messaging/protocol";
  * e2e(Node)도 불러오므로 다른 모듈을 불러오지 않는다.
  */
 
-/** 디시콘·글자콘(insert_icon)은 예전 키를 그대로 쓴다 (디시 dccon.js·txtcon.js). */
+/** 디시콘, 글자콘(insert_icon)은 예전 키를 그대로 쓴다 (디시 dccon.js, txtcon.js). */
 export const ICON_SITE_KEY = "6Lc-Fr0UAAAAAOdqLYqPy53MxlRMIXpNXFvBliwI";
 /**
- * 글 댓글 작성·삭제는 디시 comment.js의 dc_rc_pairs 중 v3 키를 쓴다. 미리보기는 comment.js가 없는 목록에서도 돌아 페이지 값을 읽지 않고 옮겨 둔다.
+ * 글 댓글 작성, 삭제는 디시 comment.js의 dc_rc_pairs 중 v3 키를 쓴다. 미리보기는 comment.js가 없는 목록에서도 돌아 페이지 값을 읽지 않고 옮겨 둔다.
  * 서버가 rc_key로 같은 쌍의 비밀키를 고르므로 키와 rc_key는 같은 쌍이어야 한다.
  */
 export const COMMENT_SITE_KEYS: Record<CommentRcKey, string> = {

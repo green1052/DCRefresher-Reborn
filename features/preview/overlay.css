@@ -1,6 +1,6 @@
 @reference "../../assets/styles/shared.css";
 
-/* ===== 미리보기 (preview 모듈) — 오버레이 shadow 안. 공용 호스트 스타일(:host·포털)은 assets/styles/overlay.css, 토스트·버블 등 컴포넌트는 Tailwind ===== */
+/* ===== 미리보기 (preview 모듈) — 오버레이 shadow 안. 공용 호스트 스타일(:host, 포털)은 assets/styles/overlay.css, 토스트, 버블 등 컴포넌트는 Tailwind ===== */
 
 /* 누르면 크게 보기나 원본 보기가 열리는 본문 이미지 (contentsClick.ts의 markPressable). */
 .refresher-preview-contents img[role="button"] {
@@ -12,7 +12,7 @@
 .refresher-html {
     word-break: break-word;
     /* 본문 HTML은 class를 남겨 확장 UI와 같은 shadow 안의 Tailwind 유틸리티(fixed inset-0 z-50 등)를 쓸 수 있다.
-       상자 안에 가둬 창 머리·버튼·댓글을 덮는 가짜 창을 만들지 못하게 한다. 댓글은 content-visibility가 이미 가둔다. */
+       상자 안에 가둬 창 머리, 버튼, 댓글을 덮는 가짜 창을 만들지 못하게 한다. 댓글은 content-visibility가 이미 가둔다. */
     contain: layout paint;
 
     /* 디시 다크모드는 본문 상자를 통째로 반전 필터로 뒤집어 글쓴이의 인라인 color:#000000까지 뒤집는다 (dark.css의 .darkmode .write_div).
@@ -22,7 +22,7 @@
         color: #000;
         filter: invert(1);
 
-        /* 안의 미디어는 다시 뒤집어 원래 색으로 (dark.css가 write_div의 img·video·iframe·embed·object를 다시 뒤집는 것과 같다). */
+        /* 안의 미디어는 다시 뒤집어 원래 색으로 (dark.css가 write_div의 img, video, iframe, embed, object를 다시 뒤집는 것과 같다). */
         :is(img, video, iframe, embed, object) {
             filter: invert(1);
         }
@@ -63,7 +63,7 @@
         color: var(--link);
     }
 
-    /* 답글 멘션은 디시처럼 따로 한 줄 — 인라인이면 디시콘·글자콘 아래 끝에 붙는다. */
+    /* 답글 멘션은 디시처럼 따로 한 줄 — 인라인이면 디시콘, 글자콘 아래 끝에 붙는다. */
     .mention.deco {
         display: block;
         margin-bottom: 3px;
@@ -84,7 +84,7 @@
         margin: 0;
     }
 
-    /* 링크 미리보기 카드 — 디시 og.css를 옮겼다. 디시는 인라인 style로도 주지만 utils/sanitize.ts가 표시·float·넘침 속성을 지워, 지워지는 것만 여기서 다시 준다. */
+    /* 링크 미리보기 카드 — 디시 og.css를 옮겼다. 디시는 인라인 style로도 주지만 utils/sanitize.ts가 표시, float, 넘침 속성을 지워, 지워지는 것만 여기서 다시 준다. */
     a.og-wrap {
         display: inline-block;
         box-sizing: border-box;
@@ -122,7 +122,7 @@
     }
 }
 
-/* 미니 미리보기 본문도 같은 크기·디시콘 높이 (fonts 모듈의 본문 폰트 크기). */
+/* 미니 미리보기 본문도 같은 크기, 디시콘 높이 (fonts 모듈의 본문 폰트 크기). */
 :is(.refresher-preview-contents, .refresher-mini-contents) {
     font-size: var(--refresher-preview-font-size, 15px);
     /* 디시 본문(.writing_view_box)과 같다. */
@@ -156,7 +156,7 @@
     display: none;
 }
 
-/* 첨부 이미지 순서 번호 (core/preview/parser.ts의 numberImages). 오른쪽 위에 띄운다. 가려진 미디어(관리자 가림·이미지 차단·스텔스)에는 띄우지 않는다. */
+/* 첨부 이미지 순서 번호 (core/preview/parser.ts의 numberImages). 오른쪽 위에 띄운다. 가려진 미디어(관리자 가림, 이미지 차단, 스텔스)에는 띄우지 않는다. */
 .refresher-imgnum {
     position: relative;
     display: inline-block;
@@ -215,7 +215,7 @@
         }
     }
 
-    /* 글자콘 — 디시 common.css를 옮겼다. 모르는 색 클래스면 디시 기본값(남색 바탕·흰 글자)을 쓴다. */
+    /* 글자콘 — 디시 common.css를 옮겼다. 모르는 색 클래스면 디시 기본값(남색 바탕, 흰 글자)을 쓴다. */
     .coment_dccon_txt {
         display: flex;
         justify-content: center;
@@ -230,7 +230,7 @@
         contain: strict;
     }
 
-    /* 글자 크기·자간·줄바꿈은 fitTxtcon(ui/fitTxtcon.ts, Comment.tsx가 부른다)이 다시 잡는다. 16px은 디시 기본값이다. */
+    /* 글자 크기, 자간, 줄바꿈은 fitTxtcon(ui/fitTxtcon.ts, Comment.tsx가 부른다)이 다시 잡는다. 16px은 디시 기본값이다. */
     .txtcon_txt {
         margin: 0;
         color: #ffffff;
@@ -245,7 +245,7 @@
         box-sizing: border-box;
     }
 
-    /* 색 목록은 core/preview/txtcon.ts의 TXTCON_BACKGROUNDS·TXTCON_COLORS와 같다. 기본색(cbg_3b4890·ctxt_ffffff)은 위 .coment_dccon_txt·.txtcon_txt가 준다. */
+    /* 색 목록은 core/preview/txtcon.ts의 TXTCON_BACKGROUNDS, TXTCON_COLORS와 같다. 기본색(cbg_3b4890, ctxt_ffffff)은 위 .coment_dccon_txt, .txtcon_txt가 준다. */
     .cbg_b4b4e1 {
         background-color: #b4b4e1;
     }
@@ -300,12 +300,12 @@
         @apply refresher-blur-reveal;
     }
 
-    /* 본문에 든 차단 디시콘·이미지 (Frame의 markBlockedDccons·markBlockedImages). 가린 내용 보기 동안은 아래 규칙으로 흐리게 보인다. */
+    /* 본문에 든 차단 디시콘, 이미지 (Frame의 markBlockedDccons, markBlockedImages). 가린 내용 보기 동안은 아래 규칙으로 흐리게 보인다. */
     &:not([data-block-revealed]) .refresher-preview-contents :is(.written_dccon, img, video)[data-blocked="hide"] {
         display: none;
     }
 
-    /* 가린 디시콘·이미지(그 자체·가린 본문·가린 댓글 안)는 눌러도 정보 창·크게 보기·원본 보기가 열리지 않으므로 손가락 커서를 되돌린다 (openDcconInfo, contentsClick.ts). */
+    /* 가린 디시콘, 이미지(그 자체, 가린 본문, 가린 댓글 안)는 눌러도 정보 창, 크게 보기, 원본 보기가 열리지 않으므로 손가락 커서를 되돌린다 (openDcconInfo, contentsClick.ts). */
     &:not([data-block-revealed]) :is(:is(.written_dccon, img)[data-blocked], [data-blocked] :is(.written_dccon, img)):not([data-comments-revealed] *) {
         cursor: auto;
     }
@@ -318,7 +318,7 @@
     }
 }
 
-/* 다크 모드 본문 미디어는 다시 뒤집혀 있다 (.refresher-html). 본문 차단 디시콘·이미지는 흐림·풀기에서도 그 반전을 지킨다 — 아니면 흐림이 반전을 덮거나 반전이 흐림을 덮는다. */
+/* 다크 모드 본문 미디어는 다시 뒤집혀 있다 (.refresher-html). 본문 차단 디시콘, 이미지는 흐림, 풀기에서도 그 반전을 지킨다 — 아니면 흐림이 반전을 덮거나 반전이 흐림을 덮는다. */
 .dark .refresher-html :is(.written_dccon, img, video)[data-blocked="blur"] {
     filter: invert(1) blur(var(--refresher-blur, 5px));
 }
@@ -334,12 +334,12 @@
     scrollbar-color: rgb(from var(--border) calc(255 - r) calc(255 - g) calc(255 - b)) transparent;
 }
 
-/* 본문에 든 차단 디시콘·이미지 (Mini의 markBlockedDccons·markBlockedImages). */
+/* 본문에 든 차단 디시콘, 이미지 (Mini의 markBlockedDccons, markBlockedImages). */
 .refresher-mini-contents :is(.written_dccon, img, video)[data-blocked] {
     display: none;
 }
 
-/* 미리보기를 연 채로 띄운 다이얼로그(메모·디시콘·차단·확인 창 등)는 배경을 다시 깔지 않는다 — 미리보기 배경과 겹쳐 두 겹으로 어두워진다.
+/* 미리보기를 연 채로 띄운 다이얼로그(메모, 디시콘, 차단, 확인 창 등)는 배경을 다시 깔지 않는다 — 미리보기 배경과 겹쳐 두 겹으로 어두워진다.
    흐림은 '팝업 바깥 배경 흐리게' 설정을 따른다 (components/dialogs.tsx). */
 #portal:has(.refresher-frame) :is([data-slot="dialog-overlay"], [data-slot="alert-dialog-overlay"]) {
     background: none;

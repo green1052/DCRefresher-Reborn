@@ -7,7 +7,7 @@
         /* 미리보기(shadow DOM)엔 선택자가 닿지 않으므로 상속되는 변수로 알린다 (features/preview/overlay.css). */
         --refresher-stealth-media: none;
 
-        /* 본문 미디어·갤러리 대문·목록 썸네일(실시간 베스트)·오른쪽 영역 썸네일 — 지연 로딩 이미지는 디시 JS가 style="display: inline"을 붙이므로 !important를 쓴다. */
+        /* 본문 미디어, 갤러리 대문, 목록 썸네일(실시간 베스트), 오른쪽 영역 썸네일 — 지연 로딩 이미지는 디시 JS가 style="display: inline"을 붙이므로 !important를 쓴다. */
         .writing_view_box :is(img, video, embed),
         #zzbang_div,
         .gall_list .thumimg,
@@ -15,7 +15,7 @@
             display: none !important;
         }
 
-        /* 본문 동영상·유튜브 — display:none이면 파이어폭스에서 높이가 20px로 접힌다. 마이너 갤러리 대문(.bgcover)도 같이 가린다. */
+        /* 본문 동영상, 유튜브 — display:none이면 파이어폭스에서 높이가 20px로 접힌다. 마이너 갤러리 대문(.bgcover)도 같이 가린다. */
         .writing_view_box iframe,
         .bgcover {
             visibility: hidden;
@@ -26,12 +26,12 @@
     --refresher-stealth-dccon-visibility: hidden;
     --refresher-stealth-dccon-label: "디시콘 표시";
 
-    /* 댓글 디시콘·글자콘: 가려 두고 마우스를 올리면 보인다 (미리보기 댓글과 같은 규칙). */
+    /* 댓글 디시콘, 글자콘: 가려 두고 마우스를 올리면 보인다 (미리보기 댓글과 같은 규칙). */
     .comment_box .comment_dccon {
         --refresher-dccon-cover-border: rgb(0 0 0 / 15%);
         @apply refresher-dccon-cover;
 
-        /* 답글이면 디시의 .reply_info .comment_dccon::before(8px 화살표)가 크기·배경을 남긴다. */
+        /* 답글이면 디시의 .reply_info .comment_dccon::before(8px 화살표)가 크기, 배경을 남긴다. */
         &:not(:hover)::before {
             width: auto;
             height: auto;

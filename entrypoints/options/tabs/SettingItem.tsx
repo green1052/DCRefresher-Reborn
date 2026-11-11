@@ -20,7 +20,7 @@ import {RefresherSelect} from "../shared/RefresherSelect";
 interface SettingItemProps {
     schema: LabeledSetting;
     value: SettingValue;
-    /** 묶음 안에서 쓸 때. 설명은 숨겨 이름의 title과 컨트롤의 aria-describedby로 돌리고 이름·컨트롤만 한 줄에 둔다. */
+    /** 묶음 안에서 쓸 때. 설명은 숨겨 이름의 title과 컨트롤의 aria-describedby로 돌리고 이름, 컨트롤만 한 줄에 둔다. */
     compact?: boolean;
     /** key 설정 전용. 같은 모듈의 다른 key 설정이 쓰는 키라 고를 수 없다. */
     takenKeys?: string[];
@@ -58,7 +58,7 @@ const formatDefault = (schema: SettingSchema): string => {
 };
 
 /**
- * 저장 전 편집값. 저장값이 바뀌면(되돌리기·다른 탭) 따라간다.
+ * 저장 전 편집값. 저장값이 바뀌면(되돌리기, 다른 탭) 따라간다.
  * effect가 아니라 렌더 중에 비교해야 옛 값이 한 번 그려지지 않는다.
  */
 const useDraft = <T, >(value: T): [T, (next: T) => void] => {
@@ -116,13 +116,13 @@ const TextControl = ({schema, value, descId, onChange}: NarrowProps<"text">) => 
 };
 
 /**
- * 단축키 하나. 버튼을 누른 뒤 원하는 키를 치면 바뀐다(영문·숫자만, 다른 키는 취소).
+ * 단축키 하나. 버튼을 누른 뒤 원하는 키를 치면 바뀐다(영문, 숫자만, 다른 키는 취소).
  * 다른 단축키가 쓰는 키면 알려 주고 계속 기다린다.
  */
 const KeyControl = ({schema, value, takenKeys = [], descId, onChange}: NarrowProps<"key">) => {
     const [listening, setListening] = useState(false);
     const [taken, setTaken] = useState("");
-    // 스크린 리더에 화면 글자와 같은 내용을 준다. 이름만 주면 '키 입력…'·'이미 사용 중'이 들리지 않는다.
+    // 스크린 리더에 화면 글자와 같은 내용을 준다. 이름만 주면 '키 입력…', '이미 사용 중'이 들리지 않는다.
     const shown = taken ? `${taken.toUpperCase()}: 이미 사용 중` : listening ? "키 입력…" : value.toUpperCase();
     const stop = (): void => {
         setListening(false);
@@ -166,9 +166,9 @@ const RangeControl = ({schema, value, descId, onChange}: NarrowProps<"range">) =
                 min={schema.min}
                 max={schema.max}
                 step={schema.step}
-                // 배열로 준다. 숫자를 주면 Slider 부품이 손잡이를 둘(최솟값·최댓값) 그린다.
+                // 배열로 준다. 숫자를 주면 Slider 부품이 손잡이를 둘(최솟값, 최댓값) 그린다.
                 value={[draft]}
-                // 이름·설명·읽는 값은 손잡이(role=slider)에 달아야 읽힌다. 그대로 두면 이름 없이 저장값(ms)만 읽힌다.
+                // 이름, 설명, 읽는 값은 손잡이(role=slider)에 달아야 읽힌다. 그대로 두면 이름 없이 저장값(ms)만 읽힌다.
                 thumbProps={{"aria-label": schema.name, "aria-describedby": descId, getAriaValueText: () => text}}
                 onValueChange={(next) => {
                     const [first] = [next].flat();
@@ -306,7 +306,7 @@ export const SettingItem = ({schema, value, compact, takenKeys, onChange}: Setti
         <div className={cn("flex items-center justify-between", compact ? "gap-2 py-1" : "flex-wrap gap-4 py-3 sm:flex-nowrap")}>
             <div className="min-w-0 grow">
                 {title}
-                {/* 묶음에서는 설명을 숨긴다. 마우스는 이름의 title로, 키보드·스크린 리더는 컨트롤의 aria-describedby로 읽는다. */}
+                {/* 묶음에서는 설명을 숨긴다. 마우스는 이름의 title로, 키보드, 스크린 리더는 컨트롤의 aria-describedby로 읽는다. */}
                 {compact ? (
                     <span id={descId} hidden>{schema.desc}</span>
                 ) : (

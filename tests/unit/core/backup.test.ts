@@ -27,7 +27,7 @@ beforeEach(() => {
 });
 
 describe("isBackupTarget", () => {
-    it("설정·차단·메모만 대상이다", () => {
+    it("설정, 차단, 메모만 대상이다", () => {
         const targets = ["refresher:modules", "refresher:block:defaults", "refresher:block:NICK", "refresher:block:TAB", "refresher:memo:UID", "refresher:module:preview:settings"];
         const others = ["refresher:db:ip", "refresher:db:meta", "refresher:module:userinfo:data", "refresher:module:zzz:settings", "refresher:backup:auto", "refresher:usage", "refresher:block:UNKNOWN", "refresher:memo:X", "other"];
         expect(targets.filter(isBackupTarget)).toEqual(targets);
@@ -53,7 +53,7 @@ describe("readBackupTargets / collectLocalData", () => {
         });
     });
 
-    it("없어진 모듈의 설정은 내보내기·백업에 넣지 않는다", async () => {
+    it("없어진 모듈의 설정은 내보내기, 백업에 넣지 않는다", async () => {
         await browser.storage.local.set({"refresher:module:preview:settings": {width: 900}, "refresher:module:zzz:settings": {width: 1}});
         expect(await collectLocalData()).toEqual({"refresher:module:preview:settings": {width: 900}});
     });
@@ -65,7 +65,7 @@ describe("readBackupTargets / collectLocalData", () => {
 });
 
 describe("runBackup / readCloudBackup", () => {
-    it("올린 설정을 그대로 읽어 오고 수동·자동 칸은 따로다", async () => {
+    it("올린 설정을 그대로 읽어 오고 수동, 자동 칸은 따로다", async () => {
         vi.spyOn(Date, "now").mockReturnValue(1234);
         await browser.storage.local.set({"refresher:modules": {a: true}});
         await runBackup("manual");
@@ -197,7 +197,7 @@ describe("runBackup / readCloudBackup", () => {
 });
 
 describe("readCloudBackupStatus", () => {
-    it("칸마다 시각·크기를 알린다", async () => {
+    it("칸마다 시각, 크기를 알린다", async () => {
         vi.spyOn(Date, "now").mockReturnValue(77);
         await browser.storage.local.set({"refresher:modules": {a: true}});
         await runBackup("auto");

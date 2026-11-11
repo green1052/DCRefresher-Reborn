@@ -82,7 +82,7 @@ describe("postSearchUrl", () => {
     });
 });
 
-describe("writerFilter·queryString", () => {
+describe("writerFilter, queryString", () => {
     it("내비게이션 항목이 있으면 주소창을 바꿔도 문서를 불러온 주소로 본다", () => {
         const navigation = vi.spyOn(performance, "getEntriesByType").mockReturnValue([
             {name: "https://gall.dcinside.com/board/lists/?id=test&s_keyword=x&rf_uid=abc"} as PerformanceResourceTiming

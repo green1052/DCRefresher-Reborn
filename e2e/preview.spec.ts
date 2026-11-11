@@ -6,7 +6,7 @@ const LIST_URL = /\/board\/lists\/\?id=test$/;
 const viewUrl = (no: number): RegExp => new RegExp(`/board/view/\\?id=test&no=${no}&page=1$`);
 
 test.describe("미리보기", () => {
-    test("제목을 우클릭하면 창을 띄워 본문·댓글을 그리고, 글 주소를 쌓았다가 Esc로 닫으면 목록으로 돌아간다", async ({listPage}) => {
+    test("제목을 우클릭하면 창을 띄워 본문, 댓글을 그리고, 글 주소를 쌓았다가 Esc로 닫으면 목록으로 돌아간다", async ({listPage}) => {
         const {page, frame} = listPage;
         await listPage.openPreview();
         await expect(listPage.frameTitle).toHaveText("[말머리] 글 3 제목");
@@ -33,7 +33,7 @@ test.describe("미리보기", () => {
         await expect(page).toHaveURL(viewUrl(3));
         await page.reload();
         await expect(viewPage(page).body).toContainText("본문 3 내용입니다.");
-        // 표시가 남으면 목록으로 뒤로 갔다 앞으로 올 때(bfcache 없이) 다시 목록·미리보기로 바뀐다.
+        // 표시가 남으면 목록으로 뒤로 갔다 앞으로 올 때(bfcache 없이) 다시 목록, 미리보기로 바뀐다.
         await expect.poll(() => page.evaluate(() => history.state)).toBeNull();
     });
 
@@ -63,7 +63,7 @@ test.describe("미리보기", () => {
         });
     });
 
-    test("PageDown·PageUp으로 옆 글로 넘기고, 뒤로 가기는 앞서 본 글을 다시 열며, 닫으면 쌓은 주소를 모두 걷는다", async ({listPage}) => {
+    test("PageDown, PageUp으로 옆 글로 넘기고, 뒤로 가기는 앞서 본 글을 다시 열며, 닫으면 쌓은 주소를 모두 걷는다", async ({listPage}) => {
         const {page} = listPage;
         const shows = async (no: number): Promise<void> => {
             await expect(listPage.frameTitle).toHaveText(`[말머리] 글 ${no} 제목`);
@@ -105,7 +105,7 @@ test.describe("미리보기", () => {
 
     test("받는 중에 넘기거나 닫아 끊은 요청은 콘솔에 오류를 남기지 않는다", async ({listPage, context}) => {
         const {page} = listPage;
-        // 본문·댓글 응답을 창을 닫을 때까지 붙잡아 늘 받는 도중에 끊기게 한다. 파이어폭스에서 content.fetch의 AbortError가 처리되지 않은 오류로 남았다.
+        // 본문, 댓글 응답을 창을 닫을 때까지 붙잡아 늘 받는 도중에 끊기게 한다. 파이어폭스에서 content.fetch의 AbortError가 처리되지 않은 오류로 남았다.
         let stall = Promise.withResolvers<void>();
         const settled: Promise<void>[] = [];
         await context.route(/\/board\/(view|comment)\//, (route) => {
@@ -143,7 +143,7 @@ test.describe("미리보기", () => {
         await expect(listPage.page).toHaveURL(LIST_URL);
     });
 
-    test("방금 연 글을 닫았다 다시 열면 본문·댓글을 다시 받지 않고, 댓글 새로고침은 받는다 (#273)", async ({listPage}) => {
+    test("방금 연 글을 닫았다 다시 열면 본문, 댓글을 다시 받지 않고, 댓글 새로고침은 받는다 (#273)", async ({listPage}) => {
         const requests: string[] = [];
         listPage.page.on("request", (request) => {
             const {pathname} = new URL(request.url());
@@ -239,7 +239,7 @@ test.describe("미리보기", () => {
         // 원본 보기는 디시 원본 주소(imgPop)가 있는 이미지에만 있다.
         await expect(viewer.getByRole("link", {name: "원본 보기"})).toHaveCount(0);
 
-        // 오버레이(shadow DOM) 안에서도 Tab·Shift+Tab이 뒤의 미리보기나 디시 페이지로 나가지 않는다.
+        // 오버레이(shadow DOM) 안에서도 Tab, Shift+Tab이 뒤의 미리보기나 디시 페이지로 나가지 않는다.
         await expect(viewer.getByRole("button", {name: "닫기"})).toBeFocused();
         const focusInside = () => viewer.evaluate((element) => document.activeElement?.tagName === "REFRESHER-ROOT" && element.contains((element.getRootNode() as ShadowRoot).activeElement));
         for (const key of ["Tab", "Shift+Tab"]) {
@@ -380,7 +380,7 @@ test.describe("미리보기 댓글", () => {
         await expect(fresh).toContainText("새 댓글");
     });
 
-    test("차단·유저 정보 모듈이 켜져 있는 동안만 그 설정대로 댓글을 가리고 작성자 아이디를 칠한다", async ({listPage, storage}) => {
+    test("차단, 유저 정보 모듈이 켜져 있는 동안만 그 설정대로 댓글을 가리고 작성자 아이디를 칠한다", async ({listPage, storage}) => {
         await storage.setModuleSettings("block", {blur: true});
         await storage.setModuleSettings("userinfo", {uidColor: "#123456"});
         await storage.set({"refresher:block:ID": [{id: "a", content: "user1", isRegex: false}]});
@@ -540,8 +540,8 @@ test.describe("미리보기 댓글", () => {
     });
 });
 
-test.describe("댓글 쓰기·지우기", () => {
-    test("비회원 댓글은 폼에서 푼 service_code와 닉네임·비밀번호를 담아 보내고, 올라간 댓글을 다시 받는다", async ({listPage, site}) => {
+test.describe("댓글 쓰기, 지우기", () => {
+    test("비회원 댓글은 폼에서 푼 service_code와 닉네임, 비밀번호를 담아 보내고, 올라간 댓글을 다시 받는다", async ({listPage, site}) => {
         const frame = await listPage.openPreview();
         const input = frame.getByRole("textbox", {name: "댓글 입력", exact: true});
         await input.fill("미리보기에서 쓴 댓글");
@@ -634,7 +634,7 @@ test.describe("댓글 쓰기·지우기", () => {
         await expect(frame.getByRole("textbox", {name: "댓글 입력", exact: true})).toHaveCount(0);
     });
 
-    test("글이 정한 댓글 대상(comment_id·comment_no)으로 보낸다", async ({listPage, site}) => {
+    test("글이 정한 댓글 대상(comment_id, comment_no)으로 보낸다", async ({listPage, site}) => {
         site.commentTarget = {id: "other", no: "77"};
         const frame = await listPage.openPreview();
         await frame.getByRole("textbox", {name: "댓글 입력", exact: true}).fill("대상 글에 쓴 댓글");
@@ -706,7 +706,7 @@ test.describe("댓글 쓰기·지우기", () => {
         await expect(frame.getByRole("textbox", {name: "댓글 입력", exact: true})).toBeEnabled();
     });
 
-    test("디시콘 패키지 줄은 Tab 정지점이 하나이고 화살표로 옮겨 Enter·Space로 고른다", async ({listPage}) => {
+    test("디시콘 패키지 줄은 Tab 정지점이 하나이고 화살표로 옮겨 Enter, Space로 고른다", async ({listPage}) => {
         const frame = await listPage.openPreview();
         await frame.getByRole("button", {name: "디시콘", exact: true}).click();
 

@@ -36,7 +36,7 @@ body:
         id: uiux
         attributes:
             label: UI/UX 제안
-            description: 사용자 인터페이스나 경험에 관한 아이디어가 있다면 설명해 주세요. (스크린샷·참고 이미지 첨부 가능)
+            description: 사용자 인터페이스나 경험에 관한 아이디어가 있다면 설명해 주세요. (스크린샷, 참고 이미지 첨부 가능)
         validations:
             required: false
 

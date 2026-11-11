@@ -2,7 +2,7 @@ import {isHTTPError, isNetworkError} from "ky";
 
 /**
  * 오류 이름으로 본다. 파이어폭스 content.fetch의 오류는 다른 영역 객체라 instanceof Error가 틀릴 수 있다.
- * HTTP 클라이언트가 아니라 여기 둔다. 저 모듈은 불러오면 ky 인스턴스를 만들어, 요청하지 않는 옵션·팝업 번들에 ky가 딸려 간다.
+ * HTTP 클라이언트가 아니라 여기 둔다. 저 모듈은 불러오면 ky 인스턴스를 만들어, 요청하지 않는 옵션, 팝업 번들에 ky가 딸려 간다.
  */
 const isNamed = (e: unknown, name: string): boolean => typeof e === "object" && e !== null && "name" in e && e.name === name;
 
@@ -34,7 +34,7 @@ export const saveOrReload = async (write: Promise<void>, reload: () => Promise<v
 };
 
 /**
- * 화면에 보일 오류 문구. 브라우저·ky의 원문(영어, 요청 주소 포함)은 console.error에 남기고 사용자에게는 이것을 보인다.
+ * 화면에 보일 오류 문구. 브라우저, ky의 원문(영어, 요청 주소 포함)은 console.error에 남기고 사용자에게는 이것을 보인다.
  * 우리가 던진 오류는 이미 한국어 안내라 그대로 쓴다.
  */
 export const friendlyMessage = (error: unknown): string => {

@@ -11,7 +11,7 @@ describe("parseAppMemos", () => {
         });
     });
 
-    it("빈 줄은 건너뛰고, '-'가 없거나 대상·메모가 빈 줄은 센다", () => {
+    it("빈 줄은 건너뛰고, '-'가 없거나 대상, 메모가 빈 줄은 센다", () => {
         expect(parseAppMemos("\n  \nuser1\n-메모\nuser2- \nuser3-메모")).toEqual({memos: {UID: {user3: "메모"}, IP: {}}, skipped: 3});
     });
 
@@ -23,7 +23,7 @@ describe("parseAppMemos", () => {
 });
 
 describe("formatAppMemos", () => {
-    it("아이디·IP 메모를 한 줄씩 쓰고 줄바꿈은 공백으로, 닉네임 메모는 빼고 센다", () => {
+    it("아이디, IP 메모를 한 줄씩 쓰고 줄바꿈은 공백으로, 닉네임 메모는 빼고 센다", () => {
         const memos = {
             UID: {user1: {text: "첫 줄\n 둘째 줄", color: "#000"}},
             IP: {"123.45": {text: "유동", color: "#000"}},

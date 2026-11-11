@@ -73,7 +73,7 @@ describe("sameComments", () => {
         expect(sameComments([], [])).toBe(true);
     });
 
-    it("수·순서·필드 값이 다르거나 필드가 하나 더 있으면 다르다", () => {
+    it("수, 순서, 필드 값이 다르거나 필드가 하나 더 있으면 다르다", () => {
         const list = [comment(1), comment(2)];
         expect(sameComments(list, [comment(1)])).toBe(false);
         expect(sameComments(list, [comment(2), comment(1)])).toBe(false);
@@ -145,7 +145,7 @@ describe("processComments", () => {
             expect(blocked(processComments([comment(1, {name: "나쁜놈"})], preData(), undefined))).toEqual({1: null});
         });
 
-        it("닉·아이디·IP·내용으로 가리고 blur 설정을 따른다", () => {
+        it("닉, 아이디, IP, 내용으로 가리고 blur 설정을 따른다", () => {
             setBlockLists({NICK: [entry("닉")], ID: [entry("uid")], IP: [entry("1.2")], COMMENT: [entry("욕")]}, {COMMENT: "CONTAIN"});
             const source = [
                 comment(1, {name: "닉"}),
@@ -195,7 +195,7 @@ describe("processComments", () => {
             expect(processComments(source, preData(), undefined, ratios("hide"))[0]?.lowActivity).toBe(true);
         });
 
-        it("태그·배지 색만이면 가리지 않는다", () => {
+        it("태그, 배지 색만이면 가리지 않는다", () => {
             expect(processComments([comment(1, {user_id: "low"})], preData(), block(), ratios("tag"))[0]?.blocked).toBeUndefined();
             expect(processComments([comment(1, {user_id: "low"})], preData(), block(), ratios("none"))[0]?.blocked).toBeUndefined();
         });
@@ -218,7 +218,7 @@ describe("processComments", () => {
     });
 
     describe("같은 댓글 접기", () => {
-        it("가린·삭제 댓글을 빼고 묶는다", () => {
+        it("가린, 삭제 댓글을 빼고 묶는다", () => {
             setBlockLists({NICK: [entry("닉")]});
             const output = processComments([
                 comment(1, {memo: "도배 글"}),

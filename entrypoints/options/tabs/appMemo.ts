@@ -5,7 +5,7 @@ const APP_IP = /^\d{1,3}\.\d{1,3}$/;
 
 type AppMemos = Record<"UID" | "IP", Record<string, string>>;
 
-/** 공앱 메모 글 → 대상별 메모 글. 형식이 아닌 줄(빈 줄, "-"가 없거나 대상·메모가 빈 줄)은 세어 돌려준다. */
+/** 공앱 메모 글 → 대상별 메모 글. 형식이 아닌 줄(빈 줄, "-"가 없거나 대상, 메모가 빈 줄)은 세어 돌려준다. */
 export const parseAppMemos = (text: string): { memos: AppMemos; skipped: number } => {
     // 아이디가 __proto__면 보통 객체에는 넣어도 조용히 사라진다 (stores/memos.ts의 ownMemo와 같은 이유).
     const memos: AppMemos = {UID: Object.create(null) as Record<string, string>, IP: Object.create(null) as Record<string, string>};
@@ -27,7 +27,7 @@ export const parseAppMemos = (text: string): { memos: AppMemos; skipped: number 
     return {memos, skipped};
 };
 
-/** 리프레셔 메모 → 공앱 메모 글. 공앱은 아이디·IP 메모만 있어 닉네임 메모는 빼고 그 개수를 돌려준다. */
+/** 리프레셔 메모 → 공앱 메모 글. 공앱은 아이디, IP 메모만 있어 닉네임 메모는 빼고 그 개수를 돌려준다. */
 export const formatAppMemos = (memos: Record<MemoType, Record<string, MemoEntry>>): { text: string; count: number; skipped: number } => {
     const lines = (["UID", "IP"] as const).flatMap((type) =>
         // 공앱은 한 줄에 메모 하나라 줄바꿈은 공백으로 바꾼다.

@@ -17,7 +17,7 @@ function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
 }
 
 function DialogPortal({ ...props }: DialogPrimitive.Portal.Props) {
-  // 오버레이(shadow DOM)에서는 그 안의 포털 칸에 그린다. 옵션·팝업에서는 overlay.portal이 없어 body다.
+  // 오버레이(shadow DOM)에서는 그 안의 포털 칸에 그린다. 옵션, 팝업에서는 overlay.portal이 없어 body다.
   return <DialogPrimitive.Portal data-slot="dialog-portal" container={overlay.portal} {...props} />
 }
 

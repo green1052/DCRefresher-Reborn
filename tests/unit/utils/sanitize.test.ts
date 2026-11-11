@@ -51,7 +51,7 @@ describe("sanitizeHtml", () => {
         expect(p.style.marginBottom).toBe("3px");
     });
 
-    it("이미지·유튜브의 높이는 지우고 다른 요소의 높이는 둔다", () => {
+    it("이미지, 유튜브의 높이는 지우고 다른 요소의 높이는 둔다", () => {
         const root = parse("<img src=\"a.png\" style=\"height: 50px; width: 10px\"><div style=\"height: 50px\">a</div><iframe src=\"https://www.youtube.com/embed/x\" style=\"height: 300px\"></iframe>");
         expect(root.querySelector("img")?.style.height).toBe("");
         expect(root.querySelector("img")?.style.width).toBe("10px");
@@ -59,7 +59,7 @@ describe("sanitizeHtml", () => {
         expect(root.querySelector("iframe")?.hasAttribute("style")).toBe(false);
     });
 
-    it("크기 0으로 온 투표 iframe은 그 크기를 지워 width·height 속성 크기로 보인다", () => {
+    it("크기 0으로 온 투표 iframe은 그 크기를 지워 width, height 속성 크기로 보인다", () => {
         const root = parse("<iframe id=\"pollFrame\" width=\"459\" height=\"437\" src=\"https://gall.dcinside.com/board/poll/vote?no=1\" style=\"width: 0px; height: 0px;\"></iframe><iframe src=\"https://a.example\" style=\"width: 300px\"></iframe>");
         const [poll, other] = root.querySelectorAll("iframe");
         expect(poll?.hasAttribute("style")).toBe(false);
@@ -81,7 +81,7 @@ describe("sanitizeHtml", () => {
         expect(video.hasAttribute("autoplay")).toBe(false);
     });
 
-    it("움짤·디시콘 동영상은 컨트롤 없이 자동 반복한다", () => {
+    it("움짤, 디시콘 동영상은 컨트롤 없이 자동 반복한다", () => {
         const root = parse("<video data-src=\"a.gif\" src=\"a.mp4\"></video><video class=\"written_dccon\" src=\"b.mp4\"></video><video src=\"https://dcimg5.dcinside.com/dccon.php?no=1\"></video>");
         for (const video of root.querySelectorAll("video")) {
             expect(video.hasAttribute("controls")).toBe(false);
@@ -89,7 +89,7 @@ describe("sanitizeHtml", () => {
         }
     });
 
-    it("이미지·iframe은 lazy로 부른다", () => {
+    it("이미지, iframe은 lazy로 부른다", () => {
         const root = parse("<img src=\"a.png\"><iframe src=\"https://www.youtube.com/embed/x\"></iframe>");
         expect(root.querySelector("img")?.getAttribute("loading")).toBe("lazy");
         expect(root.querySelector("iframe")?.getAttribute("loading")).toBe("lazy");
@@ -129,7 +129,7 @@ describe("sanitizeHtml", () => {
         expect(div?.getAttributeNames()).toEqual(["data-block"]);
     });
 
-    it("<style>·폼 요소·popover·background 속성을 뺀다", () => {
+    it("<style>, 폼 요소, popover, background 속성을 뺀다", () => {
         const root = parse("<style>*{}</style><form><input><textarea></textarea><select></select></form><button popover popovertarget=\"x\">b</button><table background=\"x.png\"></table>");
         expect(root.querySelector("style, form, input, textarea, select")).toBeNull();
         expect(root.querySelector("button")?.hasAttribute("popovertarget")).toBe(false);
@@ -157,7 +157,7 @@ describe("htmlToText", () => {
         expect(htmlToText("<a title=\"a>b\">링크</a><!-- <b>숨김</b> -->")).toBe(" 링크  ");
     });
 
-    it("태그·엔티티가 없으면 그대로 둔다", () => {
+    it("태그, 엔티티가 없으면 그대로 둔다", () => {
         expect(htmlToText("그냥 글")).toBe("그냥 글");
     });
 });

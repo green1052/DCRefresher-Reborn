@@ -15,7 +15,7 @@ export const onBfcacheRestore = (run: () => Promise<void>, signal?: AbortSignal)
     }, {signal});
 };
 
-/** 부드러운 스크롤(맨 위로·댓글로·페이지 넘김 등). 동작 줄이기(prefers-reduced-motion)를 켰으면 바로 옮긴다. */
+/** 부드러운 스크롤(맨 위로, 댓글로, 페이지 넘김 등). 동작 줄이기(prefers-reduced-motion)를 켰으면 바로 옮긴다. */
 export const smoothScroll = (): ScrollBehavior => (matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth");
 
 /**

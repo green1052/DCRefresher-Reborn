@@ -56,7 +56,7 @@ describe("isCommentPosted", () => {
         expect(isCommentPosted(submitResult("12345"))).toBe(true);
     });
 
-    it("false·빈 응답·HTML 페이지·실패 코드는 실패로 본다", () => {
+    it("false, 빈 응답, HTML 페이지, 실패 코드는 실패로 본다", () => {
         for (const response of ["false||메시지", "", "  <html><body>로그인</body></html>", "code_fail", "fail1", "form_error", "not_buy", "fail"]) {
             expect(isCommentPosted(submitResult(response)), response).toBe(false);
         }
@@ -107,7 +107,7 @@ describe("postComment", () => {
         expect(await send(["false||captcha||v3", "false||captcha"])).toEqual({ok: false, captcha: true});
     });
 
-    it("디시콘·글자콘은 ok만 성공이다", async () => {
+    it("디시콘, 글자콘은 ok만 성공이다", async () => {
         expect(await send(["ok"], dccon)).toEqual({ok: true});
         expect(await send(["ok"], txtcon)).toEqual({ok: true});
         expect(sent.map(({url}) => url)).toEqual([urls.txtcon_submit]);

@@ -99,7 +99,7 @@ test.describe("옵션 - 차단 탭", () => {
     test("항목을 추가하면 표에 보이고 저장소에 남는다", async ({page, extensionId, storage}) => {
         const options = await openOptions(page, extensionId, "block");
         await expect(page.getByText("기본 차단 모드")).toBeVisible();
-        // 모드마다 무엇을 가리는지 적는다. 불일치·불포함은 나머지를 모두 가린다고 알린다.
+        // 모드마다 무엇을 가리는지 적는다. 불일치, 불포함은 나머지를 모두 가린다고 알린다.
         const defaultMode = page.getByRole("combobox", {name: "기본 차단 모드", exact: true});
         await expect(defaultMode).toHaveAccessibleDescription("모드가 '기본값'인 항목에 씁니다. 값과 똑같으면 가립니다.");
 
@@ -158,7 +158,7 @@ test.describe("옵션 - 차단 탭", () => {
         expect(await storage.get("refresher:block:NICK")).toBeUndefined();
     });
 
-    test("같은 값·갤러리 항목은 추가하지 않고, 자기 항목은 값 그대로 수정하며, 이미지 값을 바꿔야 비슷한 이미지 지문을 버린다", async ({page, extensionId, storage}) => {
+    test("같은 값, 갤러리 항목은 추가하지 않고, 자기 항목은 값 그대로 수정하며, 이미지 값을 바꿔야 비슷한 이미지 지문을 버린다", async ({page, extensionId, storage}) => {
         const nick = {id: "a", content: "있는닉", isRegex: false, gallery: "g1"};
         const image = {id: "i", content: "a".repeat(64), isRegex: false, similar: "0".repeat(32), frames: ["1".repeat(32)]};
         await storage.set({"refresher:block:NICK": [nick], "refresher:block:IMAGE": [image]});
@@ -250,7 +250,7 @@ test.describe("옵션 - 차단 탭", () => {
         await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([readded, list[1]]);
     });
 
-    test("갤러리·마지막 사용으로 걸러 보이는 항목만 지우고, 페이지를 다시 열 때 지운 항목의 사용 기록을 정리한다", async ({page, extensionId, storage}) => {
+    test("갤러리, 마지막 사용으로 걸러 보이는 항목만 지우고, 페이지를 다시 열 때 지운 항목의 사용 기록을 정리한다", async ({page, extensionId, storage}) => {
         const day = 24 * 60 * 60 * 1000;
         await storage.set({
             "refresher:block:NICK": [
@@ -381,7 +381,7 @@ test.describe("옵션 - 차단 탭", () => {
     });
 });
 
-test.describe("옵션 - 메모·데이터 탭", () => {
+test.describe("옵션 - 메모, 데이터 탭", () => {
     test("메모 탭에서 메모를 추가하면 표에 보이고 저장소에 남는다", async ({page, extensionId, storage}) => {
         const {dialog, table} = await openOptions(page, extensionId, "memo");
         await page.getByRole("button", {name: "추가", exact: true}).click();
@@ -433,7 +433,7 @@ test.describe("옵션 - 메모·데이터 탭", () => {
     });
 });
 
-test.describe("옵션 - 데이터 탭 백업·초기화", () => {
+test.describe("옵션 - 데이터 탭 백업, 초기화", () => {
     test("수동 백업을 덮어쓰기로 복원하면 백업할 때의 목록으로 돌아간다", async ({page, extensionId, storage}) => {
         await storage.set({"refresher:block:NICK": [{id: "a", content: "백업닉", isRegex: false}]});
         const {dialog, toasts} = await openOptions(page, extensionId, "data");

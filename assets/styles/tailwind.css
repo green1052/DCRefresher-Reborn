@@ -4,7 +4,7 @@
  */
 @import "tailwindcss" source(none);
 @import "tw-animate-css";
-/* shadcn 부품이 쓰는 variant(data-horizontal·data-open 등, Base UI 데이터 속성에 맞춘 것)와 유틸리티. */
+/* shadcn 부품이 쓰는 variant(data-horizontal, data-open 등, Base UI 데이터 속성에 맞춘 것)와 유틸리티. */
 @import "shadcn/tailwind.css";
 /* 클래스를 찾을 폴더를 직접 정한다. 자동 탐색은 .gitignore에 기대는데 파이어폭스 심사용 소스 zip에는 .gitignore가 없어,
    심사 쪽 빌드의 CSS와 해시 붙은 파일 이름이 우리가 올린 빌드와 달라진다. */
@@ -24,7 +24,7 @@
     --popover-foreground: oklch(0.141 0.005 285.823);
     --primary: oklch(0.457 0.24 277.023);
     --primary-foreground: oklch(0.962 0.018 272.314);
-    /* 강조색 글자 (링크·글쓴이 표시 등). 다크 모드의 --primary는 흰 글자를 얹는 버튼 배경이라 글자로 쓰면 묻힌다. */
+    /* 강조색 글자 (링크, 글쓴이 표시 등). 다크 모드의 --primary는 흰 글자를 얹는 버튼 배경이라 글자로 쓰면 묻힌다. */
     --link: oklch(0.457 0.24 277.023);
     --secondary: oklch(0.967 0.001 286.375);
     --secondary-foreground: oklch(0.21 0.006 285.885);
@@ -141,7 +141,7 @@
 
     body {
         @apply bg-background text-foreground;
-        /* 크롬은 확장 페이지(옵션·팝업)의 body에 자체 폰트 규칙을 레이어 밖에 넣어, 레이어 안의 규칙은 진다. 폰트 교체 설정이 먹도록 important로 건다. */
+        /* 크롬은 확장 페이지(옵션, 팝업)의 body에 자체 폰트 규칙을 레이어 밖에 넣어, 레이어 안의 규칙은 진다. 폰트 교체 설정이 먹도록 important로 건다. */
         font-family: var(--font-sans) !important;
     }
 }

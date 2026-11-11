@@ -2,9 +2,9 @@ import {blockMode, dcconCode, isBlocked, isImageBlocked, similarImageThreshold, 
 import type {ModuleSettings} from "@/core/module/types";
 
 /**
- * 본문에 든 차단 디시콘·이미지·움짤에 data-blocked를 단다. 페이지 글 보기처럼 그것만 가린다 (features/preview/overlay.css).
+ * 본문에 든 차단 디시콘, 이미지, 움짤에 data-blocked를 단다. 페이지 글 보기처럼 그것만 가린다 (features/preview/overlay.css).
  * block이 없으면(차단 모듈이 꺼짐) 표시를 떼고, hideOnly면 흐리게 처리여도 숨긴다. 차단 목록이 바뀌면 다시 불러 붙이고 뗀다.
- * 이미지는 파일 해시로 보므로 다 받은 뒤에 보고, 지연 로딩·가린 이미지 보기로 다시 받으면 다시 본다 (비슷한 이미지 기준은 core/block.ts의 similarImageThreshold).
+ * 이미지는 파일 해시로 보므로 다 받은 뒤에 보고, 지연 로딩, 가린 이미지 보기로 다시 받으면 다시 본다 (비슷한 이미지 기준은 core/block.ts의 similarImageThreshold).
  * 이미지의 load 감시를 끊는 함수를 돌려준다.
  */
 export const markBlockedMedia = (root: HTMLElement, gallery: string | undefined, block: ModuleSettings["block"] | undefined, hideOnly: boolean): (() => void) => {

@@ -20,7 +20,7 @@ const VERSION = browser.runtime.getManifest().version;
 interface Page {
     tabId: number;
     gallery: string;
-    /** 처음 물었을 때의 탭 상태. 콘텐츠 스크립트가 없으면(설치·업데이트 전에 열린 탭 등) null이다. */
+    /** 처음 물었을 때의 탭 상태. 콘텐츠 스크립트가 없으면(설치, 업데이트 전에 열린 탭 등) null이다. */
     state: PageState | null;
 }
 

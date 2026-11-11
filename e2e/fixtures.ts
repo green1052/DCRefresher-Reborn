@@ -13,7 +13,7 @@ declare const chrome: typeof browser;
 
 const CHROME_EXTENSION = fileURLToPath(new URL("../.output/chrome-mv3", import.meta.url));
 const FIREFOX_EXTENSION = fileURLToPath(new URL("../.output/firefox-mv3", import.meta.url));
-/** IP·밴 DB 서버. */
+/** IP, 밴 DB 서버. */
 const IP_DB_HOST = "dcrefresher.green1052.com";
 const DCINSIDE = /^https:\/\/([a-z0-9-]+\.)*dcinside\.(com|co\.kr)$/;
 
@@ -32,10 +32,10 @@ export interface ExtensionStorage {
     setModuleSettings(id: string, settings: Record<string, Json>): Promise<void>;
 }
 
-/** 디시에 보내도 되는 POST. 모두 읽기다 (댓글 목록, 갤로그 글/댓글 수, 디시콘 목록·정보). */
+/** 디시에 보내도 되는 POST. 모두 읽기다 (댓글 목록, 갤로그 글/댓글 수, 디시콘 목록, 정보). */
 const LIVE_READ_POSTS = /^\/(board\/comment\/$|api\/gallog_user_layer\/|dccon\/(lists|package_detail)$)/;
 
-/** 실제 디시(live)로 보내되, 쓰기와 디시·IP DB 밖(광고·추적)은 끊는다. 디시 스크립트의 POST(조회수·로그)도 끊는다. */
+/** 실제 디시(live)로 보내되, 쓰기와 디시, IP DB 밖(광고, 추적)은 끊는다. 디시 스크립트의 POST(조회수, 로그)도 끊는다. */
 const routeLive = async (context: BrowserContext): Promise<void> => {
     await context.route(/^https?:\/\//, (route) => {
         const request = route.request();
@@ -55,7 +55,7 @@ const backgrounds = new WeakMap<BrowserContext, Background>();
  * 확장을 올린 브라우저 컨텍스트를 테스트마다 새 프로필로 띄운다.
  * - 크로미엄: 확장은 영속 컨텍스트에서만 올라가고, headless shell이 아니라 크로미엄 본체(channel: chromium)여야 한다.
  *   PLAYWRIGHT_CHROMIUM에 실행 파일을 주면 그것을 쓴다.
- * - 파이어폭스: 원격 디버깅 서버로 임시 부가 기능을 설치한다 (firefox.ts). 확장 페이지로는 이동하지 못해 팝업·옵션 테스트는 크로미엄에서만 돈다.
+ * - 파이어폭스: 원격 디버깅 서버로 임시 부가 기능을 설치한다 (firefox.ts). 확장 페이지로는 이동하지 못해 팝업, 옵션 테스트는 크로미엄에서만 돈다.
  * - dcinside.com 요청은 가짜 디시(site)가 응답하고 IP DB 서버는 끊는다. live 프로젝트만 실제 디시에 읽기 요청을 보낸다.
  * - serveIpDb를 켜면 크로미엄에서는 IP DB 서버 요청에 가짜 DB(ipDb)가 응답한다. 파이어폭스는 배경 요청을 route로 가로채지 못해 끊은 그대로다 (OFFLINE_PREFS).
  */
@@ -149,10 +149,10 @@ export const test = base.extend<{ live: boolean; serveIpDb: boolean }>({
         });
     },
 
-    // 모든 테스트에 건다. 페이지 오류·console.error가 하나라도 나면 실패한다.
+    // 모든 테스트에 건다. 페이지 오류, console.error가 하나라도 나면 실패한다.
     errors: [async ({context, live}, use) => {
         const errors: string[] = [];
-        // 실제 디시는 디시 스크립트·끊은 광고에서 오류가 난다. 확장 코드에서 난 것만 본다.
+        // 실제 디시는 디시 스크립트, 끊은 광고에서 오류가 난다. 확장 코드에서 난 것만 본다.
         const ours = (where: string | undefined): boolean => !live || /(chrome|moz)-extension:\/\//.test(where ?? "");
         context.on("weberror", (error) => {
             if (ours(error.error().stack)) errors.push(`pageerror ${error.page()?.url()}: ${error.error().message}`);
@@ -174,7 +174,7 @@ export const test = base.extend<{ live: boolean; serveIpDb: boolean }>({
             errors.push(`console ${page.url()}: ${message.text()}${detail ? ` ${detail}` : ""}`);
         });
         await use(errors);
-        test.expect(errors, "페이지 오류·console.error가 없어야 한다").toEqual([]);
+        test.expect(errors, "페이지 오류, console.error가 없어야 한다").toEqual([]);
     }, {auto: true}],
 
     listPage: async ({page}, use) => {

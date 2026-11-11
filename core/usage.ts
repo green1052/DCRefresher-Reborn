@@ -75,7 +75,7 @@ const send = async (): Promise<void> => {
     if (Object.keys(batch.block).length + Object.keys(batch.memo).length > 0) sendMessage("refresher:markUsed", batch).catch(console.error);
 };
 
-/** 항목이 쓰였다고 적는다. 모아서 배경에 보낸다. 차단 검사·메모 찾기처럼 자주 불리는 곳에서 불러도 된다. */
+/** 항목이 쓰였다고 적는다. 모아서 배경에 보낸다. 차단 검사, 메모 찾기처럼 자주 불리는 곳에서 불러도 된다. */
 export const markUsed = (kind: UsageKind, id: string): void => {
     const now = Date.now();
     const key = usageKey(kind, id);
@@ -116,7 +116,7 @@ export const recordUsage = (batch: UsageData): Promise<void> =>
     });
 
 /**
- * 옵션 페이지의 지금 목록에 맞춘다. 기록이 없는 항목(기록을 시작하기 전부터 있었거나 다른 기기·다른 탭에서 새로 온 것)은 지금 쓰인 것으로 둔다.
+ * 옵션 페이지의 지금 목록에 맞춘다. 기록이 없는 항목(기록을 시작하기 전부터 있었거나 다른 기기, 다른 탭에서 새로 온 것)은 지금 쓰인 것으로 둔다.
  * 지운 항목의 기록은 prune일 때(페이지를 열고 처음 맞출 때)만 버린다. 그 뒤에 지운 것은 되돌리기로 같은 id가 돌아올 수 있어 남긴다.
  * 바뀐 것이 없으면 쓰지 않는다.
  */

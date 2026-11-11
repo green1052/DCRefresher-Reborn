@@ -54,7 +54,7 @@ interface CommentProps {
 
 /**
  * memo로 감싸 keepUnchanged가 객체를 유지한 댓글은 다시 그리지 않는다.
- * 감싸지 않으면 자동 새로고침·추천·차단 목록 변경마다 댓글 전부를 다시 그린다.
+ * 감싸지 않으면 자동 새로고침, 추천, 차단 목록 변경마다 댓글 전부를 다시 그린다.
  */
 export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply, isAdmin}: CommentProps) => {
     // reply 객체째 구독하면 답글 버튼 하나에 모든 댓글이 다시 그려지므로, 이 댓글이 대상인지만 구독한다.
@@ -64,7 +64,7 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
     const toggleCollapse = usePreviewStore((s) => s.toggleCollapse);
     const selected = usePreviewStore((s) => s.selectedComments.has(comment.no));
     const toggleSelected = usePreviewStore((s) => s.toggleSelected);
-    // 글 작성자 아이디만 구독한다. 글 객체째 구독하면 추천·새로고침마다 모든 댓글이 다시 그려진다.
+    // 글 작성자 아이디만 구독한다. 글 객체째 구독하면 추천, 새로고침마다 모든 댓글이 다시 그려진다.
     const authorId = usePreviewStore((s) => s.post?.user?.id);
     const allowReply = usePreviewStore((s) => s.allowReply);
 
@@ -114,7 +114,7 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
     }, [html, isDccon]);
 
     return (
-        // 화면 밖 댓글은 레이아웃·스타일 계산을 건너뛴다 (댓글 수백 개인 글을 열 때 크게 준다).
+        // 화면 밖 댓글은 레이아웃, 스타일 계산을 건너뛴다 (댓글 수백 개인 글을 열 때 크게 준다).
         // 그리지 않은 댓글은 가장 흔한 한 줄 댓글 높이(48px)로 어림한다. 크게 잡으면 답글을 펼칠 때 높이와 스크롤 길이가 부풀었다가 줄어든다.
         <div className={cn("refresher-comment relative px-8 py-2 [contain-intrinsic-size:auto_48px] [content-visibility:auto] hover:bg-muted/50",
                            // 자동 새로고침으로 새로 들어온 댓글 (previewStore의 freshComments). 강조색으로 깔았다가 걷는다.
@@ -129,8 +129,8 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
                     <UserCard user={user} op={isOp}/>
                     {comment.duplicates ? <span className="text-xs whitespace-nowrap text-muted-foreground">같은 댓글 ×{comment.duplicates}</span> : null}
                     {/* 툴팁은 브라우저 기본(title)을 쓴다. 스레드마다 툴팁 부품을 달면 댓글이 많은 글을 열 때 느려진다. */}
-                    {/* 댓글마다 되풀이되는 버튼(접기·답글·삭제)은 Base UI Button 대신 shadcn 버튼 모양(buttonVariants)의 기본 button을 쓴다.
-                        Base UI Button은 버튼마다 이벤트 리스너를 여럿 달아 댓글이 천 개면 그것만 8천 개가 넘는다. 기본 button도 키보드·disabled 동작은 같다. */}
+                    {/* 댓글마다 되풀이되는 버튼(접기, 답글, 삭제)은 Base UI Button 대신 shadcn 버튼 모양(buttonVariants)의 기본 button을 쓴다.
+                        Base UI Button은 버튼마다 이벤트 리스너를 여럿 달아 댓글이 천 개면 그것만 8천 개가 넘는다. 기본 button도 키보드, disabled 동작은 같다. */}
                     {/* 펼친 상태는 aria-expanded로 알린다. ghost 버튼이 펼친 상태에 까는 배경은 지워 보이는 모습은 그대로 둔다. */}
                     {depth === 0 && replyCount > 1 && (
                         <button type="button" className={cn(buttonVariants({size: "icon-xs", variant: "ghost", className: "aria-expanded:not-hover:bg-transparent"}))}
@@ -223,7 +223,7 @@ export const noticeDeleteWarning = (fields: CommentForm["fields"], date: string)
  * 댓글 X가 띄운 삭제 확인 창(deletePrompt). CommentList가 한 번만 그린다.
  * 댓글 안에 그리면 답글 수가 1개와 2개 사이를 오갈 때(Thread가 답글을 Collapsible 안팎으로 옮긴다) 그 답글이 새로 마운트되어
  * 창이 말없이 닫히고 입력하던 비밀번호도 사라진다.
- * 비밀번호 없이 지워지는 삭제(관리자·회원 본인)는 X 한 번에 되돌릴 수 없으니 확인한다 (디시 comment.js와 같음). 비밀번호 삭제는 비밀번호 창이 확인을 겸한다.
+ * 비밀번호 없이 지워지는 삭제(관리자, 회원 본인)는 X 한 번에 되돌릴 수 없으니 확인한다 (디시 comment.js와 같음). 비밀번호 삭제는 비밀번호 창이 확인을 겸한다.
  */
 export const CommentDeletePrompt = ({comments, isAdmin}: { comments: ProcessedComment[]; isAdmin: boolean }) => {
     const prompt = usePreviewStore((s) => s.deletePrompt);

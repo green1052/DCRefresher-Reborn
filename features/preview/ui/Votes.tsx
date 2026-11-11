@@ -12,7 +12,7 @@ import {notifyManage} from "@/stores/notify";
 
 import {usePreviewStore} from "./previewStore";
 
-/** 본문 아래 추천·비추천과 링크 복사·새 탭 열기. */
+/** 본문 아래 추천, 비추천과 링크 복사, 새 탭 열기. */
 export const Votes = ({post}: { post: PostInfo }) => {
     const preData = usePreviewStore((s) => s.preData);
     const {upvotes, fixedUpvotes, downvotes} = post;
@@ -37,7 +37,7 @@ export const Votes = ({post}: { post: PostInfo }) => {
             ? {upvotes: result.counts ?? upvotes ?? "X", fixedUpvotes: result.fixedCounts || undefined}
             : {downvotes: result.counts ?? downvotes};
         // 응답 전에 다른 글로 넘어갔으면 숫자는 고치지 않고 알림만 띄운다.
-        // 함수형 setState로 지금 post를 읽어야 동시에 끝난 추천·비추천이 서로 덮지 않는다.
+        // 함수형 setState로 지금 post를 읽어야 동시에 끝난 추천, 비추천이 서로 덮지 않는다.
         // 바뀐 갈래는 s를 그대로 돌려 구독자를 깨우지 않는다 ({}는 zustand에서 새 상태로 쳐 전 selector를 다시 부른다).
         usePreviewStore.setState((s) => (s.signalId !== signal || !s.post ? s : {post: {...s.post, ...counts}}));
         // 1분 안에 다시 열면 캐시 본문을 쓰므로 거기 숫자도 고친다.
@@ -51,7 +51,7 @@ export const Votes = ({post}: { post: PostInfo }) => {
         void castVote(preData, mode).finally(() => setVoting(null));
     };
 
-    // 목록 쿼리(검색어·페이지)를 뺀 글 주소를 복사한다.
+    // 목록 쿼리(검색어, 페이지)를 뺀 글 주소를 복사한다.
     const onShare = (): void => {
         if (!preData) return;
         void copyWithToast(viewUrl(preData.link, preData.gallery, preData.id), "링크를 ");

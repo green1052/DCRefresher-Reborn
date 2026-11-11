@@ -267,7 +267,7 @@ describe("댓글 관리", () => {
         expect(sent[0]?.body.get("del_chk")).toBe("1");
     });
 
-    it("비밀번호 삭제는 글의 댓글 갤러리로 보내고 no는 글 번호다. 디시처럼 rc_key·c_k_v·v_cur_t·삭제 폼 값과 재전송 토큰을 붙인다", async () => {
+    it("비밀번호 삭제는 글의 댓글 갤러리로 보내고 no는 글 번호다. 디시처럼 rc_key, c_k_v, v_cur_t, 삭제 폼 값과 재전송 토큰을 붙인다", async () => {
         const sent = serve(fetchMock, () => "true");
         expect(await userDeleteComment(target(), {commentId: "cid", v_cur_t: "vt", commentDeleteFields: [["del_rand", "dv"]]}, "7", "pw", "new3", "tok")).toEqual({result: "true", message: undefined, detail: undefined});
         expect(sent[0]?.url).toBe(urls.comment_remove);
@@ -276,7 +276,7 @@ describe("댓글 관리", () => {
         });
     });
 
-    it("회원 삭제는 v_cur_t·삭제 폼 값을 보내지 않는다", async () => {
+    it("회원 삭제는 v_cur_t, 삭제 폼 값을 보내지 않는다", async () => {
         const sent = serve(fetchMock, () => "true");
         await userDeleteComment(target(), {commentId: "cid", v_cur_t: "vt", commentDeleteFields: [["del_rand", "dv"]]}, "7", "", "new3");
         expect(sent[0]?.body.has("v_cur_t")).toBe(false);
@@ -301,7 +301,7 @@ describe("댓글 관리", () => {
         }
     });
 
-    it("끌올·공지·개념글은 갤러리 종류의 관리 주소로 글 번호를 보낸다", async () => {
+    it("끌올, 공지, 개념글은 갤러리 종류의 관리 주소로 글 번호를 보낸다", async () => {
         const sent = serve(fetchMock, () => JSON.stringify({result: "success"}));
         await bump(target());
         await setNotice(target(), true);
@@ -338,7 +338,7 @@ describe("submitComment", () => {
         const sent = serve(fetchMock, () => "1234");
         const info = post({commentForm: {fields: [["service_code", "x"], ["name", "숨겨진이름"], ["check_6", "c6"], ["gallery_no", "evil"]], serviceCode: "abc0123456789", dValue: dValue("207,277,508,373,409,363,349,260.5,239,166"), checks: {}}});
         expect(await submit(info)).toEqual({result: "1234", message: undefined, detail: undefined});
-        // service_code·gallery_no는 폼에서 빼고, name은 폼 자리 그대로 우리 값으로 들어간다.
+        // service_code, gallery_no는 폼에서 빼고, name은 폼 자리 그대로 우리 값으로 들어간다.
         expect([...sent[0]!.body].map(([key]) => key)).toEqual([
             "t_vch2", "t_vch2_chk", "name", "check_6", "service_code", "c_gall_id", "c_gall_no", "id", "no", "password", "use_gall_nick", "g-recaptcha-response", "memo"
         ]);
@@ -355,7 +355,7 @@ describe("submitComment", () => {
 });
 
 describe("submitTxtcon", () => {
-    it("글 댓글과 같은 대상에 글자콘 값을 보내고, 회원이면 name·password를 빼고 보낸다", async () => {
+    it("글 댓글과 같은 대상에 글자콘 값을 보내고, 회원이면 name, password를 빼고 보낸다", async () => {
         const sent = serve(fetchMock, () => "ok");
         const info = post({commentId: "cid", commentNo: "9", commentForm: {fields: [], serviceCode: "", checks: {check_6: "c6", check_7: "c7", check_8: ""}, gallNickName: "갤닉"}});
         const options = {text: "안녕", colors: {bg: "333333", txt: "ffffff"}, commentNo: "10", replyNo: "11", grecaptchaToken: "tok"};

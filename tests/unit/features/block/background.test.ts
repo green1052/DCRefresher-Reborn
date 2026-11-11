@@ -34,7 +34,7 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("block 배경 (크롬)", () => {
-    it("켜면 글 목록·본문의 이미지·움짤에만 메뉴를 걸고 CORS 규칙을 넣으며, 끄면 둘 다 뺀다", async () => {
+    it("켜면 글 목록, 본문의 이미지, 움짤에만 메뉴를 걸고 CORS 규칙을 넣으며, 끄면 둘 다 뺀다", async () => {
         const menus = fakeMenus();
         const updateSessionRules = vi.spyOn(fakeBrowser.declarativeNetRequest, "updateSessionRules").mockResolvedValue();
 

@@ -34,14 +34,14 @@ const isSlotKey = (slot: BackupSlot, key: string): boolean => key === SLOT_KEYS[
 export const CLOUD_QUOTA = browser.storage.sync.QUOTA_BYTES ?? 102_400;
 /** 조각 하나의 글자 수. 항목 한도(8192바이트)에서 키와 따옴표 몫을 뺐다. */
 const CHUNK_CHARS = (browser.storage.sync.QUOTA_BYTES_PER_ITEM ?? 8_192) - 192;
-/** 전체 한도에서 메타·키 몫을 뺐다 (두 칸 합계). */
+/** 전체 한도에서 메타, 키 몫을 뺐다 (두 칸 합계). */
 const TOTAL_CHARS = CLOUD_QUOTA - 2400;
 
 /** 이 버전이 쓰고 읽는 백업 형식. */
 const FORMAT = 1;
 
 interface BackupMeta {
-    /** 형식을 올려도 chunks·size·createdAt은 그대로 둔다. 그래야 옛 버전이 새 형식 백업도 '있음'으로 보고 덮기 전에 확인한다. */
+    /** 형식을 올려도 chunks, size, createdAt은 그대로 둔다. 그래야 옛 버전이 새 형식 백업도 '있음'으로 보고 덮기 전에 확인한다. */
     format: number;
     chunks: number;
     /** 압축 데이터의 SHA-256 (hex). */
@@ -63,20 +63,20 @@ const BACKUP_KEYS = new Set<string>([
 ]);
 
 /**
- * 백업·내보내기 대상인 로컬 키: 모듈 on/off와 설정, 차단 목록과 기본 차단 모드, 메모.
+ * 백업, 내보내기 대상인 로컬 키: 모듈 on/off와 설정, 차단 목록과 기본 차단 모드, 메모.
  * 그 밖의 키(IP/밴 DB, 백업 상태, 모듈 캐시, 사용 기록, 없어진 모듈의 설정, 예전 버전이 남긴 키)는 크거나 기기마다 다르거나 읽지 않는 값이라 뺀다.
- * 가져오기·복원(core/settings-transfer.ts)도 이것으로 걸러 없는 모듈의 설정을 저장하지 않는다.
+ * 가져오기, 복원(core/settings-transfer.ts)도 이것으로 걸러 없는 모듈의 설정을 저장하지 않는다.
  */
 export const isBackupTarget = (key: string): boolean => BACKUP_KEYS.has(key);
 
-/** 백업 대상 키(isBackupTarget)의 값만 읽는다. get(null)은 수백 KB짜리 IP·밴 DB까지 읽는다. */
+/** 백업 대상 키(isBackupTarget)의 값만 읽는다. get(null)은 수백 KB짜리 IP, 밴 DB까지 읽는다. */
 export const readBackupTargets = async (): Promise<Record<string, unknown>> => {
     const keys = (await browser.storage.local.getKeys()).filter(isBackupTarget);
     return keys.length === 0 ? {} : browser.storage.local.get(keys);
 };
 
 /**
- * 백업·내보내기 대상. 차단 목록의 id(UUID)는 압축이 안 돼 클라우드 백업을 두 배 넘게 불리므로 뺀다.
+ * 백업, 내보내기 대상. 차단 목록의 id(UUID)는 압축이 안 돼 클라우드 백업을 두 배 넘게 불리므로 뺀다.
  * 읽는 쪽(stores/blocks.ts의 normalizeBlockList)이 없는 id를 새로 준다.
  */
 export const collectLocalData = async (): Promise<Record<string, unknown>> =>
@@ -162,7 +162,7 @@ export const readCloudBackupStatus = async (): Promise<CloudBackupStatus> => {
 };
 
 /**
- * 두 칸의 백업을 메타·조각까지 모두 지운다. sync에는 백업 칸만 쓰므로 통째로 비운다.
+ * 두 칸의 백업을 메타, 조각까지 모두 지운다. sync에는 백업 칸만 쓰므로 통째로 비운다.
  * v5가 sync에 통째로 올려 둔 키(최대 100KB)도 같이 지워져, 그 때문에 한도를 넘어 실패하던 백업을 여기서 풀 수 있다.
  */
 export const clearCloudBackups = (): Promise<void> => browser.storage.sync.clear();

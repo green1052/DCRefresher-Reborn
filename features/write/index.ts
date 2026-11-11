@@ -78,7 +78,7 @@ export default defineModule(meta, {
             const posted = flag ? flag.value === "Y" : submitting;
             if (!ctx.settings.preventExit || posted || leaving || !edited) return;
 
-            // 글자 없이 이미지·동영상만 올린 본문도 작성 중인 글이다. 디시가 넣은 자동 짤방·작성 가이드는 빼고 본다.
+            // 글자 없이 이미지, 동영상만 올린 본문도 작성 중인 글이다. 디시가 넣은 자동 짤방, 작성 가이드는 빼고 본다.
             const editor = document.querySelector<HTMLElement>(EDITOR);
             const text = Array.from(editor?.childNodes ?? [], (node) => (node instanceof Element && node.matches(AUTO) ? "" : node.textContent)).join("").trim();
             const media = Array.from(editor?.querySelectorAll("img, video, iframe, embed") ?? []).some((element) => !element.closest(AUTO));
@@ -96,7 +96,7 @@ export default defineModule(meta, {
         window.addEventListener("beforeunload", onBeforeUnload, {signal});
 
         // 수정 페이지에서 에디터 스크립트로 넣거나 뺀 이미지는 input 이벤트가 나지 않아 에디터의 DOM 변화로 알아챈다.
-        // 디시가 원래 글을 채우는 변화는 빼려고 사용자가 페이지를 건드린 뒤부터 보고, 속성(hover·class) 변화는 보지 않는다.
+        // 디시가 원래 글을 채우는 변화는 빼려고 사용자가 페이지를 건드린 뒤부터 보고, 속성(hover, class) 변화는 보지 않는다.
         // 등록 뒤에 디시가 에디터를 고칠 수 있어 submitting은 풀지 않는다. 같은 요소를 다시 observe하면 옵션만 바뀐다.
         if (edited) return;
         const observer = new MutationObserver(() => {

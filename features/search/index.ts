@@ -15,7 +15,7 @@ import meta from "./meta";
 import {addWriterTypes, keepWriterFilter, removeWriterTypes, writerSearchUrl} from "./writer";
 
 /**
- * 검색 결과 행: 글(data-no)과 그 아래 댓글 검색 행(data-cmt). 설문·AD 행은 뺀다.
+ * 검색 결과 행: 글(data-no)과 그 아래 댓글 검색 행(data-cmt). 설문, AD 행은 뺀다.
  * 검색 구간은 번호로 나뉘어 겹치지 않으므로 중복을 거르지 않는다. 댓글 검색에선 댓글마다 글 행이 되풀이되는 게 정상이다.
  */
 const RESULT_ROW = ":scope > tr:is([data-no], [data-cmt])";
@@ -24,7 +24,7 @@ const ADDED_ROW = "refresherSearchAdded";
 /** 작성자 거르기 중에 다른 작성자의 행을 숨기는 스타일. */
 const WRITER_STYLE_ID = "refresher-search-writer";
 
-/** 아이디·IP 검색. 아이디는 갤로그에서 닉네임을 읽어 글쓴이 검색으로 찾고, IP는 닉네임을 몰라 목록을 넘기며 거른다. */
+/** 아이디, IP 검색. 아이디는 갤로그에서 닉네임을 읽어 글쓴이 검색으로 찾고, IP는 닉네임을 몰라 목록을 넘기며 거른다. */
 const searchWriter = async (filter: WriterFilter): Promise<void> => {
     const {showToast} = useUiStore.getState();
     if (filter.kind === "ip") {
@@ -47,7 +47,7 @@ const searchWriter = async (filter: WriterFilter): Promise<void> => {
 };
 
 /**
- * 유저 버블의 검색. by가 "nick"이면 닉네임으로만 찾고(디시 글쓴이 검색), "identity"면 닉네임으로 찾은 글을 아이디(반고닉·고닉)나 IP(유동)로 거른다.
+ * 유저 버블의 검색. by가 "nick"이면 닉네임으로만 찾고(디시 글쓴이 검색), "identity"면 닉네임으로 찾은 글을 아이디(반고닉, 고닉)나 IP(유동)로 거른다.
  * 닉네임이 없으면 목록을 넘기며 거른다.
  */
 const searchUserPosts = (user: SelectedUser, by: "nick" | "identity"): void => {
@@ -99,7 +99,7 @@ export default defineModule(meta, {
         const counted = (row: HTMLElement): boolean => Boolean(row.dataset.no) && (!filter || row.querySelector(writerSelector(filter)) !== null);
 
         const gallery = pageGallery ?? "";
-        // 받은 검색 페이지(칠한 결과 행과 페이징 HTML). 새로고침 모듈이 목록을 갈아끼워 다시 이을 때 요청·파싱을 건너뛴다.
+        // 받은 검색 페이지(칠한 결과 행과 페이징 HTML). 새로고침 모듈이 목록을 갈아끼워 다시 이을 때 요청, 파싱을 건너뛴다.
         // 다시 이을 때 같은 다음 검색을 처음부터 따라가므로 최대 다음 검색 횟수만큼 둔다. 더 작으면 따라가는 동안 앞 페이지가 밀려나 하나도 맞지 않는다.
         const pages = new QuickLRU<string, { rows: HTMLTableRowElement[]; paging: string }>({maxSize: ctx.settings.maxSearches});
         ctx.onSettingsChanged(() => pages.resize(ctx.settings.maxSearches));
@@ -207,7 +207,7 @@ export default defineModule(meta, {
                         added++;
                     }
 
-                    // 페이징은 마지막으로 받은 구간 것으로 바꾼다. 다음 검색·페이지 링크가 거기서 이어진다.
+                    // 페이징은 마지막으로 받은 구간 것으로 바꾼다. 다음 검색, 페이지 링크가 거기서 이어진다.
                     paging.innerHTML = page.paging;
                     if (filter) keepWriterFilter(paging, filter);
                     if (searching && !isLastPage(paging)) break;

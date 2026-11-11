@@ -1,5 +1,5 @@
 /**
- * IP DB 후보 계산 (build-db.ts). 내려받은 구간 목록으로 /16 대역마다 후보를 고르고, ban.json을 검사·정리한다.
+ * IP DB 후보 계산 (build-db.ts). 내려받은 구간 목록으로 /16 대역마다 후보를 고르고, ban.json을 검사, 정리한다.
  * 내려받기와 떼어 놓아 테스트에서 불러올 수 있다.
  */
 
@@ -41,7 +41,7 @@ const candidateOf = (kisa: Map<number, string>, asn: Asn | undefined, iso: strin
     if (!iso) return vpn && asn?.org ? {org: asn.org, vpn} : undefined;
 
     const country = COUNTRY_NAME_OVERRIDES[iso] ?? regionName.of(iso) ?? iso;
-    // 해외는 국가만. 일본·중국·VPN은 기관명도 보여 준다.
+    // 해외는 국가만. 일본, 중국, VPN은 기관명도 보여 준다.
     return iso === "JP" || iso === "CN" || vpn ? {org: asn?.org, country, vpn} : {country, vpn};
 };
 
@@ -101,7 +101,7 @@ export const buildCandidates = (asns: Range<Asn>[], countries: Range<string>[], 
 
 // ===== ban.json =====
 
-/** 손으로 고치는 파일이라 형식을 검사한다. 아이디는 앞뒤 공백·빈 값·중복을 빼고, 갤러리와 아이디를 정렬해 diff를 안정시킨다. */
+/** 손으로 고치는 파일이라 형식을 검사한다. 아이디는 앞뒤 공백, 빈 값, 중복을 빼고, 갤러리와 아이디를 정렬해 diff를 안정시킨다. */
 export const normalizeBans = (data: unknown): BanList => {
     if (!isRecord(data)) throw new Error("ban.json은 갤러리 → 아이디 목록 객체여야 합니다.");
 

@@ -81,7 +81,7 @@ describe("mergeBackup", () => {
 });
 
 describe("writeSettings", () => {
-    it("replace는 없는 설정 키를 지우지만 DB·모듈 캐시는 그대로 둔다", async () => {
+    it("replace는 없는 설정 키를 지우지만 DB, 모듈 캐시는 그대로 둔다", async () => {
         await browser.storage.local.set({
             [MODULES]: {a: true},
             [SETTINGS]: {width: 900},
@@ -229,7 +229,7 @@ describe("parseImport", () => {
     });
 
     it("값 형태가 잘못된 키는 던진다", () => {
-        // 차단 목록은 배열이, 메모·설정 객체는 객체가 아닌 값이 오면 그대로 쓰여 이 기기 값을 지운다.
+        // 차단 목록은 배열이, 메모, 설정 객체는 객체가 아닌 값이 오면 그대로 쓰여 이 기기 값을 지운다.
         expect(() => parseImport(`{"${NICK}":42}`)).toThrow("형태가 올바르지 않습니다");
         expect(() => parseImport(`{"${MODULES}":42}`)).toThrow("형태가 올바르지 않습니다");
         expect(() => parseImport(`{"${SETTINGS}":42}`)).toThrow("형태가 올바르지 않습니다");

@@ -39,7 +39,7 @@ const errorOf = (error: unknown): ErrorState => ({
     secret: error instanceof Error && error.message === SECRET_ERROR
 });
 
-// 제목 링크의 첫 텍스트 노드만 읽는다. h1(로고)엔 인라인 스크립트가, 링크 전체엔 마이너·미니 표시가 섞인다.
+// 제목 링크의 첫 텍스트 노드만 읽는다. h1(로고)엔 인라인 스크립트가, 링크 전체엔 마이너, 미니 표시가 섞인다.
 const galName = (): string => document.querySelector(".page_head h2 a")?.firstChild?.textContent?.trim() || "디시인사이드";
 
 // 본문 차단은 차단 모듈 설정을 따르고, 모듈이 꺼져 있으면 가리지 않는다.
@@ -51,7 +51,7 @@ const textBlockOf = (preData: GalleryPreData, postInfo: PostInfo): PostInfo["tex
     return block && postInfo.writeText !== undefined && isBlocked("TEXT", postInfo.writeText, preData.gallery) ? blockMode(block) : undefined;
 };
 
-/** 받은 지 1분 안의 캐시 본문과 그 나이(ms). 댓글 보존·추천이 항목을 다시 저장해 수명을 늘리므로 받은 시각으로 본다. */
+/** 받은 지 1분 안의 캐시 본문과 그 나이(ms). 댓글 보존, 추천이 항목을 다시 저장해 수명을 늘리므로 받은 시각으로 본다. */
 const cachedPost = (preData: GalleryPreData): { post: PostInfo; age: number } | undefined => {
     const entry = getEntry(preData);
     const age = Date.now() - (entry?.fetchedAt ?? 0);
@@ -60,8 +60,8 @@ const cachedPost = (preData: GalleryPreData): { post: PostInfo; age: number } | 
 
 /**
  * 이 시간(ms) 안에 받은 댓글은 글을 다시 열어도 다시 받지 않는다.
- * 댓글은 쪽마다 요청이라, 열고 닫기·PageUp/Down으로 같은 글을 오갈 때마다 받으면 몇 초 만에 요청이 수십 개 몰려 임시 차단된다.
- * 새로고침 버튼·자동 새로고침은 이와 상관없이 받는다.
+ * 댓글은 쪽마다 요청이라, 열고 닫기, PageUp/Down으로 같은 글을 오갈 때마다 받으면 몇 초 만에 요청이 수십 개 몰려 임시 차단된다.
+ * 새로고침 버튼, 자동 새로고침은 이와 상관없이 받는다.
  */
 const COMMENTS_REUSE = 10_000;
 
@@ -87,7 +87,7 @@ const controller = (ctx: Ctx) => {
     let savedHistory: SavedHistory | null = null;
     let refreshTimer = 0;
     let confirmPress = createDoublePress(1000);
-    // 우클릭 누름·미니·열기·미리 받기가 같이 쓰는 본문 요청 하나. 다른 글을 받으면 앞 요청을 끊어 연타해도 쌓이지 않는다.
+    // 우클릭 누름, 미니, 열기, 미리 받기가 같이 쓰는 본문 요청 하나. 다른 글을 받으면 앞 요청을 끊어 연타해도 쌓이지 않는다.
     let pending: { key: string; ctrl: AbortController; post: Promise<PostInfo> } | null = null;
 
     // 받은 글 객체마다 정화한 본문. 같은 글을 다시 열거나 미니로 볼 때 큰 본문을 다시 정화하지 않는다.
@@ -158,7 +158,7 @@ const controller = (ctx: Ctx) => {
     let shownSeq = 0;
     // 받는 중인 댓글 요청 수. 응답이 느릴 때 자동 갱신이 요청을 겹쳐 보내지 않게 한다.
     let pulling = 0;
-    // 마지막으로 그린 댓글 원본 (보존 처리까지 마친 것). 차단 목록·방식이 바뀌면 다시 받지 않고 이것으로 다시 가린다.
+    // 마지막으로 그린 댓글 원본 (보존 처리까지 마친 것). 차단 목록, 방식이 바뀌면 다시 받지 않고 이것으로 다시 가린다.
     // raw는 source를 만든 받은 목록이다. 같은 목록을 다시 받으면 다시 그리지 않는다.
     let shown: { signal: number; source: DcinsideComment[]; raw: DcinsideComment[] } | null = null;
     // 갤러리마다 마지막으로 받은 댓글 허용(멤버만 댓글이면 false). 댓글 0개 글은 댓글을 받지 않아 이 값을 쓴다.
@@ -168,7 +168,7 @@ const controller = (ctx: Ctx) => {
     ctx.addCleanup(() => window.clearTimeout(freshTimer));
 
     /**
-     * 댓글을 지금 차단 설정·글댓비로 가공한다. processComments는 처음 쓸 때 불러온 것을 받는다.
+     * 댓글을 지금 차단 설정, 글댓비로 가공한다. processComments는 처음 쓸 때 불러온 것을 받는다.
      * 새로 가공한 댓글 중 지금 그린 것과 같은 댓글은 그린 객체를 그대로 쓴다. 자동 새로고침으로 하나만 늘어도 전부 새 객체면 댓글 전부를 다시 그린다.
      * 음성 댓글은 voice가 매번 새 객체라 다시 그린다.
      */
@@ -190,8 +190,8 @@ const controller = (ctx: Ctx) => {
 
     /**
      * 댓글을 받아 가공해 그린다. skip이면 받지 않고 빈 목록으로 처리한다 (보존해 둔 댓글은 삭제된 것으로 나온다).
-     * given(미리 받은 목록·캐시의 지난 목록)이 있으면 그것을 그리고, 미리 받기가 비었거나 실패하면 다시 받는다.
-     * 미리 받기도 여기서 기다려야 순번·pulling이 지금 잡혀, 늦게 온 옛 목록이 그사이 새로고침한 목록을 덮지 않는다.
+     * given(미리 받은 목록, 캐시의 지난 목록)이 있으면 그것을 그리고, 미리 받기가 비었거나 실패하면 다시 받는다.
+     * 미리 받기도 여기서 기다려야 순번, pulling이 지금 잡혀, 늦게 온 옛 목록이 그사이 새로고침한 목록을 덮지 않는다.
      * cached: given이 캐시의 지난 목록이라 받은 시각을 갱신하지 않는다.
      */
     const pullComments = async (
@@ -204,7 +204,7 @@ const controller = (ctx: Ctx) => {
         pulling++;
 
         try {
-            // 댓글 가공(정화·차단)은 파일 위에서 정적으로 들어 와 있다. 파이어폭스는 콘텐츠 스크립트의 늦은
+            // 댓글 가공(정화, 차단)은 파일 위에서 정적으로 들어 와 있다. 파이어폭스는 콘텐츠 스크립트의 늦은
             // 동적 import(청크)를 페이지를 다시 읽은 직후에 못 읽는다.
             // 건너뛸 때는 이 갤러리에서 받아 둔 댓글 허용(멤버만 댓글)을 쓴다. 건너뛰는 쪽이 아는 갤러리만 건너뛴다.
             const [{list: raw, allowReply, truncated}] = await Promise.all([
@@ -219,7 +219,7 @@ const controller = (ctx: Ctx) => {
 
             // 보존 기록은 받을 때마다 갱신해야 하므로 prepareComments는 같은 목록이어도 부른다.
             const source = prepareComments(raw, preData, ctx.settings.archiveArticle, truncated);
-            // 자동 새로고침으로 같은 목록을 다시 받았으면 정화·다시 그리기를 건너뛴다. 댓글이 수백 개면 정화만 수십 ms다.
+            // 자동 새로고침으로 같은 목록을 다시 받았으면 정화, 다시 그리기를 건너뛴다. 댓글이 수백 개면 정화만 수십 ms다.
             if (!skip && shown?.signal === mySignal && sameComments(raw, shown.raw)) {
                 if (store.getState().allowReply !== allowReply) store.setState({allowReply});
                 return;
@@ -242,14 +242,14 @@ const controller = (ctx: Ctx) => {
         }
     };
 
-    // 열린 창에도 차단 목록·방식 변경을 바로 반영한다. 버블에서 차단하면 그 사람 댓글이 곧바로 가려진다.
+    // 열린 창에도 차단 목록, 방식 변경을 바로 반영한다. 버블에서 차단하면 그 사람 댓글이 곧바로 가려진다.
     // 글댓비는 사용자마다 하나씩 도착해 각각 재가공을 일으키므로(200명이면 200번) 100ms 창마다 한 번으로 묶는다.
     // 첫 요청에서 타이머를 걸고 늦추지 않으므로(throttle) 도착이 길게 이어져도 창마다 한 번씩 반영된다.
     const reapplyBlocks = async (): Promise<void> => {
         const {visible, preData, signalId} = store.getState();
         if (!visible || !preData) return;
 
-        // 댓글 재가공(정화·차단)은 파일 위에서 정적으로 들어 와 있다.
+        // 댓글 재가공(정화, 차단)은 파일 위에서 정적으로 들어 와 있다.
         // signalId가 바뀐 갈래는 s를 그대로 돌려 알림을 일으키지 않는다 (zustand는 Object.is로 거른다). {}를 돌려도
         // 새 상태로 쳐 댓글 수천 개의 selector가 죄다 다시 평가된다.
         store.setState((s) => (s.signalId !== signalId ? s : {
@@ -272,7 +272,7 @@ const controller = (ctx: Ctx) => {
     ctx.addCleanup(useBlocksStore.subscribe((state, previous) => {
         if (state.entries !== previous.entries || state.defaults !== previous.defaults) scheduleReapplyBlocks();
     }));
-    // 차단 모듈의 켜짐·설정 중 가공 결과(processComments·textBlockOf)가 읽는 값만 본다. '가린 내용 보기'(blockRevealed·blurReveal)는 창과 댓글 목록이
+    // 차단 모듈의 켜짐, 설정 중 가공 결과(processComments, textBlockOf)가 읽는 값만 본다. '가린 내용 보기'(blockRevealed, blurReveal)는 창과 댓글 목록이
     // 직접 구독하므로, 켜고 끌 때마다 댓글 수백 개를 다시 가공해 모두 다시 그리지 않는다. 모듈 설정은 하나만 바뀌어도 새 객체라 값으로 비교한다.
     let blockKey = blockKeyOf(runningModuleSettings("block"));
     const onBlockChange = (): void => {
@@ -283,7 +283,7 @@ const controller = (ctx: Ctx) => {
     };
     ctx.addCleanup(moduleSettingsStore.subscribe(onBlockChange));
     ctx.addCleanup(runningModulesStore.subscribe(onBlockChange));
-    // 깡계 가림(userinfo의 글댓비·깡계 설정)이 바뀌면 다시 가공한다. 글댓비는 새 글마다 받으므로, 열린 글 댓글의 깡계 판정이 달라질 때만 한다.
+    // 깡계 가림(userinfo의 글댓비, 깡계 설정)이 바뀌면 다시 가공한다. 글댓비는 새 글마다 받으므로, 열린 글 댓글의 깡계 판정이 달라질 때만 한다.
     ctx.addCleanup(useUiStore.subscribe(({ratios}, previous) => {
         if (ratios === previous.ratios || !shown) return;
         if (shown.source.some((comment) => lowActivityOf(ratios, comment.user_id) !== lowActivityOf(previous.ratios, comment.user_id))) scheduleReapplyBlocks();
@@ -340,7 +340,7 @@ const controller = (ctx: Ctx) => {
         let archived: boolean;
 
         // 본문을 받아야 하고 목록에 댓글이 보이는 글이면 댓글도 함께 요청한다. e_s_n_o는 갤러리마다 같아 이 페이지 값을 쓰고,
-        // 본문의 값과 맞을 때만 결과를 쓴다. PageUp/Down·스크롤로 넘길 때는 지나가는 글마다 요청이 나가므로 하지 않는다.
+        // 본문의 값과 맞을 때만 결과를 쓴다. PageUp/Down, 스크롤로 넘길 때는 지나가는 글마다 요청이 나가므로 하지 않는다.
         const esno = document.querySelector<HTMLInputElement>("#e_s_n_o")?.value;
         // 방금 받은 댓글(COMMENTS_REUSE)은 그대로 쓰고 다시 받지 않는다. 캐시를 끄면 늘 받는다.
         const recent = ctx.settings.disableCache ? undefined : recentComments(preData);
@@ -390,8 +390,8 @@ const controller = (ctx: Ctx) => {
             }
         }
 
-        // PageUp/Down·스크롤로 넘겼으면 같은 방향 다음 글의 본문을 미리 받는다. 댓글은 열 때 받는다.
-        // 받는 중인 요청(새로고침 버튼·미니 등)이 있으면 미리 받지 않는다. 미리 받으면 그 요청이 끊긴다.
+        // PageUp/Down, 스크롤로 넘겼으면 같은 방향 다음 글의 본문을 미리 받는다. 댓글은 열 때 받는다.
+        // 받는 중인 요청(새로고침 버튼, 미니 등)이 있으면 미리 받지 않는다. 미리 받으면 그 요청이 끊긴다.
         if (dir && !ctx.settings.disableCache && store.getState().signalId === mySignal) {
             const next = adjacentPreData(preData, dir);
             if (next && !pending && !cachedPost(next)) void requestPost(next);
@@ -445,15 +445,15 @@ const controller = (ctx: Ctx) => {
     };
 
     // 사용자가 창을 닫으면 창이 열린 동안 건너뛴 목록 새로고침을 곧바로 한다.
-    // 삭제·차단 뒤에 닫을 때는 refresh의 reload가 어차피 다시 받으므로 close를 그대로 부른다 (같이 부르면 목록을 두 번 받는다).
+    // 삭제, 차단 뒤에 닫을 때는 refresh의 reload가 어차피 다시 받으므로 close를 그대로 부른다 (같이 부르면 목록을 두 번 받는다).
     const dismiss = (fromHistory = false) => {
         close(fromHistory);
         getModuleApi("refresh")?.catchUp();
     };
 
-    /** dir: PageUp/Down·스크롤로 넘긴 방향. 그 방향 다음 글을 미리 받는다. */
+    /** dir: PageUp/Down, 스크롤로 넘긴 방향. 그 방향 다음 글을 미리 받는다. */
     const open = (preData: GalleryPreData, commentsOnly = false, historySkip = false, dir = 0) => {
-        // 대기·요청 중인 미니가 전체 미리보기 위에 뜨지 않게 한다.
+        // 대기, 요청 중인 미니가 전체 미리보기 위에 뜨지 않게 한다.
         mini.onMiniLeave();
 
         const st = store.getState();
@@ -506,7 +506,7 @@ const controller = (ctx: Ctx) => {
             document.title = newTitle;
         }
 
-        // 설정이 꺼져 있어도 타이머는 돌려, 열린 사이 바꾼 설정(켜고 끄기·간격)을 다음 차례부터 따른다.
+        // 설정이 꺼져 있어도 타이머는 돌려, 열린 사이 바꾼 설정(켜고 끄기, 간격)을 다음 차례부터 따른다.
         // 실패(임시 차단 등)가 이어지면 목록 새로고침처럼 주기를 두 배씩 늘린다 (최대 1분). 같은 주기로 보내면 차단이 길어진다.
         // 다음 타이머는 요청이 끝난 뒤, 같은 글이 열려 있을 때만 잡는다.
         let failures = 0;
@@ -531,11 +531,11 @@ const controller = (ctx: Ctx) => {
         if (!st.preData || managing) return;
 
         const target = st.preData;
-        // 응답 전에 다른 글로 넘어갔으면 공지·개념글 표시는 바꾸지 않고 알림만 띄운다.
+        // 응답 전에 다른 글로 넘어갔으면 공지, 개념글 표시는 바꾸지 않고 알림만 띄운다.
         const stillOpen = (): boolean => store.getState().signalId === st.signalId;
         managing = true;
 
-        // 바뀐 공지·개념글 상태를 글 정보와 지금 기록에 넣는다. 다른 글로 넘어갔다 뒤로 가기로 돌아오면
+        // 바뀐 공지, 개념글 상태를 글 정보와 지금 기록에 넣는다. 다른 글로 넘어갔다 뒤로 가기로 돌아오면
         // 기록에 남은 옛 상태로 버튼이 반대로 보여, 두 번 누르면 반대 요청이 나간다.
         const toggled = (field: "notice" | "recommend", value: boolean): void => {
             const preData = {...target, [field]: value};
@@ -663,13 +663,13 @@ const controller = (ctx: Ctx) => {
             savedHistory = back;
             whenDomReady(() => open(preData, false, true), ctx.signal);
         } else if (navigation instanceof PerformanceNavigationTiming && navigation.type === "back_forward" && document.readyState !== "complete") {
-            // 문서를 불러오는 중일 때만 옮긴다. 미리보기를 끈 채 연 글 페이지에서 나중에 켜면(팝업·옵션·bfcache 동기화) setup이 다시 도는데,
+            // 문서를 불러오는 중일 때만 옮긴다. 미리보기를 끈 채 연 글 페이지에서 나중에 켜면(팝업, 옵션, bfcache 동기화) setup이 다시 도는데,
             // 탐색 종류는 그대로 back_forward라 읽던 글이 목록으로 바뀌고 쓰던 댓글이 날아간다.
             // 주소를 못 바꿨으면 다시 불러와도 글 페이지 그대로라 새로고침하지 않는다.
             if (replaceEntry({...entry, reopen: true}, back.url)) location.reload();
         } else if (navigation instanceof PerformanceNavigationTiming && (navigation.type === "reload" || navigation.type === "back_forward")) {
             // 새로고침했거나 다 불러온 뒤에 미리보기를 켠 글 페이지는 이제 진짜 글 항목이다. 미리보기 표시를 지운다.
-            // 남겨 두면 목록으로 뒤로 갔다 앞으로 올 때 bfcache가 없으면 위 back_forward로 다시 목록·미리보기가 된다.
+            // 남겨 두면 목록으로 뒤로 갔다 앞으로 올 때 bfcache가 없으면 위 back_forward로 다시 목록, 미리보기가 된다.
             replaceEntry(null);
         }
     }

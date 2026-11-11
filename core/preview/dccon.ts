@@ -54,7 +54,7 @@ export const fetchDcconPackage = async (code: string, signal?: AbortSignal): Pro
     return response;
 };
 
-/** 캐시에 있으면 캐시, 없으면 받아서 담는다. 버블·정보 창이 이미 받아 둔 패키지를 차단할 때 다시 받지 않는다. */
+/** 캐시에 있으면 캐시, 없으면 받아서 담는다. 버블, 정보 창이 이미 받아 둔 패키지를 차단할 때 다시 받지 않는다. */
 export const getDcconPackage = async (code: string, signal?: AbortSignal): Promise<DcinsideDcconPackage> => {
     const cached = dcconPackages.get(code);
     if (cached) return cached;

@@ -9,7 +9,7 @@ export default defineConfig({
     modules: ["@wxt-dev/auto-icons"],
     vite: () => ({
         plugins: [
-            // Tailwind의 자체 최적화는 대상 브라우저가 고정(Chrome 111·Firefox 128)이라 CSS 중첩을 풀고 접두어를 붙인다.
+            // Tailwind의 자체 최적화는 대상 브라우저가 고정(Chrome 111, Firefox 128)이라 CSS 중첩을 풀고 접두어를 붙인다.
             // 끄고 Vite의 압축(lightningcss)이 아래 cssTarget, 곧 manifest의 최소 버전에 맞추게 한다.
             tailwindcss({optimize: false})
         ],
@@ -21,13 +21,13 @@ export default defineConfig({
                 // 파일은 20KB쯤 커진다.
                 output: {minify: {compress: true, mangle: true, codegen: {asciiOnly: true}}}
             },
-            // 최소 버전(Chrome 140·Firefox 144)은 modulepreload를 지원해 Vite의 polyfill이 필요 없다.
+            // 최소 버전(Chrome 140, Firefox 144)은 modulepreload를 지원해 Vite의 polyfill이 필요 없다.
             modulePreload: {polyfill: false}
         }
     }),
     hooks: {
-        // components·utils 자동 import 스캔은 제네릭 타입 인자(V 등)를 export로 잘못 읽어 경고만 낸다. 직접 import하므로 끈다.
-        // imports.dirs는 기본값과 합쳐지므로 여기서 비운다. WXT API(defineContentScript·browser 등) 자동 import는 남는다.
+        // components, utils 자동 import 스캔은 제네릭 타입 인자(V 등)를 export로 잘못 읽어 경고만 낸다. 직접 import하므로 끈다.
+        // imports.dirs는 기본값과 합쳐지므로 여기서 비운다. WXT API(defineContentScript, browser 등) 자동 import는 남는다.
         "config:resolved": (wxt) => {
             if (wxt.config.imports) wxt.config.imports.dirs = [];
         },
@@ -54,7 +54,7 @@ export default defineConfig({
         return {
             name: "DCRefresher Reborn",
             // 코드가 쓰는 API 중 가장 늦게 들어온 것에 맞춘다 (빌드가 바꿔 주지 않는다).
-            // Chrome 140: Uint8Array의 toBase64·fromBase64(백업·IP DB). Firefox 144: storage.local.getBytesInUse(정보 탭), getKeys(143).
+            // Chrome 140: Uint8Array의 toBase64, fromBase64(백업, IP DB). Firefox 144: storage.local.getBytesInUse(정보 탭), getKeys(143).
             // 다른 브라우저의 키는 알 수 없는 키라 manifest 경고로 남으므로 그 브라우저에만 넣는다.
             ...(firefox
                 ? {
@@ -70,7 +70,7 @@ export default defineConfig({
                 }
                 : {minimum_chrome_version: "140"}),
             // 이미지 차단(features/block/background.ts)이 본문 이미지를 다시 받지 않고 읽는 데 쓴다.
-            // 크롬은 CORS 헤더를 붙이는 규칙, 파이어폭스는 응답 스트림 필터다. 둘 다 설치·업데이트 때 묻지 않는 권한이다.
+            // 크롬은 CORS 헤더를 붙이는 규칙, 파이어폭스는 응답 스트림 필터다. 둘 다 설치, 업데이트 때 묻지 않는 권한이다.
             permissions: ["alarms", "contextMenus", "storage", "scripting", "unlimitedStorage",
                           ...(firefox ? ["declarativeNetRequest"] : ["declarativeNetRequestWithHostAccess"])],
             host_permissions: ["https://*.dcinside.com/*"],

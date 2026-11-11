@@ -45,7 +45,7 @@ afterEach(() => {
 });
 
 describe("작성자 칸 판정", () => {
-    it("닉네임·아이디로 막은 행을 숨긴다", async () => {
+    it("닉네임, 아이디로 막은 행을 숨긴다", async () => {
         setBlockLists({NICK: [entry("도배")]});
         await start();
         expect(hidden()).toEqual(["1"]);
@@ -114,7 +114,7 @@ describe("작성자 칸 판정", () => {
     });
 });
 
-describe("대댓글·디시콘", () => {
+describe("대댓글, 디시콘", () => {
     const comments = (): void => {
         document.body.innerHTML = "<ul class=\"cmt_list\">" +
             "<li class=\"ub-content\" id=\"comment_li_1\"><span class=\"ub-writer\" data-nick=\"도배\" data-uid=\"\" data-ip=\"\"></span></li>" +
@@ -148,8 +148,8 @@ describe("대댓글·디시콘", () => {
     });
 });
 
-describe("보기 방식·가린 내용 보기", () => {
-    it("블러 강도·마우스 오버 보기를 <html>에 건다", async () => {
+describe("보기 방식, 가린 내용 보기", () => {
+    it("블러 강도, 마우스 오버 보기를 <html>에 건다", async () => {
         const {change} = await start({blur: true, blurStrength: 7});
         const root = document.documentElement;
         expect(root.style.getPropertyValue("--refresher-blur")).toBe("7px");

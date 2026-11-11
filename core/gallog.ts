@@ -34,7 +34,7 @@ type ActivityListener = (uid: string, activity: GallogActivity) => void;
 const listeners = new Set<ActivityListener>();
 
 /**
- * 갤로그에서 새로 받은 글/댓글 수를 알린다 (캐시에서 꺼낸 값은 알리지 않는다). 글댓비(userinfo)가 미리보기·버블이 받은 값도 저장한다.
+ * 갤로그에서 새로 받은 글/댓글 수를 알린다 (캐시에서 꺼낸 값은 알리지 않는다). 글댓비(userinfo)가 미리보기, 버블이 받은 값도 저장한다.
  * 기다리던 쪽보다 먼저 불린다. 해제 함수를 돌려준다.
  */
 export const onGallogActivity = (listener: ActivityListener): (() => void) => {
@@ -44,7 +44,7 @@ export const onGallogActivity = (listener: ActivityListener): (() => void) => {
 
 /**
  * 캐시를 거친 갤로그 글/댓글 수. 실패하면 undefined다.
- * 유저 버블·미리보기(useGallogActivity)와 글댓비(userinfo)가 같이 써서 같은 사람을 두 번 묻지 않는다.
+ * 유저 버블, 미리보기(useGallogActivity)와 글댓비(userinfo)가 같이 써서 같은 사람을 두 번 묻지 않는다.
  */
 export const getGallogActivity = (uid: string): Promise<GallogActivity | undefined> => {
     let request = activityCache.get(uid);

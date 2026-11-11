@@ -25,7 +25,7 @@ type RestoreMode = "replace" | "merge";
 
 const RESTORE_DESCRIPTIONS: Record<RestoreMode, string> = {
     replace: "현재 설정과 차단/메모 목록을 고른 백업으로 통째로 교체합니다. 백업에 없는 항목은 지워집니다.",
-    merge: "현재 설정과 목록은 그대로 두고, 백업에만 있는 차단·메모와 설정을 더합니다. 겹치면 현재 것을 남깁니다."
+    merge: "현재 설정과 목록은 그대로 두고, 백업에만 있는 차단, 메모와 설정을 더합니다. 겹치면 현재 것을 남깁니다."
 };
 
 export function DataTab() {
@@ -185,7 +185,7 @@ export function DataTab() {
             label: "백업",
             run: backupCloud
         },
-        cloudClear: {title: `클라우드에 올라간 수동·자동 백업을 모두 지울까요?${autoBackup ? " 자동 백업도 꺼집니다." : ""}`, label: "삭제", run: clearCloud},
+        cloudClear: {title: `클라우드에 올라간 수동, 자동 백업을 모두 지울까요?${autoBackup ? " 자동 백업도 꺼집니다." : ""}`, label: "삭제", run: clearCloud},
         auto: {
             title: `자동 백업을 켜면 ${cloud?.auto?.other ? "다른 기기에서 올린 " : ""}${formatTime(cloud?.auto?.createdAt ?? 0)} 자동 백업을 이 기기의 설정으로 덮어씁니다. 켤까요?`,
             label: "켜기",
@@ -195,7 +195,7 @@ export function DataTab() {
 
     return (
         <div>
-            <Section title="IP/밴 데이터베이스" desc={`버전: ${version.trim() || "없음"} · 마지막 확인: ${formatTime(lastUpdate)}`}
+            <Section title="IP/밴 데이터베이스" desc={`버전: ${version.trim() || "없음"}, 마지막 확인: ${formatTime(lastUpdate)}`}
                      actions={
                          <Button variant="secondary" disabled={loading} onClick={() => void forceUpdate()}>
                              <RefreshCw data-icon="inline-start"/> 지금 갱신
@@ -215,7 +215,7 @@ export function DataTab() {
                 }
             >
                 <p className="mb-3 text-muted-foreground">
-                    수동 백업: {formatTime(cloud?.manual?.createdAt ?? 0)} · 자동 백업: {formatTime(cloud?.auto?.createdAt ?? 0)}
+                    수동 백업: {formatTime(cloud?.manual?.createdAt ?? 0)}, 자동 백업: {formatTime(cloud?.auto?.createdAt ?? 0)}
                 </p>
                 {/* 복원 버튼을 Trigger로 둬야 닫을 때 그 버튼으로 포커스가 돌아온다. */}
                 <Dialog open={restoreOpen} onOpenChange={setRestoreOpen}>
@@ -284,7 +284,7 @@ export function DataTab() {
 
             {undo && (
                 <Section title="되돌리기"
-                         desc={`마지막 초기화·복원·가져오기·되돌리기(${formatTime(undo.createdAt)}) 직전의 설정과 차단/메모 목록으로 돌아갑니다. 그 뒤에 바꾼 것은 사라집니다.`}
+                         desc={`마지막 초기화, 복원, 가져오기, 되돌리기(${formatTime(undo.createdAt)}) 직전의 설정과 차단/메모 목록으로 돌아갑니다. 그 뒤에 바꾼 것은 사라집니다.`}
                          actions={
                              <Button variant="secondary" disabled={loading} onClick={() => void revert()}>
                                  <Undo2 data-icon="inline-start"/> 되돌리기

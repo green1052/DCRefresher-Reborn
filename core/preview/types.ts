@@ -6,7 +6,7 @@ export const BLOCK_DAYS = {"1": "1시간", "6": "6시간", "24": "1일", "168": 
 export type BlockDay = keyof typeof BLOCK_DAYS;
 
 /**
- * 관리 API의 차단 사유. DC 글·댓글 차단 창(update_avoid_list)의 avoid_reason 값과 같다.
+ * 관리 API의 차단 사유. DC 글, 댓글 차단 창(update_avoid_list)의 avoid_reason 값과 같다.
  * "0"은 직접 입력이다. 8(허위사실 적시)은 프로필 차단 창에만 있어 넣지 않는다.
  * 객체로 두면 "0"이 맨 앞으로 오므로 순서대로 배열에 둔다.
  */
@@ -68,9 +68,9 @@ export interface PostInfo {
     recommendCode?: string;
     /** 본문 텍스트 (.write_div). 본문 차단 검사를 정화한 contents가 아니라 페이지와 같은 텍스트로 하려고 둔다. */
     writeText?: string;
-    /** 댓글·글자콘 쓰기에 보내는 그 글의 폼 값. */
+    /** 댓글, 글자콘 쓰기에 보내는 그 글의 폼 값. */
     commentForm: CommentForm;
-    /** 비밀번호 댓글 삭제 폼(#_cmt_del_form_)의 숨은 input들. [이름, 값]. 이름·값 모두 글마다 무작위다. */
+    /** 비밀번호 댓글 삭제 폼(#_cmt_del_form_)의 숨은 input들. [이름, 값]. 이름, 값 모두 글마다 무작위다. */
     commentDeleteFields?: [string, string][];
 }
 
@@ -87,7 +87,7 @@ export interface CommentForm {
     checks: Record<string, string>;
     /** 갤닉 입력칸(#use_gall_nick)이 있으면 #gall_nick_name의 값, 없으면 undefined다. */
     gallNickName?: string;
-    /** 글 페이지의 window._TS_CMT_. 있으면 댓글·디시콘·글자콘에 Turnstile 칸을 붙여 보낸다 (디시 comment.js의 ts_cmt_fields). */
+    /** 글 페이지의 window._TS_CMT_. 있으면 댓글, 디시콘, 글자콘에 Turnstile 칸을 붙여 보낸다 (디시 comment.js의 ts_cmt_fields). */
     turnstile?: TurnstileConfig;
 }
 
@@ -182,7 +182,7 @@ export interface DcinsideComment {
 
 export interface CommentListResponse {
     list: DcinsideComment[];
-    /** 댓글·답글 쓰기 허용 (allow_reply). 멤버만 댓글을 쓰는 갤러리면 false다. */
+    /** 댓글, 답글 쓰기 허용 (allow_reply). 멤버만 댓글을 쓰는 갤러리면 false다. */
     allowReply: boolean;
     /** 10쪽(1000개)을 넘어 오래된 댓글을 받지 못했는지. */
     truncated?: boolean;

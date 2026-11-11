@@ -1,11 +1,11 @@
 /**
  * KISA 기관명을 IP 배지에 맞게 줄인다 (build-db.ts). 순서는 법인 표기 빼기 → 통째로 바꿀 이름(PRESETS) →
- * 영문 약자를 한글로 적은 앞부분(PREFIXES) → 지역·학교·보험 이름 규칙(RULES)이다. 위키 "IP·갱차 DB"에 예가 있다.
+ * 영문 약자를 한글로 적은 앞부분(PREFIXES) → 지역, 학교, 보험 이름 규칙(RULES)이다. 위키 "IP, 갱차 DB"에 예가 있다.
  */
 
 /** 널리 쓰는 이름이 따로 있는 기관 (법인 표기를 뺀 이름 → 표시 이름). */
 const PRESETS: Record<string, string> = {
-    // 통신·방송.
+    // 통신, 방송.
     에스케이텔레콤: "SKT",
     엘지유플러스: "LG U+",
     네이트커뮤니케이션즈: "네이트",
@@ -104,7 +104,7 @@ const PRESETS: Record<string, string> = {
     한국전자통신연구원: "ETRI",
     한국과학기술연구원: "KIST",
     기초과학연구원: "IBS",
-    // 학교·병원.
+    // 학교, 병원.
     한국과학기술원: "KAIST",
     광주과학기술원: "GIST",
     울산과학기술원: "UNIST",
@@ -182,7 +182,7 @@ export const shortenOrg = (name: string): string => {
     const base = name.replace(LEGAL_FORMS, "").replace(/\s+/g, " ").trim();
     if (!base) return name;
 
-    // 기관 이름이 constructor·toString이면 프로토타입의 함수가 잡힌다.
+    // 기관 이름이 constructor, toString이면 프로토타입의 함수가 잡힌다.
     if (Object.hasOwn(PRESETS, base)) return PRESETS[base]!;
 
     const prefix = PREFIXES.find(([from]) => base.startsWith(from));

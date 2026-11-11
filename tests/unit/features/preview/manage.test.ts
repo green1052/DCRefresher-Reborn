@@ -9,7 +9,7 @@ import {usePreviewStore} from "@/features/preview/ui/previewStore";
 import {preData as makePreData} from "../../../helpers";
 import {type Running, runModule} from "../module";
 
-// 관리 요청은 테스트가 resolve로 끝낸다. 본문·댓글은 바로 준다.
+// 관리 요청은 테스트가 resolve로 끝낸다. 본문, 댓글은 바로 준다.
 const pending = vi.hoisted(() => ({resolves: [] as ((result: ManageResult) => void)[]}));
 const request = vi.hoisted(() => {
     const manage = () => new Promise<ManageResult>((resolve) => pending.resolves.push(resolve));

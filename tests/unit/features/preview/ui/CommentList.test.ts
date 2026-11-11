@@ -57,7 +57,7 @@ describe("mentionTarget", () => {
         comment(5, {c_no: "3", depth: 1, name: "유동", ip: "3.3"})
     ];
 
-    it("유동 멘션은 누른 댓글보다 앞선 같은 닉·IP의 가장 최근 댓글로 간다", () => {
+    it("유동 멘션은 누른 댓글보다 앞선 같은 닉, IP의 가장 최근 댓글로 간다", () => {
         expect(mentionTarget(comments, "5", "@유동(1.1)")?.no).toBe("3");
     });
 

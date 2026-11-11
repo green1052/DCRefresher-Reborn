@@ -38,7 +38,7 @@ describe("isSimilar", () => {
 describe("imageFingerprints", () => {
     const WIDTH = 64;
     const HEIGHT = 48;
-    // 그린 것(프레임·비트맵)이 그대로 내놓을 화소. 오른쪽으로 밝아지면 dHash가 모두 1, 왼쪽으로 밝아지면 모두 0이다.
+    // 그린 것(프레임, 비트맵)이 그대로 내놓을 화소. 오른쪽으로 밝아지면 dHash가 모두 1, 왼쪽으로 밝아지면 모두 0이다.
     const PATTERNS = {
         right: image(WIDTH, HEIGHT, (x) => [x * 4, x * 4, x * 4]),
         left: image(WIDTH, HEIGHT, (x) => [255 - x * 4, 255 - x * 4, 255 - x * 4]),
@@ -111,7 +111,7 @@ describe("imageFingerprints", () => {
     });
 
     it("움직이는 gif는 정해 둔 시각마다 그 시각을 덮는 프레임을 읽고, 고른 장면은 뺀다", async () => {
-        // 0초·0.505초·1.505초·3.005초를 덮는 프레임: right, flat(뺌), left, right. 마지막 프레임은 시각을 지나 읽지 않는다.
+        // 0초, 0.505초, 1.505초, 3.005초를 덮는 프레임: right, flat(뺌), left, right. 마지막 프레임은 시각을 지나 읽지 않는다.
         frames = [[0.5, "right"], [0.5, "flat"], [1, "left"], [2, "right"], [1, "left"]];
         expect(dHashes(await imageFingerprints(file("GIF89a")))).toEqual(["f".repeat(16), "0".repeat(16), "f".repeat(16)]);
         expect(decodedType).toBe("image/gif");

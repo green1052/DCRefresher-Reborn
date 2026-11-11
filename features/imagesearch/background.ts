@@ -10,7 +10,7 @@ const MENU_PREFIX = "imagesearch:";
 const imageSearchUrl = (engine: string, src: string): string | null => {
     if (!arrayIncludes(ENGINE_IDS, engine) || !src.includes("viewimage.php")) return null;
 
-    // 디시콘 주소(image.dcinside.com/dccon.php)로 바꾼다. 호스트·경로만 바꾸고 쿼리는 그대로 둔다.
+    // 디시콘 주소(image.dcinside.com/dccon.php)로 바꾼다. 호스트, 경로만 바꾸고 쿼리는 그대로 둔다.
     const url = new URL(src);
     url.host = "image.dcinside.com";
     url.pathname = "/dccon.php";

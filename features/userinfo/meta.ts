@@ -21,7 +21,7 @@ export const BADGE_COLORS = {
 
 export type BadgeColor = keyof typeof BADGE_COLORS;
 
-const IP_INFO_FILTERS: Record<IpInfoFilter, string> = {all: "전체", foreign: "해외·VPN만", vpn: "VPN만", none: "표시 안 함"};
+const IP_INFO_FILTERS: Record<IpInfoFilter, string> = {all: "전체", foreign: "해외, VPN만", vpn: "VPN만", none: "표시 안 함"};
 
 const LOW_ACTIVITY_ACTIONS = {none: "배지 색만", tag: "[깡계] 표시", blur: "흐리게", hide: "숨기기"};
 

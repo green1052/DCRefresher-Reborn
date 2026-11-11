@@ -8,7 +8,7 @@ import {usePreviewStore} from "@/features/preview/ui/previewStore";
 const image = (src: string, complete: boolean, naturalWidth: number): string =>
     `<img src="${src}" data-complete="${complete}" data-width="${naturalWidth}">`;
 
-/** jsdom은 이미지를 받지 않으므로 data-*에 적은 받기 상태를 complete·naturalWidth로 옮긴다. */
+/** jsdom은 이미지를 받지 않으므로 data-*에 적은 받기 상태를 complete, naturalWidth로 옮긴다. */
 const setLoadState = (root: HTMLElement): void => {
     for (const element of root.querySelectorAll("img")) {
         Object.defineProperty(element, "complete", {value: element.dataset.complete !== "false"});
@@ -60,7 +60,7 @@ describe("clickContents", () => {
         expect(hidden.getAttribute("aria-label")).toBe("이미지 크게 보기");
     });
 
-    it("아직 받지 않은(lazy·받는 중) 이미지도 크게 보기 목록에 넣고, 깨진 이미지만 뺀다", () => {
+    it("아직 받지 않은(lazy, 받는 중) 이미지도 크게 보기 목록에 넣고, 깨진 이미지만 뺀다", () => {
         Element.prototype.checkVisibility = () => true;
         const container = document.createElement("div");
         document.body.append(container);

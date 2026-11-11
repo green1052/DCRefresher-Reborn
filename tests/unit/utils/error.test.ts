@@ -50,7 +50,7 @@ describe("friendlyMessage", () => {
         expect(friendlyMessage(new NetworkError(new Request("https://gall.dcinside.com/")))).toContain("연결하지 못했습니다");
     });
 
-    it("JSON 오류·저장소 한도를 가린다", () => {
+    it("JSON 오류, 저장소 한도를 가린다", () => {
         expect(friendlyMessage(new SyntaxError("Unexpected token"))).toBe("JSON 형식이 올바르지 않습니다.");
         // 크롬의 실제 문구에는 quota도 들어 있어 쓰기 횟수 한도를 용량 한도보다 먼저 본다.
         expect(friendlyMessage(new Error("This request exceeds the MAX_WRITE_OPERATIONS_PER_MINUTE quota."))).toContain("너무 자주");

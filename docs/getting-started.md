@@ -6,14 +6,14 @@
 
 | 항목 | 사용 |
 |------|------|
-| 확장 프레임워크 | [WXT](https://wxt.dev). Chrome·Firefox 모두 MV3. manifest의 최소 버전(Chrome 140, Firefox 144)은 코드가 쓰는 API 중 가장 늦게 들어온 것에 맞춥니다. 빌드가 바꿔 주지 않으므로 더 새 API를 쓰면 `wxt.config.ts`에서 같이 올립니다 |
+| 확장 프레임워크 | [WXT](https://wxt.dev). Chrome, Firefox 모두 MV3. manifest의 최소 버전(Chrome 140, Firefox 144)은 코드가 쓰는 API 중 가장 늦게 들어온 것에 맞춥니다. 빌드가 바꿔 주지 않으므로 더 새 API를 쓰면 `wxt.config.ts`에서 같이 올립니다 |
 | UI | [React](https://react.dev) 19, [shadcn/ui](https://ui.shadcn.com)(Base UI) + [Tailwind CSS](https://tailwindcss.com) v4 |
 | 상태 | zustand |
 | 저장소 | WXT storage (`wxt/utils/storage`) |
 | HTTP | ky |
 | HTML 정화 | DOMPurify (`utils/sanitize.ts`) |
 | 메시징 | @webext-core/messaging |
-| 패키지 관리·실행 | Bun 1.4 이상, Node 25 이상. 단위 테스트와 E2E가 `Uint8Array`의 `toBase64`·`fromBase64`·`toHex`를 써서 Node 24 이하에서는 실패합니다([테스트](testing.md)). `scripts/`는 Bun에서 돌아 Bun API를 씁니다. WXT·Vitest·Playwright는 Node에서 돌므로 빌드 모듈(`modules/`)과 E2E는 Node API를 씁니다 |
+| 패키지 관리, 실행 | Bun 1.4 이상, Node 25 이상. 단위 테스트와 E2E가 `Uint8Array`의 `toBase64`, `fromBase64`, `toHex`를 써서 Node 24 이하에서는 실패합니다([테스트](testing.md)). `scripts/`는 Bun에서 돌아 Bun API를 씁니다. WXT, Vitest, Playwright는 Node에서 돌므로 빌드 모듈(`modules/`)과 E2E는 Node API를 씁니다 |
 | 테스트 | Vitest, Playwright ([테스트](testing.md)) |
 
 ## 명령
@@ -26,24 +26,24 @@ bun run test           # 단위 테스트. test:watch는 지켜보며 다시 돈
 bun run build          # .output/chrome-mv3 (build:firefox는 .output/firefox-mv3)
 bun run e2e            # 빌드하고 E2E. 처음 한 번 bunx playwright install chromium
 bun run e2e:firefox    # 파이어폭스로 빌드하고 E2E. 처음 한 번 bunx playwright install firefox
-bun run e2e:live       # 실제 디시 E2E. 디시 마크업·API가 바뀌었는지 본다 (GitHub Actions의 CI 워크플로에서도 돈다)
+bun run e2e:live       # 실제 디시 E2E. 디시 마크업, API가 바뀌었는지 본다 (GitHub Actions의 CI 워크플로에서도 돈다)
 bun run zip            # 배포용 zip (zip:firefox는 Firefox zip + 소스 zip)
 ```
 
-커밋 전에 `bun run compile`, `bun run test`, `bun run build`가 통과해야 합니다. PR마다 CI(`.github/workflows/ci.yml`)가 타입 검사, 단위 테스트, 크로미엄·파이어폭스 E2E를 돌립니다. 빌드는 E2E 스크립트가 먼저 하므로 따로 돌리지 않습니다. 번들 구성은 로컬에서 `bunx wxt build --analyze`가 만드는 `stats.html`로 봅니다.
+커밋 전에 `bun run compile`, `bun run test`, `bun run build`가 통과해야 합니다. PR마다 CI(`.github/workflows/ci.yml`)가 타입 검사, 단위 테스트, 크로미엄, 파이어폭스 E2E를 돌립니다. 빌드는 E2E 스크립트가 먼저 하므로 따로 돌리지 않습니다. 번들 구성은 로컬에서 `bunx wxt build --analyze`가 만드는 `stats.html`로 봅니다.
 
 ## 코드 규칙
 
 - 반복은 `for...of`를 씁니다 (`forEach` 대신). catch 변수는 `e`, 이벤트 매개변수는 `ev`입니다.
 - 브라우저 기본 기능과 WXT 기능으로 되면 그것을 씁니다. 그다음은 직접 만들지 않고 관리되는 라이브러리를 씁니다(DOMPurify, ky, quick-lru 등). `utils/`에는 라이브러리로 대신할 수 없는 작은 도우미만 둡니다(`typed.ts` 등). 라이브러리 코드는 패치하지 않습니다.
-- 기능 하나를 고칠 때 여러 화면을 건드리지 않도록 모듈 구조를 따릅니다([모듈](modules.md)). 옵션·팝업은 모듈 정의(`meta.ts`의 스키마·`extensionPageVars`·토글 id와 `labels.ts`·`icons.ts`, 페이지의 `pageToggles`)만 보고 그립니다.
+- 기능 하나를 고칠 때 여러 화면을 건드리지 않도록 모듈 구조를 따릅니다([모듈](modules.md)). 옵션, 팝업은 모듈 정의(`meta.ts`의 스키마, `extensionPageVars`, 토글 id와 `labels.ts`, `icons.ts`, 페이지의 `pageToggles`)만 보고 그립니다.
 - 타입은 정확하게 씁니다. 경계에서 `unknown`을 넘기거나 `as`로 덮지 말고 값을 검사해 좁힙니다.
-- 주석은 한국어로, 코드만 봐서는 알 수 없는 이유(디시·브라우저 동작, 순서 제약, 성능 이유)를 적습니다.
+- 주석은 한국어로, 코드만 봐서는 알 수 없는 이유(디시, 브라우저 동작, 순서 제약, 성능 이유)를 적습니다.
   - 문장은 "~다."처럼 마침표로 끝내되 구분선(`// ===== … =====`)과 영어 라벨에는 찍지 않습니다.
-  - 내보내는 함수·상수·타입은 `/** … */`, 코드 안의 설명은 `//`를 씁니다.
+  - 내보내는 함수, 상수, 타입은 `/** … */`, 코드 안의 설명은 `//`를 씁니다.
   - 다른 파일을 가리킬 때는 경로를 적습니다(`core/storage/sync.ts`). 파일을 옮기면 가리키던 주석도 같이 고칩니다.
 - 커밋 메시지는 conventional commits(`feat`, `fix`, `perf`, `refactor`, `docs`, `chore`, `ci` …)를 따릅니다. 이슈 번호는 GitHub 이슈일 때만 적습니다.
 
 ## 다음
 
-[구조](architecture.md)에서 디렉터리·실행 흐름·필터·저장소·스토어를 보고, 기능을 더할 거라면 [모듈](modules.md)의 [새 모듈 만들기](modules.md#새-모듈-만들기-차례대로)로 갑니다.
+[구조](architecture.md)에서 디렉터리, 실행 흐름, 필터, 저장소, 스토어를 보고, 기능을 더할 거라면 [모듈](modules.md)의 [새 모듈 만들기](modules.md#새-모듈-만들기-차례대로)로 갑니다.

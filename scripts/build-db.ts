@@ -1,9 +1,9 @@
 /// <reference types="bun" />
 
 /**
- * IP·밴 DB 만들기. .github/workflows/db.yml이 수·토요일에 돌려 db/ 폴더를 data 브랜치로 올린다.
+ * IP, 밴 DB 만들기. .github/workflows/db.yml이 수, 토요일에 돌려 db/ 폴더를 data 브랜치로 올린다.
  *
- * - ip.json: MaxMind(국가·ASN), VPN 목록, KISA 기관명 → /16 대역마다 유력한 후보 → 확장이 저장하는 형식 (core/ipdb)
+ * - ip.json: MaxMind(국가, ASN), VPN 목록, KISA 기관명 → /16 대역마다 유력한 후보 → 확장이 저장하는 형식 (core/ipdb)
  * - ban.json: 손으로 관리하는 "갤러리 → 아이디 목록". 워크플로가 data 브랜치에서 가져다 두면 검사하고 정리한다.
  */
 
@@ -29,7 +29,7 @@ const KISA_URL = "https://xn--3e0bx5euxnjje69i70af08bea817g.xn--3e0b707e/jsp/bus
 
 /** MMDB의 IPv4 전체를 주소 순으로. 라이브러리에 순회가 없어 네트워크 끝으로 건너뛰며 조회한다. */
 const readMmdb = async <T, V>(edition: string, pick: (record: T) => V | undefined): Promise<Range<V>[]> => {
-    // 수많은 네트워크가 같은 레코드(국가·ASN)를 가리킨다. 디코더 캐시를 주면 같은 디코드를 되풀이하지 않는다.
+    // 수많은 네트워크가 같은 레코드(국가, ASN)를 가리킨다. 디코더 캐시를 주면 같은 디코드를 되풀이하지 않는다.
     const reader = new Reader<T & object>(Buffer.from(await ky.get(MMDB_URL(edition)).arrayBuffer()), {cache: new Map()});
     // 미러가 갱신을 멈추면 크기 검사로는 알 수 없고, 낡은 데이터가 새 버전으로 계속 올라간다. GeoLite는 일주일에 두 번 나온다.
     const age = Date.now() - reader.metadata.buildEpoch.getTime();

@@ -77,7 +77,7 @@ const DcconSummary = ({code, onOpen}: { code: string; onOpen: () => void }) => {
 };
 
 /** 클릭하면 복사되는 값 한 줄. 라벨 폭을 맞춰 값이 한 줄로 늘어서게 하고, 긴 값(IP 후보 등)은 띄어쓰기에서 다음 줄로 넘긴다. onSearch가 있으면 오른쪽에 그 값으로 글을 찾는 버튼을 둔다.
- * color·valueClassName은 값을 배지와 같은 색으로 칠한다. */
+ * color, valueClassName은 값을 배지와 같은 색으로 칠한다. */
 const CopyRow = ({label, value, onCopy, onSearch, color, valueClassName}: {
     label: string;
     value: string;
@@ -131,7 +131,7 @@ type BlockRule = { type: BlockType; entry: BlockEntry };
 
 /**
  * 이 대상을 막고 있는 차단 규칙 목록. 왜 가려졌는지 보여 주고 그 자리에서 풀 수 있게 한다.
- * 허용 목록(불일치·불포함)은 이 대상이 어느 항목에도 맞지 않아 막힌 것이라, 항목을 지워도 풀리지 않고 지운 항목의 사람까지 막히므로 해제를 두지 않는다.
+ * 허용 목록(불일치, 불포함)은 이 대상이 어느 항목에도 맞지 않아 막힌 것이라, 항목을 지워도 풀리지 않고 지운 항목의 사람까지 막히므로 해제를 두지 않는다.
  * 허용 목록은 맞지 않은 항목 전부가 넘어오므로 유형마다 한 줄로 줄인다. 항목마다 그리면 버블이 화면을 넘고(스크롤하면 닫힌다) 해제 버튼이 밀려난다.
  */
 const BlockRules = ({rules, defaults}: { rules: BlockRule[]; defaults: Record<BlockType, DetectMode> }) => {
@@ -214,8 +214,8 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
     const entries = useBlocksStore((s) => s.entries);
     const defaults = useBlocksStore((s) => s.defaults);
     const rules = blockingEntries(selected.dccon ? {DCCON: selected.dccon} : {NICK: selected.nick, ID: selected.uid, IP: selected.ip}, gallery ?? undefined, {entries, defaults});
-    // DB를 읽을 때마다 오르는 번호를 구독해 다시 그린다. 0이면 아직 읽지 않아 IP·밴을 찾지 않는다.
-    // 디시콘 버블은 IP·밴을 그리지 않으므로 읽기를 시작하지 않는다(onDatabaseChange).
+    // DB를 읽을 때마다 오르는 번호를 구독해 다시 그린다. 0이면 아직 읽지 않아 IP, 밴을 찾지 않는다.
+    // 디시콘 버블은 IP, 밴을 그리지 않으므로 읽기를 시작하지 않는다(onDatabaseChange).
     const dbVersion = useSyncExternalStore(selected.dccon ? onDatabaseChange : subscribeDatabase, databaseVersion);
 
     // Popover는 스크롤을 따라가지 않으므로 스크롤하면 닫는다.
@@ -241,7 +241,7 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
     };
 
     const identity = identityValue(selected);
-    // 검색 모듈이 이 페이지에서 돌 때만 (아이디·IP 거르기를 그 모듈이 한다).
+    // 검색 모듈이 이 페이지에서 돌 때만 (아이디, IP 거르기를 그 모듈이 한다).
     const searchApi = getModuleApi("search");
     const searchBy = (by: "nick" | "identity"): (() => void) | undefined => searchApi && (() => {
         close();
@@ -257,7 +257,7 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
     return (
         <Popover open onOpenChange={(open, details) => {
             if (open) return;
-            // 닫히는 동안(애니메이션)에도 잠시 클릭·Esc를 받는다. 지금 버블이 아니면 흘려보낸다.
+            // 닫히는 동안(애니메이션)에도 잠시 클릭, Esc를 받는다. 지금 버블이 아니면 흘려보낸다.
             // 받으면 곧바로 다시 연 버블을 그 클릭으로 닫고, 다음 Esc(미리보기 닫기 등)를 먹는다.
             if (useUiStore.getState().bubble !== bubble) {
                 details.cancel();
@@ -271,7 +271,7 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
                             anchor={{getBoundingClientRect: () => DOMRect.fromRect({x: bubble.x, y: bubble.y, width: 0, height: 0})}}
                             initialFocus={focus.keyboard} finalFocus={focus.finalFocus}
                             aria-label={selected.dccon ? "디시콘 메뉴" : `${selected.nick || identity || "사용자"} 메뉴`}>
-                {/* 여기서 여는 창(메모·패키지 차단)은 연 요소로 포커스를 먼저 옮겨 둔다. 그래야 그 창이 닫힐 때 사라진 버블 대신 그리로 돌아간다. */}
+                {/* 여기서 여는 창(메모, 패키지 차단)은 연 요소로 포커스를 먼저 옮겨 둔다. 그래야 그 창이 닫힐 때 사라진 버블 대신 그리로 돌아간다. */}
                 {selected.dccon ? (
                     <>
                         {/* 버블이 떠 있는 채로 다른 디시콘을 우클릭해도 그 디시콘의 정보를 새로 받게 코드로 다시 만든다. */}
@@ -335,7 +335,7 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
     );
 };
 
-/** 작성자를 우클릭하면 뜨는 유저 버블 (메모·차단·갤로그). */
+/** 작성자를 우클릭하면 뜨는 유저 버블 (메모, 차단, 갤로그). */
 export const BubbleHost = (actions: BubbleActions) => {
     const bubble = useUiStore((s) => s.bubble);
     const selected = useUiStore((s) => s.selected);

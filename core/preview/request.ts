@@ -1,4 +1,4 @@
-/** 게시글·댓글 받기와 추천. 나머지 디시 요청은 각 파일(manage·submit·txtcon·dccon)로 나뉘어 있고 여기서 다시 내보낸다. */
+/** 게시글, 댓글 받기와 추천. 나머지 디시 요청은 각 파일(manage, submit, txtcon, dccon)로 나뉘어 있고 여기서 다시 내보낸다. */
 import {ajax, http} from "@/core/http/client";
 import {galleryPath, urls} from "@/core/http/urls";
 import {isRecord} from "@/utils/record";

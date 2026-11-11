@@ -23,13 +23,13 @@ export const startAutoBackup = (): void => {
         });
     });
 
-    // 알람은 브라우저를 끄거나(파이어폭스는 항상) 확장을 업데이트하면 사라질 수 있어, 대기 중인 백업은 다음 시작·업데이트 때 다시 건다.
+    // 알람은 브라우저를 끄거나(파이어폭스는 항상) 확장을 업데이트하면 사라질 수 있어, 대기 중인 백업은 다음 시작, 업데이트 때 다시 건다.
     // 워커가 깰 때마다 하면 안 된다. 크롬은 울린 알람을 지운 뒤 워커를 깨우므로 방금 울린 알람을 또 걸어 백업이 두 번 돈다.
     const rearm = (): void => void Promise.all([backupStorage.pending().getValue(), browser.alarms.get(AUTO_BACKUP_ALARM)])
         .then(([pending, alarm]) => (pending && !alarm ? arm() : undefined))
         .catch(console.error);
     // 파이어폭스는 확장을 껐다 켜면 onStartup/onInstalled 없이 배경만 다시 뜨고 알람은 지워진다.
-    // 배경 페이지가 상주해 방금 울린 알람을 또 걸 일이 없으므로 뜰 때마다 다시 건다 (시작·설치·업데이트도 여기서 덮인다).
+    // 배경 페이지가 상주해 방금 울린 알람을 또 걸 일이 없으므로 뜰 때마다 다시 건다 (시작, 설치, 업데이트도 여기서 덮인다).
     if (import.meta.env.BROWSER === "firefox") {
         rearm();
     } else {

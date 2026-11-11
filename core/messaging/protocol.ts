@@ -12,7 +12,7 @@ export const LIST_REPLACED_EVENT = "refresher:list-replaced";
 
 /**
  * 팝업 '현재 페이지'의 토글 하나. 이 페이지에서 도는 모듈의 pageToggles만 담긴다.
- * 아이콘(컴포넌트)과 이름은 팝업이 모듈 정보(features/<id>/icons.ts·labels.ts)에서 찾는다. 이름을 콘텐츠 번들에 두지 않으려고 보내지 않는다.
+ * 아이콘(컴포넌트)과 이름은 팝업이 모듈 정보(features/<id>/icons.ts, labels.ts)에서 찾는다. 이름을 콘텐츠 번들에 두지 않으려고 보내지 않는다.
  */
 export interface PageToggleState {
     module: string;
@@ -40,7 +40,7 @@ export const TURNSTILE_HOST = "data-refresher-turnstile";
 /** 확인 창이 닫힐 때 TURNSTILE_HOST에 보내는 이벤트. 기다리던 페이지 쪽이 그만둔다. */
 export const TURNSTILE_CANCEL_EVENT = "refresher-turnstile-cancel";
 
-/** refresher:turnstileToken의 결과. 디시 ts_cmt_fields가 보내는 cf-turnstile-response·ts_state·ts_token_ms가 된다. */
+/** refresher:turnstileToken의 결과. 디시 ts_cmt_fields가 보내는 cf-turnstile-response, ts_state, ts_token_ms가 된다. */
 export interface TurnstileResult {
     token: string;
     state: string;
@@ -62,7 +62,7 @@ interface ProtocolMap {
 
     /**
      * 탭 → 배경: 디시가 reCAPTCHA v3를 요구하면 그 탭의 MAIN world에서 토큰을 받아 온다. 실패하면 undefined다.
-     * 글 댓글 작성·삭제(comment_submit, comment_delete_submit)는 rc_key로 보낸 쌍의 키로, 디시콘·글자콘(insert_icon)은 예전 키로 받는다.
+     * 글 댓글 작성, 삭제(comment_submit, comment_delete_submit)는 rc_key로 보낸 쌍의 키로, 디시콘, 글자콘(insert_icon)은 예전 키로 받는다.
      */
     "refresher:grecaptchaToken"(data: GrecaptchaRequest): string | undefined;
 
@@ -75,7 +75,7 @@ interface ProtocolMap {
 
     /**
      * 탭 → 배경: 그 탭의 MAIN world에 목록 다리를 건다. 페이지마다 한 번.
-     * 다리는 refresh·search가 목록 행을 갈아끼우거나 이어 붙일 때 보내는 LIST_REPLACED_EVENT를 받아 디시 자체 차단·이용자 메모 표시를 다시 적용한다.
+     * 다리는 refresh, search가 목록 행을 갈아끼우거나 이어 붙일 때 보내는 LIST_REPLACED_EVENT를 받아 디시 자체 차단, 이용자 메모 표시를 다시 적용한다.
      */
     "refresher:installListBridge"(): void;
 
@@ -91,7 +91,7 @@ interface ProtocolMap {
      */
     "refresher:gallogPage"(id: string): string | null;
 
-    /** 탭 → 배경: 쓰인 차단 항목·메모 (core/usage.ts). 여러 탭이 동시에 써도 기록을 잃지 않게 배경이 차례로 저장한다. */
+    /** 탭 → 배경: 쓰인 차단 항목, 메모 (core/usage.ts). 여러 탭이 동시에 써도 기록을 잃지 않게 배경이 차례로 저장한다. */
     "refresher:markUsed"(batch: UsageData): void;
 
     /** 옵션 → 배경: 사용 기록을 지금 목록에 맞추고 그 종류의 기록을 돌려준다. prune이면 목록에 없는 기록도 버린다 (core/usage.ts의 syncUsage). */
@@ -100,7 +100,7 @@ interface ProtocolMap {
     /** 배경 → 탭: 이미지 우클릭 메뉴의 "이 이미지 차단". 인자는 이미지 주소다. 탭이 파일 해시를 구해 차단 목록에 넣는다 (stores/blockRequest.ts). */
     "refresher:blockImage"(url: string): void;
 
-    /** 옵션 → 배경: IP·밴 DB "지금 갱신". 같은 버전이어도 다시 받는다. 배경 한 곳에서 받아야 진행 중인 갱신과 겹쳐 두 번 받지 않는다. */
+    /** 옵션 → 배경: IP, 밴 DB "지금 갱신". 같은 버전이어도 다시 받는다. 배경 한 곳에서 받아야 진행 중인 갱신과 겹쳐 두 번 받지 않는다. */
     "refresher:updateDatabase"(): void;
 
     /** 팝업 → 탭: 이 페이지의 토글 상태와 시작하지 못한 모듈. */

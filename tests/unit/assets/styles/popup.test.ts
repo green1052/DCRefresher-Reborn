@@ -39,7 +39,7 @@ describe("팝업 CSS 스캔 제외", () => {
         expect(excluded).toContain("{features,core,stores,components/overlay}");
         const reached = reachable("entrypoints/popup/main.tsx");
         expect(reached).toContain("components/ui/button.tsx");
-        // 클래스는 화면(.tsx)에 있다. 팝업은 features·core·stores의 .ts(설정 메타·상태)만 불러온다.
+        // 클래스는 화면(.tsx)에 있다. 팝업은 features, core, stores의 .ts(설정 메타, 상태)만 불러온다.
         // 경로 패턴이 폴더면 그 안의 파일 전부가 빠진다.
         const hit = [...reached].filter((path) => path.endsWith(".tsx") &&
             excluded.some((pattern) => posix.matchesGlob(path, pattern) || posix.matchesGlob(path, `${pattern}/**`)));

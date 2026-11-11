@@ -17,7 +17,7 @@ export const fitPolls = (root: HTMLElement): (() => void) => {
             const container = doc?.body?.querySelector<HTMLElement>(":scope > :not(script, style)");
             if (!doc || !(container instanceof doc.defaultView!.HTMLElement)) return;
 
-            // 글꼴·배율에 따라 1px만 넘쳐도 안쪽에 스크롤바가 생겨 내용을 가리므로 끈다.
+            // 글꼴, 배율에 따라 1px만 넘쳐도 안쪽에 스크롤바가 생겨 내용을 가리므로 끈다.
             doc.documentElement.style.overflow = "hidden";
 
             const observer = new ResizeObserver(() => {

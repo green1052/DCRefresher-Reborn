@@ -11,7 +11,7 @@ import {useUiStore} from "@/stores/ui";
 
 import {tick} from "../../../../helpers";
 
-// Base UI는 변환되지 않아 진짜 React를 불러 그려지지 않으므로 창·버튼을 평범한 요소로 바꾼다.
+// Base UI는 변환되지 않아 진짜 React를 불러 그려지지 않으므로 창, 버튼을 평범한 요소로 바꾼다.
 vi.mock("@/components/dialogs", () => ({
     ModalDialog: ({children}: { children?: ReactNode }) => <div>{children}</div>,
     DialogCloseButton: () => null,

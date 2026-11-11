@@ -13,15 +13,15 @@ import {isRecord} from "@/utils/record";
 
 /**
  * DB 파일 하나를 받는다. 재시도하지 않는다. 실패하면 배경의 다음 알람이나 사용자의 "지금 갱신"이 다시 받는다.
- * 브라우저 캐시는 서버에 확인(ETag)한 뒤 쓴다. 서버가 ip·ban을 1시간 캐시하라고 주므로, 그대로 쓰면 새 버전이 올라온 뒤에도
+ * 브라우저 캐시는 서버에 확인(ETag)한 뒤 쓴다. 서버가 ip, ban을 1시간 캐시하라고 주므로, 그대로 쓰면 새 버전이 올라온 뒤에도
  * 한 시간 안의 "지금 갱신"이 옛 파일을 받아 저장한다.
  * 전체 시간 제한은 두지 않는다. 느린 회선에서 수백 KB를 받는 도중에 끊긴다.
  */
 const get = (url: string): Promise<string> => http.get(url, {retry: 0, cache: "no-cache", totalTimeout: false}).text();
 
 /**
- * IP/밴 DB를 내려받아 저장한다. 배경이 부른다 (설치·주기, 옵션 페이지의 "지금 갱신" 메시지).
- * 서버 버전이 저장된 것과 같으면 본문(ip·ban 각각 수백 KB)은 받지 않고 확인 시각만 갱신한다. 다시 쓰면 열린 탭마다 IP DB를 다시 풀기 때문이다.
+ * IP/밴 DB를 내려받아 저장한다. 배경이 부른다 (설치, 주기, 옵션 페이지의 "지금 갱신" 메시지).
+ * 서버 버전이 저장된 것과 같으면 본문(ip, ban 각각 수백 KB)은 받지 않고 확인 시각만 갱신한다. 다시 쓰면 열린 탭마다 IP DB를 다시 풀기 때문이다.
  * force: 사용자가 누른 "지금 갱신". 같은 버전이어도 다시 받는다.
  */
 export const updateDatabase = async (force = false): Promise<void> => {
@@ -81,7 +81,7 @@ let bans: ((uid: string) => string | undefined) | null = null;
 let bansRequested = false;
 /** 감시로 받은 밴 DB 갱신 수. 처음 읽기가 늦게 끝나 새 값을 덮지 않게 견준다. */
 let banVersion = 0;
-/** 지금 읽어 둔 DB의 버전·형식 (모르면 빈 문자열). bfcache 복원 때 같으면 수백 KB를 다시 풀지 않는다. */
+/** 지금 읽어 둔 DB의 버전, 형식 (모르면 빈 문자열). bfcache 복원 때 같으면 수백 KB를 다시 풀지 않는다. */
 let loadedStamp = "";
 const stampOf = (meta: DatabaseMeta | null): string => `${meta?.version ?? ""}
 ${meta?.format ?? ""}`;
@@ -130,7 +130,7 @@ const loadBans = (stored: string): void => {
 
 /**
  * 밴 목록 → uid 조회 함수 (없으면 undefined). 이유가 여럿이면 ", "로 잇는다.
- * uid 2만여 개를 Map에 그대로 두면 문자열·칸이 탭마다 1MB쯤 된다. uid를 정렬해 한 문자열로 잇고 시작점과 이유 번호만
+ * uid 2만여 개를 Map에 그대로 두면 문자열, 칸이 탭마다 1MB쯤 된다. uid를 정렬해 한 문자열로 잇고 시작점과 이유 번호만
  * 형식화 배열에 두어 절반 아래로 줄인다. 조회는 이진 탐색이다 (uid 하나에 비교 15번쯤).
  */
 const indexBans = (list: BanList): ((uid: string) => string | undefined) => {
@@ -228,13 +228,13 @@ const tagOf = ({vpn, country}: IpCandidate): string | undefined => (vpn ? "VPN" 
 
 const withTag = (name: string, tag?: string): string => (name && tag ? `${name} (${tag})` : name || tag || "");
 
-/** IP 대역(a.b)의 조직·국가·VPN 정보. 데이터가 없으면 undefined다. */
+/** IP 대역(a.b)의 조직, 국가, VPN 정보. 데이터가 없으면 undefined다. */
 export const ipInfoOf = (ip: string): IpInfo | undefined => {
     const candidates = lookupIp?.(ip);
     const first = candidates?.[0];
     if (!candidates || !first) return undefined;
 
-    // 후보마다 자기 국가·VPN을 붙인다. 조직이 없으면 국가·VPN만 보이고, 그것도 없을 때만 미상이라고 쓴다 (빈 칸이 되지 않게).
+    // 후보마다 자기 국가, VPN을 붙인다. 조직이 없으면 국가, VPN만 보이고, 그것도 없을 때만 미상이라고 쓴다 (빈 칸이 되지 않게).
     const shown = [...new Set(candidates.map((candidate) => withTag(candidate.org ?? "", tagOf(candidate)) || "조직 미상"))];
 
     return {label: shown.join(", "), title: shown.join("\n"), category: categoryOf(first)};

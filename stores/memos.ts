@@ -11,7 +11,7 @@ type MemoMap = Record<string, MemoEntry>;
 
 interface MemosState {
     memos: Record<MemoType, MemoMap>;
-    /** 저장소의 현재 값에 change를 붙여 쓴다 (가져오기·여러 개 지우기). */
+    /** 저장소의 현재 값에 change를 붙여 쓴다 (가져오기, 여러 개 지우기). */
     updateMemos: (type: MemoType, change: (memos: MemoMap) => MemoMap) => Promise<void>;
     setMemo: (type: MemoType, user: string, entry: MemoEntry) => Promise<void>;
     removeMemo: (type: MemoType, user: string) => Promise<void>;
@@ -22,7 +22,7 @@ const isMemoEntry = (value: unknown): value is MemoEntry =>
     && (value.added === undefined || typeof value.added === "number");
 
 /**
- * 새 메모의 기본 색. 색상만 무작위로 고르고 채도(60%)·명도(50%)는 고정한다. 아무 RGB나 고르면 흰색·검은색에 가까운 색이 나와 한쪽 테마에서 안 보인다.
+ * 새 메모의 기본 색. 색상만 무작위로 고르고 채도(60%), 명도(50%)는 고정한다. 아무 RGB나 고르면 흰색, 검은색에 가까운 색이 나와 한쪽 테마에서 안 보인다.
  * 색 입력칸(input[type=color])이 #rrggbb만 받으므로 HSL을 RGB로 바꾼다.
  */
 export const randomColor = (): string => {
@@ -35,13 +35,13 @@ export const randomColor = (): string => {
     return `#${channel(0)}${channel(8)}${channel(4)}`;
 };
 
-/** 저장소·가져오기 값에서 유효한 항목만 남긴다. */
+/** 저장소, 가져오기 값에서 유효한 항목만 남긴다. */
 export const normalizeMemoMap = (value: unknown): MemoMap =>
     isRecord(value)
         ? Object.fromEntries(Object.entries(value).filter((entry): entry is [string, MemoEntry] => isMemoEntry(entry[1])))
         : {};
 
-/** 메모의 단일 출처. 콘텐츠·옵션 모두 이 스토어를 쓰고 저장소와 양방향 동기화된다. */
+/** 메모의 단일 출처. 콘텐츠, 옵션 모두 이 스토어를 쓰고 저장소와 양방향 동기화된다. */
 export const useMemosStore = create<MemosState>(() => ({
     memos: {UID: {}, NICK: {}, IP: {}},
 
@@ -65,7 +65,7 @@ export const useMemosStore = create<MemosState>(() => ({
     }
 }));
 
-/** 그 키의 메모. 닉네임이 toString·constructor·__proto__여도 프로토타입 값을 메모로 읽지 않게 자기 속성만 본다. */
+/** 그 키의 메모. 닉네임이 toString, constructor, __proto__여도 프로토타입 값을 메모로 읽지 않게 자기 속성만 본다. */
 export const ownMemo = (map: MemoMap, key: string): MemoEntry | undefined => (Object.hasOwn(map, key) ? map[key] : undefined);
 
 type MemoUser = { uid?: string; ip?: string; nick?: string };
@@ -108,5 +108,5 @@ const lists = typedListSync({
     lock: LIST_LOCKS.memos
 });
 
-/** 저장소 값을 읽고 변경(다른 탭·옵션 페이지)을 감시한다. 여러 번 불러도 한 번만 한다. signal은 콘텐츠 스크립트 컨텍스트의 것이다. */
+/** 저장소 값을 읽고 변경(다른 탭, 옵션 페이지)을 감시한다. 여러 번 불러도 한 번만 한다. signal은 콘텐츠 스크립트 컨텍스트의 것이다. */
 export const initMemosStore = lists.start;

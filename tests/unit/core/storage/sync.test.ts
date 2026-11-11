@@ -20,7 +20,7 @@ afterEach(() => {
 const restoreFromBfcache = () => window.dispatchEvent(new PageTransitionEvent("pageshow", {persisted: true}));
 
 describe("watchStorage", () => {
-    it("값이 바뀌면 새 값·옛 값으로 부른다", async () => {
+    it("값이 바뀌면 새 값, 옛 값으로 부른다", async () => {
         const callback = vi.fn();
         watchStorage("local:k", callback);
 

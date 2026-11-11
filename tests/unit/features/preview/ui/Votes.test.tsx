@@ -9,7 +9,7 @@ import {usePreviewStore} from "@/features/preview/ui/previewStore";
 import {Votes} from "@/features/preview/ui/Votes";
 import {preData, tick} from "../../../../helpers";
 
-// Base UI·lucide는 평범한 요소로 바꾼다(그리기·계산에 필요한 것만 남긴다).
+// Base UI, lucide는 평범한 요소로 바꾼다(그리기, 계산에 필요한 것만 남긴다).
 vi.mock("@/components/ui/button", () => ({
     Button: ({children, disabled, onClick, "aria-label": label}: { children?: ReactNode; disabled?: boolean; onClick?: () => void; "aria-label"?: string }) =>
         <button disabled={disabled} onClick={onClick} aria-label={label}>{children}</button>
@@ -34,7 +34,7 @@ beforeEach(() => setEntry(target, {post: post()}));
 afterEach(() => render(null, root));
 
 describe("Votes", () => {
-    it("추천하면 추천 수·고정닉 추천 수와 캐시 본문의 숫자를 고친다", async () => {
+    it("추천하면 추천 수, 고정닉 추천 수와 캐시 본문의 숫자를 고친다", async () => {
         vi.mocked(vote).mockResolvedValue({success: true, counts: "4", fixedCounts: "2"});
         await click(post(), "추천");
         await vi.waitFor(() => expect(getEntry(target)?.post?.upvotes).toBe("4"));

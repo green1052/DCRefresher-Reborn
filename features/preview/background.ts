@@ -49,7 +49,7 @@ const executeGrecaptcha = async (siteKey: string, action: string): Promise<strin
 };
 
 /**
- * 탭의 페이지 컨텍스트에서 Turnstile 위젯을 그려 토큰을 받는다 (디시 comment.js의 ts_cmt_load·ts_cmt_wait). 직렬화되므로 바깥 변수를 쓰지 않는다.
+ * 탭의 페이지 컨텍스트에서 Turnstile 위젯을 그려 토큰을 받는다 (디시 comment.js의 ts_cmt_load, ts_cmt_wait). 직렬화되므로 바깥 변수를 쓰지 않는다.
  * host(미리보기 확인 창의 자리)가 없으면 투명하게 그리고, 확인을 눌러야 하면(interactive) 기다리지 않고 돌아온다. 아니면 디시처럼 wait까지만 기다린다.
  * host가 있으면 그 안에 보이게 그리고 누르거나 창이 닫힐 때(cancelEvent)까지 기다린다. 토큰은 한 번만 쓰이므로 받을 때마다 새로 그리고 지운다.
  */
@@ -121,7 +121,7 @@ const executeTurnstile = async ({sitekey, wait, appearance}: TurnstileConfig, ho
     }
 };
 
-/** 미리보기: 댓글·디시콘 작성과 댓글 삭제에 쓸 reCAPTCHA·Turnstile 토큰을 탭의 페이지(MAIN world)에서 받아 온다. */
+/** 미리보기: 댓글, 디시콘 작성과 댓글 삭제에 쓸 reCAPTCHA, Turnstile 토큰을 탭의 페이지(MAIN world)에서 받아 온다. */
 export default defineBackgroundModule(meta, {
     listen() {
         // 6.2 이전의 미리보기로 읽은 글 기록(지금은 :visited로 표시)을 지운다. 6.3에서 뺀다.

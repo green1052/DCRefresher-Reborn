@@ -13,8 +13,8 @@ export const panelOf = (from: Element | null | undefined): HTMLElement | null | 
 export const focusPanel = (from: Element | null | undefined): void => panelOf(from)?.focus({preventScroll: true});
 
 /**
- * 트리거 없이 여는 창(다이얼로그·버블)의 포커스. 창과 같이 마운트되는 컴포넌트에서 부른다.
- * 마운트할 때 포커스된 요소(연 요소)를 기억했다가 닫을 때 돌려준다. 그사이 연 버튼이 막혔으면(전체 삭제·초기화 중) panelOf로 돌린다.
+ * 트리거 없이 여는 창(다이얼로그, 버블)의 포커스. 창과 같이 마운트되는 컴포넌트에서 부른다.
+ * 마운트할 때 포커스된 요소(연 요소)를 기억했다가 닫을 때 돌려준다. 그사이 연 버튼이 막혔으면(전체 삭제, 초기화 중) panelOf로 돌린다.
  * Base UI는 트리거가 없거나 부모가 언마운트해 닫으면 포커스를 돌려주지 않아 언마운트할 때도 돌려준다.
  * 포커스가 창(popup) 안이나 body에 남았을 때만 돌려주고, 다른 곳(새로 뜬 창의 입력칸 등)으로 간 포커스는 빼앗지 않는다.
  */

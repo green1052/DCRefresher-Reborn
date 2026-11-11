@@ -50,7 +50,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     const value = state.targets[type] ?? "";
     const existing = Boolean(memoOf(type, value));
 
-    /** 저장·삭제를 마치면 알리고 닫는다. 실패하면 창을 열어 둔다. 닫으면 입력한 메모가 사라진다. */
+    /** 저장, 삭제를 마치면 알리고 닫는다. 실패하면 창을 열어 둔다. 닫으면 입력한 메모가 사라진다. */
     const save = async (write: Promise<void>, done: string): Promise<void> => {
         try {
             await write;

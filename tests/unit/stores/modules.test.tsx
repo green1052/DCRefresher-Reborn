@@ -92,7 +92,7 @@ describe("initModulesStore", () => {
         expect(listener).toHaveBeenCalledTimes(2);
     });
 
-    it("없어진 모듈의 값·캐시와 스키마에 없는 설정을 지운다", async () => {
+    it("없어진 모듈의 값, 캐시와 스키마에 없는 설정을 지운다", async () => {
         await fakeBrowser.storage.local.set({
             "refresher:modules": {gone: true, fonts: false},
             "refresher:module:gone:settings": {a: 1},

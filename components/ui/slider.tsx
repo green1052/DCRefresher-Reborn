@@ -10,7 +10,7 @@ function Slider({
   thumbProps,
   ...props
 }: SliderPrimitive.Root.Props & {
-  /** 손잡이(role=slider)에 넘길 속성. 이름(aria-label)·읽는 값(getAriaValueText)은 손잡이에 달아야 읽힌다. */
+  /** 손잡이(role=slider)에 넘길 속성. 이름(aria-label), 읽는 값(getAriaValueText)은 손잡이에 달아야 읽힌다. */
   thumbProps?: SliderPrimitive.Thumb.Props
 }) {
   const _values = Array.isArray(value)

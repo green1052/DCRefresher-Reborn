@@ -4,7 +4,7 @@ import {hookUploads, type ImageOptions, UPLOAD_OPTIONS_KEY} from "@/features/wri
 
 import {tick} from "../../../helpers";
 
-// jsdom에 없는 것들. 이미지 디코딩·인코딩은 결과 크기만 정하는 가짜로 둔다.
+// jsdom에 없는 것들. 이미지 디코딩, 인코딩은 결과 크기만 정하는 가짜로 둔다.
 class FakeDataTransfer {
     readonly files: File[] = [];
     readonly items = {add: (file: File): void => void this.files.push(file)};
@@ -190,7 +190,7 @@ describe("파일 선택칸", () => {
         expect(received[0]?.map((file) => file.name)).toEqual(names.map((name) => `${name}.webp`));
     });
 
-    it("GIF·WebP는 WebP 변환 대상이 아니다", async () => {
+    it("GIF, WebP는 WebP 변환 대상이 아니다", async () => {
         setOptions({webp: true, quality: 0.5, rename: false, concurrency: 2});
         const gif = new File(["GIF89a"], "a.gif", {type: "image/gif"});
         choose([gif]);
@@ -198,10 +198,10 @@ describe("파일 선택칸", () => {
     });
 });
 
-describe("붙여넣기·끌어 놓기", () => {
+describe("붙여넣기, 끌어 놓기", () => {
     const EDITOR = "<div class=\"note-editor\"><div class=\"note-dropzone\"></div><div class=\"note-editable\"><p id=\"caret\"></p></div></div>";
 
-    /** files를 실은 이벤트. jsdom에는 clipboardData·dataTransfer가 없어 속성으로 붙인다. */
+    /** files를 실은 이벤트. jsdom에는 clipboardData, dataTransfer가 없어 속성으로 붙인다. */
     const transferEvent = (type: "paste" | "drop", files: File[]): Event => {
         const ev = new Event(type, {bubbles: true, cancelable: true});
         const transfer = new FakeDataTransfer();

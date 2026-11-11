@@ -28,7 +28,7 @@ const GALLOG_DCCON = /dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/g;
  */
 const splitDccons = (memo: string): string => memo.replace(/"\s*(img|video) class="written_dccon/g, "\"><$1 class=\"written_dccon");
 
-// 정화 결과는 입력에만 달려 있어 기억해 둔다. 자동 새로고침·차단 변경·가린 내용 보기마다 댓글 수백 개를 다시 정화하지 않는다.
+// 정화 결과는 입력에만 달려 있어 기억해 둔다. 자동 새로고침, 차단 변경, 가린 내용 보기마다 댓글 수백 개를 다시 정화하지 않는다.
 const cleaned = new QuickLRU<string, string>({maxSize: 2000});
 const sanitizeMemo = (memo: string): string => sanitizeHtml(splitDccons(memo).replace(/data-dcconoverstatus="?\w+"?/g, "data-dcconoverstatus=\"true\""));
 
@@ -66,7 +66,7 @@ const extractVoice = (memo: string): { memo: string; voice?: ProcessedComment["v
  */
 export const prepareComments = (raw: DcinsideComment[], preData: GalleryPreData, archive: boolean, truncated = false): DcinsideComment[] => {
     // 댓글돌이(COMMENT_BOY)는 보존 기록에 들어가지 않게 restoreArchive보다 먼저 뺀다.
-    // 다른 삭제 코드('2' 등)나 del_yn "Y"로 온 댓글은 is_delete "1"로 맞춘다. 답글·삭제 버튼 숨김과 같은 댓글 접기 제외가 "1"로 판단한다.
+    // 다른 삭제 코드('2' 등)나 del_yn "Y"로 온 댓글은 is_delete "1"로 맞춘다. 답글, 삭제 버튼 숨김과 같은 댓글 접기 제외가 "1"로 판단한다.
     const filtered = raw
         .filter((comment) => comment.nicktype !== "COMMENT_BOY")
         .map((comment) => ({...comment, is_delete: comment.is_delete !== "0" || comment.del_yn === "Y" ? "1" : "0"}));
@@ -77,7 +77,7 @@ export const prepareComments = (raw: DcinsideComment[], preData: GalleryPreData,
 /**
  * 받은 두 댓글 목록이 같은지. 자동 새로고침이 같은 목록을 다시 받으면 다시 그리지 않으려고 쓴다.
  * 목록을 JSON 문자열로 만들어 비교하면 댓글이 1000개일 때 주기마다 1MB가 넘는 문자열을 만든다. 필드 값을 차례로 비교하고 다르면 바로 멈춘다.
- * 디시 댓글 필드는 문자열·숫자 같은 값이다. 객체 값이 오면 내용이 같아도 다르다고 보지만 다시 그릴 뿐이다.
+ * 디시 댓글 필드는 문자열, 숫자 같은 값이다. 객체 값이 오면 내용이 같아도 다르다고 보지만 다시 그릴 뿐이다.
  * T로 받아야 for...in의 키로 형 변환 없이 읽는다.
  */
 export const sameComments = <T extends object>(a: T[], b: T[]): boolean => {
@@ -157,7 +157,7 @@ export const processComments = (
 
     const duplicate = duplicateOf(block);
     if (duplicate) {
-        // 페이지처럼 가린 댓글(차단·깡계)은 세지 않는다.
+        // 페이지처럼 가린 댓글(차단, 깡계)은 세지 않는다.
         const candidates = list.filter((comment) => !comment.blocked && comment.is_delete !== "1");
         for (const [comment, repeats] of groupDuplicates(candidates, (comment) => texts.get(comment) ?? "", duplicate)) comment.duplicates = repeats;
     }

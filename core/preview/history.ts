@@ -34,7 +34,7 @@ const isGalleryPreData = (value: unknown): value is GalleryPreData =>
 
 const isSavedHistory = (value: unknown): value is SavedHistory => isRecord(value) && typeof value.title === "string" && typeof value.url === "string";
 
-/** 미리보기가 쌓은 기록 항목이면 그 항목. 어느 문서가 쌓았는지는 보지 않는다. 모양이 어긋난 preData·back은 버린다. */
+/** 미리보기가 쌓은 기록 항목이면 그 항목. 어느 문서가 쌓았는지는 보지 않는다. 모양이 어긋난 preData, back은 버린다. */
 export const previewEntry = (state: unknown): PreviewEntry | null => {
     if (!isRecord(state) || state.refresher !== 1 || typeof state.doc !== "number") return null;
     return {

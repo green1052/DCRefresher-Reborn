@@ -7,8 +7,8 @@ import {buildPreData, isBlurHidden, isTextPost} from "./rows";
 import {closeMiniSoon, hoverMini, keepMini, MINI_WIDTH, miniPosition, postTitle, usePreviewStore} from "./ui/previewStore";
 
 /**
- * 미니 미리보기 (제목에 마우스를 올리면 뜨는 카드). 본문은 전체 미리보기와 같은 요청·캐시(getPost)로 받는다.
- * 제목 칸에 들어가고 나갈 때 부를 핸들러(rows-input.ts가 문서에서 받는다)와, 전체 미리보기를 열 때·모듈이 멈출 때 부를 leave를 돌려준다.
+ * 미니 미리보기 (제목에 마우스를 올리면 뜨는 카드). 본문은 전체 미리보기와 같은 요청, 캐시(getPost)로 받는다.
+ * 제목 칸에 들어가고 나갈 때 부를 핸들러(rows-input.ts가 문서에서 받는다)와, 전체 미리보기를 열 때, 모듈이 멈출 때 부를 leave를 돌려준다.
  */
 export const createMini = (
     ctx: Ctx,
@@ -94,7 +94,7 @@ export const createMini = (
         }
         keepMini();
         hoverMini();
-        // 떠 있을 때만 비운다. 제목 칸을 지날 때마다 setState하면 스토어를 구독하는 창·댓글이 모두 다시 확인한다.
+        // 떠 있을 때만 비운다. 제목 칸을 지날 때마다 setState하면 스토어를 구독하는 창, 댓글이 모두 다시 확인한다.
         if (mini) usePreviewStore.setState({mini: null});
     };
 

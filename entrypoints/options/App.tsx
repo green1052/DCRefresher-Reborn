@@ -98,7 +98,7 @@ export function App() {
     }, []);
 
     useEffect(() => {
-        // 읽기 전이나 읽기에 실패한 채 그리면 빈 목록에서 고친 결과(전체 삭제·추가·가져오기)가 저장된 목록을 덮으므로 탭을 그리지 않는다.
+        // 읽기 전이나 읽기에 실패한 채 그리면 빈 목록에서 고친 결과(전체 삭제, 추가, 가져오기)가 저장된 목록을 덮으므로 탭을 그리지 않는다.
         Promise.all([initBlocksStore(), initMemosStore(), initModulesStore()]).then(
             () => setStatus("ready"),
             (e) => {

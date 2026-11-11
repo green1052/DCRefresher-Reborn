@@ -29,7 +29,7 @@ const colorsOf = (ctx: Ctx): BadgeColors =>
 
 /** 한 번의 실행(setup)이 그리는 데 쓰는 값. 모듈을 다시 켜면 새로 만든다. */
 interface BadgeState {
-    /** 설정에서 만든 배지 색·표시 조건. 작성자 칸마다(목록 새로고침마다 수십 개) 다시 만들지 않고 설정이 바뀔 때(readBadgeSettings) 한 번 만든다. */
+    /** 설정에서 만든 배지 색, 표시 조건. 작성자 칸마다(목록 새로고침마다 수십 개) 다시 만들지 않고 설정이 바뀔 때(readBadgeSettings) 한 번 만든다. */
     colors: BadgeColors;
     view: BadgeView;
     ratios: Record<string, RatioInfo>;
@@ -73,7 +73,7 @@ const LOW_ACTIVITY_CLASS_LIST = Object.values(LOW_ACTIVITY_CLASSES);
 const LOW_ACTIVITY_SELECTOR = LOW_ACTIVITY_CLASS_LIST.map((name) => `.${name}`).join(",");
 
 /**
- * 깡계 숨김·흐림이 바뀌었다고 알려 차단 모듈이 같은 댓글을 다시 접게 한다. 그 접기는 이 모듈이 DB를 읽기 전에 먼저 돈다.
+ * 깡계 숨김, 흐림이 바뀌었다고 알려 차단 모듈이 같은 댓글을 다시 접게 한다. 그 접기는 이 모듈이 DB를 읽기 전에 먼저 돈다.
  * 작성자마다 불리므로 한 번에 모아 보낸다.
  */
 let notifyQueued = false;
@@ -86,7 +86,7 @@ const notifyRowsHidden = (): void => {
     });
 };
 
-/** 깡계 흐림·숨김을 모두 뗀다. 뗀 것이 있었는지 돌려준다. */
+/** 깡계 흐림, 숨김을 모두 뗀다. 뗀 것이 있었는지 돌려준다. */
 const clearLowActivity = (): boolean => {
     const marked = document.querySelectorAll(LOW_ACTIVITY_SELECTOR);
     for (const element of marked) element.classList.remove(...LOW_ACTIVITY_CLASS_LIST);
@@ -94,7 +94,7 @@ const clearLowActivity = (): boolean => {
 };
 
 const process = (ctx: Ctx, {colors, view, ratios}: BadgeState, element: HTMLElement): void => {
-    // 완료 표시 없이 매번 다시 그린다. 파싱 중인 작성자 칸(닉콘·IP 전)에서 먼저 불려도, 칸이 다 읽혀 다시 불릴 때 배지가 제자리를 찾는다.
+    // 완료 표시 없이 매번 다시 그린다. 파싱 중인 작성자 칸(닉콘, IP 전)에서 먼저 불려도, 칸이 다 읽혀 다시 불릴 때 배지가 제자리를 찾는다.
     element.querySelector(`.${BADGES_CLASS}`)?.remove();
 
     const {nick, uid, ip} = element.dataset;
@@ -152,13 +152,13 @@ const process = (ctx: Ctx, {colors, view, ratios}: BadgeState, element: HTMLElem
     }
 };
 
-/** 설정에서 배지 색·표시 조건을 만든다. 미리보기 작성자 표시(UserCard)는 같은 설정을 바로 읽어 같은 badgeViewOf로 만든다. */
+/** 설정에서 배지 색, 표시 조건을 만든다. 미리보기 작성자 표시(UserCard)는 같은 설정을 바로 읽어 같은 badgeViewOf로 만든다. */
 const readBadgeSettings = (ctx: Ctx, state: BadgeState): void => {
     state.colors = colorsOf(ctx);
     state.view = badgeViewOf(ctx.settings);
 };
 
-/** 미리보기도 같은 글댓비를 쓰도록 ui 스토어에 올린다. 지난 값은 미리보기·버블이 읽을 때 isFresh로 걸러 새로 조회한다. */
+/** 미리보기도 같은 글댓비를 쓰도록 ui 스토어에 올린다. 지난 값은 미리보기, 버블이 읽을 때 isFresh로 걸러 새로 조회한다. */
 const publishRatios = (ctx: Ctx, {ratios}: BadgeState): void => {
     useUiStore.setState({ratios: ctx.settings.checkRatio ? {cache: ratios, alarm: ctx.settings.alarmRatio, action: ctx.settings.lowActivityAction} : null});
 };
@@ -171,7 +171,7 @@ const rebuildAll = (ctx: Ctx, state: BadgeState): void => {
     if (cleared) notifyRowsHidden();
 };
 
-/** 몇몇 유저의 작성자 칸만 다시 그린다. 깡계 흐림·숨김은 process가 더하기만 하므로 먼저 뗀다. */
+/** 몇몇 유저의 작성자 칸만 다시 그린다. 깡계 흐림, 숨김은 process가 더하기만 하므로 먼저 뗀다. */
 const rebuildUsers = (ctx: Ctx, state: BadgeState, uids: string[]): void => {
     // 작성자 칸을 한 번만 훑는다. 다른 탭이 글댓비를 쓸 때마다(새 글마다 최대 10명) 유저 수만큼 문서를 다시 찾지 않는다.
     const changed = new Set(uids);
@@ -213,15 +213,15 @@ export default defineModule(meta, {
             if (needsDatabase()) void initDatabase().catch(console.error);
         });
 
-        // await 뒤마다 확인해, 그사이 모듈이 꺼졌으면 onRevoke가 지운 배지·글댓비를 다시 그리지 않는다.
+        // await 뒤마다 확인해, 그사이 모듈이 꺼졌으면 onRevoke가 지운 배지, 글댓비를 다시 그리지 않는다.
         const {signal} = ctx;
 
-        // 글댓비 캐시. moduleDataStorage 키라 백업·내보내기에서 빠진다.
-        // 읽기·감시는 키로 하고 항목은 처음 저장할 때 만든다. defineItem은 만드는 순간 값을 읽어, 미리 만들면 같은 캐시를 두 번 읽는다.
+        // 글댓비 캐시. moduleDataStorage 키라 백업, 내보내기에서 빠진다.
+        // 읽기, 감시는 키로 하고 항목은 처음 저장할 때 만든다. defineItem은 만드는 순간 값을 읽어, 미리 만들면 같은 캐시를 두 번 읽는다.
         const ratioKey = moduleDataKey("userinfo");
         let ratioStorage: WxtStorageItem<RatioData, {}> | undefined;
 
-        // 작성자 우클릭으로 유저 버블(메모·차단·갤로그)을 연다. 메모는 이 모듈의 기능이라 차단 모듈이 꺼져 있어도 열려야 한다.
+        // 작성자 우클릭으로 유저 버블(메모, 차단, 갤로그)을 연다. 메모는 이 모듈의 기능이라 차단 모듈이 꺼져 있어도 열려야 한다.
         document.addEventListener("contextmenu", openWriterBubble, {capture: true, signal});
 
         // 받았지만 아직 저장하지 않은 글댓비 (RATIO_SAVE_DELAY).
@@ -289,7 +289,7 @@ export default defineModule(meta, {
             saver.schedule();
         };
 
-        // 미리보기·버블·새 글 조회가 갤로그에서 새로 받은 값을 모두 저장한다. 이미 받은 사람을 다시 묻지 않는다.
+        // 미리보기, 버블, 새 글 조회가 갤로그에서 새로 받은 값을 모두 저장한다. 이미 받은 사람을 다시 묻지 않는다.
         // 새 글 조회는 한 번에 최대 10명을 받아 uid마다 불린다. 모아서 한 번만 올리고 다시 그린다 (notifyRowsHidden과 같은 식).
         let incoming: (readonly [string, GallogActivity])[] = [];
         ctx.addCleanup(onGallogActivity((uid, activity) => {
@@ -314,7 +314,7 @@ export default defineModule(meta, {
             for (const uid of stale) pending.add(uid);
 
             // 실패는 uid마다 흡수한다. 한 명이 실패해도 받아 온 나머지는 저장한다 (실패한 사람은 배지만 빠진다).
-            // 버블·미리보기가 이미 받았거나 받는 중인 사람은 그 결과를 같이 쓴다 (getGallogActivity의 캐시).
+            // 버블, 미리보기가 이미 받았거나 받는 중인 사람은 그 결과를 같이 쓴다 (getGallogActivity의 캐시).
             void Promise.all(stale.map(async (uid) => [uid, await getGallogActivity(uid)] as const)).then(async (results) => {
                 for (const [uid, info] of results) {
                     if (!info) failedRatios.set(uid, true);

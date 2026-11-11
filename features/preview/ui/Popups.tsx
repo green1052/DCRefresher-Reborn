@@ -213,7 +213,7 @@ interface AdminAction {
 /**
  * 관리 권한이 있을 때 미리보기를 연 동안 화면 왼쪽 가장자리에 붙는 관리 패널.
  * 차단 버튼은 차단 키 두 번(프리셋으로 즉시 차단)과 달리 옵션 창을 연다. 나머지는 두 번 눌러야 실행하고, 첫 번째는 토스트로 알린다.
- * Frame이 미리보기 포털 안에 그린다. 나중에 뜬 창(차단·메모 등)이 패널 위를 덮어야
+ * Frame이 미리보기 포털 안에 그린다. 나중에 뜬 창(차단, 메모 등)이 패널 위를 덮어야
  * 한 번 클릭에 창 닫기와 관리 동작이 같이 일어나지 않는다.
  */
 export const AdminPanel = () => {
@@ -225,7 +225,7 @@ export const AdminPanel = () => {
     // 두 번 누르기 확인 상태. 바뀌어도 다시 그릴 필요가 없어 ref에 둔다.
     const confirmPress = useRef(createDoublePress(CONFIRM_WINDOW)).current;
 
-    // key는 고정된 id로 준다. 라벨을 key로 쓰면 공지·개념글을 토글할 때 버튼이 새로 마운트돼 포커스가 사라진다.
+    // key는 고정된 id로 준다. 라벨을 key로 쓰면 공지, 개념글을 토글할 때 버튼이 새로 마운트돼 포커스가 사라진다.
     const actions: AdminAction[] = [
         {id: "notice", label: notice ? "공지 해제" : "공지 등록", confirm: MANAGE_LABELS.notice[notice ? 1 : 0], icon: <Megaphone data-icon="inline-start"/>, active: notice, run: () => requestManage("notice")},
         {id: "recommend", label: recommend ? "개념글 해제" : "개념글 등록", confirm: MANAGE_LABELS.recommend[recommend ? 1 : 0], icon: <Star data-icon="inline-start"/>, active: recommend, run: () => requestManage("recommend")},

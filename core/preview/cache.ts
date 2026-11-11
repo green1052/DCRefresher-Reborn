@@ -24,7 +24,7 @@ const entries = new QuickLRU<string, CacheEntry>({maxSize: 25, maxAge: MAX_AGE})
 /** seen(삭제 댓글 보존 기록)의 상한. 살아 있는 동안 새 댓글과 지워진 댓글이 계속 쌓이므로 오래된 것부터 버린다 (architecture.md의 캐시 상한 규칙). */
 const SEEN_LIMIT = 2000;
 
-// 만료된 항목은 꺼내거나 훑을 때에야 지워진다. 미리보기를 30개 열고 두면 본문 HTML·댓글 0.9MB가 그대로 남는다.
+// 만료된 항목은 꺼내거나 훑을 때에야 지워진다. 미리보기를 30개 열고 두면 본문 HTML, 댓글 0.9MB가 그대로 남는다.
 // 저장할 때마다 수명이 다시 시작되므로 마지막 저장의 수명이 끝난 뒤 한 번 훑는다. 훑기(이터레이터)가 만료된 항목을 지운다.
 let sweep: ReturnType<typeof setTimeout> | undefined;
 const scheduleSweep = (): void => {
@@ -33,7 +33,7 @@ const scheduleSweep = (): void => {
 };
 
 /**
- * 글 하나를 가리키는 키. 번호는 갤러리마다 따로 매겨진다. 일반·마이너·미니·인물 갤러리는 id가 겹칠 수 있어 종류도 넣는다.
+ * 글 하나를 가리키는 키. 번호는 갤러리마다 따로 매겨진다. 일반, 마이너, 미니, 인물 갤러리는 id가 겹칠 수 있어 종류도 넣는다.
  * 일반 갤러리는 종류를 붙이지 않는다 ("id:번호").
  */
 export const postKey = (preData: Pick<GalleryPreData, "gallery" | "id" | "link">): string => {

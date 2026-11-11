@@ -17,7 +17,7 @@ import {SettingItem} from "./SettingItem";
 type SettingEntry = [key: string, schema: LabeledSetting];
 
 /**
- * 검색어(소문자)에 맞는 설정. 모듈 이름·설명이 맞으면 전부, 아니면 이름·설명·묶음 이름이 맞는 설정만 남긴다.
+ * 검색어(소문자)에 맞는 설정. 모듈 이름, 설명이 맞으면 전부, 아니면 이름, 설명, 묶음 이름이 맞는 설정만 남긴다.
  * 맞는 것이 없으면 undefined. 검색어가 비면 전부다.
  */
 export const matchSettings = (feature: Pick<ModuleInfo, "name" | "description" | "settings">, needle: string): SettingEntry[] | undefined => {
@@ -62,7 +62,7 @@ const ModuleSettings = ({feature, settings, shown}: { feature: ModuleInfo; setti
                             <div className="py-3" role="group" aria-label={group.name}>
                                 <p className="font-medium">{group.name}</p>
                                 <p className="mb-2 text-xs text-muted-foreground">{group.desc}</p>
-                                {/* 글 입력칸·슬라이더는 칸 하나에 넣기엔 좁다. 섞여 있으면 묶음 전체를 한 줄에 하나씩 그려 조작부를 오른쪽 끝에 맞춘다. */}
+                                {/* 글 입력칸, 슬라이더는 칸 하나에 넣기엔 좁다. 섞여 있으면 묶음 전체를 한 줄에 하나씩 그려 조작부를 오른쪽 끝에 맞춘다. */}
                                 <div className={entries.some(([, schema]) => schema.type === "text" || schema.type === "range") ? "grid grid-cols-1 gap-x-6" : "grid grid-cols-2 gap-x-6 sm:grid-cols-3"}>
                                     {entries.map((entry) => item(entry, true))}
                                 </div>
@@ -100,7 +100,7 @@ const ModuleCard = ({feature, shown, searching}: { feature: ModuleInfo; shown: S
             {shown.length > 0 && (
                 // 접혀서 패널이 빠져도 이 칸은 카드의 자식으로 남아 카드 간격만큼 아래 여백이 벌어진다. 그 간격을 여기서 지운다.
                 <Collapsible open={enabled || searching} className="-mt-(--card-spacing)">
-                    {/* overflow-clip에 여백을 둔다. 없으면 가장자리 스위치·입력칸의 포커스 테두리가 잘린다. */}
+                    {/* overflow-clip에 여백을 둔다. 없으면 가장자리 스위치, 입력칸의 포커스 테두리가 잘린다. */}
                     <CollapsibleContent
                         className="h-(--collapsible-panel-height) overflow-clip transition-[height,opacity] duration-200 ease-out [overflow-clip-margin:6px] data-ending-style:h-0 data-ending-style:opacity-0 data-starting-style:h-0 data-starting-style:opacity-0 motion-reduce:transition-none">
                         <CardContent className="mt-2">
@@ -119,7 +119,7 @@ const ModuleCard = ({feature, shown, searching}: { feature: ModuleInfo; shown: S
 
 /**
  * 검색어(소문자)가 든 글자를 칠한다 (CSS Custom Highlight API, assets/styles/pages.css의 ::highlight).
- * DOM을 바꾸지 않아 이름·설명을 <mark>로 쪼개 그리지 않아도 된다.
+ * DOM을 바꾸지 않아 이름, 설명을 <mark>로 쪼개 그리지 않아도 된다.
  */
 const useSearchHighlight = (root: RefObject<HTMLElement | null>, needle: string): void => {
     useEffect(() => {

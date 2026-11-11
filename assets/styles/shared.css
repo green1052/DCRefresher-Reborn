@@ -23,7 +23,7 @@
 }
 
 /*
- * 스텔스 모드: 댓글 디시콘·글자콘을 가려 두고 마우스를 올리면 보인다. 가리는 값과 안내 문구는 features/stealth/page.css가 <html>에 거는 변수다.
+ * 스텔스 모드: 댓글 디시콘, 글자콘을 가려 두고 마우스를 올리면 보인다. 가리는 값과 안내 문구는 features/stealth/page.css가 <html>에 거는 변수다.
  * 안내 문구 테두리 색은 --refresher-dccon-cover-border로 준다.
  */
 @utility refresher-dccon-cover {

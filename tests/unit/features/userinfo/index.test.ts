@@ -14,7 +14,7 @@ import {useUiStore} from "@/stores/ui";
 import {stored, tick} from "../../../helpers";
 import {type Running, runModule} from "../module";
 
-// IP·밴 DB와 갤로그는 저장소·네트워크 대신 표로 둔다.
+// IP, 밴 DB와 갤로그는 저장소, 네트워크 대신 표로 둔다.
 const db = vi.hoisted(() => ({
     ips: new Map<string, { label: string; title: string; category: IpCategory }>(),
     bans: new Map<string, string>(),
@@ -97,7 +97,7 @@ afterEach(() => {
     running = undefined;
 });
 
-describe("아이디·IP 배지", () => {
+describe("아이디, IP 배지", () => {
     it("회원은 아이디를, 유동은 IP 정보를 붙인다", async () => {
         db.ips.set("1.2", {label: "KT", title: "KT\nSK", category: "korea"});
         mountRows([{no: "1", uid: "member"}, {no: "2", ip: "1.2"}, {no: "3", ip: "9.9"}]);
@@ -135,7 +135,7 @@ describe("아이디·IP 배지", () => {
         expect(badges("2")).toEqual(["[Tencent (VPN)]"]);
     });
 
-    it("고정닉·반고정닉 아이디는 설정대로 숨긴다", async () => {
+    it("고정닉, 반고정닉 아이디는 설정대로 숨긴다", async () => {
         mountRows([{no: "1", uid: "fixed", icon: "fix_nik.gif"}, {no: "2", uid: "half", icon: "nik.gif"}]);
         const {change} = await start({showFixedNickUID: false});
         expect(badges("1")).toEqual([]);
@@ -153,7 +153,7 @@ describe("아이디·IP 배지", () => {
     });
 });
 
-describe("메모·순서·갱차", () => {
+describe("메모, 순서, 갱차", () => {
     it("메모를 붙이고 메모가 바뀌면 다시 그린다", async () => {
         mountRows([{no: "1", uid: "member"}]);
         await start();
@@ -193,7 +193,7 @@ describe("메모·순서·갱차", () => {
     });
 });
 
-describe("글댓비·깡계", () => {
+describe("글댓비, 깡계", () => {
     const saveRatio = async (ratio: Record<string, RatioInfo>): Promise<void> =>
         fakeBrowser.storage.local.set({[RATIO_KEY]: {ratio}});
 
@@ -239,7 +239,7 @@ describe("글댓비·깡계", () => {
         expect(badges("1")).toEqual(["(low)", "[0/0]"]);
     });
 
-    it("흐리게·숨기기는 행에 걸고 알리고, 설정을 바꾸면 뗀다", async () => {
+    it("흐리게, 숨기기는 행에 걸고 알리고, 설정을 바꾸면 뗀다", async () => {
         await saveRatio({low: {article: 1, comment: 2, date: Date.now()}});
         mountRows([{no: "1", uid: "low"}]);
         const notified = vi.fn();
@@ -349,7 +349,7 @@ describe("글댓비·깡계", () => {
         await vi.waitFor(async () => expect(Object.keys((await stored(RATIO_KEY) as { ratio?: Record<string, RatioInfo> }).ratio ?? {}).sort()).toEqual(["fresh", "other"]));
     });
 
-    it("미리보기·버블이 새로 받은 글댓비도 그리고 저장한다", async () => {
+    it("미리보기, 버블이 새로 받은 글댓비도 그리고 저장한다", async () => {
         mountRows([{no: "1", uid: "seen"}]);
         const {stop} = await start({checkRatio: true});
         for (const listener of gallog.listeners) listener("seen", {article: 7, comment: 8});
@@ -364,7 +364,7 @@ describe("글댓비·깡계", () => {
         expect(gallog.listeners.size).toBe(0);
     });
 
-    it("글댓비 표시를 끄면 미리보기·버블이 받은 값을 넣지 않는다", async () => {
+    it("글댓비 표시를 끄면 미리보기, 버블이 받은 값을 넣지 않는다", async () => {
         mountRows([{no: "1", uid: "seen"}]);
         await start();
         for (const listener of gallog.listeners) listener("seen", {article: 7, comment: 8});
@@ -423,7 +423,7 @@ describe("글댓비·깡계", () => {
     });
 });
 
-describe("미리보기 공유·끄기", () => {
+describe("미리보기 공유, 끄기", () => {
     it("끄면 배지를 떼고 미리보기에 올린 글댓비를 거둔다", async () => {
         db.ips.set("1.2", {label: "KT", title: "KT", category: "korea"});
         mountRows([{no: "1", ip: "1.2"}]);

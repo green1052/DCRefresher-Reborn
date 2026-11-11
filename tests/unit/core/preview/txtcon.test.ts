@@ -8,7 +8,7 @@ describe("wrapTxtcon", () => {
         expect(wrapTxtcon("가\r\n나다라마바사")).toBe("가\n나다라마바\n사");
     });
 
-    it("국기·ZWJ 가족 이모지는 한 글자로 센다", () => {
+    it("국기, ZWJ 가족 이모지는 한 글자로 센다", () => {
         expect(wrapTxtcon("🇰🇷👨‍👩‍👧가나다라")).toBe("🇰🇷👨‍👩‍👧가나다\n라");
     });
 });
@@ -30,11 +30,11 @@ describe("normalizeTxtcon", () => {
         expect(normalizeTxtcon("☺".repeat(11))).toBe("☺".repeat(11));
     });
 
-    it("국기·ZWJ 이모지는 쪼개지 않는다", () => {
+    it("국기, ZWJ 이모지는 쪼개지 않는다", () => {
         expect(normalizeTxtcon("🇰🇷👨‍👩‍👧")).toBe("🇰🇷👨‍👩‍👧");
     });
 
-    it("중괄호·안 보이는 채움 문자를 빼고, 특수 공백은 일반 공백으로, 마침표 4개 이상은 3개로 바꾼다", () => {
+    it("중괄호, 안 보이는 채움 문자를 빼고, 특수 공백은 일반 공백으로, 마침표 4개 이상은 3개로 바꾼다", () => {
         expect(normalizeTxtcon("{가}ㅤ나")).toBe("가나");
         expect(normalizeTxtcon("가 나")).toBe("가 나");
         expect(normalizeTxtcon("아.....")).toBe("아...");

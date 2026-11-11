@@ -7,10 +7,10 @@ import DOMPurify, {type Config, type DOMPurify as Purifier} from "dompurify";
 const isGifVideo = (node: Element): boolean =>
     node.hasAttribute("data-src") || node.classList.contains("written_dccon") || /dccon\.php/.test(node.getAttribute("src") ?? "");
 
-// 인라인 style은 글 서식(글자·색·표·여백·크기)만 남긴다. 위치·표시(display)·배경 이미지 같은 나머지는
-// 창을 벗어나거나 숨기기 규칙(스텔스·관리자 가림)을 이기거나 원격 이미지를 불러오므로 지운다.
-// 음수 여백은 본문을 창 머리(제목·작성자·버튼)나 댓글 위로 끌어올려 덮으므로 지운다 (calc(0px - 400px)도 '-'가 든다).
-// 이미지·동영상·유튜브의 높이는 CSS의 height: auto(유튜브는 16:9)가 이겨야 창보다 넓은 것이 줄어들 때 비율이 맞는다.
+// 인라인 style은 글 서식(글자, 색, 표, 여백, 크기)만 남긴다. 위치, 표시(display), 배경 이미지 같은 나머지는
+// 창을 벗어나거나 숨기기 규칙(스텔스, 관리자 가림)을 이기거나 원격 이미지를 불러오므로 지운다.
+// 음수 여백은 본문을 창 머리(제목, 작성자, 버튼)나 댓글 위로 끌어올려 덮으므로 지운다 (calc(0px - 400px)도 '-'가 든다).
+// 이미지, 동영상, 유튜브의 높이는 CSS의 height: auto(유튜브는 16:9)가 이겨야 창보다 넓은 것이 줄어들 때 비율이 맞는다.
 const KEPT_STYLE = /^(?:color|background-color|font-.+|text-(?:align|indent|decoration|wrap).*|white-space.*|line-height|letter-spacing|word-spacing|vertical-align|border-(?!image).+|padding.*|margin.*|width|height|table-layout)$/;
 
 const autoHeight = (node: Element): boolean =>
@@ -21,7 +21,7 @@ const keepFormatting = (node: HTMLElement | SVGElement): void => {
     for (const name of [...style]) {
         const dropped = !KEPT_STYLE.test(name)
             || (name === "height" && autoHeight(node))
-            // 디시 투표(pollFrame)는 width·height 0으로 와서 페이지 스크립트가 내용 크기로 늘린다. 미리보기엔 그 스크립트가 없어 0이면 지워 width·height 속성 크기로 보인다.
+            // 디시 투표(pollFrame)는 width, height 0으로 와서 페이지 스크립트가 내용 크기로 늘린다. 미리보기엔 그 스크립트가 없어 0이면 지워 width, height 속성 크기로 보인다.
             || ((name === "width" || name === "height") && node.nodeName === "IFRAME" && Number.parseFloat(style.getPropertyValue(name)) === 0)
             || (name.startsWith("margin") && style.getPropertyValue(name).includes("-"));
         if (dropped) style.removeProperty(name);
@@ -29,16 +29,16 @@ const keepFormatting = (node: HTMLElement | SVGElement): void => {
     if (style.length === 0) node.removeAttribute("style");
 };
 
-/** iframe에 넘겨도 되는 권한. 동영상 재생에 쓰는 것만 남기고, 카메라·마이크·클립보드 같은 권한은 본문이 넘기지 못하게 한다. */
+/** iframe에 넘겨도 되는 권한. 동영상 재생에 쓰는 것만 남기고, 카메라, 마이크, 클립보드 같은 권한은 본문이 넘기지 못하게 한다. */
 const IFRAME_ALLOW = new Set(["autoplay", "encrypted-media", "fullscreen", "picture-in-picture"]);
 
 // 동영상에는 재생 컨트롤을 붙인다. 디시 본문은 컨트롤 없이 페이지 스크립트로 재생하기 때문이다.
-// 디시콘·움짤은 디시처럼 컨트롤 없이 자동 반복 재생한다.
-// 이미지·iframe은 lazy로 두어 스텔스·이미지 차단으로 숨긴 것은 받지 않게 한다.
+// 디시콘, 움짤은 디시처럼 컨트롤 없이 자동 반복 재생한다.
+// 이미지, iframe은 lazy로 두어 스텔스, 이미지 차단으로 숨긴 것은 받지 않게 한다.
 // 링크는 새 탭으로 연다. DOMPurify가 target을 지워 그대로 두면 갤러리 탭이 넘어가 목록과 미리보기를 잃는다.
 // # 앵커는 주소를 뗀다. 미리보기(shadow DOM) 안에서는 가리킬 곳이 없고, 누르면 주소에 #이 붙어 미리보기 기록이 바뀌며 창이 닫힌다.
 const onAttributes = (node: Element): void => {
-    // MathML(<math>) 같은 나머지 요소는 서식만 골라 지울 수 없어(HTMLElement·SVGElement가 아니다) style을 통째로 지운다.
+    // MathML(<math>) 같은 나머지 요소는 서식만 골라 지울 수 없어(HTMLElement, SVGElement가 아니다) style을 통째로 지운다.
     if (node.hasAttribute("style")) {
         if (node instanceof HTMLElement || node instanceof SVGElement) keepFormatting(node);
         else node.removeAttribute("style");
@@ -74,12 +74,12 @@ const YOUTUBE_EMBED = /<embed\s[^>]*?src="(https:\/\/www\.youtube(?:-nocookie)?\
 const embedYoutube = (html: string): string =>
     html.includes("<embed") ? html.replace(YOUTUBE_EMBED, "<iframe src=\"$1\" width=\"560\" height=\"315\" allowfullscreen></iframe>") : html;
 
-// <style>은 shadow 루트 전체(창·댓글·가린 내용)에 걸리고, 폼 요소는 본문에 필요 없는데 가짜 입력칸을 만들 수 있어 뺀다.
-// SVG <feImage>와 background 속성은 원격 이미지를 불러오는데 미디어 숨기기(태그·CSS)에 걸리지 않는다. 본문에 쓸 일도 없어 뺀다.
-// popover·command 속성은 본문 버튼으로 <dialog>나 팝오버를 최상위 층에 띄운다. 남긴 크기·배경색과 합치면 화면 전체를 덮는 가짜 창이 되어 뺀다.
+// <style>은 shadow 루트 전체(창, 댓글, 가린 내용)에 걸리고, 폼 요소는 본문에 필요 없는데 가짜 입력칸을 만들 수 있어 뺀다.
+// SVG <feImage>와 background 속성은 원격 이미지를 불러오는데 미디어 숨기기(태그, CSS)에 걸리지 않는다. 본문에 쓸 일도 없어 뺀다.
+// popover, command 속성은 본문 버튼으로 <dialog>나 팝오버를 최상위 층에 띄운다. 남긴 크기, 배경색과 합치면 화면 전체를 덮는 가짜 창이 되어 뺀다.
 // data-slot은 확장 UI가 다이얼로그가 떠 있는지 볼 때 찾는 표시다 (utils/event.ts의 isTyping, Frame의 Esc). 본문이 달면 단축키가 막힌다.
-// data-blocked·data-*-revealed·data-blur-reveal·data-duplicate·data-low-activity는 확장이 가림 상태로 읽는 표시다
-// (core/block.ts의 isBlockedHidden, features/preview/overlay.css). 본문이 달면 차단한 이미지·디시콘의 가림을 스스로 푼다.
+// data-blocked, data-*-revealed, data-blur-reveal, data-duplicate, data-low-activity는 확장이 가림 상태로 읽는 표시다
+// (core/block.ts의 isBlockedHidden, features/preview/overlay.css). 본문이 달면 차단한 이미지, 디시콘의 가림을 스스로 푼다.
 const FORBIDDEN = ["style", "form", "input", "textarea", "select", "feimage"];
 const BASE: Config = {
     FORBID_ATTR: [
@@ -105,7 +105,7 @@ const make = (cfg: Config): Purifier => {
 let base: Purifier | undefined;
 let noMedia: Purifier | undefined;
 
-/** 스크립트·로딩이 없는 문서 (<template>의 내용 문서). 정화할 HTML을 여기서 파싱한다. */
+/** 스크립트, 로딩이 없는 문서 (<template>의 내용 문서). 정화할 HTML을 여기서 파싱한다. */
 let inert: Document | undefined;
 
 /**
@@ -125,7 +125,7 @@ export const sanitizeHtml = (html: string, options: { stripMedia?: boolean } = {
 };
 
 /**
- * 직렬화된 HTML(innerHTML·DOMPurify 결과) → 차단어 검사용 평문.
+ * 직렬화된 HTML(innerHTML, DOMPurify 결과) → 차단어 검사용 평문.
  * 태그만 떼면 &amp; 같은 엔티티가 남아 'R&B', '<3' 같은 차단어가 안 걸린다.
  */
 export const htmlToText = (html: string): string => {

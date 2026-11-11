@@ -2,14 +2,14 @@ import {type CommentRcKey, type GrecaptchaRequest, sendMessage, type TurnstileRe
 import {type ManageResult, resultMessage, submitComment, type SubmitResult, submitTxtcon, userDeleteComment} from "@/core/preview/request";
 import type {DcinsideDccon, GalleryPreData, PostInfo, TurnstileConfig} from "@/core/preview/types";
 
-// 'false||메시지' 형식이 아닌 실패 응답 코드 (디시 dccon.js·txtcon.js에서 옮김).
+// 'false||메시지' 형식이 아닌 실패 응답 코드 (디시 dccon.js, txtcon.js에서 옮김).
 const FAIL_MESSAGES: Record<string, string> = {
     code_fail: "자동입력 방지 코드가 일치하지 않습니다.",
     fail1: "닉네임과 비밀번호를 정확하게 입력해 주세요.",
     form_error: "닉네임과 비밀번호를 정확하게 입력해 주세요."
 };
 
-// 디시콘 댓글만의 실패 응답 코드 (디시 dccon.js와 같은 문구). 글·글자콘 댓글이 fail을 받아도 디시콘 문구를 보이지 않게 나눈다.
+// 디시콘 댓글만의 실패 응답 코드 (디시 dccon.js와 같은 문구). 글, 글자콘 댓글이 fail을 받아도 디시콘 문구를 보이지 않게 나눈다.
 const DCCON_FAIL_MESSAGES: Record<string, string> = {
     not_buy: "구매내역이 존재하지 않는 디시콘입니다.",
     expired: "사용기간이 만료된 디시콘입니다.",
@@ -95,8 +95,8 @@ export const turnstileFields = async (
 type CommentOutcome = { ok: true } | { ok: false; captcha: true } | { ok: false; captcha: false; message: string };
 
 /**
- * 댓글·디시콘·글자콘을 보낸다. 처음엔 토큰 없이 보내고, 'false||captcha||v3'가 오면 reCAPTCHA v3 토큰을 붙여 한 번 더 보낸다
- * (디시 comment.js·dccon.js·txtcon.js와 같음). turnstile(turnstileFields)은 두 전송에 같이 붙인다 (디시도 formData에 한 번 붙인다).
+ * 댓글, 디시콘, 글자콘을 보낸다. 처음엔 토큰 없이 보내고, 'false||captcha||v3'가 오면 reCAPTCHA v3 토큰을 붙여 한 번 더 보낸다
+ * (디시 comment.js, dccon.js, txtcon.js와 같음). turnstile(turnstileFields)은 두 전송에 같이 붙인다 (디시도 formData에 한 번 붙인다).
  * 요청이 끊기면 던진다 (서버는 댓글을 올렸을 수 있다).
  */
 export const postComment = async (
@@ -119,7 +119,7 @@ export const postComment = async (
 
     const response = await sendWithV3(send, content.txtcon || useDccon ? {action: "insert_icon"} : {action: "comment_submit", rcKey});
 
-    // 성공 응답: 댓글은 새 댓글 번호, 디시콘·글자콘은 'ok'.
+    // 성공 응답: 댓글은 새 댓글 번호, 디시콘, 글자콘은 'ok'.
     if (content.txtcon || useDccon ? response.result === "ok" : isCommentPosted(response)) return {ok: true};
     // v2 체크박스를 요구하거나 v3 재전송도 막히면 원문 페이지에서만 풀 수 있다.
     if (response.message === "captcha") return {ok: false, captcha: true};
@@ -129,7 +129,7 @@ export const postComment = async (
 };
 
 /**
- * 본인 댓글 삭제 (비밀번호·회원). 'false||captcha||v3'가 오면 작성처럼 v3 토큰을 붙여 한 번 더 보낸다 (디시 comment.js의 비밀번호 삭제).
+ * 본인 댓글 삭제 (비밀번호, 회원). 'false||captcha||v3'가 오면 작성처럼 v3 토큰을 붙여 한 번 더 보낸다 (디시 comment.js의 비밀번호 삭제).
  */
 export const deleteOwnComment = async (preData: GalleryPreData, post: PostInfo, commentNo: string, password: string): Promise<ManageResult> => {
     const rcKey = pickRcKey();

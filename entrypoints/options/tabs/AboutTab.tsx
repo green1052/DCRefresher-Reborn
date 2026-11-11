@@ -63,7 +63,7 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
             `브라우저: ${navigator.userAgent}`,
             `켜진 모듈: ${enabledNames.join(", ") || "없음"}`,
             `IP DB: ${db?.version || "없음"} (마지막 확인 ${formatTime(db?.lastUpdate ?? 0)})`,
-            `차단 ${blockCount}개 · 메모 ${memoCount}개`
+            `차단 ${blockCount}개, 메모 ${memoCount}개`
         ];
         await copyText(lines.join("\n"), "진단 정보를 복사했습니다. 버그 제보에 붙여 넣어 주세요.", "복사하지 못했습니다.");
     };
@@ -99,8 +99,8 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
 
             <Section title="데이터 현황">
                 <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-3">
-                    <dt className="text-muted-foreground">차단 · 메모</dt>
-                    <dd>차단 {blockCount}개 · 메모 {memoCount}개</dd>
+                    <dt className="text-muted-foreground">차단, 메모</dt>
+                    <dd>차단 {blockCount}개, 메모 {memoCount}개</dd>
                     <dt className="text-muted-foreground">로컬 저장소</dt>
                     <dd>{usage === "error" ? "알 수 없음" : usage ? formatBytes(usage.local) : "…"}</dd>
                     <dt className="text-muted-foreground">클라우드 저장소</dt>

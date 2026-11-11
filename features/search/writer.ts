@@ -1,6 +1,6 @@
 import {listUrl, WRITER_PARAMS, type WriterFilter, type WriterKind} from "@/core/http/urls";
 
-// 아이디·IP로 작성자 글 찾기. 디시 글쓴이 검색(search_name)은 닉네임만 찾고 아이디·IP로는 아무것도 나오지 않는다.
+// 아이디, IP로 작성자 글 찾기. 디시 글쓴이 검색(search_name)은 닉네임만 찾고 아이디, IP로는 아무것도 나오지 않는다.
 // 그래서 목록 주소에 이 값(core/http/urls.ts의 WRITER_PARAMS)을 얹어 두고 그 작성자가 아닌 행을 숨긴다.
 // 닉네임을 알면 글쓴이 검색으로 범위를 넓히고, 모르면 목록을 넘기며 거른다.
 
@@ -36,7 +36,7 @@ const TYPE_NAMES: Record<WriterKind, string> = {uid: "아이디", ip: "IP"};
 const ADDED_TYPE = "refresherWriterType";
 
 /**
- * 갤러리 검색창의 종류(글쓴이 등)에 아이디·IP를 더한다. 고르고 검색하면 디시 검색 대신 search를 부른다.
+ * 갤러리 검색창의 종류(글쓴이 등)에 아이디, IP를 더한다. 고르고 검색하면 디시 검색 대신 search를 부른다.
  * 이 페이지가 작성자 거르기 중이면 그 종류와 값을 채워 둔다.
  */
 export const addWriterTypes = (filter: WriterFilter | null, search: (filter: WriterFilter) => void, signal: AbortSignal): void => {
@@ -71,7 +71,7 @@ export const addWriterTypes = (filter: WriterFilter | null, search: (filter: Wri
         layer.style.display = "none";
     }, {signal});
 
-    // 디시의 검색 버튼·입력칸 처리기보다 먼저 받아 막는다.
+    // 디시의 검색 버튼, 입력칸 처리기보다 먼저 받아 막는다.
     const submit = (ev: Event): void => {
         if (!chosen) return;
         ev.preventDefault();
