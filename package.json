@@ -24,7 +24,7 @@
         "@webext-core/messaging": "^4.0.1",
         "class-variance-authority": "^0.7.1",
         "cn": "^0.5.2",
-        "dompurify": "^3.4.17",
+        "dompurify": "^3.4.18",
         "ky": "^2.2.0",
         "lucide-react": "^1.73.0",
         "p-limit": "^7.3.3",
