@@ -28,7 +28,7 @@
         "ky": "^2.2.0",
         "lucide-react": "^1.73.0",
         "p-limit": "^7.3.3",
-        "quick-lru": "^7.3.0",
+        "quick-lru": "^8.0.0",
         "react": "^19.3.1",
         "react-dom": "^19.3.1",
         "zustand": "^5.1.0"
