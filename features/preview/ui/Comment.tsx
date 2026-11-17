@@ -119,6 +119,8 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
         <div className={cn("refresher-comment relative px-8 py-2 [contain-intrinsic-size:auto_48px] [content-visibility:auto] hover:bg-muted/50",
                            // 자동 새로고침으로 새로 들어온 댓글 (previewStore의 freshComments). 강조색으로 깔았다가 걷는다.
                            fresh && "animate-fresh-comment",
+                           // 지운 댓글은 행 전체를 흐리게 해 눈에 띈다. 배경 색은 마우스를 올릴 때와 겹쳐 헷갈린다.
+                           isDeleted && "opacity-60",
                            threadOpen && THREAD_OPEN, depth === 1 && REPLY, depth === 1 && !lastReply && REPLY_CONTINUES)}
              data-no={comment.no}
              data-deleted={isDeleted || undefined} data-blocked={comment.blocked} data-low-activity={comment.lowActivity} data-duplicate={comment.duplicates === 0 || undefined} data-fresh={fresh || undefined}>
