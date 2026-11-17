@@ -4,11 +4,16 @@ import {releaseDatabase} from "@/core/database";
 import {documentUrl} from "@/core/http/urls";
 import {onMessage} from "@/core/messaging/protocol";
 import {loadAll, pageState, runPageToggle, runShortcut, settledPageState, stopAll} from "@/core/module/registry";
+import {enablesOf, isModuleEnabled} from "@/core/module/settings";
 import {BOARD_PAGE} from "@/core/pages";
+import {MODULES_KEY} from "@/core/storage/items";
 import {bindUsageContext} from "@/core/usage";
 import features from "@/features";
+import metas from "@/features/metas";
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
+
+import {storage} from "wxt/utils/storage";
 
 import {mountOverlayWhenNeeded} from "./overlay";
 
@@ -39,9 +44,20 @@ export const start = async (ctx: ContentScriptContext): Promise<void> => {
     mountOverlayWhenNeeded(ctx);
 
     // ===== 모듈 부트스트랩 =====
-    // 차단, 메모는 BOARD_PAGE에서만 읽고 IP/밴 DB는 처음 필요할 때 읽는다.
+    // 차단, 메모 저장소는 BOARD_PAGE에서만, 읽는 모듈이 하나라도 켜져 있을 때만 읽는다. 스킵한 회차는 다음 기회에 다시 본다.
+    const STORE_USERS = ["block", "preview", "userinfo"];
+    let storesReady: Promise<void> | undefined;
+    const ensureStores = (): Promise<void> => storesReady ??= (async () => {
+        const enables = enablesOf(await storage.getItem(MODULES_KEY));
+        const needed = metas.filter((meta) => STORE_USERS.includes(meta.id)).some((meta) => isModuleEnabled(meta, enables));
+        if (!needed) {
+            storesReady = undefined;
+            return;
+        }
+        await Promise.all([initBlocksStore(ctx.signal), initMemosStore(ctx.signal)]);
+    })();
     const board = BOARD_PAGE.test(documentUrl.pathname);
-    await loadAll(features, ctx.signal, board ? Promise.all([initBlocksStore(ctx.signal), initMemosStore(ctx.signal)]) : undefined);
+    await loadAll(features, ctx.signal, board ? ensureStores : undefined);
 };
 
 // HTML 엔트리는 이 모듈을 부수 효과만으로 읽어 export가 트리쉐이킹되므로 전역에 심는다.

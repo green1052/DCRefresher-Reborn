@@ -20,7 +20,7 @@ afterEach(() => context.abort());
 
 const setEnables = (value: Record<string, boolean>) => fakeBrowser.storage.local.set({"refresher:modules": value});
 const setSettings = (id: string, value: unknown) => fakeBrowser.storage.local.set({[`refresher:module:${id}:settings`]: value});
-const load = (defs: Parameters<Registry["loadAll"]>[0], signal = context.signal, ready?: Promise<void[]>) => registry.loadAll(defs, signal, ready);
+const load = (defs: Parameters<Registry["loadAll"]>[0], signal = context.signal, beforeStart?: () => Promise<void>) => registry.loadAll(defs, signal, beforeStart);
 /** 저장소 변경 알림을 막는다. 감시가 놓친 변경(bfcache, 감시 전 쓰기)을 흉내 낸다. */
 const muteWatchers = () => vi.spyOn(fakeBrowser.storage.local.onChanged, "trigger").mockResolvedValue([]);
 
@@ -76,21 +76,21 @@ describe("loadAll", () => {
     });
 
     it("ready가 끝난 뒤에 setup한다", async () => {
-        const ready = Promise.withResolvers<void[]>();
+        const gate = Promise.withResolvers<void>();
         const setup = vi.fn();
 
-        const loading = load([testModule({id: "a", setup})], undefined, ready.promise);
+        const loading = load([testModule({id: "a", setup})], undefined, () => gate.promise);
         await tick();
         expect(setup).not.toHaveBeenCalled();
 
-        ready.resolve([]);
+        gate.resolve();
         await loading;
         expect(setup).toHaveBeenCalledTimes(1);
     });
 
     it("ready가 실패하면 아무 모듈도 켜지 않는다", async () => {
         const setup = vi.fn();
-        await expect(load([testModule({id: "a", setup})], undefined, Promise.reject(new Error("no blocks")))).rejects.toThrow("no blocks");
+        await expect(load([testModule({id: "a", setup})], undefined, () => Promise.reject(new Error("no blocks")))).rejects.toThrow("no blocks");
         expect(setup).not.toHaveBeenCalled();
     });
 
@@ -485,13 +485,13 @@ describe("stopAll", () => {
     });
 
     it("불러오는 중에 멈추면 그 뒤에 켜지 않는다", async () => {
-        const ready = Promise.withResolvers<void[]>();
+        const gate = Promise.withResolvers<void>();
         const setup = vi.fn();
-        const loading = load([testModule({id: "a", setup})], undefined, ready.promise);
+        const loading = load([testModule({id: "a", setup})], undefined, () => gate.promise);
         await tick();
 
         registry.stopAll();
-        ready.resolve([]);
+        gate.resolve();
         await loading;
 
         expect(setup).not.toHaveBeenCalled();

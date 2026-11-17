@@ -3,7 +3,7 @@ import {shallow} from "zustand/shallow";
 
 import {blockMode, duplicateOf, isBlocked} from "@/core/block";
 import {isAbortError} from "@/core/http/client";
-// 정적 import: 파이어폭스는 콘텐츠 스크립트가 늦게 하는 동적 import(청크)를 페이지를 다시 읽은 직후에 못 읽는다.
+// 정적 import: 파이어폭스 155 전엔 실패한 동적 import가 모듈 맵에 실패로 남아 같은 페이지에서 다시 시도하지 못한다. 청크는 부트스트랩이 시작 시 한 번만 받는다.
 import {prepareComments, processComments, sameComments} from "@/core/preview/comments";
 import {sanitizeHtml} from "@/utils/sanitize";
 import {defineModule} from "@/core/module/define";
