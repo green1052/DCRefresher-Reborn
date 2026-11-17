@@ -189,28 +189,6 @@ test.describe("옵션 - 차단 탭", () => {
         await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([readded, list[1]]);
     });
 
-    test("갤러리로 걸러 보이는 항목만 지운다", async ({page, extensionId, storage}) => {
-        await storage.set({
-            "refresher:block:NICK": [
-                {id: "a", content: "갤닉", isRegex: false, gallery: "g1"},
-                {id: "b", content: "공통닉", isRegex: false},
-                {id: "c", content: "갤최근닉", isRegex: false, gallery: "g1"}
-            ]
-        });
-        const {table, alert} = await openOptions(page, extensionId, "block");
-        await expect(table.getByText("공통닉")).toBeVisible();
-
-        await page.getByRole("combobox", {name: "갤러리", exact: true}).click();
-        await page.getByRole("option", {name: "g1"}).click();
-        await expect(table.getByText("공통닉")).toHaveCount(0);
-        await expect(table.getByText("갤닉")).toBeVisible();
-
-        await page.getByRole("button", {name: "보이는 2개 삭제"}).click();
-        await alert.getByRole("button", {name: "삭제", exact: true}).click();
-        await expect.poll(() => storage.get("refresher:block:NICK")).toMatchObject([{id: "b"}]);
-        await expect(page.getByRole("tabpanel")).toBeFocused();
-    });
-
     test("거르기 중에 추가하면 거르기를 풀어 새 항목이 보인다", async ({page, extensionId, storage}) => {
         await storage.set({
             "refresher:block:NICK": [{id: "a", content: "갤닉", isRegex: false, gallery: "g1"}]

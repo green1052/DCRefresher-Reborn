@@ -159,8 +159,8 @@ export const ListTabs = <T extends string, I>({
         return [type, {total: all.length, list: all.filter((item) => visible(item)).reverse()}];
     })), [types, items, needle, galleryFilter, searchText, galleryOf]);
 
-    // 떠 있는 확인 창: 그 종류 전체 삭제(clear)나 보이는 항목 삭제(shown).
-    const [confirm, setConfirm] = useState<{ kind: "clear" | "shown"; type: T } | null>(null);
+    // 떠 있는 확인 창: 그 종류 전체 삭제.
+    const [confirm, setConfirm] = useState<{type: T} | null>(null);
     // 삭제를 확인하면 연 버튼이 사라지거나 막히므로 지우기 전에 탭 패널로 포커스를 옮겨 둔다.
     const filterRow = useRef<HTMLDivElement>(null);
     const [importOpen, setImportOpen] = useState(false);
@@ -247,27 +247,23 @@ export const ListTabs = <T extends string, I>({
                         const limit = limits[type] ?? PAGE;
                         return (
                             <TabsContent key={type} value={type} className="tab-enter">
-                                <div ref={filterRow} className="flex flex-wrap items-center gap-2 pt-2">
-                                    <RefresherSelect value={galleryFilter} options={galleryOptions} aria-label="갤러리" onChange={(value) => {
-                                        setGallery(value);
-                                        resetLimits();
-                                    }}/>
-                                    {filtering && list.length > 0 && (
-                                        <Button variant="destructive" onClick={() => setConfirm({kind: "shown", type})}>
-                                            <Trash2 data-icon="inline-start"/> 보이는 {list.length}개 삭제
-                                        </Button>
-                                    )}
-                                </div>
-                                <div className="flex flex-wrap items-center justify-between gap-3 py-4">
+                                <div ref={filterRow} className="flex flex-wrap items-center justify-between gap-3 py-4">
                                     {toolbar(type)}
-                                    <div className="ml-auto flex flex-wrap gap-2">
+                                    <div className="ml-auto flex flex-wrap items-center gap-2">
+                                        {/* 갤러리 한정 항목이 있을 때만 거르기를 보여 준다. 없으면 "모든 항목"과 결과가 같다. */}
+                                        {galleries.length > 0 && (
+                                            <RefresherSelect value={galleryFilter} options={galleryOptions} aria-label="갤러리" onChange={(value) => {
+                                                setGallery(value);
+                                                resetLimits();
+                                            }}/>
+                                        )}
                                         <SearchInput className="w-[180px]" placeholder="검색" aria-label={`${label} 검색`} value={query}
                                                      onChange={(ev) => {
                                                          setQuery(ev.target.value);
                                                          resetLimits();
                                                      }}/>
                                         {/* 검색 중에도 걸러진 것만이 아니라 이 종류 전부를 지우므로 확인 문구에 전체 개수를 적는다. */}
-                                        <TooltipButton tip="전체 삭제" variant="destructive" size="icon" disabled={total === 0} onClick={() => setConfirm({kind: "clear", type})}>
+                                        <TooltipButton tip="전체 삭제" variant="destructive" size="icon" disabled={total === 0} onClick={() => setConfirm({type})}>
                                             <Trash2/>
                                         </TooltipButton>
                                         <TooltipButton tip="추가" size="icon" onClick={() => {
@@ -321,16 +317,14 @@ export const ListTabs = <T extends string, I>({
 
             {confirm && (
                 <ConfirmDialog
-                    title={confirm.kind === "clear"
-                        ? `${names[confirm.type]} ${object} 모두(${items(confirm.type).length}개) 삭제할까요?`
-                        : `보이는 ${names[confirm.type]} ${object} ${shown.get(confirm.type)!.list.length}개 삭제할까요?`}
+                    title={`${names[confirm.type]} ${object} 모두(${items(confirm.type).length}개) 삭제할까요?`}
                     confirmLabel="삭제"
                     danger
                     onConfirm={() => {
                         focusPanel(filterRow.current);
-                        const {kind, type} = confirm;
-                        const targets = kind === "clear" ? items(type) : shown.get(type)!.list;
-                        removeItems(type, targets, () => (kind === "clear" ? onClear(type) : onRemoveMany(type, targets)));
+                        const {type} = confirm;
+                        const targets = items(type);
+                        removeItems(type, targets, () => onClear(type));
                         setConfirm(null);
                     }}
                     onClose={() => setConfirm(null)}
