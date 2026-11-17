@@ -4,7 +4,8 @@ import {runningModuleSettings} from "@/core/module/registry";
 import {getDcconPackage} from "@/core/preview/request";
 import {TYPE_NAMES} from "@/core/storage/items";
 import type {BlockType} from "@/core/storage/types";
-import {type BlockInputFields, useBlocksStore} from "@/stores/blocks";
+import {type BlockInputFields} from "@/core/block-list";
+import {useBlocksStore} from "@/stores/blocks";
 import {reportFailure} from "@/stores/notify";
 import {type SelectedUser, useUiStore} from "@/stores/ui";
 

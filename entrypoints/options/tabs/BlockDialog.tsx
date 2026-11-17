@@ -8,7 +8,8 @@ import {Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabe
 import {Input} from "@/components/ui/input";
 import {DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
-import {blockKey, type BlockInputFields, useBlocksStore} from "@/stores/blocks";
+import {blockKey, type BlockInputFields} from "@/core/block-list";
+import {useBlocksStore} from "@/stores/blocks";
 import {messageOf, SAVE_FAILED} from "@/utils/error";
 
 import {RefresherSelect} from "../shared/RefresherSelect";

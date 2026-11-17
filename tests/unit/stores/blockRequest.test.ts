@@ -3,7 +3,7 @@ import {beforeEach, describe, expect, it, vi} from "vitest";
 import {getDcconPackage} from "@/core/preview/request";
 import type {DcinsideDcconPackage} from "@/core/preview/types";
 import {handleBlockRequest} from "@/stores/blockRequest";
-import {normalizeBlockList} from "@/stores/blocks";
+import {normalizeBlockList} from "@/core/block-list";
 
 import {setBlockLists, stored} from "../../helpers";
 

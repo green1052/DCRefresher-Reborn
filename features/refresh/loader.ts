@@ -12,7 +12,7 @@ import {type Ctx} from "./meta";
 import {createUnseenCounter} from "./title";
 
 /** 목록 요청 하나의 제한 (머리 제한 15초 + 본문 수신 시간). */
-export const LIST_TIMEOUT = 30_000;
+const LIST_TIMEOUT = 30_000;
 /** 같은 요청을 다시 보내지 않는 최소 간격. */
 export const MINIMUM_REFRESH_INTERVAL = 2000;
 

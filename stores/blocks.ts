@@ -6,8 +6,7 @@ import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {typedListSync} from "@/core/storage/sync";
 import {saveOrReload} from "@/utils/error";
 
-// 검사, 정규화는 core/block-list에 두고 여기서 다시 꺼낸다. 옵션, 테스트가 stores/blocks에서 그대로 찾는다.
-export {blockKey, composeExtra, normalizeBlockList, normalizeDefaults, type BlockInputFields} from "@/core/block-list";
+// 검사, 정규화는 core/block-list에 있다.
 import {blockKey, normalizeBlockList, normalizeDefaults, type BlockInputFields} from "@/core/block-list";
 
 interface BlocksState {

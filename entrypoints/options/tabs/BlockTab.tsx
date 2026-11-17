@@ -6,7 +6,8 @@ import {IMAGE_HOST_ORIGINS} from "@/core/pages";
 import {pinDefaultMode} from "@/core/settings-transfer";
 import {BLOCK_TYPES, DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType} from "@/core/storage/types";
-import {type BlockInputFields, blockKey, blockLabel, composeExtra, normalizeBlockList, normalizeDefaults, useBlocksStore} from "@/stores/blocks";
+import {type BlockInputFields, blockKey, composeExtra, normalizeBlockList, normalizeDefaults} from "@/core/block-list";
+import {blockLabel, useBlocksStore} from "@/stores/blocks";
 import {SAVE_FAILED} from "@/utils/error";
 
 import {BlockDialog, DETECT_MODE_DESCRIPTIONS} from "./BlockDialog";

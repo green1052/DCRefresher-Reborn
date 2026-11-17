@@ -4,7 +4,7 @@ import {beforeEach, describe, expect, it, vi} from "vitest";
 
 import {isImageBlocked} from "@/core/block";
 import {blockImage} from "@/stores/blockRequest";
-import {normalizeBlockList} from "@/stores/blocks";
+import {normalizeBlockList} from "@/core/block-list";
 import {sha256} from "@/utils/hash";
 import {imageFingerprints} from "@/utils/imageFingerprint";
 

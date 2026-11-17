@@ -22,6 +22,4 @@ export const http: KyInstance = ky.create({
 export const formBody = (fields: Record<string, string | null | undefined | false>): URLSearchParams =>
     new URLSearchParams(Object.entries(fields).filter((entry): entry is [string, string] => typeof entry[1] === "string"));
 
-export {isAbortError} from "@/utils/error";
-
 export const ajax: KyInstance = http.extend({headers: {"X-Requested-With": "XMLHttpRequest"}});

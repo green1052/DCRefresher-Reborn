@@ -1,6 +1,6 @@
 import {HTTPError} from "ky";
 
-import {isAbortError} from "@/core/http/client";
+import {isAbortError} from "@/utils/error";
 import {defineModule} from "@/core/module/define";
 import {getModuleApi} from "@/core/module/registry";
 import type {GalleryPreData, PostInfo} from "@/core/preview/types";

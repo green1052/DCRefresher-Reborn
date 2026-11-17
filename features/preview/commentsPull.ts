@@ -8,7 +8,7 @@ import {fetchComments} from "@/core/preview/request";
 import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
 import {useBlocksStore} from "@/stores/blocks";
 import {lowActivityOf, useUiStore} from "@/stores/ui";
-import {isAbortError} from "@/core/http/client";
+import {isAbortError} from "@/utils/error";
 import type {ModuleSettings} from "@/core/module/types";
 import type {ProcessedComment} from "@/core/preview/comments";
 

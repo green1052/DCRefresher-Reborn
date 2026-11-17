@@ -1,5 +1,5 @@
 import {blockMode, isBlocked} from "@/core/block";
-import {isAbortError} from "@/core/http/client";
+import {isAbortError} from "@/utils/error";
 import {runningModuleSettings} from "@/core/module/registry";
 import {getEntry, postKey, setEntry} from "@/core/preview/cache";
 import {fetchPost} from "@/core/preview/request";

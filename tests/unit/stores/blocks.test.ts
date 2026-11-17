@@ -2,7 +2,8 @@ import {beforeEach, describe, expect, it, vi} from "vitest";
 import {fakeBrowser} from "wxt/testing/fake-browser";
 
 import {DEFAULT_DETECT_MODE} from "@/core/storage/items";
-import {blockKey, composeExtra, initBlocksStore, normalizeBlockList, normalizeDefaults, useBlocksStore} from "@/stores/blocks";
+import {blockKey, composeExtra, normalizeBlockList, normalizeDefaults} from "@/core/block-list";
+import {initBlocksStore, useBlocksStore} from "@/stores/blocks";
 
 import {blockEntry as entry, setBlockLists, stored} from "../../helpers";
 
