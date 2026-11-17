@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {fakeBrowser} from "wxt/testing/fake-browser";
 
-import type {ModuleContext} from "@/core/module/types";
+import type {AnyModule, ModuleContext} from "@/core/module/types";
 
 import {setting, testModule, tick} from "../../../helpers";
 
@@ -20,7 +20,12 @@ afterEach(() => context.abort());
 
 const setEnables = (value: Record<string, boolean>) => fakeBrowser.storage.local.set({"refresher:modules": value});
 const setSettings = (id: string, value: unknown) => fakeBrowser.storage.local.set({[`refresher:module:${id}:settings`]: value});
-const load = (defs: Parameters<Registry["loadAll"]>[0], signal = context.signal, beforeStart?: () => Promise<void>) => registry.loadAll(defs, signal, beforeStart);
+const load = (defs: AnyModule[], signal = context.signal, beforeStart?: () => Promise<void>) => {
+    // 같은 id가 두 개면(등록 실패 검사) 앞의 것을 쓴다.
+    const loaders: Record<string, () => Promise<AnyModule>> = {};
+    for (const def of defs) loaders[def.id] ??= () => Promise.resolve(def);
+    return registry.loadAll(defs, loaders, signal, beforeStart);
+};
 /** 저장소 변경 알림을 막는다. 감시가 놓친 변경(bfcache, 감시 전 쓰기)을 흉내 낸다. */
 const muteWatchers = () => vi.spyOn(fakeBrowser.storage.local.onChanged, "trigger").mockResolvedValue([]);
 

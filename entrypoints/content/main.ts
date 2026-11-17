@@ -8,7 +8,7 @@ import {enablesOf, isModuleEnabled} from "@/core/module/settings";
 import {BOARD_PAGE} from "@/core/pages";
 import {MODULES_KEY} from "@/core/storage/items";
 import {bindUsageContext} from "@/core/usage";
-import features from "@/features";
+import loaders from "@/features";
 import metas from "@/features/metas";
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
@@ -57,7 +57,7 @@ export const start = async (ctx: ContentScriptContext): Promise<void> => {
         await Promise.all([initBlocksStore(ctx.signal), initMemosStore(ctx.signal)]);
     })();
     const board = BOARD_PAGE.test(documentUrl.pathname);
-    await loadAll(features, ctx.signal, board ? ensureStores : undefined);
+    await loadAll(metas, loaders, ctx.signal, board ? ensureStores : undefined);
 };
 
 // HTML 엔트리는 이 모듈을 부수 효과만으로 읽어 export가 트리쉐이킹되므로 전역에 심는다.

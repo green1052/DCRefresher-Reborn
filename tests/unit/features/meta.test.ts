@@ -5,7 +5,7 @@ import {describe, expect, it} from "vitest";
 
 import {defaultValue, normalizeSetting, settingsOf} from "@/core/module/settings";
 import type {AnyModuleMeta} from "@/core/module/types";
-import features from "@/features/index";
+import loaders from "@/features/index";
 import metas from "@/features/meta";
 
 /** 폴더 이름 → 메타 id. 저장소 키와 빌드(modules/commands)가 폴더, id를 같은 것으로 본다. */
@@ -29,7 +29,7 @@ describe("모듈 메타", () => {
     });
 
     it("페이지에서 할 일이 없는 모듈만 index.ts가 없다", () => {
-        const withIndex = new Set(features.map((module) => module.id));
+        const withIndex = new Set(Object.keys(loaders));
         expect(metas.filter((meta) => !withIndex.has(meta.id)).map((meta) => meta.id)).toEqual(["imagesearch"]);
     });
 });

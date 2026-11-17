@@ -11,7 +11,7 @@ import type {SettingValue} from "@/core/storage/types";
 import {onBfcacheRestore} from "@/utils/dom";
 
 import {enablesOf, isModuleEnabled, readModuleStorage, settingsOf} from "./settings";
-import type {AnyModule, ModuleApis, ModuleContext, ModuleSettings} from "./types";
+import type {AnyModule, AnyModuleMeta, ModuleApis, ModuleContext, ModuleSettings} from "./types";
 
 interface ModuleInstance {
     def: AnyModule;
@@ -25,6 +25,22 @@ interface ModuleInstance {
 }
 
 const instances = new Map<string, ModuleInstance>();
+
+/** 모듈 id → 구현을 받는 로더(features/index.ts의 lazy glob). 꺼진 모듈은 청크를 내려받지 않는다. */
+export type ModuleLoaders = Record<string, () => Promise<AnyModule>>;
+
+/** 받아 둔 구현. 켜졌다 꺼져도 청크는 한 번만 받는다. 실패한 약속은 굳어지지 않게 지운다. */
+const impls = new Map<string, Promise<AnyModule>>();
+const moduleOf = (id: string, loaders: ModuleLoaders): Promise<AnyModule> => {
+    const pending = impls.get(id) ?? loaders[id]?.();
+    if (!pending) throw new Error(`${id} has no loader.`);
+    impls.set(id, pending);
+    void pending.catch(() => impls.delete(id));
+    return pending;
+};
+
+/** 같은 모듈을 두 번 받아 이중 등록하는 사이를 막는다. */
+const registering = new Set<string>();
 
 /** 모듈 id → 설정값. UI가 구독한다. */
 export const moduleSettingsStore = createStore<Record<string, Readonly<Record<string, SettingValue>>>>(() => ({}));
@@ -150,23 +166,28 @@ const applySettings = (instance: ModuleInstance, stored: unknown): void => {
 };
 
 /** on/off와 설정을 한 번에 읽는다(왕복 쌓임 방지). */
-const readAll = (defs: AnyModule[]) => readModuleStorage(defs.map((def) => def.id));
+const readAll = (metas: AnyModuleMeta[]) => readModuleStorage(metas.map((meta) => meta.id));
 
 /** 모듈이 켜지기 전에 기다린다. 콘텐츠에서 차단, 메모 저장소를 읽는 데 쓴다. 실패하면 그 회차에는 아무 모듈도 안 켠다. */
 export type BeforeStart = () => Promise<void>;
 
-const register = async (def: AnyModule, stored: unknown, enables: Record<string, unknown>, beforeStart?: BeforeStart): Promise<void> => {
-    if (instances.has(def.id)) throw new Error(`${def.id} is already registered.`);
+const register = async (meta: AnyModuleMeta, loaders: ModuleLoaders, stored: unknown, enables: Record<string, unknown>, beforeStart?: BeforeStart): Promise<void> => {
+    // 꺼진 모듈은 청크도 받지 않는다.
+    if (!isModuleEnabled(meta, enables)) return;
+    if (instances.has(meta.id) || registering.has(meta.id)) throw new Error(`already registered: ${meta.id}`);
+    registering.add(meta.id);
+    try {
+        const def = await moduleOf(meta.id, loaders);
+        const instance: ModuleInstance = {def, settings: {}};
+        instances.set(meta.id, instance);
 
-    const instance: ModuleInstance = {def, settings: {}};
-    instances.set(def.id, instance);
+        // 설정은 옵션 페이지가 저장소에 직접 쓰고, loadAll이 건 감시가 반영한다.
+        if (def.settings) applySettings(instance, stored);
 
-    // 설정은 옵션 페이지가 저장소에 직접 쓰고, loadAll이 건 감시가 반영한다.
-    if (def.settings) applySettings(instance, stored);
-
-    if (isModuleEnabled(def, enables)) {
         await beforeStart?.();
         await start(instance);
+    } finally {
+        registering.delete(meta.id);
     }
 };
 
@@ -227,67 +248,73 @@ export const stopAll = (): void => {
     for (const instance of instances.values()) stop(instance, true);
 };
 
-/** on/off 값에 맞춰 모듈을 시작, 중지하고, 시작하는 모듈의 setup을 기다린다. beforeStart가 실패하면 그 회차는 건너뛴다. */
-const sync = async (enables: Record<string, unknown>, beforeStart?: BeforeStart): Promise<void> => {
-    try {
-        await beforeStart?.();
-    } catch (e) {
-        console.error(e);
-        return;
-    }
-    const starts: Promise<void>[] = [];
-    for (const instance of instances.values()) {
-        if (!isModuleEnabled(instance.def, enables)) {
-            instance.failed = false;
-            stop(instance);
-        } else if (!instance.failed) {
-            starts.push(start(instance).catch((e) => console.error(e)));
-        }
-    }
-    await Promise.all(starts);
-};
-
 /** 모듈을 일괄 등록하고 on/off를 감시해 시작/중지한다. setup은 ready 뒤에 돈다. */
-const load = async (defs: AnyModule[], signal: AbortSignal, beforeStart?: BeforeStart): Promise<void> => {
+const load = async (metas: AnyModuleMeta[], loaders: ModuleLoaders, signal: AbortSignal, beforeStart?: BeforeStart): Promise<void> => {
     // UI가 읽는 설정을 기본값으로 먼저 채운다. 미등록 모듈의 오버레이 UI도 설정을 읽는다.
-    moduleSettingsStore.setState(Object.fromEntries(defs.filter((def) => def.settings).map((def) => [def.id, settingsOf(def, null)])));
-    // 이 페이지가 아닌 모듈은 등록하지 않는다. 검색어에 든 글자에 걸리지 않게 경로만 본다.
-    defs = defs.filter((def) => !def.urls || def.urls.some((re) => re.test(documentUrl.pathname)));
+    moduleSettingsStore.setState(Object.fromEntries(metas.filter((meta) => meta.settings).map((meta) => [meta.id, settingsOf(meta, null)])));
+    // 이 페이지가 아니거나 구현이 없는 모듈은 등록하지 않는다(imagesearch는 메타만 있다). 검색어에 든 글자에 걸리지 않게 경로만 본다.
+    const onPage = metas.filter((meta) => loaders[meta.id] && (!meta.urls || meta.urls.some((re) => re.test(documentUrl.pathname))));
     // 한 번에 읽고 감시는 읽기 전에 건다. 등록 전에 온 값은 읽은 값 대신 쓴다.
-    const early = new Map<string, unknown>();
-    for (const def of defs) {
-        if (!def.settings) continue;
-        watchStorage(moduleSettingsKey(def.id), (next) => {
-            const instance = instances.get(def.id);
+    const storedById = new Map<string, unknown>();
+    for (const meta of onPage) {
+        if (!meta.settings) continue;
+        watchStorage(moduleSettingsKey(meta.id), (next) => {
+            const instance = instances.get(meta.id);
             if (instance) applySettings(instance, next);
-            else early.set(def.id, next);
+            else storedById.set(meta.id, next);
         }, signal);
     }
-    const {settings, enables} = await readAll(defs);
-    const results = await Promise.allSettled(defs.map((def) => register(def, early.has(def.id) ? early.get(def.id) : settings.get(def.id), enables, beforeStart)));
+    const {settings, enables} = await readAll(onPage);
+    for (const [id, value] of settings) if (!storedById.has(id)) storedById.set(id, value);
+    const results = await Promise.allSettled(onPage.map((meta) => register(meta, loaders, storedById.get(meta.id), enables, beforeStart)));
     for (const [index, result] of results.entries()) {
-        if (result.status === "rejected") console.error(`Failed to load module: ${defs[index]?.id}`, result.reason);
+        if (result.status === "rejected") console.error(`Failed to load module: ${onPage[index]?.id}`, result.reason);
     }
     // 저장소 준비가 실패했으면 여기서 멈춘다. 아래 sync가 빈 차단 목록으로 모듈을 켜지 않게 한다.
     await beforeStart?.();
 
-    watchStorage(MODULES_KEY, (next) => void sync(enablesOf(next), beforeStart), signal);
+    /** on/off 값에 맞춰 모듈을 시작, 중지하고, 시작하는 모듈의 setup을 기다린다. 불러오지 않은 모듈이 켜졌으면 지금 받는다. */
+    const sync = async (next: Record<string, unknown>): Promise<void> => {
+        try {
+            await beforeStart?.();
+        } catch (e) {
+            console.error(e);
+            return;
+        }
+        const starts: Promise<void>[] = [];
+        for (const instance of instances.values()) {
+            if (!isModuleEnabled(instance.def, next)) {
+                instance.failed = false;
+                stop(instance);
+            } else if (!instance.failed) {
+                starts.push(start(instance).catch((e) => console.error(e)));
+            }
+        }
+        for (const meta of onPage) {
+            if (instances.has(meta.id) || registering.has(meta.id) || !isModuleEnabled(meta, next)) continue;
+            starts.push(register(meta, loaders, storedById.get(meta.id), next, beforeStart).catch((e) => console.error(`Failed to load module: ${meta.id}`, e)));
+        }
+        await Promise.all(starts);
+    };
+
+    watchStorage(MODULES_KEY, (next) => void sync(enablesOf(next)), signal);
     // bfcache 복귀 탭은 그사이 변경을 못 받았으니 설정을 먼저 맞춘다.
     onBfcacheRestore(async () => {
-        const stored = await readAll(defs);
+        const stored = await readAll(onPage);
         for (const instance of instances.values()) {
             if (instance.def.settings) applySettings(instance, stored.settings.get(instance.def.id));
         }
-        await sync(stored.enables, beforeStart);
+        for (const [id, value] of stored.settings) storedById.set(id, value);
+        await sync(stored.enables);
     }, signal);
     // 불러오는 동안 팝업이 바꾼 on/off는 감시 전이라 놓친다. 한 번 맞춘다.
-    resync = async () => sync(enablesOf(await storage.getItem(MODULES_KEY)), beforeStart);
+    resync = async () => sync(enablesOf(await storage.getItem(MODULES_KEY)));
     signal.addEventListener("abort", () => (resync = null), {once: true});
     await resync();
 };
 
-export const loadAll = (defs: AnyModule[], signal: AbortSignal, beforeStart?: BeforeStart): Promise<void> => {
-    const done = load(defs, signal, beforeStart);
+export const loadAll = (metas: AnyModuleMeta[], loaders: ModuleLoaders, signal: AbortSignal, beforeStart?: BeforeStart): Promise<void> => {
+    const done = load(metas, loaders, signal, beforeStart);
     // 실패는 loadAll을 기다리는 쪽이 받는다. 팝업 질문은 실패해도 지금 상태로 답한다.
     loading = done.catch(() => {});
     return done;
