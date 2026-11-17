@@ -21,8 +21,7 @@ test.describe("미리보기", () => {
         const icon = await frame.getByRole("button", {name: "디시콘", exact: true}).boundingBox();
         expect([icon?.width, icon?.height]).toEqual([36, 36]);
 
-        await page.keyboard.press("Escape");
-        await expect(frame).toHaveCount(0);
+        await listPage.closePreview();
         await expect(page).toHaveURL(LIST_URL);
         await expect(page).toHaveTitle("테스트 갤러리");
     });
@@ -47,8 +46,7 @@ test.describe("미리보기", () => {
             await listPage.openPreview();
             await expect(frame).toBeVisible();
             expect(await layout()).toEqual(short);
-            await page.keyboard.press("Escape");
-            await expect(frame).toHaveCount(0);
+            await listPage.closePreview();
 
             // 페이지를 늘려 스크롤바를 세운다 (fixtures에서 Chromium의 스크롤바 숨김을 끈다).
             await page.evaluate(() => document.body.style.setProperty("min-height", "300vh"));
@@ -57,8 +55,7 @@ test.describe("미리보기", () => {
             await listPage.openPreview();
             await expect(frame).toBeVisible();
             expect(await layout()).toEqual({width: long.width, gutter: "stable"});
-            await page.keyboard.press("Escape");
-            await expect(frame).toHaveCount(0);
+            await listPage.closePreview();
             expect(await layout()).toEqual(long);
         });
     });
@@ -83,8 +80,7 @@ test.describe("미리보기", () => {
         await page.goBack();
         await shows(1);
 
-        await page.keyboard.press("Escape");
-        await expect(listPage.frame).toHaveCount(0);
+        await listPage.closePreview();
         await expect(page).toHaveURL(LIST_URL);
         await expect(listPage.refreshButton).toBeVisible();
     });
@@ -124,8 +120,7 @@ test.describe("미리보기", () => {
             requested = postRequest(no - 1);
             await page.keyboard.press("PageDown");
             await requested;
-            await page.keyboard.press("Escape");
-            await expect(listPage.frame).toHaveCount(0);
+            await listPage.closePreview();
             stall.resolve();
         }
         // 끊긴 응답이 다 돌아올 때까지 기다린다. 오류는 errors 픽스처가 본다.
@@ -153,8 +148,7 @@ test.describe("미리보기", () => {
             await expect(listPage.comments).toHaveCount(2);
             // Base UI의 Esc 리스너는 스크롤 칸 포커스와 같은 effect 차례에 붙으므로 포커스를 본 뒤에 누른다.
             await expect(listPage.overlay.locator(".refresher-frame-scroll")).toBeFocused();
-            await listPage.page.keyboard.press("Escape");
-            await expect(listPage.frame).toHaveCount(0);
+            await listPage.closePreview();
         }
         expect(requests).toEqual(["/board/view/", "/board/comment/"]);
 
@@ -168,8 +162,7 @@ test.describe("미리보기", () => {
         await listPage.openPreview();
         await expect(listPage.comments).toHaveCount(2);
         await expect(listPage.overlay.locator(".refresher-frame-scroll")).toBeFocused();
-        await page.keyboard.press("Escape");
-        await expect(listPage.frame).toHaveCount(0);
+        await listPage.closePreview();
 
         // 본문이 들어온 뒤 첫 프레임에 그려진 댓글 수를 잰다. 댓글이 본문과 같이 그려지면 그 프레임까지 본문이 보이지 않는다.
         const atFirstFrame = page.evaluate(() => new Promise<number>((resolve) => {
@@ -209,8 +202,7 @@ test.describe("미리보기", () => {
         await expect(listPage.frame.getByRole("button", {name: /댓글만 표시 중입니다/})).toBeVisible();
         await expect(listPage.comments).toHaveCount(2);
 
-        await listPage.page.keyboard.press("Escape");
-        await expect(listPage.frame).toHaveCount(0);
+        await listPage.closePreview();
         await reply.click();
         await expect(listPage.page).toHaveURL(/\/board\/view\/\?id=test&no=3&t=cv$/);
     });
@@ -249,8 +241,7 @@ test.describe("미리보기", () => {
         await listPage.page.keyboard.press("Escape");
         await expect(viewer).toHaveCount(0);
         await expect(frame).toBeVisible();
-        await listPage.page.keyboard.press("Escape");
-        await expect(frame).toHaveCount(0);
+        await listPage.closePreview();
     });
 
     test("본문 이미지는 키보드로 골라 Enter로 크게 본다", async ({listPage}) => {
@@ -613,8 +604,7 @@ test.describe("댓글 쓰기, 지우기", () => {
         await page.keyboard.press("PageDown");
         await expect(listPage.frameTitle).toHaveText("[말머리] 글 2 제목");
         await expect(input).toHaveValue("글 2에 쓰던 댓글");
-        await page.keyboard.press("Escape");
-        await expect(frame).toHaveCount(0);
+        await listPage.closePreview();
         await listPage.openPreview();
         await expect(listPage.frameTitle).toHaveText("[말머리] 글 3 제목");
         await expect(input).toHaveValue("");

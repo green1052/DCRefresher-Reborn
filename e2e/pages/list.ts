@@ -1,4 +1,4 @@
-import type {Locator, Page} from "@playwright/test";
+import {expect, type Locator, type Page} from "@playwright/test";
 
 const FAKE_LIST_URL = "https://gall.dcinside.com/board/lists/?id=test";
 
@@ -38,6 +38,10 @@ export async function openListPage(page: Page, url = FAKE_LIST_URL) {
         openPreview: async (index = 0): Promise<Locator> => {
             await titles.nth(index).click({button: "right"});
             return frame;
+        },
+        closePreview: async (): Promise<void> => {
+            await page.keyboard.press("Escape");
+            await expect(frame).toHaveCount(0);
         },
         leave: () => page.mouse.move(0, 0)
     };
