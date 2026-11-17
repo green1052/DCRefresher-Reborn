@@ -47,6 +47,15 @@ vi.mock("@/core/gallog", () => ({
         }
         return activity;
     },
+    // 자동 조회(새 글 폴링)는 바쁘지 않을 때만 받는다 - 테스트에서는 항상 이 탭이 받는다.
+    getGallogActivityUnlessBusy: async (uid: string) => {
+        gallog.asked.push(uid);
+        const activity = gallog.activity.get(uid);
+        if (activity) {
+            for (const listener of gallog.listeners) listener(uid, activity);
+        }
+        return activity;
+    },
     onGallogActivity: (listener: (uid: string, activity: GallogActivity) => void) => {
         gallog.listeners.add(listener);
         return () => gallog.listeners.delete(listener);

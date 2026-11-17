@@ -1,5 +1,6 @@
 import {defineExtensionMessaging} from "@webext-core/messaging";
 
+import type {GallogActivity} from "@/core/gallog";
 import type {TurnstileConfig} from "@/core/preview/types";
 import type {UsageData, UsageKind} from "@/core/usage";
 import type {Sample} from "@/utils/imageFingerprint";
@@ -68,6 +69,12 @@ interface ProtocolMap {
 
     /** 탭 → 배경: 갤로그 첫 화면(HTML). CORS 때문에 배경이 받는다. 없는 아이디면 null. */
     "refresher:gallogPage"(id: string): string | null;
+
+    /** 탭 → 배경: 글댓비 조회권. 공유 캐시에 값이 있으면 cached로 주고, 다른 탭이 받는 중이면 mine 없이 돌려준다. */
+    "refresher:gallogClaim"(uid: string): {mine: boolean; cached?: GallogActivity};
+
+    /** 탭 → 배경: 글댓비 조회 결과. 실패는 activity 없이 보내 조회권만 푼다. */
+    "refresher:gallogResult"(data: {uid: string; activity?: GallogActivity}): void;
 
     /** 탭 → 배경: 쓰인 차단 항목, 메모. 여러 탭이 동시에 써도 잃지 않게 배경이 차례로 저장한다. */
     "refresher:markUsed"(batch: UsageData): void;

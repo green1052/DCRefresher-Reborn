@@ -4,7 +4,7 @@ import {storage, type WxtStorageItem} from "wxt/utils/storage";
 import {badgeViewOf, type BadgeView, DEFAULT_BADGE_VIEW, showsUid} from "@/core/badges";
 import {banReasonsOf, initDatabase, ipInfoOf, onDatabaseChange, passesIpFilter} from "@/core/database";
 import {defineModule} from "@/core/module/define";
-import {type GallogActivity, getGallogActivity, onGallogActivity, type RatioInfo} from "@/core/gallog";
+import {type GallogActivity, getGallogActivityUnlessBusy, onGallogActivity, type RatioInfo} from "@/core/gallog";
 import {ROWS_HIDDEN_EVENT} from "@/core/block";
 import {FILTER_SKIP_ATTR} from "@/core/filtering";
 import {pageGallery} from "@/core/http/urls";
@@ -300,10 +300,10 @@ export default defineModule(meta, {
             if (stale.length === 0) return;
             for (const uid of stale) pending.add(uid);
 
-            // 실패는 uid마다 흡수해 나머지는 저장한다. 버블·미리보기가 받은 값도 같이 쓴다 (캐시).
-            void Promise.all(stale.map(async (uid) => [uid, await getGallogActivity(uid)] as const)).then(async (results) => {
+            // 실패(undefined)는 uid마다 흡수해 나머지는 저장한다. 다른 탭이 받는 중(null)이면 다음 주기에 공유 캐시로 받는다. 버블·미리보기가 받은 값도 같이 쓴다 (캐시).
+            void Promise.all(stale.map(async (uid) => [uid, await getGallogActivityUnlessBusy(uid)] as const)).then(async (results) => {
                 for (const [uid, info] of results) {
-                    if (!info) failedRatios.set(uid, true);
+                    if (info === undefined) failedRatios.set(uid, true);
                 }
                 // 새로 받은 값은 위 onGallogActivity가 이미 넣었다. 남은 것은 이 모듈이나 글댓비 표시가 꺼져 있을 때 받아 갤로그 캐시에만 있던 값이다.
                 const fresh = results.filter((entry): entry is [string, GallogActivity] => Boolean(entry[1]) && !isFresh(state.ratios[entry[0]]));
