@@ -18,7 +18,8 @@ import {formatAppMemos, parseAppMemos} from "./appMemo";
 import {useUsage} from "../shared/hooks";
 import {ImportDialog} from "../shared/ImportDialog";
 import {ListRow, ListTabs} from "../lists/ListTabs";
-import {copyText, notify} from "../optionsStore";
+import {notify} from "../optionsStore";
+import {copyText} from "@/stores/ui";
 import {RefresherSelect} from "../shared/RefresherSelect";
 
 interface MemoFormState {

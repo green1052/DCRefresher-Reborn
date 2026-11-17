@@ -113,12 +113,12 @@ export const useUiStore = create<UiState>((set, get) => ({
     closeMemo: () => set({memo: null})
 }));
 
-/** text를 클립보드에 복사하고 토스트로 알린다. subject는 "링크를 "처럼 문구 앞에 붙는다. */
-export const copyWithToast = (text: string, subject = ""): Promise<void> => {
+/** text를 클립보드에 복사하고 결과를 토스트로 알린다. done은 성공 문구, failed는 실패 문구다. */
+export const copyText = (text: string, done: string, failed: string): Promise<void> => {
     const {showToast} = useUiStore.getState();
     return navigator.clipboard.writeText(text).then(
-        () => showToast(`${subject}복사했습니다.`),
-        () => showToast(`${subject}복사하지 못했습니다.`, "error")
+        () => showToast(done),
+        () => showToast(failed, "error")
     );
 };
 

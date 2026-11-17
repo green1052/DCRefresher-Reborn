@@ -12,7 +12,7 @@ import {useModulesStore} from "@/stores/modules";
 
 import {formatBytes, formatTime} from "../shared/format";
 import {Section} from "../shared/widgets";
-import {copyText} from "../optionsStore";
+import {copyText} from "@/stores/ui";
 
 const REPO = "https://github.com/green1052/DCRefresher-Reborn";
 

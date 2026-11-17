@@ -17,7 +17,8 @@ import {isRecord} from "@/utils/record";
 import {downloadJson} from "../shared/format";
 import {ImportDialog} from "../shared/ImportDialog";
 import {EmptyList, SearchInput} from "../shared/widgets";
-import {copyText, notify, notifyDone} from "../optionsStore";
+import {notify, notifyDone} from "../optionsStore";
+import {copyText} from "@/stores/ui";
 import {RefresherSelect} from "../shared/RefresherSelect";
 
 

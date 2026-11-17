@@ -20,7 +20,7 @@ import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {type BlockRequestOptions, handleBlockRequest} from "@/stores/blockRequest";
 import {blockLabel, useBlocksStore} from "@/stores/blocks";
 import {useUserMemo} from "@/stores/memos";
-import {copyWithToast, type SelectedUser, selectedGallery, useUiStore} from "@/stores/ui";
+import {copyText, type SelectedUser, selectedGallery, useUiStore} from "@/stores/ui";
 import {SAVE_FAILED} from "@/utils/error";
 import {type ActivityState, useGallogActivity} from "@/components/overlay/gallogActivity";
 import {cn} from "cn";
@@ -231,7 +231,7 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
     const close = (): void => useUiStore.getState().closeBubble();
     const copy = (value: string): void => {
         close();
-        void copyWithToast(value);
+        void copyText(value, "복사했습니다.", "복사하지 못했습니다.");
     };
     // 이벤트로 보내면 차단 모듈이 꺼져 있을 때 받는 쪽이 없어 조용히 무시되므로 직접 부른다.
     const requestBlock = (options: BlockRequestOptions): void => {
