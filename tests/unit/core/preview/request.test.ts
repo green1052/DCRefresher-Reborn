@@ -165,6 +165,20 @@ describe("fetchComments", () => {
         controller.abort();
         await expect(pending).rejects.toThrow();
     });
+
+    it("조용한 갱신은 새 댓글이 없으면 1쪽만 보고 끝난다", async () => {
+        const pages = serveComments(3, (page) => [comment(page * 10)]);
+        const result = await fetchComments(preData({commentCount: 30}), {}, signal(), "30");
+        expect(pages()).toEqual([1]);
+        expect(result).toBeUndefined();
+    });
+
+    it("조용한 갱신도 새 댓글이 있으면 남은 쪽을 마저 받는다", async () => {
+        const pages = serveComments(3, (page) => (page === 1 ? [comment(35), comment(30)] : [comment(page * 10)]));
+        const result = await fetchComments(preData({commentCount: 30}), {}, signal(), "30");
+        expect(pages()).toEqual([1, 2, 3]);
+        expect(result?.list.map((item) => item.no)).toEqual(["20", "30", "35"]);
+    });
 });
 
 describe("vote", () => {

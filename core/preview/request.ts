@@ -29,7 +29,10 @@ export const fetchPost = async (preData: GalleryPreData, signal: AbortSignal): P
 const isComment = (value: unknown): value is DcinsideComment => isRecord(value) && typeof value.no === "string";
 
 /** 댓글 목록. 한 쪽에 100개씩이라 여러 쪽을 받아 합친다. */
-export const fetchComments = async (preData: GalleryPreData, postInfo: Pick<PostInfo, "commentId" | "commentNo" | "esno">, signal: AbortSignal): Promise<CommentListResponse> => {
+export async function fetchComments(preData: GalleryPreData, postInfo: Pick<PostInfo, "commentId" | "commentNo" | "esno">, signal: AbortSignal): Promise<CommentListResponse>;
+/** skipIfUnchangedFrom(가장 최근 댓글 번호)보다 새 댓글이 없으면 1쪽만 받고 undefined를 돌려준다. 자동 새로고침용. */
+export async function fetchComments(preData: GalleryPreData, postInfo: Pick<PostInfo, "commentId" | "commentNo" | "esno">, signal: AbortSignal, skipIfUnchangedFrom: string): Promise<CommentListResponse | undefined>;
+export async function fetchComments(preData: GalleryPreData, postInfo: Pick<PostInfo, "commentId" | "commentNo" | "esno">, signal: AbortSignal, skipIfUnchangedFrom?: string): Promise<CommentListResponse | undefined> {
     const body = await dcBody(preData.link, {
         id: preData.gallery,
         no: preData.id,
@@ -60,6 +63,25 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: Pick<Post
         });
     };
 
+    const lastPageOf = (first: {pagination: string | null}): number => Math.max(1, ...Array.from(first.pagination?.matchAll(/viewComments\((\d+)/g) ?? [], (match) => Number(match[1])));
+    // 쪽 사이에 같은 댓글이 겹쳐 올 수 있어 번호로 하나만 남기고 번호(등록)순으로 맞춘다. 1쪽이 가장 최근 댓글이다.
+    const merge = (first: {comments: DcinsideComment[]; pagination: string | null; allowReply: boolean}, rest: {comments: DcinsideComment[]}[]): CommentListResponse => {
+        const byNo = new Map<string, DcinsideComment>();
+        for (const response of [first, ...rest]) {
+            for (const comment of response.comments) byNo.set(comment.no, comment);
+        }
+        return {list: [...byNo.values()].sort((a, b) => Number(a.no) - Number(b.no)), allowReply: first.allowReply, truncated: lastPageOf(first) > 10};
+    };
+
+    if (skipIfUnchangedFrom !== undefined) {
+        // 1쪽만 먼저 받아 최신 댓글 번호가 그대로면 나머지 쪽은 받지 않는다.
+        const first = await fetchPage(1);
+        const newest = first.comments.reduce((max, comment) => Math.max(max, Number(comment.no) || 0), 0);
+        if (newest <= (Number(skipIfUnchangedFrom) || 0)) return undefined;
+        const rest = await Promise.all(Array.from({length: Math.max(0, Math.min(10, lastPageOf(first)) - 1)}, (_, index) => fetchPage(index + 2)));
+        return merge(first, rest);
+    }
+
     // 목록의 댓글 수로 쪽 수를 어림해 1쪽과 함께 받는다. 1쪽을 받은 뒤에 요청하면 댓글이 많은 글은 수백 ms 늦게 뜬다.
     // 목록의 수는 삭제된 댓글을 빼고 세어 모자랄 수 있으므로, 1쪽의 쪽 나눔(viewComments(n, ...))에서 마지막 쪽 번호를 읽어 남은 쪽을 마저 받는다.
     // 1쪽을 먼저 요청해야 요청 제한 모듈에 막혀도 쪽 나눔을 먼저 받는다. 1쪽이 실패하면 어림한 쪽의 실패는 버린다.
@@ -70,17 +92,9 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: Pick<Post
     early.catch(() => {});
 
     const first = await firstPage;
-    const pages = Math.max(1, ...Array.from(first.pagination?.matchAll(/viewComments\((\d+)/g) ?? [], (match) => Number(match[1])));
-    const rest = Promise.all(Array.from({length: Math.max(0, Math.min(10, pages) - guessed)}, (_, index) => fetchPage(guessed + index + 1)));
+    const rest = Promise.all(Array.from({length: Math.max(0, Math.min(10, lastPageOf(first)) - guessed)}, (_, index) => fetchPage(guessed + index + 1)));
     const [earlyPages, restPages] = await Promise.all([early, rest]);
-
-    // 1쪽이 가장 최근 댓글이고 뒤쪽일수록 오래된 댓글이다. 쪽 사이에 같은 댓글이 겹쳐 올 수 있어 번호로 하나만 남기고 번호(등록)순으로 맞춘다.
-    const byNo = new Map<string, DcinsideComment>();
-    for (const response of [first, ...earlyPages, ...restPages]) {
-        for (const comment of response.comments) byNo.set(comment.no, comment);
-    }
-
-    return {list: [...byNo.values()].sort((a, b) => Number(a.no) - Number(b.no)), allowReply: first.allowReply, truncated: pages > 10};
+    return merge(first, [...earlyPages, ...restPages]);
 };
 
 interface VoteResult {

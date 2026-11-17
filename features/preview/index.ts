@@ -182,7 +182,7 @@ const controller = (ctx: Ctx) => {
         pulling++;
 
         try {
-            // 정적 import - 파이어폭스는 콘텐츠 스크립트의 늦은 동적 import 청크를 못 읽는다.
+            // 정적 import - 파이어폭스 155 미만은 실패한 동적 import가 캐시되어 새로고침 전까지 죽는다.
             const [{list: raw, allowReply, truncated}] = await Promise.all([
                 skip ? {list: [], allowReply: allowReplies.get(preData.gallery) ?? store.getState().allowReply, truncated: false} : await Promise.resolve(given).then((list) => list ?? fetchComments(preData, post, signal))
             ]);
@@ -277,6 +277,13 @@ const controller = (ctx: Ctx) => {
         // 받지 못했던 댓글을 다시 받는 동안은 안내 대신 받는 중 표시를 보인다.
         if (st.commentsFailed) store.setState({commentsFailed: false});
         try {
+            // 자동 새로고침은 1쪽만 보고 새 댓글이 없으면 나머지 쪽을 받지 않는다.
+            if (!report && shown) {
+                const newest = String(Math.max(0, ...shown.source.map((comment) => Number(comment.no) || 0)));
+                const fresh = await fetchComments(st.preData, st.post, abort.signal, newest);
+                if (fresh !== undefined) await pullComments(st.preData, st.post, st.signalId, false, fresh);
+                return true;
+            }
             await pullComments(st.preData, st.post, st.signalId);
             return true;
         } catch (e) {
