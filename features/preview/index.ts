@@ -154,9 +154,10 @@ const controller = (ctx: Ctx) => {
     ctx.addCleanup(() => window.clearTimeout(freshTimer));
 
     /** 지금 설정으로 가공하되 그린 것과 같은 댓글은 그 객체를 그대로 써 전부 다시 그리지 않는다. */
-    const processKeepingUnchanged = (process: typeof processComments, source: DcinsideComment[], preData: GalleryPreData): ProcessedComment[] => {
+    const processKeepingUnchanged = async (process: typeof processComments, source: DcinsideComment[], preData: GalleryPreData): Promise<ProcessedComment[]> => {
         const before = new Map(store.getState().comments?.map((comment) => [comment.no, comment]));
-        return process(source, preData, runningModuleSettings("block"), useUiStore.getState().ratios).map((comment) => {
+        const processed = await process(source, preData, runningModuleSettings("block"), useUiStore.getState().ratios);
+        return processed.map((comment) => {
             const old = before.get(comment.no);
             return old && shallow(old, comment) ? old : comment;
         });
@@ -203,7 +204,10 @@ const controller = (ctx: Ctx) => {
             const before = shown?.signal === mySignal && ctx.settings.highlightNewComments ? new Set(shown.source.map((comment) => comment.no)) : null;
             const added = before ? source.filter((comment) => !before.has(comment.no) && comment.is_delete !== "1").map((comment) => comment.no) : [];
             shown = {signal: mySignal, source, raw};
-            store.setState({comments: processKeepingUnchanged(processComments, source, preData), allowReply, freshComments: added.length > 0 ? new Set(added) : NO_FRESH});
+            const comments = await processKeepingUnchanged(processComments, source, preData);
+            // 정화를 기다리는 사이 다른 댓글 받기가 끝났으면 옛 목록으로 덮지 않는다.
+            if (store.getState().signalId !== mySignal || seq < shownSeq) return;
+            store.setState({comments, allowReply, freshComments: added.length > 0 ? new Set(added) : NO_FRESH});
             // 강조(3초)가 끝나면 지운다. 남겨 두면 답글을 접었다 펴는 등 다시 그릴 때마다 강조가 되풀이된다.
             window.clearTimeout(freshTimer);
             if (added.length > 0) {
@@ -222,10 +226,16 @@ const controller = (ctx: Ctx) => {
         const {visible, preData, signalId} = store.getState();
         if (!visible || !preData) return;
 
+        const source = shown?.signal === signalId ? shown.source : undefined;
+        const seq = commentSeq;
+        const comments = source ? await processKeepingUnchanged(processComments, source, preData) : undefined;
+        // 기다리는 사이 댓글을 다시 받았으면 옛 목록으로 덮지 않는다.
+        if (comments && (seq !== commentSeq || store.getState().signalId !== signalId)) return;
+
         // signalId가 바뀐 갈래는 s를 그대로 돌린다 - {}는 새 상태로 쳐 selector가 죄다 다시 평가된다.
         store.setState((s) => (s.signalId !== signalId ? s : {
             post: s.post && {...s.post, textBlocked: textBlockOf(preData, s.post)},
-            comments: shown?.signal === signalId ? processKeepingUnchanged(processComments, shown.source, preData) : s.comments
+            comments: comments ?? s.comments
         }));
         dropStaleReply();
     };
