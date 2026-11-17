@@ -2,6 +2,7 @@ import {BLOCKED_TEXT, dcconCode, duplicateOf, groupDuplicates, HIDDEN_ROW_SELECT
 import {FILTER_SKIP_ATTR} from "@/core/filtering";
 import {defineModule} from "@/core/module/define";
 import {isViewPage, pageGallery} from "@/core/http/urls";
+import {BLOCK_TYPES} from "@/core/storage/items";
 import {onMessage} from "@/core/messaging/protocol";
 import {WRITER_ROW_SELECTOR} from "@/core/list";
 import type {BlockType} from "@/core/storage/types";
@@ -15,6 +16,21 @@ import meta, {type Ctx} from "./meta";
 
 /** 보기 방식(블러)만 바꾸는 설정. 이것만 바뀌면 다시 판정하지 않는다. */
 const BLUR_KEYS = new Set<keyof Ctx["settings"]>(["blurReveal", "blurStrength"]);
+
+type BlocksState = ReturnType<typeof useBlocksStore.getState>;
+
+/** 항목이 뒤로만 더해졌나. 더해지기만 했으면 이미 가린 요소는 다시 보지 않는다. 지우기, 수정, NOT_* 추가는 가림이 풀릴 수 있어 전체 재판정이다. */
+const isAdditiveChange = (previous: BlocksState, state: BlocksState): boolean => {
+    if (state.defaults !== previous.defaults) return false;
+    return BLOCK_TYPES.every((type) => {
+        const next = state.entries[type];
+        const old = previous.entries[type];
+        return next === old || (next.length > old.length
+            && old.every((entry, i) => entry === next[i])
+            // NOT_*는 허용 목록이라 더하면 가림이 풀릴 수 있다. mode 없는 항목은 기본 모드를 따른다.
+            && next.slice(old.length).every((entry) => !(entry.mode ?? state.defaults[type]).startsWith("NOT_")));
+    });
+};
 
 /** 블러 강도, 마우스 오버 보기는 <html>의 변수, 클래스로만 건다 (assets/styles/content.css). 행마다 JS를 붙이지 않아도 새로 그려진 행에 그대로 먹는다. */
 const applyBlurStyle = (ctx: Ctx): void => {
@@ -188,17 +204,21 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
     }
 
     // 필터는 DOM 삽입 때만 돈다. 차단 목록이나 숨기는 방식(블러/대댓글)이 바뀌면 이미 그려진 요소를 직접 다시 판정한다.
-    const recheck = (): void => {
-        restoreHiddenElements();
+    const recheck = (skipHidden = false): void => {
+        if (!skipHidden) restoreHiddenElements();
         for (const [selector, check] of checks) {
-            for (const element of document.querySelectorAll<HTMLElement>(selector)) check(element);
+            for (const element of document.querySelectorAll<HTMLElement>(selector)) {
+                // 항목이 더해지기만 했으면 이미 가린 요소는 가려진 채로 넘어간다. 접기(.cmt_list)는 보이는 댓글이 달라졌으니 다시 묶는다.
+                if (skipHidden && selector !== ".cmt_list" && element.closest(HIDDEN_ROW_SELECTOR)) continue;
+                check(element);
+            }
         }
         if (isViewPage && document.readyState !== "loading") checkText();
     };
 
     ctx.addCleanup(useBlocksStore.subscribe((state, previous) => {
         if (state.entries === previous.entries && state.defaults === previous.defaults) return;
-        recheck();
+        recheck(isAdditiveChange(previous, state));
     }));
 
     return recheck;

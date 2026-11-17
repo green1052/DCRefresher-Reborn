@@ -2,6 +2,7 @@
 import {afterEach, beforeEach, describe, expect, it, onTestFinished} from "vitest";
 
 import block from "@/features/block/index";
+import {useBlocksStore} from "@/stores/blocks";
 import {useUiStore} from "@/stores/ui";
 
 import {blockEntry as entry, setBlockLists, tick} from "../../../helpers";
@@ -103,6 +104,21 @@ describe("작성자 칸 판정", () => {
         expect(hidden()).toEqual(["2"]);
         setBlockLists();
         expect(hidden()).toEqual([]);
+    });
+
+    it("항목이 더해지기만 하면 가린 행은 그대로 두고 새로 막을 행만 판정한다", async () => {
+        setBlockLists({NICK: [entry("도배")]});
+        await start();
+        useBlocksStore.setState((state) => ({entries: {...state.entries, NICK: [...state.entries.NICK, entry("착한")]}}));
+        expect(hidden()).toEqual(["1", "2"]);
+    });
+
+    it("NOT_* 항목을 더하면 허용 목록이 늘어 다시 판정해 푼다", async () => {
+        setBlockLists({NICK: [entry("도배", {mode: "NOT_SAME"})]});
+        await start();
+        expect(hidden()).toEqual(["2", "3"]);
+        useBlocksStore.setState((state) => ({entries: {...state.entries, NICK: [...state.entries.NICK, entry("착한", {mode: "NOT_SAME"})]}}));
+        expect(hidden()).toEqual(["3"]);
     });
 
     it("숨기는 방식을 바꾸면 다시 판정한다", async () => {
