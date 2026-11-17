@@ -42,10 +42,15 @@ describe("dcconImage", () => {
         expect(dcconImage({id: "a", content: "abc123", isRegex: false})).toBe(image("abc123"));
     });
 
-    // stores/blockRequest.ts가 묶음을 "^(" + RegExp.escape로 묶은 경로들 + ")$"로 저장한다.
+    // 묶음은 stores/blockRequest.ts가 공통 접두사를 한 번만 쓴 정규식으로 저장한다. 옛 항목은 "^(" + RegExp.escape로 묶은 경로들 + ")$"다.
     it("묶음 정규식이면 RegExp.escape를 되돌린 첫 코드의 이미지다", () => {
         const bundle = (paths: string[]): string => `^(${paths.map((path) => RegExp.escape(path)).join("|")})$`;
         expect(dcconImage({id: "a", content: bundle(["6abc", "7def"]), isRegex: true})).toBe(image("6abc"));
         expect(dcconImage({id: "a", content: bundle(["abc"]), isRegex: true})).toBe(image("abc"));
+    });
+
+    it("접두사를 묶은 묶음 정규식이면 접두사와 첫 꼬리를 이은 코드의 이미지다", () => {
+        expect(dcconImage({id: "a", content: "^(?:36ab12(?:cd|ef))$", isRegex: true})).toBe(image("36ab12cd"));
+        expect(dcconImage({id: "a", content: "^(?:\\x70kg(?:\\x61a|b))$", isRegex: true})).toBe(image("pkgaa"));
     });
 });

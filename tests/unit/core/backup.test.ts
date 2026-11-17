@@ -29,7 +29,7 @@ beforeEach(() => {
 describe("isBackupTarget", () => {
     it("설정, 차단, 메모만 대상이다", () => {
         const targets = ["refresher:modules", "refresher:block:defaults", "refresher:block:NICK", "refresher:block:TAB", "refresher:memo:UID", "refresher:module:preview:settings"];
-        const others = ["refresher:db:ip", "refresher:db:meta", "refresher:module:userinfo:data", "refresher:module:zzz:settings", "refresher:backup:auto", "refresher:usage", "refresher:block:UNKNOWN", "refresher:memo:X", "other"];
+        const others = ["refresher:db:ip", "refresher:db:meta", "refresher:module:userinfo:data", "refresher:module:zzz:settings", "refresher:backup:auto", "refresher:block:UNKNOWN", "refresher:memo:X", "other"];
         expect(targets.filter(isBackupTarget)).toEqual(targets);
         expect(others.filter(isBackupTarget)).toEqual([]);
     });

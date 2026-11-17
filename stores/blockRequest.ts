@@ -11,7 +11,6 @@ import {type SelectedUser, useUiStore} from "@/stores/ui";
 type DcconPackageMode = "bundle" | "each";
 
 // 묶음 차단 정규식. 디시콘 경로는 공통 접두사(패키지 번호)가 길어 DcconRain의 PACKS처럼 접두사를 한 번만 쓴다.
-// 경로는 16진수뿐이라 정규식 구문 문자가 없다 — 이스케이프를 건너뛰면 \xNN 없이 그대로 저장된다.
 const esc = (path: string) => (/^[0-9a-f]+$/.test(path) ? path : RegExp.escape(path));
 const bundledPattern = (paths: string[]): string => {
     const unique = [...new Set(paths)];

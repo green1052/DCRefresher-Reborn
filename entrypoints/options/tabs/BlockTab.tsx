@@ -16,10 +16,16 @@ import {ListRow, ListTabs} from "../lists/ListTabs";
 import {notify} from "../optionsStore";
 import {RefresherSelect} from "../shared/RefresherSelect";
 
-// 묶음 정규식("^(a|b...)$")이면 첫 코드의 이미지를 쓴다 - escape의 \xhh는 되돌린다.
+// 묶음 정규식("^(a|b...)$", 접두사를 묶은 "^(?:앞부분(?:a|b...))$")이면 첫 코드의 이미지를 쓴다. escape의 \xhh는 되돌린다.
 export const dcconImage = (entry: BlockEntry): string => {
-    const first = entry.isRegex ? entry.content.match(/^\^\(((?:\\x[0-9a-f]{2})?\w+)[|)]/)?.[1] : undefined;
-    const code = first?.replace(/^\\x([0-9a-f]{2})/, (_, hex: string) => String.fromCharCode(parseInt(hex, 16))) ?? entry.content;
+    const unhex = (code: string) => code.replace(/^\\x([0-9a-f]{2})/, (_, hex: string) => String.fromCharCode(parseInt(hex, 16)));
+    let code = entry.content;
+    if (entry.isRegex) {
+        const plain = entry.content.match(/^\^\(((?:\\x[0-9a-f]{2})?\w+)[|)]/);
+        const factored = entry.content.match(/^\^\(\?:((?:\\x[0-9a-f]{2})?\w+)\(\?:((?:\\x[0-9a-f]{2})?\w+)\|/);
+        const first = plain?.[1] ?? (factored ? unhex(factored[1]!) + unhex(factored[2]!) : undefined);
+        if (first !== undefined) code = unhex(first);
+    }
     return `https://image.dcinside.com/dccon.php?no=${code}`;
 };
 

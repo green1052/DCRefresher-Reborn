@@ -122,7 +122,7 @@ describe("writeSettings", () => {
         expect(list).toEqual([expect.objectContaining({id: expect.any(String)})]);
     });
 
-    it("id 없는 항목은 이 기기의 같은 항목 id를 이어 써 사용 기록을 지킨다", async () => {
+    it("id 없는 항목은 이 기기의 같은 항목 id를 이어 쓴다", async () => {
         await browser.storage.local.set({[NICK]: [entry("a", {id: "local-a"}), entry("a", {id: "local-ga", gallery: "g"})]});
         await writeSettings({[NICK]: [{content: "a", isRegex: false}, {content: "a", isRegex: false, gallery: "g"}, {content: "b", isRegex: false}]}, "replace");
         const [a, ga, b] = (await stored(NICK)) as BlockEntry[];
