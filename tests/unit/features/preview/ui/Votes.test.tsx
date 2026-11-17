@@ -7,7 +7,7 @@ import {vote} from "@/core/preview/request";
 import type {PostInfo} from "@/core/preview/types";
 import {usePreviewStore} from "@/features/preview/ui/previewStore";
 import {Votes} from "@/features/preview/ui/Votes";
-import {preData, tick} from "../../../../helpers";
+import {preData, tick} from "@/tests/helpers";
 
 // Base UI, lucide는 평범한 요소로 바꾼다(그리기, 계산에 필요한 것만 남긴다).
 vi.mock("@/components/ui/button", () => ({

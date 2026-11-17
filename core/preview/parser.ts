@@ -89,7 +89,7 @@ const TXTCON_CHECKS = ["check_6", "check_7", "check_8"];
 /** 글 페이지 스크립트의 `var _TS_CMT_ = {…};`. mode가 0이거나 없으면 디시도 Turnstile을 쓰지 않는다. */
 const parseTurnstile = (dom: Document): TurnstileConfig | undefined => {
     for (const script of dom.scripts) {
-        const json = script.textContent?.match(/var _TS_CMT_\s*=\s*(\{[^;]*\});/)?.[1];
+        const json = script.textContent?.match(/var _TS_CMT_\s*=\s*(\{[^;]*});/)?.[1];
         if (!json) continue;
         try {
             const {mode, sitekey, wait, appearance, test} = JSON.parse(json);
@@ -138,7 +138,7 @@ export const parsePostInfo = (html: string): PostInfo | undefined => {
     const writeText = dom.querySelector(".write_div")?.textContent?.trim();
     body?.remove();
 
-    const header = strip(dom.querySelector<HTMLElement>(".title_headtext")?.textContent?.replace(/^\[|\]$/g, ""));
+    const header = strip(dom.querySelector<HTMLElement>(".title_headtext")?.textContent?.replace(/^\[|]$/g, ""));
     const commentCountText = strip(dom.querySelector<HTMLElement>(".gall_comment")?.textContent?.trim().split(" ")[1]);
     // 작성 시각. title("2026-09-26 02:29:40")이 없으면 표시 글자("2026.09.26 02:29:40")를 쓴다.
     const date = dom.querySelector<HTMLElement>(".gallview_head .gall_date");

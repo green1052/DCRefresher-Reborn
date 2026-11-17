@@ -1,6 +1,6 @@
-import {COMMENT_SITE_KEYS, D_ALPHABET, decodeD, ICON_SITE_KEY} from "../../core/preview/dcinside-js";
-import {COUNT_CELLS, COUNT_TEXT, LIST_TABLE} from "../../features/refresh/markup";
-import {AUTO, EDITOR, LEAVE, POSTED, SUBJECT, SUBMIT} from "../../features/write/markup";
+import {COMMENT_SITE_KEYS, D_ALPHABET, decodeD, ICON_SITE_KEY} from "@/core/preview/dcinside-js";
+import {COUNT_CELLS, COUNT_TEXT, LIST_TABLE} from "@/features/refresh/markup";
+import {AUTO, EDITOR, LEAVE, POSTED, SUBJECT, SUBMIT} from "@/features/write/markup";
 import {expect, test} from "../fixtures";
 import {openListPage} from "../pages/list";
 
@@ -187,7 +187,7 @@ test.describe("실제 디시", () => {
         for (const name of ["cf-turnstile-response=", "ts_state=", "ts_focus_ms=", "ts_token_ms=", "ts_test=1"]) expect(comment).toContain(name);
         expect(comment).toContain("action: 'comment'");
         // 켜져 있으면 파서(core/preview/parser.ts parseTurnstile)가 읽는 모양이다.
-        const turnstile = /var _TS_CMT_\s*=\s*(\{[^;]*\});/.exec(view)?.[1];
+        const turnstile = /var _TS_CMT_\s*=\s*(\{[^;]*});/.exec(view)?.[1];
         if (turnstile) expect(JSON.parse(turnstile)).toMatchObject({mode: expect.any(Number), sitekey: expect.any(String)});
     });
 
