@@ -169,6 +169,30 @@ describe("본문 이미지 차단", () => {
         await vi.waitFor(() => expect(image.classList.contains("refresherBlocked")).toBe(true));
     });
 
+    it("움짤은 주소가 같으면 이벤트가 몇 번이나 와도 한 번만 본다", async () => {
+        setBlockLists({IMAGE: [entry("다른 파일", {similar: NEAR})]});
+        // jsdom은 영상을 받지 못해 다 받은 상태를 직접 심는다.
+        const video = document.createElement("video");
+        const arm = (url: string): void => {
+            video.src = url;
+            for (const [key, value] of Object.entries({currentSrc: url, readyState: HTMLMediaElement.HAVE_ENOUGH_DATA, duration: 10, videoWidth: 100, videoHeight: 100,
+                buffered: {length: 1, start: () => 0, end: () => 10}})) {
+                Object.defineProperty(video, key, {value, configurable: true});
+            }
+        };
+        arm(imageUrl());
+        writeDiv().append(video);
+        await start({similarImages: true});
+        await vi.waitFor(() => expect(imageFingerprints).toHaveBeenCalledTimes(1));
+        for (const type of ["progress", "seeked", "suspend", "progress", "seeked"]) video.dispatchEvent(new Event(type));
+        await tick();
+        expect(imageFingerprints).toHaveBeenCalledTimes(1);
+
+        arm(imageUrl());
+        video.dispatchEvent(new Event("canplaythrough"));
+        await vi.waitFor(() => expect(imageFingerprints).toHaveBeenCalledTimes(2));
+    });
+
     it("차단 목록이 바뀐 뒤에도 지문을 기다리지 않고 다시 가린다", async () => {
         const url = imageUrl();
         const file = entry(await fileOf(url));

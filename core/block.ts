@@ -250,7 +250,7 @@ const isSimilarBlocked = (samples: Sample[], gallery: string | undefined, thresh
 export const VIDEO_CHECK_EVENTS = ["progress", "suspend", "canplaythrough", "seeked"];
 
 /** 다 받은 미디어의 화소 수. 부분 받은 것을 읽으면 확장이 나머지를 다시 받는다. */
-const loadedPixels = (media: HTMLImageElement | HTMLVideoElement): number | undefined => {
+export const loadedPixels = (media: HTMLImageElement | HTMLVideoElement): number | undefined => {
     if (media instanceof HTMLImageElement) return media.complete && media.naturalWidth > 0 ? media.naturalWidth * media.naturalHeight : undefined;
     const {buffered, duration} = media;
     const whole = media.readyState === HTMLMediaElement.HAVE_ENOUGH_DATA && buffered.length === 1 && buffered.start(0) === 0 && buffered.end(0) >= duration - 0.05;
