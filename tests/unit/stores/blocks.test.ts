@@ -75,7 +75,7 @@ describe("useBlocksStore", () => {
 
         const list = await nicks();
         expect(list.map((item) => item.content)).toEqual(["b", "a", "a", "c"]);
-        // 사용 기록이 id로 묶여 있어 바꾼 항목은 id를 지킨다. 새 항목은 새 id를 받는다.
+        // 바꾼 항목은 id를 지킨다. 새 항목은 새 id를 받는다.
         expect(list[2]).toMatchObject({id: "a", content: "a", isRegex: true});
         expect(list[3]?.id).toEqual(expect.any(String));
         expect(new Set(list.map((item) => item.id)).size).toBe(4);

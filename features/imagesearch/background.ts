@@ -18,7 +18,7 @@ const imageSearchUrl = (engine: string, src: string): string | null => {
     return ENGINES[engine].url + encodeURIComponent(url.toString());
 };
 
-/** 켠 엔진마다 이미지 우클릭 메뉴를 하나씩 만든다. 이 확장의 메뉴가 둘 이상이면(block의 "이 이미지 차단" 포함) 브라우저가 확장 이름 아래로 묶는다. */
+/** 켠 엔진마다 이미지 우클릭 메뉴를 하나씩 만든다. 이 확장의 메뉴가 둘 이상이면 브라우저가 확장 이름 아래로 묶는다. */
 export default defineBackgroundModule(meta, {
     listen() {
         browser.contextMenus.onClicked.addListener(async (info, tab) => {

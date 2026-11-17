@@ -40,7 +40,7 @@ Chromium 140, Firefox 144 이상. 툴바 아이콘의 팝업에서 모듈을 켜
 |---|---|
 | [미리보기](https://github.com/green1052/DCRefresher-Reborn/wiki/preview) | 목록에서 글과 댓글을 창으로 봅니다 |
 | [글 목록 새로고침](https://github.com/green1052/DCRefresher-Reborn/wiki/refresh) | 목록을 자동으로 새로고침하고 새 글을 표시합니다 |
-| [콘텐츠 차단](https://github.com/green1052/DCRefresher-Reborn/wiki/block) | 유저, 글, 댓글, 디시콘, 이미지를 숨기거나 흐리게 합니다 |
+| [콘텐츠 차단](https://github.com/green1052/DCRefresher-Reborn/wiki/block) | 유저, 글, 댓글, 디시콘을 숨기거나 흐리게 합니다 |
 | [유저 정보](https://github.com/green1052/DCRefresher-Reborn/wiki/userinfo) | 작성자 옆에 아이디, IP 정보, 메모, 배지를 붙입니다 |
 | [레이아웃 수정](https://github.com/green1052/DCRefresher-Reborn/wiki/layout) | 좁은 화면용 컴팩트 모드와 페이지 요소 숨기기 |
 | [폰트 교체](https://github.com/green1052/DCRefresher-Reborn/wiki/fonts) | 페이지와 미리보기의 폰트, 글자 크기를 바꿉니다 |

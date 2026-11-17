@@ -58,7 +58,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
 
         const value = content.trim();
 
-        // 같은 값, 갤러리 항목은 저장소에서 하나로 합쳐져 별명, 지문을 잃은 채 덮이므로 막는다. 고치려면 목록에서 수정한다.
+        // 같은 값, 갤러리 항목은 저장소에서 하나로 합쳐져 별명을 잃은 채 덮이므로 막는다. 고치려면 목록에서 수정한다.
         const key = blockKey({content: value, isRegex, gallery: gallery.trim() || undefined});
         if (useBlocksStore.getState().entries[type].some((entry) => entry.id !== initial?.id && blockKey(entry) === key)) {
             setError("이미 같은 차단 항목이 있습니다.");

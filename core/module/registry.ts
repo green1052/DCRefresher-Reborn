@@ -248,7 +248,7 @@ export const stopAll = (): void => {
     for (const instance of instances.values()) stop(instance, true);
 };
 
-/** 모듈을 일괄 등록하고 on/off를 감시해 시작/중지한다. setup은 ready 뒤에 돈다. */
+/** 모듈을 일괄 등록하고 on/off를 감시해 시작/중지한다. setup은 beforeStart 뒤에 돈다. */
 const load = async (metas: AnyModuleMeta[], loaders: ModuleLoaders, signal: AbortSignal, beforeStart?: BeforeStart): Promise<void> => {
     // UI가 읽는 설정을 기본값으로 먼저 채운다. 미등록 모듈의 오버레이 UI도 설정을 읽는다.
     moduleSettingsStore.setState(Object.fromEntries(metas.filter((meta) => meta.settings).map((meta) => [meta.id, settingsOf(meta, null)])));
