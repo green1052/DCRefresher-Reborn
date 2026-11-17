@@ -1,5 +1,5 @@
 import {render, act} from "@/tests/helpers";
-import type {ReactNode} from "react";
+import type {ComponentProps, ReactNode} from "react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {BubbleHost} from "@/components/overlay/UserBubble";
@@ -11,9 +11,14 @@ import {blockEntry, setBlockLists} from "../../../helpers";
 
 vi.mock("lucide-react", () => ({Ban: () => null, ExternalLink: () => null, NotebookPen: () => null, Search: () => null}));
 
-vi.mock("@/components/ui/popover", () => ({
-    Popover: ({children}: { children?: ReactNode }) => <>{children}</>,
-    PopoverContent: ({children}: { children?: ReactNode }) => <div>{children}</div>
+// 버블 몸통(OverlayPopoverContent)은 Base UI 프리미티브로 직접 조립하므로 포털, 위치, 팝업을 여기서 바꾼다.
+vi.mock("@base-ui/react/popover", () => ({
+    Popover: {
+        Root: ({children}: { children?: ReactNode }) => <>{children}</>,
+        Portal: ({children}: { children?: ReactNode }) => <>{children}</>,
+        Positioner: ({children}: { children?: ReactNode }) => <>{children}</>,
+        Popup: ({children, ...props}: ComponentProps<"div">) => <div {...props}>{children}</div>
+    }
 }));
 vi.mock("@/components/ui/button", () => ({
     Button: ({children, onClick}: { children?: ReactNode; onClick?: () => void }) => <button onClick={onClick}>{children}</button>

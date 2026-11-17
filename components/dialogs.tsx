@@ -1,13 +1,40 @@
-import type {Dialog as DialogPrimitive} from "@base-ui/react/dialog";
+import {AlertDialog as AlertDialogPrimitive} from "@base-ui/react/alert-dialog";
+import {Dialog as DialogPrimitive} from "@base-ui/react/dialog";
 import {X} from "lucide-react";
 import {type KeyboardEvent, type ReactNode, type RefObject, useRef, useState} from "react";
 
+import {overlay} from "@/components/overlay/shadow";
 import {useReturnFocus} from "@/components/useReturnFocus";
-import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogTitle} from "@/components/ui/alert-dialog";
+import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogFooter, AlertDialogOverlay, AlertDialogTitle} from "@/components/ui/alert-dialog";
 import {Button} from "@/components/ui/button";
-import {Dialog, DialogClose, DialogContent, DialogFooter} from "@/components/ui/dialog";
+import {Dialog, DialogClose, DialogFooter, DialogOverlay} from "@/components/ui/dialog";
 import {useModuleSettings} from "@/core/module/useModuleSettings";
 import {cn} from "cn";
+
+/**
+ * 오버레이(shadow DOM) 안의 포털 칸에 그리는 창 몸통. components/ui의 dialog, alert-dialog는 순정 shadcn이라 포털 칸을 못 바꾸므로
+ * Base UI 프리미티브로 직접 조립한다(ImageViewer, Frame과 같은 방식). 모양 문자열은 components/ui와 맞춘다.
+ * 옵션, 팝업에서는 overlay.portal이 비어 body에 그린다(순정과 같은 행동). 배경은 forceRender로 늘 그려 단축키 막기(isTyping)가 알게 한다.
+ */
+const OverlayDialogContent = ({className, overlayProps, ...props}: DialogPrimitive.Popup.Props & {overlayProps?: DialogPrimitive.Backdrop.Props}) => (
+    <DialogPrimitive.Portal data-slot="dialog-portal" container={overlay.portal}>
+        <DialogOverlay {...overlayProps}/>
+        <DialogPrimitive.Popup data-slot="dialog-content" className={cn(
+            "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-6 rounded-xl bg-popover p-6 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-md data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+            className
+        )} {...props}/>
+    </DialogPrimitive.Portal>
+);
+
+const OverlayAlertDialogContent = ({className, overlayProps, ...props}: AlertDialogPrimitive.Popup.Props & {overlayProps?: AlertDialogPrimitive.Backdrop.Props}) => (
+    <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" container={overlay.portal}>
+        <AlertDialogOverlay {...overlayProps}/>
+        <AlertDialogPrimitive.Popup data-slot="alert-dialog-content" data-size="default" className={cn(
+            "group/alert-dialog-content fixed top-1/2 left-1/2 z-50 grid w-full -translate-x-1/2 -translate-y-1/2 gap-6 rounded-xl bg-popover p-6 text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none data-[size=default]:max-w-xs data-[size=default]:sm:max-w-lg data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+            className
+        )} {...props}/>
+    </AlertDialogPrimitive.Portal>
+);
 
 /**
  * 연 창의 포커스.
@@ -75,7 +102,7 @@ const useModal = (onClose: () => void, focusOnOpen: AutoFocus) => {
  * 열 때만 마운트하는 다이얼로그. Esc, 바깥 클릭, 닫기 버튼이 닫고, 닫으면 연 요소로 포커스를 돌려준다.
  * onClose는 닫힘 애니메이션이 끝나 포커스가 돌아간 뒤에 불린다. 그 안에서 알림 창을 띄워도 알림이 닫히면 연 요소로 돌아온다.
  * 부모가 언마운트해 닫아도 된다 (저장한 뒤 등). dismissible이 false면(가져오는 중 등) 닫지 않는다.
- * 오버레이(shadow DOM)에서는 그 안의 포털 칸에 그린다 (components/ui/dialog.tsx). 폭은 className으로 준다 (sm:max-w-[480px] 등).
+ * 오버레이(shadow DOM)에서는 그 안의 포털 칸에 그린다 (OverlayDialogContent). 폭은 className으로 준다 (sm:max-w-[480px] 등).
  */
 export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true, disablePointerDismissal, actionsRef, className, children}: {
     onClose: () => void;
@@ -94,9 +121,9 @@ export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true,
         // actionsRef.close()는 dismissible과 상관없이 닫는다. 일이 끝난 직후라 dismissible이 아직 옛 값일 수 있다.
         <Dialog {...modal.root} actionsRef={actionsRef} disablePointerDismissal={disablePointerDismissal}
                 onOpenChange={(next, {reason}) => !next && (dismissible || reason === "imperative-action") && modal.close()}>
-            <DialogContent {...modal.popup} showCloseButton={false} className={className}>
+            <OverlayDialogContent {...modal.popup} className={className}>
                 {children}
-            </DialogContent>
+            </OverlayDialogContent>
         </Dialog>
     );
 };
@@ -147,14 +174,14 @@ export const ConfirmDialog = ({title, confirmLabel = "확인", cancelLabel = "�
     return (
         <AlertDialog {...modal.root} onOpenChange={(next) => !next && modal.close()}>
             {/* 생김새는 다른 창(DialogContent, DialogTitle)과 맞춘다. */}
-            <AlertDialogContent {...modal.popup} className="text-sm data-[size=default]:max-w-[calc(100%-2rem)] data-[size=default]:sm:max-w-[440px]">
+            <OverlayAlertDialogContent {...modal.popup} className="text-sm data-[size=default]:max-w-[calc(100%-2rem)] data-[size=default]:sm:max-w-110">
                 {/* 이미지 해시처럼 띄어쓰기 없는 긴 값도 창 안에서 줄을 바꾼다. */}
                 <AlertDialogTitle className="text-sm leading-snug wrap-anywhere">{title}</AlertDialogTitle>
                 <AlertDialogFooter>
                     {cancelLabel !== null && <AlertDialogCancel>{cancelLabel}</AlertDialogCancel>}
                     <AlertDialogAction variant={danger ? "destructive" : "default"} onClick={onConfirm}>{confirmLabel}</AlertDialogAction>
                 </AlertDialogFooter>
-            </AlertDialogContent>
+            </OverlayAlertDialogContent>
         </AlertDialog>
     );
 };

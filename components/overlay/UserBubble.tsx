@@ -4,7 +4,8 @@ import {type ComponentProps, useEffect, useRef, useState, useSyncExternalStore} 
 import {DialogActions, ModalDialog} from "@/components/dialogs";
 import {Button} from "@/components/ui/button";
 import {DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dialog";
-import {Popover, PopoverContent} from "@/components/ui/popover";
+import {Popover as PopoverPrimitive} from "@base-ui/react/popover";
+import {Popover} from "@/components/ui/popover";
 import {Separator} from "@/components/ui/separator";
 import {Skeleton} from "@/components/ui/skeleton";
 import {useReturnFocus} from "@/components/useReturnFocus";
@@ -23,6 +24,23 @@ import {copyWithToast, type SelectedUser, selectedGallery, useUiStore} from "@/s
 import {SAVE_FAILED} from "@/utils/error";
 import {type ActivityState, useGallogActivity} from "@/components/overlay/gallogActivity";
 import {cn} from "cn";
+
+/**
+ * 오버레이(shadow DOM) 안의 포털 칸에 그리는 PopoverContent. components/ui/popover.tsx는 순정 shadcn이라 포털 칸·가상 anchor를 못 넘기므로
+ * Base UI 프리미티브로 직접 조립한다. 모양 문자열은 components/ui/popover.tsx와 맞춘다.
+ * 버블은 트리거 요소 대신 anchor(가상 좌표)로 위치를 잡는다.
+ */
+const OverlayPopoverContent = ({className, align = "center", alignOffset = 0, side = "bottom", sideOffset = 4, anchor, ...props}:
+    PopoverPrimitive.Popup.Props & Pick<PopoverPrimitive.Positioner.Props, "align" | "alignOffset" | "side" | "sideOffset" | "anchor">) => (
+    <PopoverPrimitive.Portal container={overlay.portal}>
+        <PopoverPrimitive.Positioner align={align} alignOffset={alignOffset} side={side} sideOffset={sideOffset} anchor={anchor} className="isolate z-50">
+            <PopoverPrimitive.Popup data-slot="popover-content" className={cn(
+                "z-50 flex w-72 origin-(--transform-origin) flex-col gap-4 rounded-md bg-popover p-4 text-sm text-popover-foreground shadow-md ring-1 ring-foreground/10 outline-hidden duration-100 data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+                className
+            )} {...props}/>
+        </PopoverPrimitive.Positioner>
+    </PopoverPrimitive.Portal>
+);
 
 import {overlay} from "./shadow";
 
@@ -267,7 +285,7 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
             close();
         }}>
             {/* 우클릭한 자리에 띄운다. 트리거 대신 그 점을 기준으로 놓는다. */}
-            <PopoverContent ref={popup} side="bottom" align="start" sideOffset={4} className="w-auto min-w-[200px] max-w-[320px] gap-2 p-2"
+            <OverlayPopoverContent ref={popup} side="bottom" align="start" sideOffset={4} className="w-auto min-w-[200px] max-w-[320px] gap-2 p-2"
                             anchor={{getBoundingClientRect: () => DOMRect.fromRect({x: bubble.x, y: bubble.y, width: 0, height: 0})}}
                             initialFocus={focus.keyboard} finalFocus={focus.finalFocus}
                             aria-label={selected.dccon ? "디시콘 메뉴" : `${selected.nick || identity || "사용자"} 메뉴`}>
@@ -330,7 +348,7 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
                     </>
                 )}
                 {rules.length > 0 && <BlockRules rules={rules} defaults={defaults}/>}
-            </PopoverContent>
+            </OverlayPopoverContent>
         </Popover>
     );
 };

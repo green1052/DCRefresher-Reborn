@@ -4,10 +4,10 @@ import {shallow} from "zustand/shallow";
 
 import {ColorInput} from "@/components/ColorInput";
 import {WithTooltip} from "@/components/WithTooltip";
+import {Slider as SliderPrimitive} from "@base-ui/react/slider";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Kbd} from "@/components/ui/kbd";
-import {Slider} from "@/components/ui/slider";
 import {Switch} from "@/components/ui/switch";
 import {defaultValue} from "@/core/module/settings";
 import type {LabeledSetting, SettingSchema} from "@/core/module/types";
@@ -39,6 +39,29 @@ type NarrowProps<T extends SettingSchema["type"]> = Omit<SettingItemProps, "sche
 
 /** 범위 값 표시. 저장은 ms 그대로 하고, 보여 줄 때만 초로 바꾼다(5000ms → 5초). */
 const formatRange = (value: number, unit: string): string => (unit === "ms" ? `${value / 1000}초` : `${value}${unit}`);
+
+/**
+ * 손잡이(aria) 속성을 받는 Slider. components/ui/slider.tsx는 순정 shadcn이라 손잡이에 속성을 못 심으므로
+ * Base UI 프리미티브로 직접 조립한다. 모양 문자열은 components/ui/slider.tsx와 맞춘다.
+ */
+const Slider = ({className, thumbProps, value, defaultValue, min = 0, max = 100, ...props}: SliderPrimitive.Root.Props & {
+    /** 손잡이(role=slider)에 심을 속성. 이름(aria-label), 설명(aria-describedby), 읽는 값(getAriaValueText)을 여기로 넘겨야 읽힌다. */
+    thumbProps?: SliderPrimitive.Thumb.Props;
+}) => (
+    <SliderPrimitive.Root className={cn("data-horizontal:w-full data-vertical:h-full", className)} data-slot="slider"
+                          defaultValue={defaultValue} value={value} min={min} max={max} thumbAlignment="edge" {...props}>
+        <SliderPrimitive.Control className="relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:min-h-40 data-vertical:w-auto data-vertical:flex-col">
+            <SliderPrimitive.Track data-slot="slider-track"
+                                   className="relative grow overflow-hidden rounded-full bg-muted select-none data-horizontal:h-1.5 data-horizontal:w-full data-vertical:h-full data-vertical:w-1.5">
+                <SliderPrimitive.Indicator data-slot="slider-range" className="bg-primary select-none data-horizontal:h-full data-vertical:w-full"/>
+            </SliderPrimitive.Track>
+            {Array.from({length: Array.isArray(value) ? value.length : Array.isArray(defaultValue) ? defaultValue.length : 1}, (_, index) => (
+                <SliderPrimitive.Thumb key={index} data-slot="slider-thumb" {...(index === 0 ? thumbProps : {})}
+                                        className="block size-4 shrink-0 rounded-full border border-primary bg-white shadow-sm ring-ring/50 transition-[color,box-shadow] select-none hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"/>
+            ))}
+        </SliderPrimitive.Control>
+    </SliderPrimitive.Root>
+);
 
 const formatDefault = (schema: SettingSchema): string => {
     switch (schema.type) {

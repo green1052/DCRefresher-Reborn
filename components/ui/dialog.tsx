@@ -4,7 +4,6 @@ import * as React from "react"
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 import { cn } from "cn"
 
-import { overlay } from "@/components/overlay/shadow"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
 
@@ -17,8 +16,7 @@ function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
 }
 
 function DialogPortal({ ...props }: DialogPrimitive.Portal.Props) {
-  // 오버레이(shadow DOM)에서는 그 안의 포털 칸에 그린다. 옵션, 팝업에서는 overlay.portal이 없어 body다.
-  return <DialogPrimitive.Portal data-slot="dialog-portal" container={overlay.portal} {...props} />
+  return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
 }
 
 function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
@@ -45,15 +43,13 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
-  overlayProps,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
-  overlayProps?: DialogPrimitive.Backdrop.Props
 }) {
   return (
     <DialogPortal>
-      <DialogOverlay {...overlayProps} />
+      <DialogOverlay />
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
@@ -154,6 +150,8 @@ export {
   DialogDescription,
   DialogFooter,
   DialogHeader,
+  DialogOverlay,
+  DialogPortal,
   DialogTitle,
   DialogTrigger,
 }

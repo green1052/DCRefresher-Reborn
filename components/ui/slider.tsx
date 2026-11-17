@@ -7,12 +7,8 @@ function Slider({
   value,
   min = 0,
   max = 100,
-  thumbProps,
   ...props
-}: SliderPrimitive.Root.Props & {
-  /** 손잡이(role=slider)에 넘길 속성. 이름(aria-label), 읽는 값(getAriaValueText)은 손잡이에 달아야 읽힌다. */
-  thumbProps?: SliderPrimitive.Thumb.Props
-}) {
+}: SliderPrimitive.Root.Props) {
   const _values = Array.isArray(value)
     ? value
     : Array.isArray(defaultValue)
@@ -44,7 +40,6 @@ function Slider({
           <SliderPrimitive.Thumb
             data-slot="slider-thumb"
             key={index}
-            {...thumbProps}
             className="block size-4 shrink-0 rounded-full border border-primary bg-white shadow-sm ring-ring/50 transition-[color,box-shadow] select-none hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
           />
         ))}

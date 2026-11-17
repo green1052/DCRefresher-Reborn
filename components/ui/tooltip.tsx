@@ -1,7 +1,7 @@
+"use client"
+
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip"
 import { cn } from "cn"
-
-import { overlay } from "@/components/overlay/shadow"
 
 function TooltipProvider({
   delay = 0,
@@ -38,7 +38,7 @@ function TooltipContent({
     "align" | "alignOffset" | "side" | "sideOffset"
   >) {
   return (
-    <TooltipPrimitive.Portal container={overlay.portal}>
+    <TooltipPrimitive.Portal>
       <TooltipPrimitive.Positioner
         align={align}
         alignOffset={alignOffset}
