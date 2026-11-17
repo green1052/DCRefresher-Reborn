@@ -36,6 +36,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
     const [content, setContent] = useState(initial?.content ?? "");
     const [isRegex, setIsRegex] = useState(initial?.isRegex ?? false);
     const [gallery, setGallery] = useState(initial?.gallery ?? "");
+    const [name, setName] = useState(initial?.extra ?? "");
     const [mode, setMode] = useState<DetectMode | "">(initial?.mode ?? "");
     const [error, setError] = useState("");
     const id = useId();
@@ -70,8 +71,8 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                 isRegex,
                 mode: mode || undefined,
                 gallery: gallery.trim() || undefined,
-                // extra는 별명(우클릭 차단 닉네임, 디시콘 제목)이라 입력칸 없이 그대로 유지한다.
-                extra: initial?.extra
+                // extra는 별명(디시콘 제목, 우클릭 차단 닉네임). 입력칸에서 고친다.
+                extra: name.trim() || undefined
             });
         } catch {
             setError(SAVE_FAILED);
@@ -98,6 +99,12 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                     <Field orientation="horizontal">
                         <Checkbox id={`${id}-regex`} checked={isRegex} onCheckedChange={setIsRegex}/>
                         <FieldLabel htmlFor={`${id}-regex`}>정규식</FieldLabel>
+                    </Field>
+
+                    <Field>
+                        <FieldLabel htmlFor={`${id}-name`}>정보 (선택)</FieldLabel>
+                        <Input id={`${id}-name`} placeholder="목록에 보일 정보. 비우면 값으로 보입니다." value={name}
+                               onChange={(ev) => setName(ev.target.value)}/>
                     </Field>
 
                     <Field>

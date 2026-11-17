@@ -22,8 +22,8 @@ interface BlocksState {
     setDefault: (type: BlockType, mode: DetectMode) => Promise<void>;
 }
 
-/** 항목을 사람에게 보일 이름. 디시콘은 코드 대신 이름(extra)을 쓴다. */
-export const blockLabel = (type: BlockType, entry: BlockEntry): string => (type === "DCCON" ? entry.extra || entry.content : entry.content);
+/** 항목을 사람에게 보일 이름. 별명(extra)이 있으면 값 대신 보인다. */
+export const blockLabel = (entry: BlockEntry): string => entry.extra || entry.content;
 
 /** 유형마다 빈 차단 목록. 유형을 늘리면 여기서 타입 오류가 난다. */
 export const emptyEntries = (): Record<BlockType, BlockEntry[]> => ({COMMENT: [], DCCON: [], ID: [], IP: [], NICK: [], TAB: [], TEXT: [], TITLE: []});

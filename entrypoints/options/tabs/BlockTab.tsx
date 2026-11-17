@@ -111,7 +111,7 @@ export function BlockTab() {
                         ) : (
                             <span className="font-medium">{entry.content}</span>
                         )}
-                        label={blockLabel(type, entry)}
+                        label={blockLabel(entry)}
                         info={<span className="text-muted-foreground">{entryInfo(entry)}</span>}
                         onEdit={() => setDialog({type, initial: entry})}
                         onRemove={remove}
