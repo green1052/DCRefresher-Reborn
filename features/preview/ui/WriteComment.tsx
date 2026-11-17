@@ -29,7 +29,7 @@ const Swatch = ({color, label}: { color: string; label: string }) => (
     <ToggleGroupItem
         value={color}
         aria-label={label}
-        className="size-[18px] min-w-0 cursor-pointer rounded-full border border-foreground/25 p-0 aria-pressed:outline-2 aria-pressed:outline-offset-2 aria-pressed:outline-solid aria-pressed:outline-primary"
+        className="size-4.5 min-w-0 cursor-pointer rounded-full border border-foreground/25 p-0 aria-pressed:outline-2 aria-pressed:outline-offset-2 aria-pressed:outline-solid aria-pressed:outline-primary"
         style={{background: `#${color}`}}
     />
 );
@@ -69,7 +69,7 @@ export const WriteComment = () => {
     const pwSaved = Boolean(saved.pw);
     // 저장된 비밀번호는 입력칸에 넣지 않는다. 오버레이 섀도 루트가 open이라 페이지 스크립트가 값을 읽을 수 있다.
     const [passwordEdited, setPasswordEdited] = useState(false);
-    // 고른 디시콘(더블콘이면 둘)과 대왕콘 여부. 같이 고르고 같이 비운다.
+    // 보내는 중인 디시콘(더블콘이면 둘)과 대왕콘 여부. 보내는 동안만 담겨 있다가 끝나면 비운다(submit의 finally).
     const [{list: dccons, big: bigDccon}, setDccon] = useState(NO_DCCON);
     const [dcconOpen, setDcconOpen] = useState(false);
     const [txtcon, setTxtcon] = useState(false);
@@ -112,11 +112,13 @@ export const WriteComment = () => {
     }, [reply.replyNo]);
 
     // 팝업에서 고른 디시콘은 상태에 아직 반영되지 않았으니 pick으로 받아 쓴다.
-    const submit = async (pick: { list: DcinsideDccon[]; big: boolean } = {list: dccons, big: bigDccon}): Promise<void> => {
+    const submit = async (pick = {list: dccons, big: bigDccon}): Promise<void> => {
         const st = usePreviewStore.getState();
         const raw = textarea.current?.value ?? "";
-        const text = (txtcon && pick.list.length === 0 ? normalizeTxtcon(raw) : raw).trim();
         const useDccon = pick.list.length > 0;
+        // 팝업에서 디시콘을 골라 바로 보내면 글자콘을 끄기 전 상태(closure)라 둘은 같이 못 쓴다.
+        const sendTxtcon = txtcon && !useDccon;
+        const text = (sendTxtcon ? normalizeTxtcon(raw) : raw).trim();
 
         if (!st.preData || !st.post || sending) return;
         if (!useDccon && !text) return;
@@ -132,6 +134,8 @@ export const WriteComment = () => {
             return;
         }
 
+        // 디시콘은 보내는 동안만 입력칸에 실어 둔다.
+        if (useDccon) setDccon(pick);
         setSending(true);
         sendingKeys.add(key);
         const {preData, post, reply: sentReply} = st;
@@ -160,7 +164,7 @@ export const WriteComment = () => {
                 // 토큰이 묻지 않고 바로 와도 넘어간 글에는 보내지 않는다.
                 if (usePreviewStore.getState().signalId !== st.signalId) return;
             }
-            const outcome = await postComment(preData, post, user, {text, dccons: pick.list, bigDccon: pick.big, txtcon: txtcon && !useDccon ? txtconColors : undefined}, sentReply, code, turnstile);
+            const outcome = await postComment(preData, post, user, {text, dccons: pick.list, bigDccon: pick.big, txtcon: sendTxtcon ? txtconColors : undefined}, sentReply, code, turnstile);
 
             if (outcome.ok) {
                 // 보내는 사이 더 쓴 글은 남긴다. 디시콘만 보냈으면 입력칸의 글은 보내지 않았으니 둔다.
@@ -168,8 +172,7 @@ export const WriteComment = () => {
                     if (textarea.current?.value === raw) textarea.current.value = "";
                     if (drafts.get(key) === raw) drafts.delete(key);
                 }
-                // 보내는 사이 새로 고른 디시콘, 켠 글자콘, 답글 대상은 다음 댓글 것이라 보낸 것만 비운다.
-                setDccon((current) => (current.list === pick.list ? NO_DCCON : current));
+                // 보내는 사이 켠 글자콘, 답글 대상은 다음 댓글 것이라 보낸 것만 비운다. 디시콘은 finally에서 비운다.
                 if (txtcon) setTxtcon(false);
                 // 디시처럼 쓴 닉네임, 비밀번호를 기억한다. 만든 비밀번호도 저장해야 나중에 자기 댓글을 지울 수 있다.
                 if (!login) saveNonmember(nick, password);
@@ -198,6 +201,8 @@ export const WriteComment = () => {
         } finally {
             sendingKeys.delete(key);
             setSending(false);
+            // 성공, 실패, 취소 어느 끝이든 실어 둔 디시콘을 비운다. 다시 보내려면 팝업에서 다시 고른다.
+            setDccon((current) => (current.list === pick.list ? NO_DCCON : current));
         }
     };
 
@@ -270,12 +275,10 @@ export const WriteComment = () => {
                     ref={textarea}
                     rows={2}
                     defaultValue={initialText}
-                    disabled={dccons.length > 0}
                     aria-label={`${mode} 입력`}
                     placeholder={
-                        dccons.length > 0 ? "디시콘이 선택되었습니다."
-                            : txtcon ? "글자콘 입력... (최대 20자, 4줄, 줄당 5자로 나뉨, Shift+Enter 줄바꿈)"
-                                : "댓글 입력... (Shift+Enter 줄바꿈)"
+                        txtcon ? "글자콘 입력... (최대 20자, 4줄, 줄당 5자로 나뉨, Shift+Enter 줄바꿈)"
+                            : "댓글 입력... (Shift+Enter 줄바꿈)"
                     }
                     className="min-h-16 flex-1 resize-y"
                     onChange={(ev) => {
@@ -295,9 +298,8 @@ export const WriteComment = () => {
                 />
                 <div className="flex flex-col gap-2">
                     <div className="flex gap-2">
-                        <TooltipButton tip={dccons.length > 0 ? "디시콘 취소" : "디시콘"} variant="secondary" size="icon"
-                                       onClick={() => (dccons.length > 0 ? setDccon(NO_DCCON) : setDcconOpen(true))}>
-                            {dccons.length > 0 ? <X/> : <Smile/>}
+                        <TooltipButton tip="디시콘" variant="secondary" size="icon" onClick={() => setDcconOpen(true)}>
+                            <Smile/>
                         </TooltipButton>
                         <WithTooltip tip={txtcon ? "글자콘 취소" : "글자콘"}
                                      trigger={<Button variant={txtcon ? "default" : "secondary"} size="icon" aria-label="글자콘" aria-pressed={txtcon}
@@ -351,10 +353,9 @@ export const WriteComment = () => {
             {dcconOpen && (
                 <DcconPopup
                     onSelect={(list, big) => {
-                        setDccon({list, big});
                         if (txtcon) exitTxtcon();
                         setDcconOpen(false);
-                        // 고르자마자 바로 보낸다. 보내다 멈추면(캡차 취소 등) 위 상태가 남아 손으로 다시 누를 수 있다.
+                        // 고르자마자 바로 보낸다. 디시콘 상태는 submit이 보내는 동안만 담는다.
                         void submit({list, big});
                     }}
                     onClose={() => setDcconOpen(false)}
