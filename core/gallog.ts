@@ -16,6 +16,17 @@ export interface RatioInfo extends GallogActivity {
     date: number;
 }
 
+/** 글댓비 저장소 모양. */
+export interface RatioData {
+    ratio?: Record<string, RatioInfo>;
+}
+
+/** 글댓비 저장 상한. 최근에 받은 사람부터 이만큼만 남긴다. */
+const MAX_RATIOS = 500;
+
+export const trimRatios = (all: Record<string, RatioInfo>): Record<string, RatioInfo> =>
+    Object.fromEntries(Object.entries(all).sort(([, a], [, b]) => b.date - a.date).slice(0, MAX_RATIOS));
+
 /** 갤로그의 글/댓글 수 ("글,댓글" 텍스트 응답). */
 const fetchGallogActivity = async (uid: string): Promise<GallogActivity | undefined> => {
     const text = await ajax.post(GALLOG_API, {

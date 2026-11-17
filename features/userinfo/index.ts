@@ -1,16 +1,15 @@
 import QuickLRU from "quick-lru";
-import {storage, type WxtStorageItem} from "wxt/utils/storage";
+import {storage} from "wxt/utils/storage";
 
 import {badgeViewOf, type BadgeView, DEFAULT_BADGE_VIEW, showsUid} from "@/core/badges";
 import {banReasonsOf, initDatabase, ipInfoOf, onDatabaseChange, passesIpFilter} from "@/core/database";
 import {defineModule} from "@/core/module/define";
-import {type GallogActivity, getGallogActivityUnlessBusy, onGallogActivity, type RatioInfo} from "@/core/gallog";
+import {type GallogActivity, getGallogActivityUnlessBusy, onGallogActivity, type RatioData, type RatioInfo, trimRatios} from "@/core/gallog";
 import {ROWS_HIDDEN_EVENT} from "@/core/block";
 import {FILTER_SKIP_ATTR} from "@/core/filtering";
 import {pageGallery} from "@/core/http/urls";
 import {WRITER_ROW_SELECTOR} from "@/core/list";
-import {batchedSave} from "@/core/storage/batched";
-import {moduleDataKey, moduleDataStorage} from "@/core/storage/items";
+import {moduleDataKey} from "@/core/storage/items";
 import {watchStorage} from "@/core/storage/sync";
 import {onBfcacheRestore} from "@/utils/dom";
 import {findMemo, useMemosStore} from "@/stores/memos";
@@ -18,9 +17,6 @@ import {isFresh, isLowActivity, openWriterBubble, useUiStore} from "@/stores/ui"
 import {objectFromEntries, objectKeys} from "@/utils/typed";
 
 import meta, {BADGE_COLORS, type BadgeColor, type Ctx} from "./meta";
-
-/** 저장소의 글댓비 캐시 (moduleDataStorage). */
-type RatioData = { ratio?: Record<string, RatioInfo> };
 
 type BadgeColors = Partial<Record<BadgeColor, string>>;
 
@@ -39,15 +35,6 @@ interface BadgeState {
 const WRITER_SELECTOR = ".ub-writer:not([user_name])";
 /** 작성자 칸 하나에 붙이는 배지 묶음. FILTER_SKIP_ATTR을 붙여 core/filtering이 훑지 않게 한다. */
 const BADGES_CLASS = "refresher-user-badges";
-
-/** 글댓비 저장 상한. 최근에 받은 사람부터 이만큼만 남긴다. */
-const MAX_RATIOS = 500;
-
-/** 글댓비를 모아 저장하는 간격 (ms). 저장마다 캐시 전체가 열린 탭마다 전달되고 워커도 깬다. */
-const RATIO_SAVE_DELAY = 30_000;
-
-const trimRatios = (all: Record<string, RatioInfo>): Record<string, RatioInfo> =>
-    Object.fromEntries(Object.entries(all).sort(([, a], [, b]) => b.date - a.date).slice(0, MAX_RATIOS));
 
 const buildBadgeSpan = (text: string, color?: string, title?: string, className = "refresherUserData"): HTMLElement => {
     const span = Object.assign(document.createElement("span"), {className, textContent: text});
@@ -209,18 +196,16 @@ export default defineModule(meta, {
         // await 뒤마다 확인해, 그사이 모듈이 꺼졌으면 onRevoke가 지운 배지, 글댓비를 다시 그리지 않는다.
         const {signal} = ctx;
 
-        // 글댓비 캐시. moduleDataStorage 키라 백업·내보내기에서 빠진다. 항목은 처음 저장할 때 만든다 (미리 만들면 두 번 읽는다).
+        // 글댓비 캐시. moduleDataStorage 키라 백업·내보내기에서 빠진다. 저장은 배경이 유일하게 하니 읽기만 한다.
         const ratioKey = moduleDataKey("userinfo");
-        let ratioStorage: WxtStorageItem<RatioData, {}> | undefined;
 
         // 작성자 우클릭으로 유저 버블(메모, 차단, 갤로그)을 연다. 메모는 이 모듈의 기능이라 차단 모듈이 꺼져 있어도 열려야 한다.
         document.addEventListener("contextmenu", openWriterBubble, {capture: true, signal});
 
-        let unsaved: Record<string, RatioInfo> = {};
-        // 저장소 글댓비를 합친다. 다른 탭의 저장과 bfcache 복원이 여기로 오니, 바뀐 유저의 칸만 다시 그린다.
+        // 저장소 글댓비를 합친다. 배경의 저장과 bfcache 복원이 여기로 오니, 바뀐 유저의 칸만 다시 그린다.
         const applyStored = (next: RatioData | null): void => {
             const before = state.ratios;
-            const ratios = trimRatios({...next?.ratio, ...unsaved});
+            const ratios = trimRatios({...next?.ratio});
             state.ratios = ratios;
             const changed = [...new Set([...Object.keys(before), ...Object.keys(ratios)])]
                 .filter((uid) => before[uid]?.date !== ratios[uid]?.date || before[uid]?.article !== ratios[uid]?.article || before[uid]?.comment !== ratios[uid]?.comment);
@@ -246,13 +231,6 @@ export default defineModule(meta, {
         loading = false;
         state.ratios = (early === undefined ? stored : early)?.ratio ?? {};
         publishRatios(ctx, state);
-        // unsaved는 쓰기가 끝난 뒤 batch에 든 것만 지워, 쓰는 사이 받은 글댓비를 지우지 않는다.
-        const saver = batchedSave(ctx, RATIO_SAVE_DELAY, async () => {
-            const batch = {...unsaved};
-            if (Object.keys(batch).length === 0) return;
-            await (ratioStorage ??= moduleDataStorage<RatioData>("userinfo", {})).setValue({ratio: state.ratios});
-            unsaved = Object.fromEntries(Object.entries(unsaved).filter(([uid, info]) => batch[uid] !== info));
-        });
 
         ctx.addFilter(
             WRITER_SELECTOR,
@@ -266,15 +244,13 @@ export default defineModule(meta, {
         // IP DB가 갱신되거나 갱차 목록을 다 읽으면 다시 그린다.
         ctx.addCleanup(onDatabaseChange(() => rebuildAll(ctx, state)));
 
-        // 받은 글댓비를 이 탭에는 바로 그리고, 저장은 모아서 한다 (RATIO_SAVE_DELAY).
+        // 받은 글댓비를 이 탭에는 바로 그린다. 저장은 배경이 결과를 받아 한다.
         const storeRatios = (entries: (readonly [string, GallogActivity])[]): void => {
             const now = Date.now();
             const received = Object.fromEntries(entries.map(([uid, info]) => [uid, {...info, date: now}]));
-            Object.assign(unsaved, received);
             state.ratios = trimRatios({...state.ratios, ...received});
             publishRatios(ctx, state);
             rebuildUsers(ctx, state, Object.keys(received));
-            saver.schedule();
         };
 
         // 미리보기, 버블, 새 글 조회가 받은 값을 모두 저장한다. 새 글 조회는 uid마다 불리므로 모아 한 번만 한다.
