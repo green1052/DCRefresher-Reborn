@@ -106,7 +106,7 @@ export function DataTab() {
             <Section title="IP/밴 데이터베이스" desc={`버전: ${version.trim() || "없음"}`}
                      actions={
                          <Button variant="secondary" disabled={loading} onClick={() => void forceUpdate()}>
-                             <RefreshCw data-icon="inline-start"/> 지금 갱신
+                             <RefreshCw data-icon="inline-start"/> 갱신
                          </Button>
                      }/>
 

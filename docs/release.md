@@ -12,5 +12,5 @@ release에 push하면 `.github/workflows/release.yml`이 CI를 통과했는지 �
 `.github/workflows/db.yml`이 수, 토요일 예약과 수동 실행(Actions → DB → Run workflow)으로 `scripts/build-db.ts`를 돌려 `data` 브랜치에 올리고, Cloudflare Pages가 `dcrefresher.green1052.com`으로 배포하면 확장이 받습니다.
 
 - 늘 release 브랜치로 만듭니다(배포된 코드와 형식이 같아야 해서). `ip.json`은 확장 저장 형식(`core/ipdb.ts`의 `CompactIpData`) 그대로이고 `ban.json`, `_headers`는 `data` 브랜치에서 손으로 관리합니다. `data` 브랜치는 커밋 하나로 유지하고 사이에 바뀌었으면 실패합니다. 6.0.3 이하는 `raw.githubusercontent.com`에서 받으므로 게시를 유지합니다.
-- 확장은 `version` 파일과 저장 형식(`IP_FORMAT`)이 같으면 받지 않습니다(`core/database.ts`의 `updateDatabase`). "지금 갱신"은 다시 받고 깨진 파일은 저장하지 않습니다.
+- 확장은 `version` 파일과 저장 형식(`IP_FORMAT`)이 같으면 받지 않습니다(`core/database.ts`의 `updateDatabase`). "갱신"은 다시 받고 깨진 파일은 저장하지 않습니다.
 - **`IP_FORMAT`을 바꾸면** 옛, 새 확션이 서로의 `ip.json`을 못 읽습니다. 바꾼 버전을 릴리즈했으면 DB 워크플로를 바로 수동으로 돌립니다. 형식은 꼭 필요할 때만 바꿉니다.

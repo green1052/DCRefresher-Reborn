@@ -55,7 +55,7 @@ scripts/                IP DB 빌드 스크립트
 배경은 뜰 때마다 리스너를 동기로 겁니다. Chrome은 서비스 워커, Firefox는 이벤트 페이지라 상태는 저장소에 둡니다. 탭↔배경 메시지는 `core/messaging/protocol.ts`의 `ProtocolMap`에 모읍니다 - 이름은 `refresher:` 접두사, 배경에서 딱 한 번만 받고(`tests/unit/entrypoints/background/messages.test.ts`), 배경을 거친 오류는 `instanceof` 대신 `utils/error.ts`의 이름으로 봅니다. 모듈은 이 문서를 불러온 주소(`documentUrl`)로 판단하고 갤러리 id, 글 번호는 `pageGallery`, `pagePostNo`를 씁니다.
 
 - `page.ts`: 탭의 페이지(MAIN world)에서 실행합니다. 갈아끼운 목록에 디시 스크립트(`chk_user_block`, `UserMemo.renderWriterMemoBadges`)를 다시 거는 다리를 페이지마다 겁니다(`refresher:installListBridge`). 그 뒤로 콘텐츠 스크립트는 `LIST_REPLACED_EVENT` 이벤트만 보냅니다. 한 모듈만 쓸 때는 그 `background.ts`가 `runInPage`로 합니다. import가 필요한 코드는 unlisted script로 번들해 `runFileInPage`로 넣습니다(글쓰기 이미지 변환).
-- `database.ts`: IP, 밴 DB를 하루마다 확인해 7일이 지났거나 형식이 옛것이면 받습니다. 알람은 배포 빌드에서만, 설치, 업데이트 때도 받습니다. "지금 갱신"은 배경에 메시지(`refresher:updateDatabase`)를 보냅니다. 통합검색, 갤로그는 CORS가 막혀 배경이 대신 받습니다(`refresher:searchPosts`, `refresher:gallogPage`).
+- `database.ts`: IP, 밴 DB를 하루마다 확인해 7일이 지났거나 형식이 옛것이면 받습니다. 알람은 배포 빌드에서만, 설치, 업데이트 때도 받습니다. "갱신"은 배경에 메시지(`refresher:updateDatabase`)를 보냅니다. 통합검색, 갤로그는 CORS가 막혀 배경이 대신 받습니다(`refresher:searchPosts`, `refresher:gallogPage`).
 
 ## 저장소
 

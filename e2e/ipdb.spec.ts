@@ -13,14 +13,14 @@ test.describe("IP/밴 데이터베이스", () => {
         await expect(listPage.row(1).locator(".refresher-user-badges")).toHaveText("(user1)[테스트 갤러리]");
     });
 
-    test("지금 갱신은 버전이 같아도 다시 받는다", async ({page, extensionId, ipDb, storage}) => {
+    test("갱신은 버전이 같아도 다시 받는다", async ({page, extensionId, ipDb, storage}) => {
         const ipRequests = (): number => ipDb.requests.filter((path) => path === "/ip.json").length;
         await expect.poll(() => storage.get("refresher:db:meta")).toMatchObject({version: ipDb.version});
         expect(ipRequests()).toBe(1);
 
         const {toasts} = await openOptions(page, extensionId, "data");
         await expect(page.getByText(`버전: ${ipDb.version}`)).toBeVisible();
-        await page.getByRole("button", {name: "지금 갱신", exact: true}).click();
+        await page.getByRole("button", {name: "갱신", exact: true}).click();
         await expect(toasts).toContainText("데이터베이스를 갱신했습니다.");
         expect(ipRequests()).toBe(2);
     });

@@ -40,7 +40,7 @@ export default defineBackground({type: "module", main: () => {
     listenPageMessages();
 
     const updateDatabase = startDatabaseUpdates();
-    // 옵션의 "지금 갱신". ky 오류는 메시지로 건너가면 종류(상태 코드 등)를 잃으므로 여기서 안내 문구로 바꿔 던진다.
+    // 옵션의 "갱신". ky 오류는 메시지로 건너가면 종류(상태 코드 등)를 잃으므로 여기서 안내 문구로 바꿔 던진다.
     onMessage("refresher:updateDatabase", () => updateDatabase(true).catch((e: unknown) => {
         console.error(e);
         throw new Error(friendlyMessage(e));

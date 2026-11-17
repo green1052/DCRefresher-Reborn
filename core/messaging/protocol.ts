@@ -68,7 +68,7 @@ interface ProtocolMap {
     /** 탭 → 배경: 글댓비 조회 결과. 실패는 activity 없이 보내 조회권만 푼다. */
     "refresher:gallogResult"(data: {uid: string; activity?: GallogActivity}): void;
 
-    /** 옵션 → 배경: DB "지금 갱신". 배경 한 곳에서 받아 갱신이 겹치지 않게 한다. */
+    /** 옵션 → 배경: DB "갱신". 배경 한 곳에서 받아 갱신이 겹치지 않게 한다. */
     "refresher:updateDatabase"(): void;
 
     /** 팝업 → 탭: 이 페이지의 토글 상태와 시작하지 못한 모듈. */
