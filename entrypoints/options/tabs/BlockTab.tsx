@@ -1,5 +1,8 @@
-import {useCallback, useId, useState} from "react";
+import {useCallback, useState} from "react";
 
+import {Info} from "lucide-react";
+
+import {TooltipButton} from "@/components/WithTooltip";
 import {pinDefaultMode} from "@/core/settings-transfer";
 import {BLOCK_TYPES, DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType} from "@/core/storage/types";
@@ -37,7 +40,6 @@ export function BlockTab() {
     const galleryOf = useCallback((entry: BlockEntry): string | undefined => entry.gallery, []);
 
     const [dialog, setDialog] = useState<{ type: BlockType; initial: BlockEntry | null } | null>(null);
-    const modeDescId = useId();
 
     const importBlocks = async (parsed: Record<string, unknown>): Promise<number> => {
         // '기본값' 모드 항목은 내보낸 기기의 기본 모드로 검사됐다 - 다르면 그 모드를 적어 방식을 지킨다.
@@ -75,21 +77,18 @@ export function BlockTab() {
                 onClear={(type) => updateEntries(type, () => [])}
                 onAdd={(type) => setDialog({type, initial: null})}
                 toolbar={(type) => (
-                    <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2">
-                            <span className="text-muted-foreground">기본 차단 모드</span>
-                            <RefresherSelect
-                                value={defaults[type]}
-                                aria-label="기본 차단 모드"
-                                aria-describedby={modeDescId}
-                                onChange={(next) => void setDefault(type, next).catch(() => notify(SAVE_FAILED))}
-                                options={DETECT_MODE_NAMES}
-                            />
-                        </div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">기본 차단 모드</span>
+                        <RefresherSelect
+                            value={defaults[type]}
+                            aria-label="기본 차단 모드"
+                            onChange={(next) => void setDefault(type, next).catch(() => notify(SAVE_FAILED))}
+                            options={DETECT_MODE_NAMES}
+                        />
                         {/* 모드를 '기본값'으로 둔 항목이 따르는 모드라, 불일치, 불포함으로 바꾸면 그 항목들이 곧바로 허용 목록이 된다. */}
-                        <p id={modeDescId} className="max-w-md text-sm text-muted-foreground">
-                            모드가 '기본값'인 항목에 씁니다. {DETECT_MODE_DESCRIPTIONS[defaults[type]]}
-                        </p>
+                        <TooltipButton tip={DETECT_MODE_DESCRIPTIONS[defaults[type]]} variant="ghost" size="icon-xs">
+                            <Info className="size-3.5"/>
+                        </TooltipButton>
                     </div>
                 )}
                 items={items}

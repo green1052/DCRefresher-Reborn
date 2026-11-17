@@ -93,8 +93,8 @@ export function App() {
     const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
 
     useEffect(() => {
-        // 열 때 20번 중 1번(5%)은 디시콘 비 이스터에그가 뜬다.
-        if (Math.random() < 0.05) useOptionsStore.getState().startRain();
+        // 열 때 100번 중 1번(1%)은 디시콘 비 이스터에그가 뜬다.
+        if (Math.random() < 0.01) useOptionsStore.getState().startRain();
     }, []);
 
     useEffect(() => {

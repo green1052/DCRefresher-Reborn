@@ -1,10 +1,12 @@
 import {useId, useState} from "react";
+import {Info} from "lucide-react";
 
+import {TooltipButton} from "@/components/WithTooltip";
 import {DialogActions, ModalDialog, SubmitForm} from "@/components/dialogs";
 import {Button} from "@/components/ui/button";
 import {Checkbox} from "@/components/ui/checkbox";
 import {DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dialog";
-import {Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel} from "@/components/ui/field";
+import {Field, FieldError, FieldGroup, FieldLabel} from "@/components/ui/field";
 import {Input} from "@/components/ui/input";
 import {DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
@@ -18,8 +20,8 @@ import {RefresherSelect} from "../shared/RefresherSelect";
 export const DETECT_MODE_DESCRIPTIONS: Record<DetectMode, string> = {
     SAME: "값과 똑같으면 가립니다.",
     CONTAIN: "값이 들어 있으면 가립니다.",
-    NOT_SAME: "값과 똑같은 것만 남기고 나머지를 모두 가립니다. 불일치, 불포함 항목이 여럿이면 하나에만 맞아도 남깁니다.",
-    NOT_CONTAIN: "값이 들어 있는 것만 남기고 나머지를 모두 가립니다. 불일치, 불포함 항목이 여럿이면 하나에만 맞아도 남깁니다."
+    NOT_SAME: "값과 똑같은 것만 남기고 나머지를 모두 가립니다.\n불일치, 불포함 항목이 여럿이면 하나에만 맞아도 남깁니다.",
+    NOT_CONTAIN: "값이 들어 있는 것만 남기고 나머지를 모두 가립니다.\n불일치, 불포함 항목이 여럿이면 하나에만 맞아도 남깁니다."
 };
 
 interface BlockDialogProps {
@@ -36,7 +38,6 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
     const [gallery, setGallery] = useState(initial?.gallery ?? "");
     const [mode, setMode] = useState<DetectMode | "">(initial?.mode ?? "");
     const [error, setError] = useState("");
-    const defaultMode = useBlocksStore((state) => state.defaults[type]);
     const id = useId();
 
     const submit = async (): Promise<void> => {
@@ -104,14 +105,15 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                         <Input id={`${id}-gallery`} placeholder="갤러리 ID" value={gallery} onChange={(ev) => setGallery(ev.target.value)}/>
                     </Field>
 
-                    <Field orientation="horizontal">
-                        <FieldContent>
+                    <Field>
+                        <div className="flex items-center gap-1.5">
                             <FieldLabel>차단 모드</FieldLabel>
-                            <FieldDescription id={`${id}-mode-desc`}>
-                                {mode ? DETECT_MODE_DESCRIPTIONS[mode] : `기본 차단 모드(${DETECT_MODE_NAMES[defaultMode]}): ${DETECT_MODE_DESCRIPTIONS[defaultMode]}`}
-                            </FieldDescription>
-                        </FieldContent>
-                        <RefresherSelect value={mode} aria-label="차단 모드" aria-describedby={`${id}-mode-desc`} onChange={setMode}
+                            <TooltipButton tip={mode ? DETECT_MODE_DESCRIPTIONS[mode] : "기본 차단 모드를 따릅니다."}
+                                           variant="ghost" size="icon-xs">
+                                <Info className="size-3.5"/>
+                            </TooltipButton>
+                        </div>
+                        <RefresherSelect value={mode} aria-label="차단 모드" onChange={setMode}
                                          options={{"": "기본값", ...DETECT_MODE_NAMES}}/>
                     </Field>
 

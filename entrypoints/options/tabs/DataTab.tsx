@@ -3,7 +3,14 @@ import {useEffect, useId, useRef, useState} from "react";
 
 import {ConfirmDialog, DialogActions} from "@/components/dialogs";
 import {Button} from "@/components/ui/button";
-import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger} from "@/components/ui/dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger
+} from "@/components/ui/dialog";
 import {Field, FieldLabel} from "@/components/ui/field";
 import {Switch} from "@/components/ui/switch";
 import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
@@ -24,7 +31,7 @@ const RESTORE_DESCRIPTIONS: Record<RestoreMode, string> = {
 };
 
 export function DataTab() {
-    const {version, lastUpdate} = useStorageItem(dbMetaStorage());
+    const {version} = useStorageItem(dbMetaStorage());
     const backupError = useStorageItem(backupStorage.error());
     const autoBackup = useStorageItem(backupStorage.auto());
     const undo = useStorageItem(backupStorage.undo());
@@ -37,7 +44,19 @@ export function DataTab() {
     const [importOpen, setImportOpen] = useState(false);
     const restoreRef = useRef<HTMLButtonElement>(null);
     const id = useId();
-    const {loading, forceUpdate, backupCloud, recoverCloud, toggleAutoBackup, exportData, exportFile, submitImport, clearCloud, clearData, revert} =
+    const {
+        loading,
+        forceUpdate,
+        backupCloud,
+        recoverCloud,
+        toggleAutoBackup,
+        exportData,
+        exportFile,
+        submitImport,
+        clearCloud,
+        clearData,
+        revert
+    } =
         useDataActions(restoreRef, setRestoreOpen);
 
     useEffect(() => {
@@ -70,7 +89,11 @@ export function DataTab() {
             label: "백업",
             run: backupCloud
         },
-        cloudClear: {title: `클라우드에 올라간 수동, 자동 백업을 모두 지울까요?${autoBackup ? " 자동 백업도 꺼집니다." : ""}`, label: "삭제", run: clearCloud},
+        cloudClear: {
+            title: `클라우드에 올라간 수동, 자동 백업을 모두 지울까요?${autoBackup ? " 자동 백업도 꺼집니다." : ""}`,
+            label: "삭제",
+            run: clearCloud
+        },
         auto: {
             title: `자동 백업을 켜면 ${cloud?.auto?.other ? "다른 기기에서 올린 " : ""}${formatTime(cloud?.auto?.createdAt ?? 0)} 자동 백업을 이 기기의 설정으로 덮어씁니다. 켤까요?`,
             label: "켜기",
@@ -80,7 +103,7 @@ export function DataTab() {
 
     return (
         <div>
-            <Section title="IP/밴 데이터베이스" desc={`버전: ${version.trim() || "없음"}, 마지막 확인: ${formatTime(lastUpdate)}`}
+            <Section title="IP/밴 데이터베이스" desc={`버전: ${version.trim() || "없음"}`}
                      actions={
                          <Button variant="secondary" disabled={loading} onClick={() => void forceUpdate()}>
                              <RefreshCw data-icon="inline-start"/> 지금 갱신
@@ -89,7 +112,7 @@ export function DataTab() {
 
             <Section
                 title="클라우드 백업"
-                desc="브라우저 동기화 저장소(최대 100KB)에 설정과 차단/메모 목록을 압축해 백업합니다. 수동 백업과 자동 백업은 따로 저장됩니다."
+                desc="브라우저 동기화 저장소에 설정을 백업합니다."
                 actions={
                     <Field orientation="horizontal">
                         {/* 자동 칸은 기기끼리 같이 쓰고 켜는 즉시 이 기기 설정으로 덮인다. 새 기기에서 켰다가 복원할 백업을 잃지 않게 먼저 묻는다. */}
@@ -100,19 +123,23 @@ export function DataTab() {
                 }
             >
                 <p className="mb-3 text-muted-foreground">
-                    수동 백업: {formatTime(cloud?.manual?.createdAt ?? 0)}, 자동 백업: {formatTime(cloud?.auto?.createdAt ?? 0)}
+                    수동 백업: {formatTime(cloud?.manual?.createdAt ?? 0)}
+                    <br/>
+                    자동 백업: {formatTime(cloud?.auto?.createdAt ?? 0)}
                 </p>
                 {/* 복원 버튼을 Trigger로 둬야 닫을 때 그 버튼으로 포커스가 돌아온다. */}
                 <Dialog open={restoreOpen} onOpenChange={setRestoreOpen}>
                     <div className="flex flex-wrap gap-2">
                         {/* 백업 버튼은 원래 수동 칸을 덮는다. 다른 기기가 올린 백업일 때만 묻는다(새 기기에서 복원과 헷갈려 누르는 경우). */}
-                        <Button variant="secondary" disabled={loading || !cloud} onClick={() => (cloud?.manual?.other ? setConfirm("manual") : void backupCloud())}>
+                        <Button variant="secondary" disabled={loading || !cloud}
+                                onClick={() => (cloud?.manual?.other ? setConfirm("manual") : void backupCloud())}>
                             <CloudUpload data-icon="inline-start"/> 백업
                         </Button>
                         <DialogTrigger render={<Button ref={restoreRef} variant="secondary" disabled={loading}/>}>
                             <CloudDownload data-icon="inline-start"/> 복원
                         </DialogTrigger>
-                        <Button variant="secondary" disabled={loading || (!cloud?.manual && !cloud?.auto)} onClick={() => setConfirm("cloudClear")}>
+                        <Button variant="secondary" disabled={loading || (!cloud?.manual && !cloud?.auto)}
+                                onClick={() => setConfirm("cloudClear")}>
                             <Trash2 data-icon="inline-start"/> 삭제
                         </Button>
                     </div>
@@ -134,7 +161,8 @@ export function DataTab() {
                                 ["manual", "수동 백업", cloud?.manual ? formatTime(cloud.manual.createdAt) : undefined],
                                 ["auto", "자동 백업", cloud?.auto ? formatTime(cloud.auto.createdAt) : undefined]
                             ] as const).map(([slot, label, time]) => (
-                                <Button key={slot} variant="secondary" size="lg" className="justify-between" disabled={!time}
+                                <Button key={slot} variant="secondary" size="lg" className="justify-between"
+                                        disabled={!time}
                                         onClick={() => void recoverCloud(slot, restoreMode)}>
                                     {label}
                                     <span className="text-muted-foreground">{time ?? "없음"}</span>
@@ -153,7 +181,7 @@ export function DataTab() {
             </Section>
 
             <Section title="내보내기 / 가져오기"
-                     desc="IP/밴 데이터베이스와 캐시를 뺀 모든 설정과 차단/메모 목록을 JSON으로 옮깁니다. 가져오기는 JSON에 든 설정과 목록만 바꾸고, JSON에 없는 것은 그대로 둡니다.">
+                     desc="설정을 내보냅니다.">
                 <div className="flex flex-wrap gap-2">
                     <Button variant="secondary" disabled={loading} onClick={() => void exportData()}>
                         <ClipboardCopy data-icon="inline-start"/> 클립보드로 내보내기
@@ -177,7 +205,7 @@ export function DataTab() {
                          }/>
             )}
 
-            <Section title="초기화" desc="모든 설정과 차단/메모 데이터를 삭제합니다. 초기화한 뒤에는 되돌리기로 직전 상태로 돌아갈 수 있습니다."
+            <Section title="초기화" desc="모든 설정을 삭제합니다."
                      actions={
                          <Button variant="destructive" disabled={loading} onClick={() => setConfirm("reset")}>
                              <Trash2 data-icon="inline-start"/> 데이터 초기화
@@ -185,7 +213,8 @@ export function DataTab() {
                      }/>
 
             {confirmed && (
-                <ConfirmDialog title={confirmed.title} confirmLabel={confirmed.label} danger onClose={() => setConfirm(null)} onConfirm={() => {
+                <ConfirmDialog title={confirmed.title} confirmLabel={confirmed.label} danger
+                               onClose={() => setConfirm(null)} onConfirm={() => {
                     setConfirm(null);
                     void confirmed.run();
                 }}/>
@@ -193,7 +222,7 @@ export function DataTab() {
 
             {importOpen && (
                 <ImportDialog title="데이터 가져오기"
-                              desc="내보낸 JSON 데이터를 붙여 넣거나 파일에서 불러와 주세요. JSON에 든 설정과 목록만 바꾸고 나머지는 그대로 둡니다. 들어 있는 차단/메모 목록은 합치지 않고 통째로 바꿉니다. 기본 차단 모드는 이 기기 것을 남깁니다. 합치려면 차단/메모 탭의 가져오기를 써 주세요."
+                              desc={"차단, 메모는 통째로 덮어씁니다."}
                               onClose={() => setImportOpen(false)} onSubmit={submitImport}/>
             )}
         </div>

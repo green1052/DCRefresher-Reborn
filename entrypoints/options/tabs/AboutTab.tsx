@@ -59,13 +59,13 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
     const copyDiagnostics = async (): Promise<void> => {
         const db = await dbMetaStorage().getValue().catch(() => null);
         const lines = [
-            `DCRefresher Reborn v${version} (${import.meta.env.BROWSER})`,
+            `DCRefresher Reborn v${version}`,
             `브라우저: ${navigator.userAgent}`,
             `켜진 모듈: ${enabledNames.join(", ") || "없음"}`,
             `IP DB: ${db?.version || "없음"} (마지막 확인 ${formatTime(db?.lastUpdate ?? 0)})`,
             `차단 ${blockCount}개, 메모 ${memoCount}개`
         ];
-        await copyText(lines.join("\n"), "진단 정보를 복사했습니다. 버그 제보에 붙여 넣어 주세요.", "복사하지 못했습니다.");
+        await copyText(lines.join("\n"), "진단 정보를 복사했습니다.", "복사하지 못했습니다.");
     };
 
     return (

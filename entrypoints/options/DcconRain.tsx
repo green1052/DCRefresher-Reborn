@@ -48,7 +48,6 @@ const COUNT = 60;
 const MAX_DELAY = 1.5;
 const DURATION = 2.4;
 
-/** 로고 연타 이스터에그. */
 export const DcconRain = () => {
     // 종료는 타이머로 한다. 마지막 이미지의 animationend에 걸면 그 이미지가 로드 실패로 지워졌을 때 끝나지 않는다.
     useEffect(() => {

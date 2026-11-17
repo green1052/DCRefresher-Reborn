@@ -111,7 +111,6 @@
         }
     }
 
-    /* 옵션 로고 연타 이스터에그 (DcconRain). 회전각은 이미지마다 --spin으로 준다. */
     --animate-dccon-fall: dccon-fall linear both;
 
     @keyframes dccon-fall {

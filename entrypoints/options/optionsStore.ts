@@ -3,7 +3,6 @@ import {create} from "zustand";
 import {useUiStore} from "@/stores/ui";
 
 interface OptionsState {
-    /** 디시콘 비 이스터에그 - 새 값이 들어가면 비가 다시 마운트된다. */
     rain: number;
     notice: string | null;
     startRain: () => void;
