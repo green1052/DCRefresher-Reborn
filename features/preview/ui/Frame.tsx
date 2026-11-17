@@ -2,7 +2,6 @@ import {Dialog} from "@base-ui/react/dialog";
 import {Archive, ArrowUp, CircleAlert, Eye, MessageSquare, RotateCw} from "lucide-react";
 import {Fragment, useEffect, useLayoutEffect, useRef, useState} from "react";
 
-import {overlay} from "@/components/overlay/shadow";
 import {Alert, AlertDescription} from "@/components/ui/alert";
 import {Button} from "@/components/ui/button";
 import {Separator} from "@/components/ui/separator";
@@ -14,7 +13,7 @@ import {useContentModuleSettings, useRunningModuleSettings} from "@/core/module/
 import {postKey as keyOfPost} from "@/core/preview/cache";
 import {useUiStore} from "@/stores/ui";
 import {smoothScroll} from "@/utils/dom";
-import {hasModifier, isTyping, MODAL_OVERLAY_SELECTOR} from "@/utils/event";
+import {hasModifier, isTyping} from "@/utils/event";
 import {cn} from "cn";
 
 import {adjacentPreData} from "../rows";
@@ -26,7 +25,9 @@ import {CountDown} from "./CountDown";
 import {ErrorBlock} from "./ErrorBlock";
 import {AdminPanel} from "./Popups";
 import {postTitle, usePreviewStore} from "./previewStore";
+import {PreviewDialogRoot} from "./PreviewDialogRoot";
 import {usePreviewMedia} from "./usePreviewMedia";
+import {useScrollLock} from "./useScrollLock";
 import {useWheelGesture} from "./useWheelGesture";
 import {Votes} from "./Votes";
 import {WriteComment} from "./WriteComment";
@@ -123,28 +124,8 @@ export const Frame = () => {
     const listTitle = usePreviewStore((s) => s.preData?.title);
     const scroller = useRef<HTMLDivElement>(null);
     const commentsSection = useRef<HTMLDivElement>(null);
-    // 비모달이라 뒤 페이지를 inert로 막아 Tab, 스크린 리더가 목록으로 나가지 않게 한다(오버레이는 남긴다).
-    // 키보드로 열었을 때만 연 요소로 포커스를 돌려준다 - 마우스로 연 창까지 돌리면 새로고침 모듈이 갱신을 멈춘다.
-    useEffect(() => {
-        if (!visible) return;
-
-        const focused = focusedElement();
-        const opener = focused?.matches(":focus-visible") ? focused : null;
-        const html = document.documentElement;
-        const previous = {overflow: html.style.overflow, gutter: html.style.scrollbarGutter};
-        // 스크롤바가 실제로 있을 때만 그 자리를 남겨, 잠가도 뒤 페이지가 옆으로 밀리지 않게 한다. 짧은 페이지에 걸면 오히려 빈 홈이 생긴다.
-        if (window.innerWidth > html.clientWidth) html.style.scrollbarGutter = "stable";
-        html.style.overflow = "hidden";
-        const blocked = document.body.querySelectorAll<HTMLElement>(":scope > :not(refresher-root, [data-refresher-ui], [inert])");
-        for (const element of blocked) element.inert = true;
-
-        return () => {
-            html.style.overflow = previous.overflow;
-            html.style.scrollbarGutter = previous.gutter;
-            for (const element of blocked) element.inert = false;
-            opener?.focus({preventScroll: true});
-        };
-    }, [visible]);
+    // 비모달이라 뒤 페이지를 inert로 잠그고, 키보드로 열었을 때만 연 요소로 포커스를 돌려준다.
+    useScrollLock(visible);
 
     // 열거나 글을 바꾸면 스크롤 칸에 포커스를 줘 방향키, 스페이스로 바로 스크롤되게 한다.
     useEffect(() => {
@@ -155,9 +136,6 @@ export const Frame = () => {
     useLayoutEffect(() => {
         if (scroller.current) scroller.current.scrollTop = 0;
     }, [postKey]);
-
-    // 창 안에서 글자를 끌어 고르다 바깥에서 놓거나 그 반대여도 click은 둘을 감싼 스크롤 칸에 떨어진다. 바깥에서 누르고 뗀 것만 닫는다.
-    const pressedOutside = useRef(false);
 
     // 창이 그려진 뒤에 걸면 뜨자마자 누른 PageDown을 놓친다. 그리기 전에 건다.
     useLayoutEffect(() => {
@@ -195,67 +173,14 @@ export const Frame = () => {
     const hasComments = comments !== undefined || (post !== undefined && visible);
 
     return (
-        // 비모달 창이다. 스크롤 잠금과 PageUp/Down 이동은 직접 처리한다. 바깥 클릭 닫기는 아래 click이 맡는다(위에 뜬 팝업, 버블을 눌러도 닫히지 않게).
-        <Dialog.Root
-            open
-            modal={false}
-            disablePointerDismissal
-            onOpenChange={(open, details) => {
-                if (open) return;
-                // 닫히는 동안(페이드)과 닫힌 뒤에도 잠시 Base UI가 Esc를 받는다. 이미 닫았으면 키를 흘려보내 목록의 Esc(선택 풀기)가 받게 한다.
-                if (!usePreviewStore.getState().visible) {
-                    details.cancel();
-                    details.allowPropagation();
-                    return;
-                }
-                // 버블은 여기서 닫는다 - Base UI는 Esc 리스너를 effect로 걸어 막 뜬 버블이 아직 Esc를 받지 못한다.
-                if (details.reason === "escape-key" && useUiStore.getState().bubble) {
-                    details.cancel();
-                    useUiStore.getState().closeBubble();
-                    return;
-                }
-                // 다이얼로그는 키를 흘려보내 그쪽이 닫히게 한다.
-                if (details.reason === "escape-key" && overlay.portal?.querySelector(`${MODAL_OVERLAY_SELECTOR}, [data-slot=popover-content]`)) {
-                    details.cancel();
-                    details.allowPropagation();
-                    return;
-                }
-                usePreviewStore.getState().requestClose();
-            }}
+        <PreviewDialogRoot
+            fading={fading}
+            busy={busy}
+            blur={backgroundBlur}
+            onWheel={onWheel}
+            scroller={scroller}
+            after={hintDir !== 0 ? <SkipHint dir={hintDir}/> : undefined}
         >
-            <Dialog.Portal container={overlay.portal}>
-                <div className={cn("fixed inset-0 bg-black/40 duration-150 animate-in fade-in data-fading:pointer-events-none data-fading:animate-out data-fading:fade-out data-fading:fill-mode-forwards",
-                                   backgroundBlur && "backdrop-blur-[5px]")}
-                     data-fading={fading || undefined}/>
-                {/* 화면 전체가 스크롤 칸 - 스크롤바 폭을 양쪽에 비워 글을 오갈 때 창이 흔들리지 않게 한다. */}
-                <Dialog.Popup
-                    className="refresher-frame-scroll fixed inset-0 flex overflow-y-auto overscroll-contain py-[5vh] outline-none duration-150 animate-in fade-in [scrollbar-color:var(--border)_transparent] [scrollbar-gutter:stable_both-edges] [scrollbar-width:thin] data-fading:pointer-events-none data-fading:animate-out data-fading:fade-out data-fading:fill-mode-forwards"
-                    // Base UI가 Portal을 별도 커밋에 마운트해 [visible] effect가 돌 때는 아직 스크롤 칸이 없다(React). 붙는 순간 포커스한다.
-                    ref={(element) => {
-                        scroller.current = element;
-                        element?.focus({preventScroll: true});
-                    }}
-                    tabIndex={-1}
-                    data-fading={fading || undefined}
-                    aria-busy={busy}
-                    // 비모달이지만 연 동안 뒤 페이지를 inert로 막으므로 보조 기술에는 모달로 알린다.
-                    aria-modal
-                    // 포커스는 위 효과가 스크롤 칸에 주고, 닫을 때는 연 요소로 직접 돌려준다.
-                    initialFocus={false}
-                    finalFocus={false}
-                    onWheel={onWheel}
-                    // click/contextmenu에서 닫는다 - pointerdown에서 닫으면 이어지는 click이 아래 목록에 떨어진다.
-                    onPointerDown={(ev) => (pressedOutside.current = ev.target === ev.currentTarget)}
-                    onPointerUp={(ev) => (pressedOutside.current = pressedOutside.current && ev.target === ev.currentTarget)}
-                    onClick={(ev) => {
-                        if (pressedOutside.current && ev.target === ev.currentTarget) usePreviewStore.getState().requestClose();
-                    }}
-                    onContextMenu={(ev) => {
-                        if (ev.target !== ev.currentTarget) return;
-                        ev.preventDefault();
-                        usePreviewStore.getState().requestClose();
-                    }}
-                >
                 {/* 너비는 설정을 쓰되 90%까지, 관리 패널 폭을 비운다 - sticky 버튼을 위해 clip이다. */}
                 <div
                     className="refresher-frame m-auto flex min-h-[min(800px,90vh)] flex-col overflow-clip rounded-2xl bg-background text-sm shadow-2xl ring-1 ring-foreground/10"
@@ -376,9 +301,6 @@ export const Frame = () => {
                 </div>
                 {/* aria-modal 창 안에 두어 스크린 리더가 건너뛰지 않게 한다. */}
                 {visible && adminVisible && <AdminPanel/>}
-                </Dialog.Popup>
-                {hintDir !== 0 && <SkipHint dir={hintDir}/>}
-            </Dialog.Portal>
-        </Dialog.Root>
+        </PreviewDialogRoot>
     );
 };
