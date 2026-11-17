@@ -7,7 +7,7 @@ import {loadAll, pageState, runPageToggle, runShortcut, settledPageState, stopAl
 import {enablesOf, isModuleEnabled} from "@/core/module/settings";
 import {BOARD_PAGE} from "@/core/pages";
 import {MODULES_KEY} from "@/core/storage/items";
-import {bindUsageContext} from "@/core/usage";
+
 import loaders from "@/features";
 import metas from "@/features/metas";
 import {initBlocksStore} from "@/stores/blocks";
@@ -19,8 +19,6 @@ import {mountOverlayWhenNeeded} from "./overlay";
 
 // 부트스트랩(index.ts)이 청크로 나눠 부르므로 export로만 낸다.
 export const start = async (ctx: ContentScriptContext): Promise<void> => {
-    bindUsageContext(ctx.signal);
-
     // ===== 메시징 (배경, 팝업→탭) =====
     // 스크립트가 다시 주입되면 이전 인스턴스가 남아 메시지를 계속 받는다. 멈춘 모듈의 빈 상태로 팝업에 먼저 답하지 않게 무효화될 때 푼다.
     ctx.onInvalidated(onMessage("refresher:executeShortcut", ({data: command}) => runShortcut(command)));

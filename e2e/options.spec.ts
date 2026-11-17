@@ -204,25 +204,6 @@ test.describe("옵션 - 차단 탭", () => {
         await expect(page.getByRole("tabpanel")).toBeFocused();
     });
 
-    test("삭제 알림의 되돌리기는 지운 항목을 id 그대로 원래 자리에 되살리고 사용 기록도 지킨다", async ({page, extensionId, storage}) => {
-        const list = [{id: "a", content: "가닉", isRegex: false}, {id: "b", content: "나닉", isRegex: false}, {id: "c", content: "다닉", isRegex: false}];
-        const old = Date.now() - 200 * 24 * 60 * 60 * 1000;
-        const usage = {block: {a: old, b: old, c: old}, memo: {}};
-        await storage.set({"refresher:block:NICK": list, "refresher:usage": usage});
-        const {table, alert, toasts} = await openOptions(page, extensionId, "block");
-
-        await table.getByRole("button", {name: "나닉 삭제", exact: true}).click();
-        await alert.getByRole("button", {name: "삭제", exact: true}).click();
-        await expect(toasts).toContainText("닉네임 차단 목록을 1개 삭제했습니다.");
-        await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([list[0], list[2]]);
-
-        await toasts.getByRole("button", {name: "되돌리기", exact: true}).click();
-        await expect.poll(() => storage.get("refresher:block:NICK")).toEqual(list);
-        await expect(table.getByText("나닉", {exact: true})).toBeVisible();
-        await expect(table.getByText("200일 전")).toHaveCount(3);
-        expect(await storage.get("refresher:usage")).toEqual(usage);
-    });
-
     test("지운 뒤 같은 차단을 다시 넣었으면 되돌리기가 그것을 겹쳐 넣지 않는다", async ({page, extensionId, storage}) => {
         const list = [{id: "a", content: "가닉", isRegex: false}, {id: "b", content: "나닉", isRegex: false}];
         await storage.set({"refresher:block:NICK": list});
@@ -240,57 +221,42 @@ test.describe("옵션 - 차단 탭", () => {
         await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([readded, list[1]]);
     });
 
-    test("갤러리, 마지막 사용으로 걸러 보이는 항목만 지우고, 페이지를 다시 열 때 지운 항목의 사용 기록을 정리한다", async ({page, extensionId, storage}) => {
-        const day = 24 * 60 * 60 * 1000;
+    test("갤러리로 걸러 보이는 항목만 지운다", async ({page, extensionId, storage}) => {
         await storage.set({
             "refresher:block:NICK": [
-                {id: "a", content: "오래된닉", isRegex: false, gallery: "g1"},
+                {id: "a", content: "갤닉", isRegex: false, gallery: "g1"},
                 {id: "b", content: "공통닉", isRegex: false},
-                {id: "c", content: "최근닉", isRegex: false, gallery: "g1"}
-            ],
-            "refresher:usage": {block: {a: Date.now() - 100 * day, b: Date.now() - 100 * day, c: Date.now()}, memo: {}}
+                {id: "c", content: "갤최근닉", isRegex: false, gallery: "g1"}
+            ]
         });
         const {table, alert} = await openOptions(page, extensionId, "block");
         await expect(table.getByText("공통닉")).toBeVisible();
-        await expect(table.getByText("100일 전").first()).toBeVisible();
 
         await page.getByRole("combobox", {name: "갤러리", exact: true}).click();
         await page.getByRole("option", {name: "g1"}).click();
         await expect(table.getByText("공통닉")).toHaveCount(0);
-        await expect(table.getByText("최근닉")).toBeVisible();
+        await expect(table.getByText("갤닉")).toBeVisible();
 
-        await page.getByRole("combobox", {name: "마지막 사용", exact: true}).click();
-        await page.getByRole("option", {name: "90일 넘게 안 쓰임"}).click();
-        await expect(table.getByText("최근닉")).toHaveCount(0);
-        await expect(table.getByText("오래된닉")).toBeVisible();
-
-        await page.getByRole("button", {name: "보이는 1개 삭제"}).click();
+        await page.getByRole("button", {name: "보이는 2개 삭제"}).click();
         await alert.getByRole("button", {name: "삭제", exact: true}).click();
-        await expect.poll(() => storage.get("refresher:block:NICK")).toMatchObject([{id: "b"}, {id: "c"}]);
+        await expect.poll(() => storage.get("refresher:block:NICK")).toMatchObject([{id: "b"}]);
         await expect(page.getByRole("tabpanel")).toBeFocused();
-        expect(await storage.get("refresher:usage")).toMatchObject({block: {a: expect.any(Number)}});
-        await page.reload();
-        await expect(table.getByText("공통닉")).toBeVisible();
-        await expect.poll(() => storage.get("refresher:usage")).toEqual({block: {b: expect.any(Number), c: expect.any(Number)}, memo: {}});
     });
 
     test("거르기 중에 추가하면 거르기를 풀어 새 항목이 보인다", async ({page, extensionId, storage}) => {
         await storage.set({
-            "refresher:block:NICK": [{id: "a", content: "오래된닉", isRegex: false, gallery: "g1"}],
-            "refresher:usage": {block: {a: Date.now() - 100 * 24 * 60 * 60 * 1000}, memo: {}}
+            "refresher:block:NICK": [{id: "a", content: "갤닉", isRegex: false, gallery: "g1"}]
         });
         const {table, dialog} = await openOptions(page, extensionId, "block");
         await page.getByRole("combobox", {name: "갤러리", exact: true}).click();
         await page.getByRole("option", {name: "g1"}).click();
-        await page.getByRole("combobox", {name: "마지막 사용", exact: true}).click();
-        await page.getByRole("option", {name: "90일 넘게 안 쓰임"}).click();
 
         await page.getByRole("button", {name: "추가", exact: true}).click();
         await dialog.getByPlaceholder("닉네임 값을 입력해 주세요").fill("새닉");
         await dialog.getByRole("button", {name: "추가", exact: true}).click();
 
         await expect(table.getByText("새닉", {exact: true})).toBeVisible();
-        await expect(table.getByText("오래된닉", {exact: true})).toBeVisible();
+        await expect(table.getByText("갤닉", {exact: true})).toBeVisible();
     });
 
     test("긴 목록은 200줄씩 그리고 더 보기로 펼치며, 검색은 그리지 않은 줄까지 찾는다", async ({page, extensionId, storage}) => {

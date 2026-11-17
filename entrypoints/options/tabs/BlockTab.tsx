@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useId, useMemo, useState} from "react";
+import {useCallback, useEffect, useId, useState} from "react";
 
 import {Button} from "@/components/ui/button";
 import {IMAGE_HOST_ORIGINS} from "@/core/pages";
@@ -11,7 +11,7 @@ import {blockLabel, useBlocksStore} from "@/stores/blocks";
 import {SAVE_FAILED} from "@/utils/error";
 
 import {BlockDialog, DETECT_MODE_DESCRIPTIONS} from "./BlockDialog";
-import {useUsage} from "../shared/hooks";
+
 import {ListRow, ListTabs} from "../lists/ListTabs";
 import {notify} from "../optionsStore";
 import {RefresherSelect} from "../shared/RefresherSelect";
@@ -52,14 +52,10 @@ export function BlockTab() {
     const addEntries = useBlocksStore((state) => state.addEntries);
     const [imageHostAccess, requestImageHostAccess] = useImageHostAccess();
 
-    const ids = useMemo(() => BLOCK_TYPES.flatMap((type) => entries[type].map((entry) => entry.id)), [entries]);
-    const used = useUsage("block", ids);
-
     // ListTabs의 걸르기 메모는 이 넷의 참조가 바뀔 때만 다시 한다 (인라인이면 다른 다시 그림에도 수천 항목을 다시 훑는다).
     const items = useCallback((type: BlockType): readonly BlockEntry[] => entries[type], [entries]);
     const searchText = useCallback((entry: BlockEntry): (string | undefined)[] => [entry.content, entry.gallery, entry.extra], []);
     const galleryOf = useCallback((entry: BlockEntry): string | undefined => entry.gallery, []);
-    const usedAt = useCallback((_type: BlockType, entry: BlockEntry): number | undefined => used[entry.id], [used]);
 
     const [dialog, setDialog] = useState<{ type: BlockType; initial: BlockEntry | null } | null>(null);
     const modeDescId = useId();
@@ -129,7 +125,6 @@ export function BlockTab() {
                 // 디시콘은 content가 코드라 이름(extra)으로도 찾을 수 있게 넣는다.
                 searchText={searchText}
                 galleryOf={galleryOf}
-                usedAt={usedAt}
                 onRemoveMany={(type, removed) => {
                     const removedIds = new Set(removed.map((entry) => entry.id));
                     return updateEntries(type, (current) => current.filter((entry) => !removedIds.has(entry.id)));
@@ -151,7 +146,6 @@ export function BlockTab() {
                         )}
                         label={blockLabel(type, entry)}
                         info={<span className="text-muted-foreground">{entryInfo(entry)}</span>}
-                        used={used[entry.id]}
                         onEdit={() => setDialog({type, initial: entry})}
                         onRemove={remove}
                     />

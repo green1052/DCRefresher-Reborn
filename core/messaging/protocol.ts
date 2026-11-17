@@ -2,7 +2,6 @@ import {defineExtensionMessaging} from "@webext-core/messaging";
 
 import type {GallogActivity} from "@/core/gallog";
 import type {TurnstileConfig} from "@/core/preview/types";
-import type {UsageData, UsageKind} from "@/core/usage";
 import type {Sample} from "@/utils/imageFingerprint";
 
 /** 콘텐츠 스크립트→페이지(MAIN world) CustomEvent. 파이어폭스는 객체를 못 읽어 detail은 원시값뿐이다. */
@@ -75,12 +74,6 @@ interface ProtocolMap {
 
     /** 탭 → 배경: 글댓비 조회 결과. 실패는 activity 없이 보내 조회권만 푼다. */
     "refresher:gallogResult"(data: {uid: string; activity?: GallogActivity}): void;
-
-    /** 탭 → 배경: 쓰인 차단 항목, 메모. 여러 탭이 동시에 써도 잃지 않게 배경이 차례로 저장한다. */
-    "refresher:markUsed"(batch: UsageData): void;
-
-    /** 옵션 → 배경: 사용 기록을 지금 목록에 맞추고 그 종류의 기록을 돌려준다. prune이면 목록에 없는 기록도 버린다 (core/usage.ts의 syncUsage). */
-    "refresher:syncUsage"(data: { kind: UsageKind; ids: string[]; prune: boolean }): Record<string, number>;
 
     /** 배경 → 탭: 우클릭 "이 이미지 차단". 탭이 해시를 구해 목록에 넣는다. */
     "refresher:blockImage"(url: string): void;

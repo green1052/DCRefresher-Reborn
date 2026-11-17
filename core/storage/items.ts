@@ -128,5 +128,3 @@ export const backupStorage = {
         (backupDevice ??= storage.defineItem<string>("local:refresher:backup:device", {init: () => crypto.randomUUID()}))
 };
 
-/** 차단 항목, 메모의 마지막 사용 시각. 기기마다 따로 두고 백업하지 않는다. */
-export const USAGE_KEY = "local:refresher:usage";

@@ -6,14 +6,12 @@ import {beforeEach, describe, expect, it, vi} from "vitest";
 import {blockingEntries, dcconCode, groupDuplicates, imageHash, isAnyBlocked, isBlocked, isBlockedHidden, isImageBlocked} from "@/core/block";
 import {DETECT_MODES} from "@/core/storage/items";
 import type {BlockEntry} from "@/core/storage/types";
-import {markUsed} from "@/core/usage";
 import {useBlocksStore} from "@/stores/blocks";
 import {sha256} from "@/utils/hash";
 import {imageFingerprints, isSimilarSet} from "@/utils/imageFingerprint";
 
 import {blockEntry, setBlockLists} from "../../helpers";
 
-vi.mock("@/core/usage", () => ({markUsed: vi.fn()}));
 // jsdom은 이미지를 디코딩하지 못해 지문은 테스트가 정한다.
 // isSimilarSet은 실제 함수를 감싸 몇 번 훑는지 센다.
 vi.mock("@/utils/imageFingerprint", async (original) => {
@@ -24,8 +22,6 @@ vi.mock("@/utils/imageFingerprint", async (original) => {
 let nextId = 0;
 // 색인 비교 테스트에 내용이 같은 항목이 있어 id는 순번으로 붙인다.
 const entry = (content: string, fields: Partial<BlockEntry> = {}): BlockEntry => blockEntry(content, {id: `e${nextId++}`, ...fields});
-
-const usedIds = (): string[] => vi.mocked(markUsed).mock.calls.map(([, id]) => id);
 
 beforeEach(() => setBlockLists());
 
@@ -121,23 +117,6 @@ describe("isBlocked", () => {
         setBlockLists({NICK: [entry("가", {mode: "NOT_SAME"}), entry("가")]});
         expect(isBlocked("NICK", "가")).toBe(true);
     });
-
-    it("막은 항목과 허용한 항목을 모두 쓰였다고 적는다", () => {
-        const byNick = entry("닉", {mode: "CONTAIN"});
-        const byExact = entry("닉네임");
-        const unused = entry("다른닉");
-        setBlockLists({NICK: [byNick, byExact, unused]});
-        expect(isBlocked("NICK", "닉네임")).toBe(true);
-        // 색인에서 찾는 일치 항목이 먼저 적히므로 순서는 보지 않는다.
-        expect(usedIds().toSorted()).toEqual([byNick.id, byExact.id].toSorted());
-
-        vi.mocked(markUsed).mockClear();
-        const allow = entry("가", {mode: "NOT_SAME"});
-        const miss = entry("나", {mode: "NOT_SAME"});
-        setBlockLists({NICK: [allow, miss]});
-        expect(isBlocked("NICK", "가")).toBe(false);
-        expect(usedIds()).toEqual([allow.id]);
-    });
 });
 
 describe("isAnyBlocked", () => {
@@ -145,14 +124,6 @@ describe("isAnyBlocked", () => {
         setBlockLists({ID: [entry("uid")]});
         expect(isAnyBlocked({NICK: "닉", ID: "uid"})).toBe(true);
         expect(isAnyBlocked({NICK: "닉", ID: null, IP: undefined})).toBe(false);
-    });
-
-    it("막힌 유형에서 멈추지 않고 다른 유형 항목도 쓰였다고 적는다", () => {
-        const nick = entry("닉");
-        const id = entry("uid");
-        setBlockLists({NICK: [nick], ID: [id]});
-        expect(isAnyBlocked({NICK: "닉", ID: "uid"})).toBe(true);
-        expect(usedIds()).toEqual([nick.id, id.id]);
     });
 });
 
@@ -177,12 +148,6 @@ describe("blockingEntries", () => {
         const {defaults} = useBlocksStore.getState();
         expect(blockingEntries({NICK: "닉"}, undefined, {entries: {...useBlocksStore.getState().entries, NICK: [nick]}, defaults})).toEqual([{type: "NICK", entry: nick}]);
         expect(blockingEntries({NICK: "닉"})).toEqual([]);
-    });
-
-    it("쓰였다고 적지 않는다", () => {
-        setBlockLists({NICK: [entry("닉")]});
-        blockingEntries({NICK: "닉"});
-        expect(markUsed).not.toHaveBeenCalled();
     });
 });
 
@@ -298,7 +263,6 @@ describe("이미지 차단", () => {
         fetchImage = vi.fn(async () => new Response("abc"));
         vi.stubGlobal("fetch", fetchImage);
         vi.mocked(imageFingerprints).mockReset().mockResolvedValue([[FINGERPRINT, MIRRORED]]);
-        vi.mocked(markUsed).mockClear();
         vi.spyOn(console, "warn").mockImplementation(() => {});
         return () => vi.unstubAllGlobals();
     });
@@ -409,8 +373,8 @@ describe("이미지 차단", () => {
             setBlockLists({IMAGE: [exact, near]});
 
             expect(await isImageBlocked(image(url), undefined, 12)).toBe(true);
-            // 같은 파일이면 지문을 기다리지 않고 답하므로 지문 판정은 뒤이어 적힌다.
-            await vi.waitFor(() => expect(usedIds()).toEqual(expect.arrayContaining([exact.id, near.id])));
+            // 같은 파일이면 지문을 기다리지 않고 답한다.
+            await vi.waitFor(() => expect(vi.mocked(isSimilarSet)).toHaveBeenCalled());
         });
 
         it("같은 파일은 지문을 다 구하기 전에 막는다", async () => {
@@ -450,7 +414,6 @@ describe("이미지 차단", () => {
             expect(await isImageBlocked(image(url), undefined, 4)).toBe(true);
             expect(await isImageBlocked(image(url), undefined, 4)).toBe(true);
             expect(isSimilarSet).toHaveBeenCalledTimes(2);
-            expect(usedIds().filter((id) => id === near.id)).toHaveLength(2);
 
             setBlockLists({IMAGE: [entry("다른 파일", {similar: "5".repeat(32)})]});
             expect(await isImageBlocked(image(url), undefined, 4)).toBe(false);

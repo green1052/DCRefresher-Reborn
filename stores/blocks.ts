@@ -38,7 +38,7 @@ export const useBlocksStore = create<BlocksState>((set, get) => ({
     addEntry: (type, fields) => get().addEntries(type, [fields]),
 
     addEntries: async (type, list) => {
-        // 같은 content+gallery는 새로 들어온 쪽으로 바꿔 맨 뒤로 보낸다. 바꾸는 항목은 기존 id를 이어 써 사용 기록(core/usage.ts)을 지킨다.
+        // 같은 content+gallery는 새로 들어온 쪽으로 바꿔 맨 뒤로 보낸다. 바꾸는 항목은 기존 id를 이어 쓴다.
         // 새 항목의 id는 가져온 id가 기존 항목과 겹치지 않게 늘 새로 준다. update의 change는 두 번 불리므로 id는 밖에서 미리 만든다.
         const added = new Map(list.map((fields) => [blockKey(fields), {...fields, id: crypto.randomUUID()}]));
         await lists.update(type, (current) => {

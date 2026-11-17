@@ -9,13 +9,13 @@ import {DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import {Field, FieldError, FieldGroup, FieldLabel} from "@/components/ui/field";
 import {Input} from "@/components/ui/input";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
-import {memoUsageKey} from "@/core/usage";
+
 import type {MemoEntry, MemoType} from "@/core/storage/types";
 import {normalizeMemoMap, ownMemo, randomColor, useMemosStore} from "@/stores/memos";
 import {SAVE_FAILED} from "@/utils/error";
 
 import {formatAppMemos, parseAppMemos} from "./appMemo";
-import {useUsage} from "../shared/hooks";
+
 import {ImportDialog} from "../shared/ImportDialog";
 import {ListRow, ListTabs} from "../lists/ListTabs";
 import {notify} from "../optionsStore";
@@ -162,15 +162,12 @@ export function MemoTab() {
     const memos = useMemosStore((state) => state.memos);
     const setMemo = useMemosStore((state) => state.setMemo);
     const updateMemos = useMemosStore((state) => state.updateMemos);
-    const ids = useMemo(() => MEMO_TYPES.flatMap((type) => Object.keys(memos[type]).map((user) => memoUsageKey(type, user))), [memos]);
-    const used = useUsage("memo", ids);
     const sorted = useMemo(() => ({UID: byAdded(memos.UID), NICK: byAdded(memos.NICK), IP: byAdded(memos.IP)}), [memos]);
 
     // ListTabs의 걸르기 메모는 이 넷의 참조가 바뀔 때만 다시 한다 (BlockTab의 같은 자리 참고).
     const items = useCallback((type: MemoType): readonly [string, MemoEntry][] => sorted[type], [sorted]);
     const searchText = useCallback((item: [string, MemoEntry]): (string | undefined)[] => [item[0], item[1].text, item[1].gallery], []);
     const galleryOf = useCallback((item: [string, MemoEntry]): string | undefined => item[1].gallery, []);
-    const usedAt = useCallback((type: MemoType, item: [string, MemoEntry]): number | undefined => used[memoUsageKey(type, item[0])], [used]);
 
     const [form, setForm] = useState<MemoFormState | null>(null);
     const [appImport, setAppImport] = useState(false);
@@ -252,7 +249,6 @@ export function MemoTab() {
                 items={items}
                 searchText={searchText}
                 galleryOf={galleryOf}
-                usedAt={usedAt}
                 onRemoveMany={(type, removed) => {
                     const users = new Set(removed.map(([user]) => user));
                     return updateMemos(type, (current) => Object.fromEntries(Object.entries(current).filter(([user]) => !users.has(user))));
@@ -273,7 +269,6 @@ export function MemoTab() {
                         }
                         label={user}
                         info={<span className="text-muted-foreground">{entry.text}</span>}
-                        used={used[memoUsageKey(type, user)]}
                         onEdit={() => setForm({type, user, text: entry.text, color: entry.color, gallery: entry.gallery ?? ""})}
                         onRemove={remove}
                     />

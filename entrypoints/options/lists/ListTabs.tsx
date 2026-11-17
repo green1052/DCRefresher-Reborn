@@ -22,23 +22,11 @@ import {copyText} from "@/stores/ui";
 import {RefresherSelect} from "../shared/RefresherSelect";
 
 
-/** 오래 안 쓴 항목 거르기. 쓰인 시각은 이 기기에서 걸리거나(차단) 보인(메모) 때다. */
-const UNUSED_OPTIONS = {"0": "사용 기록 전체", "30": "30일 넘게 안 쓰임", "90": "90일 넘게 안 쓰임", "180": "180일 넘게 안 쓰임"};
-
 /** 받침이 있으면 "을", 없으면 "를". */
 const objectParticle = (word: string): string => ((word.charCodeAt(word.length - 1) - 0xac00) % 28 > 0 ? "을" : "를");
 
-const DAY = 24 * 60 * 60 * 1000;
-
 /** 표에 한 번에 그리는 줄 수. 수천 줄을 다 그리면 검색어를 칠 때마다 느려진다(5,000줄에서 한 글자에 50ms쯤). 검색은 전체에서 한다. */
 const PAGE = 200;
-
-/** 마지막으로 쓰인 시각 표시 ("오늘", "3일 전"). */
-const formatUsed = (time: number | undefined): string => {
-    if (time === undefined) return "-";
-    const days = Math.floor((Date.now() - time) / DAY);
-    return days < 1 ? "오늘" : `${days}일 전`;
-};
 
 // 지운 항목을 저장된 자리에 되살린다 - 같은 키가 다시 생겼으면 두고 건너뛴다.
 export const restoreRemoved = <I, >(current: readonly I[], removed: readonly { index: number; item: I }[], key: (item: I) => string): I[] => {
@@ -50,11 +38,10 @@ export const restoreRemoved = <I, >(current: readonly I[], removed: readonly { i
     return next;
 };
 
-export const ListRow = ({head, label, info, used, onEdit, onRemove}: {
+export const ListRow = ({head, label, info, onEdit, onRemove}: {
     head: ReactNode;
     label: string;
     info: ReactNode;
-    used?: number;
     onEdit: () => void;
     onRemove: () => void;
 }) => {
@@ -71,7 +58,6 @@ export const ListRow = ({head, label, info, used, onEdit, onRemove}: {
                     </button>
                 </TableHead>
                 <TableCell className="whitespace-normal">{info}</TableCell>
-                <TableCell className="text-muted-foreground">{formatUsed(used)}</TableCell>
                 <TableCell className="text-right">
                     {/* 줄마다 툴팁 부품이나 Base UI Button을 달면 수천 줄에서 느려지므로 title과 맨 button 포커스 링을 쓴다. */}
                     <button type="button" aria-label={`${label} 삭제`} title="삭제"
@@ -118,7 +104,6 @@ export const ListTabs = <T extends string, I>({
                                                   items,
                                                   searchText,
                                                   galleryOf,
-                                                  usedAt,
                                                   onRemoveMany,
                                                   itemKey,
                                                   onRestore,
@@ -140,7 +125,6 @@ export const ListTabs = <T extends string, I>({
     items: (type: T) => readonly I[];
     searchText: (item: I) => (string | undefined)[];
     galleryOf: (item: I) => string | undefined;
-    usedAt: (type: T, item: I) => number | undefined;
     onRemoveMany: (type: T, items: readonly I[]) => Promise<void>;
     itemKey: (item: I) => string;
     onRestore: (type: T, restore: (current: I[]) => I[]) => Promise<void>;
@@ -151,8 +135,6 @@ export const ListTabs = <T extends string, I>({
     const needle = query.trim().toLowerCase();
     // 갤러리 거르기: all(전체), common(모든 갤러리 항목), g:<ID>(그 갤러리 한정 항목). 검색어처럼 모든 탭이 같이 쓴다.
     const [gallery, setGallery] = useState("all");
-    // 이만큼(일) 넘게 안 쓰인 항목만. 0이면 거르지 않는다.
-    const [unusedDays, setUnusedDays] = useState("0");
     // 표에 그리는 줄 수 - 종류마다 따로 세고 거르기가 바뀌면 처음 PAGE줄로 돌린다.
     const [limits, setLimits] = useState<Record<string, number>>({});
     const resetLimits = (): void => setLimits({});
@@ -164,21 +146,18 @@ export const ListTabs = <T extends string, I>({
     const galleryOptions: Record<string, string> = {all: "모든 항목", common: "갤러리 공통", ...Object.fromEntries(galleries.map((id) => [`g:${id}`, id]))};
     // 고르던 갤러리의 항목을 다 지우면 선택지에서 빠지므로 전체로 돌린다.
     const galleryFilter = gallery in galleryOptions ? gallery : "all";
-    // 기간을 바꿀 때만 다시 잰다. 렌더마다 Date.now()로 재면 아래 shown의 메모가 늘 빗나간다.
-    const cutoff = useMemo(() => (Number(unusedDays) > 0 ? Date.now() - Number(unusedDays) * DAY : 0), [unusedDays]);
-    const filtering = Boolean(needle) || galleryFilter !== "all" || cutoff > 0;
+    const filtering = Boolean(needle) || galleryFilter !== "all";
 
-    const visible = (type: T, item: I): boolean => {
+    const visible = (item: I): boolean => {
         if (needle && !searchText(item).some((text) => text?.toLowerCase().includes(needle))) return false;
         if (galleryFilter !== "all" && (galleryOf(item) ?? "") !== (galleryFilter === "common" ? "" : galleryFilter.slice(2))) return false;
-        // 기록이 아직 없으면(옵션이 맞추기 전) 오래된 것으로 보지 않는다.
-        return !cutoff || (usedAt(type, item) ?? Date.now()) < cutoff;
+        return true;
     };
     // items는 오래된 순이므로 뒤집고, 종류마다 한 번만 걸러 탭 배지와 표가 같이 쓴다 (total은 거르기 전 개수).
     const shown = useMemo(() => new Map(types.map((type) => {
         const all = items(type);
-        return [type, {total: all.length, list: all.filter((item) => visible(type, item)).reverse()}];
-    })), [types, items, needle, galleryFilter, cutoff, searchText, galleryOf, usedAt]);
+        return [type, {total: all.length, list: all.filter((item) => visible(item)).reverse()}];
+    })), [types, items, needle, galleryFilter, searchText, galleryOf]);
 
     // 떠 있는 확인 창: 그 종류 전체 삭제(clear)나 보이는 항목 삭제(shown).
     const [confirm, setConfirm] = useState<{ kind: "clear" | "shown"; type: T } | null>(null);
@@ -273,10 +252,6 @@ export const ListTabs = <T extends string, I>({
                                         setGallery(value);
                                         resetLimits();
                                     }}/>
-                                    <RefresherSelect value={unusedDays} options={UNUSED_OPTIONS} aria-label="마지막 사용" onChange={(value) => {
-                                        setUnusedDays(value);
-                                        resetLimits();
-                                    }}/>
                                     {filtering && list.length > 0 && (
                                         <Button variant="destructive" onClick={() => setConfirm({kind: "shown", type})}>
                                             <Trash2 data-icon="inline-start"/> 보이는 {list.length}개 삭제
@@ -299,7 +274,6 @@ export const ListTabs = <T extends string, I>({
                                             // 걸러진 조건에 안 맞는 새 항목이 바로 숨어 추가가 안 된 것처럼 보이지 않게 검색어와 거르기를 모두 푼다.
                                             setQuery("");
                                             setGallery("all");
-                                            setUnusedDays("0");
                                             resetLimits();
                                             onAdd(type);
                                         }}>
@@ -320,7 +294,6 @@ export const ListTabs = <T extends string, I>({
                                                     <TableRow>
                                                         <TableHead>{columns[0]}</TableHead>
                                                         <TableHead>{columns[1]}</TableHead>
-                                                        <TableHead title="이 기기에서 마지막으로 걸리거나 보인 때">최근 사용</TableHead>
                                                         <TableHead className="w-12"/>
                                                     </TableRow>
                                                 </TableHeader>

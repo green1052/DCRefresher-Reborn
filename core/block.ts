@@ -5,7 +5,6 @@ import QuickLRU from "quick-lru";
 import type {ImageHashes} from "@/core/messaging/protocol";
 import type {ModuleSettings} from "@/core/module/types";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
-import {markUsed} from "@/core/usage";
 import {useBlocksStore} from "@/stores/blocks";
 import {sha256} from "@/utils/hash";
 import {imageFingerprints, isSimilarSet, MAX_PIXELS, type Sample} from "@/utils/imageFingerprint";
@@ -242,7 +241,6 @@ const isSimilarBlocked = (samples: Sample[], gallery: string | undefined, thresh
         last = {entries: entries.IMAGE, mode: defaults.IMAGE, gallery, threshold, hits};
         similarHits.set(samples, last);
     }
-    for (const entry of last.hits) markUsed("block", entry.id);
     return last.hits.length > 0;
 };
 
@@ -288,15 +286,12 @@ export const isBlockedHidden = (element: Element): boolean => {
     return !(blocked.getAttribute("data-blocked") === "blur" && element.closest("[data-blur-reveal]"));
 };
 
-/** 내용이 차단 대상인지. 맞은 항목은 모두 쓰였다고 적는다(같이 막은 항목이 지워지지 않게). */
+/** 내용이 차단 대상인지. */
 export const isBlocked = (type: BlockType, content: string, gallery?: string): boolean =>
-    content !== "" && scan(useBlocksStore.getState(), type, content, gallery, (entry, kind) => {
-        if (kind !== "miss") markUsed("block", entry.id);
-    });
+    content !== "" && scan(useBlocksStore.getState(), type, content, gallery);
 
 /** 값 중 하나라도 차단 대상인지. */
 export const isAnyBlocked = (values: BlockValues, gallery?: string): boolean =>
-    // some을 바로 쓰면 다른 유형 항목의 markUsed가 빠진다.
     objectEntries(values).map(([type, value]) => (value ? isBlocked(type, value, gallery) : false)).some(Boolean);
 
 /** 확장이 흐리게 가린 행 (차단 블러, userinfo의 깡계 흐림). 흐린 행은 보이므로 checkVisibility로 가릴 수 없다. */

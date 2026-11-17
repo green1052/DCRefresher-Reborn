@@ -1,10 +1,8 @@
-import {useEffect} from "react";
 import {create} from "zustand";
 
 import {LIST_LOCKS, MEMO_TYPES, memoMapKey} from "@/core/storage/items";
 import {typedListSync} from "@/core/storage/sync";
 import type {MemoEntry, MemoType} from "@/core/storage/types";
-import {markUsed, memoUsageKey} from "@/core/usage";
 import {isRecord} from "@/utils/record";
 
 type MemoMap = Record<string, MemoEntry>;
@@ -70,32 +68,23 @@ export const ownMemo = (map: MemoMap, key: string): MemoEntry | undefined => (Ob
 
 type MemoUser = { uid?: string; ip?: string; nick?: string };
 
-/** 찾은 메모와 그 사용 기록 키. 기록은 부른 쪽이 적는다 (그리는 중에 적지 않게). */
-const lookupMemo = (memos: Record<MemoType, MemoMap>, user: MemoUser, gallery?: string | null): { entry: MemoEntry; used: string } | undefined => {
-    const find = (type: MemoType, key?: string): { entry: MemoEntry; used: string } | undefined => {
+/** 찾은 메모. */
+const lookupMemo = (memos: Record<MemoType, MemoMap>, user: MemoUser, gallery?: string | null): MemoEntry | undefined => {
+    const find = (type: MemoType, key?: string): MemoEntry | undefined => {
         const entry = key ? ownMemo(memos[type], key) : undefined;
-        return !entry || (entry.gallery && entry.gallery !== gallery) ? undefined : {entry, used: memoUsageKey(type, key!)};
+        return !entry || (entry.gallery && entry.gallery !== gallery) ? undefined : entry;
     };
 
     return find("UID", user.uid) ?? find("IP", user.ip) ?? find("NICK", user.nick);
 };
 
-/** 유저에 달린 메모 (아이디 > IP > 닉네임 순). 다른 갤러리 전용 메모는 건너뛴다. 찾은 메모는 쓰였다고 적는다 (옵션의 오래 안 쓰인 메모 거르기). */
-export const findMemo = (user: MemoUser, gallery?: string | null): MemoEntry | undefined => {
-    const found = lookupMemo(useMemosStore.getState().memos, user, gallery);
-    if (found) markUsed("memo", found.used);
-    return found?.entry;
-};
+/** 유저에 달린 메모 (아이디 > IP > 닉네임 순). 다른 갤러리 전용 메모는 건너뛴다. */
+export const findMemo = (user: MemoUser, gallery?: string | null): MemoEntry | undefined =>
+    lookupMemo(useMemosStore.getState().memos, user, gallery);
 
 /** 컴포넌트용 findMemo. 구독한 memos로 찾아야 메모가 바뀔 때 다시 그린다. */
-export const useUserMemo = (user: MemoUser, gallery?: string | null): MemoEntry | undefined => {
-    const found = lookupMemo(useMemosStore((state) => state.memos), user, gallery);
-    // 사용 기록은 그린 뒤에 적는다. 그리는 중에 적으면 버리는 렌더도 저장소에 쓴다.
-    useEffect(() => {
-        if (found) markUsed("memo", found.used);
-    }, [found?.used]);
-    return found?.entry;
-};
+export const useUserMemo = (user: MemoUser, gallery?: string | null): MemoEntry | undefined =>
+    lookupMemo(useMemosStore((state) => state.memos), user, gallery);
 
 // 값이 없으면 null → 빈 목록. 같은 값이 돌아오면 구독자(배지 전체 다시 그리기)를 깨우지 않는다 (typedListSync).
 const lists = typedListSync({
