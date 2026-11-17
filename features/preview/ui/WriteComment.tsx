@@ -111,11 +111,12 @@ export const WriteComment = () => {
         if (reply.replyNo) textarea.current?.focus();
     }, [reply.replyNo]);
 
-    const submit = async (): Promise<void> => {
+    // 팝업에서 고른 디시콘은 상태에 아직 반영되지 않았으니 pick으로 받아 쓴다.
+    const submit = async (pick: { list: DcinsideDccon[]; big: boolean } = {list: dccons, big: bigDccon}): Promise<void> => {
         const st = usePreviewStore.getState();
         const raw = textarea.current?.value ?? "";
-        const text = (txtcon ? normalizeTxtcon(raw) : raw).trim();
-        const useDccon = dccons.length > 0;
+        const text = (txtcon && pick.list.length === 0 ? normalizeTxtcon(raw) : raw).trim();
+        const useDccon = pick.list.length > 0;
 
         if (!st.preData || !st.post || sending) return;
         if (!useDccon && !text) return;
@@ -159,7 +160,7 @@ export const WriteComment = () => {
                 // 토큰이 묻지 않고 바로 와도 넘어간 글에는 보내지 않는다.
                 if (usePreviewStore.getState().signalId !== st.signalId) return;
             }
-            const outcome = await postComment(preData, post, user, {text, dccons, bigDccon, txtcon: txtcon ? txtconColors : undefined}, sentReply, code, turnstile);
+            const outcome = await postComment(preData, post, user, {text, dccons: pick.list, bigDccon: pick.big, txtcon: txtcon && !useDccon ? txtconColors : undefined}, sentReply, code, turnstile);
 
             if (outcome.ok) {
                 // 보내는 사이 더 쓴 글은 남긴다. 디시콘만 보냈으면 입력칸의 글은 보내지 않았으니 둔다.
@@ -168,7 +169,7 @@ export const WriteComment = () => {
                     if (drafts.get(key) === raw) drafts.delete(key);
                 }
                 // 보내는 사이 새로 고른 디시콘, 켠 글자콘, 답글 대상은 다음 댓글 것이라 보낸 것만 비운다.
-                setDccon((current) => (current.list === dccons ? NO_DCCON : current));
+                setDccon((current) => (current.list === pick.list ? NO_DCCON : current));
                 if (txtcon) setTxtcon(false);
                 // 디시처럼 쓴 닉네임, 비밀번호를 기억한다. 만든 비밀번호도 저장해야 나중에 자기 댓글을 지울 수 있다.
                 if (!login) saveNonmember(nick, password);
@@ -353,6 +354,8 @@ export const WriteComment = () => {
                         setDccon({list, big});
                         if (txtcon) exitTxtcon();
                         setDcconOpen(false);
+                        // 고르자마자 바로 보낸다. 보내다 멈추면(캡차 취소 등) 위 상태가 남아 손으로 다시 누를 수 있다.
+                        void submit({list, big});
                     }}
                     onClose={() => setDcconOpen(false)}
                 />
