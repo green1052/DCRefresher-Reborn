@@ -205,9 +205,8 @@ interface BubbleProps extends BubbleActions {
     selected: SelectedUser;
 }
 
-const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) => {
-    const popup = useRef<HTMLDivElement>(null);
-    const focus = useReturnFocus(popup);
+/** 버블이 보여 줄 데이터 - 스토어 구독과 파생값을 모은다. */
+const useBubbleData = (selected: SelectedUser) => {
     const activityState = useGallogActivity(selected.dccon ? undefined : selected.uid);
     const gallery = selectedGallery(selected.gallery);
     const memo = useUserMemo(selected, gallery);
@@ -217,6 +216,18 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
     const rules = blockingEntries(selected.dccon ? {DCCON: selected.dccon} : {NICK: selected.nick, ID: selected.uid, IP: selected.ip}, gallery ?? undefined, {entries, defaults});
     // DB를 읽을 때마다 오르는 번호를 구독해 다시 그린다 (0이면 아직 읽지 않아 IP, 밴을 찾지 않는다).
     const dbVersion = useSyncExternalStore(selected.dccon ? onDatabaseChange : subscribeDatabase, databaseVersion);
+    const ipInfo = dbVersion > 0 && selected.ip ? ipInfoOf(selected.ip) : undefined;
+    // 배지와 같은 색. 유저 정보 모듈이 꺼져 있거나 색을 비웠으면 미리보기(features/preview/ui/UserCard.tsx)처럼 파랑이다.
+    const userinfo = useRunningModuleSettings("userinfo");
+    const ipColor = ipInfo ? userinfo?.[`${ipInfo.category}Color`] : undefined;
+    const bans = dbVersion > 0 && selected.uid ? banReasonsOf(selected.uid) : undefined;
+    return {gallery, defaults, rules, memo, ipInfo, ipColor, bans, activity: formatActivity(activityState)};
+};
+
+const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) => {
+    const popup = useRef<HTMLDivElement>(null);
+    const focus = useReturnFocus(popup);
+    const {gallery, defaults, rules, memo, ipInfo, ipColor, bans, activity} = useBubbleData(selected);
 
     // Popover는 스크롤을 따라가지 않으므로 스크롤하면 닫는다 - 미리보기 스크롤은 shadow 밖으로 이벤트가 안 나가 루트에서도 잡는다.
     useEffect(() => {
@@ -246,12 +257,6 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
         close();
         searchApi.searchUserPosts(selected, by);
     });
-    const ipInfo = dbVersion > 0 && selected.ip ? ipInfoOf(selected.ip) : undefined;
-    // 배지와 같은 색. 유저 정보 모듈이 꺼져 있거나 색을 비웠으면 미리보기(features/preview/ui/UserCard.tsx)처럼 파랑이다.
-    const userinfo = useRunningModuleSettings("userinfo");
-    const ipColor = ipInfo ? userinfo?.[`${ipInfo.category}Color`] : undefined;
-    const bans = dbVersion > 0 && selected.uid ? banReasonsOf(selected.uid) : undefined;
-    const activity = formatActivity(activityState);
 
     return (
         <Popover open onOpenChange={(open, details) => {

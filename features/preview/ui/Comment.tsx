@@ -86,22 +86,6 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
     // 정화한 HTML을 그대로 넣는다 - 고치면 다른 트리로 읽힐 수 있어 줄바꿈은 CSS로 보인다.
     const html = comment.memo;
 
-    // 글자콘 크기는 그려진 뒤, 화면 근처에 오면 잰다 (fitTxtconNearView). html이 바뀌면 내용을 새로 넣으므로 다시 잰다. 글만 있는 댓글(대부분)은 훑지 않는다.
-    const body = useRef<HTMLDivElement>(null);
-    useLayoutEffect(() => {
-        if (!isDccon) return;
-        const stops = Array.from(body.current?.querySelectorAll<HTMLElement>(".coment_dccon_txt") ?? [], (box) => fitTxtconNearView(box));
-        return () => {
-            for (const stop of stops) stop();
-        };
-    }, [html, isDccon]);
-    // 깨진 디시콘 mp4는 디시처럼 gif로 바꾼다.
-    useEffect(() => (isDccon && body.current ? watchGifVideos(body.current) : undefined), [html, isDccon]);
-    // 디시콘 정보 창을 키보드로도 연다 (pressContents).
-    useEffect(() => {
-        if (isDccon && body.current) markPressable(body.current, false);
-    }, [html, isDccon]);
-
     return (
         // 화면 밖 댓글은 레이아웃 계산을 건너뛴다 - 그리지 않은 댓글은 한 줄 댓글 높이(48px)로 어림한다.
         <div className={cn("refresher-comment relative px-8 py-2 [contain-intrinsic-size:auto_48px] [content-visibility:auto] hover:bg-muted/50",
@@ -165,14 +149,34 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
                     )}
                 </div>
             )}
-            {/* 지운 댓글은 읽을 수 있게 본문용 회색을 쓴다. */}
-            <div ref={body} className={cn("refresher-html refresher-comment-html mt-1", !isDccon && "whitespace-pre-line", isDeleted && "text-muted-foreground")} data-dccon={isDccon || undefined}
-                 onClick={isDccon ? openDcconInfo : undefined}
-                 onKeyDown={isDccon ? pressContents : undefined}
-                 dangerouslySetInnerHTML={{__html: html}}/>
+            <CommentBody html={html} isDccon={isDccon} isDeleted={isDeleted}/>
         </div>
     );
 });
+
+/** 댓글 본문 - 글자콘 크기 재기, 깨진 움짤 변환, 디시콘 정보 창 열기를 함께 단다. */
+const CommentBody = ({html, isDccon, isDeleted}: { html: string; isDccon: boolean; isDeleted?: boolean }) => {
+    const body = useRef<HTMLDivElement>(null);
+    // 글자콘 크기는 그려진 뒤, 화면 근처에 오면 잰다 (fitTxtconNearView). html이 바뀌면 내용을 새로 넣으므로 다시 잰다.
+    useLayoutEffect(() => {
+        if (!isDccon) return;
+        const stops = Array.from(body.current?.querySelectorAll<HTMLElement>(".coment_dccon_txt") ?? [], (box) => fitTxtconNearView(box));
+        return () => {
+            for (const stop of stops) stop();
+        };
+    }, [html, isDccon]);
+    // 깨진 디시콘 mp4는 디시처럼 gif로 바꾼다.
+    useEffect(() => (isDccon && body.current ? watchGifVideos(body.current) : undefined), [html, isDccon]);
+    // 디시콘 정보 창을 키보드로도 연다 (pressContents).
+    useEffect(() => {
+        if (isDccon && body.current) markPressable(body.current, false);
+    }, [html, isDccon]);
+    // 지운 댓글은 읽을 수 있게 본문용 회색을 쓴다.
+    return <div ref={body} className={cn("refresher-html refresher-comment-html mt-1", !isDccon && "whitespace-pre-line", isDeleted && "text-muted-foreground")} data-dccon={isDccon || undefined}
+                onClick={isDccon ? openDcconInfo : undefined}
+                onKeyDown={isDccon ? pressContents : undefined}
+                dangerouslySetInnerHTML={{__html: html}}/>;
+};
 
 const setDeleting = (no: string, deleting: boolean): void =>
     usePreviewStore.setState((s) => ({deletingComments: toggled(s.deletingComments, no, deleting)}));
