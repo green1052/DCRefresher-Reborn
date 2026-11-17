@@ -10,6 +10,21 @@ import {type SelectedUser, useUiStore} from "@/stores/ui";
 /** 패키지 전체 차단 방식. bundle: 정규식 한 항목으로 묶는다, each: 디시콘마다 한 항목 (따로 풀 수 있다). */
 type DcconPackageMode = "bundle" | "each";
 
+// 묶음 차단 정규식. 디시콘 경로는 공통 접두사(패키지 번호)가 길어 DcconRain의 PACKS처럼 접두사를 한 번만 쓴다.
+// 경로는 16진수뿐이라 정규식 구문 문자가 없다 — 이스케이프를 건너뛰면 \xNN 없이 그대로 저장된다.
+const esc = (path: string) => (/^[0-9a-f]+$/.test(path) ? path : RegExp.escape(path));
+const bundledPattern = (paths: string[]): string => {
+    const unique = [...new Set(paths)];
+    if (unique.length === 1) return `^(${esc(unique[0]!)})$`;
+    let end = unique[0]!.length;
+    for (const path of unique) {
+        let i = 0;
+        while (i < end && i < path.length && path[i] === unique[0]![i]) i++;
+        end = i;
+    }
+    return `^(?:${esc(unique[0]!.slice(0, end))}(?:${unique.map((path) => esc(path.slice(end))).join("|")}))$`;
+};
+
 /**
  * 버블의 차단은 그 값을 막는다. 유형의 기본 모드가 NOT_*(허용 목록)면 모드 없이 넣은 항목이 허용 목록에 들어가므로 일치로 넣는다.
  * 포함(CONTAIN) 기본값은 사용자가 고른 것이라 그대로 따른다.
@@ -44,9 +59,7 @@ const blockDccon = async (selected: SelectedUser, dcconPackage?: DcconPackageMod
     if (!dcconPackage) {
         await useBlocksStore.getState().addEntry("DCCON", {content: code, isRegex: false, extra, mode});
     } else if (dcconPackage === "bundle") {
-        // 경로에 정규식 특수문자가 있으면 의미가 변하므로 묶을 때 이스케이프한다.
-        const paths = response.detail.map((detail) => RegExp.escape(detail.path)).join("|");
-        await useBlocksStore.getState().addEntry("DCCON", {content: `^(${paths})$`, isRegex: true, extra: `[묶음] ${extra}`, mode});
+        await useBlocksStore.getState().addEntry("DCCON", {content: bundledPattern(response.detail.map((detail) => detail.path)), isRegex: true, extra: `[묶음] ${extra}`, mode});
     } else {
         // 묶지 않고 하나씩 넣되 addEntries로 한 번에 쓴다. 따로 넣으면 저장소 쓰기와 모든 탭의 watch가 디시콘 수만큼 돈다.
         await useBlocksStore.getState().addEntries("DCCON", response.detail.map(({path}) => ({content: path, isRegex: false, extra, mode})));

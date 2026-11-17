@@ -64,9 +64,44 @@ describe("handleBlockRequest", () => {
         await handleBlockRequest({target: "dccon", dcconPackage: "bundle"}, {dccon: "code1"});
 
         const [entry] = await list("DCCON");
-        expect(entry).toMatchObject({content: `^(${RegExp.escape("a.b")}|${RegExp.escape("c+d")})$`, isRegex: true});
+        expect(entry).toMatchObject({content: `^(?:(?:${RegExp.escape("a.b")}|${RegExp.escape("c+d")}))$`, isRegex: true});
         const pattern = new RegExp(entry?.content ?? "");
         expect(pattern.test("a.b")).toBe(true);
         expect(pattern.test("axb")).toBe(false);
+    });
+
+    it("묶음 정규식은 공통 접두사를 한 번만 쓴다", async () => {
+        vi.mocked(getDcconPackage).mockResolvedValue(dcconPackage(["pkg1234aa", "pkg1234bb"]));
+
+        await handleBlockRequest({target: "dccon", dcconPackage: "bundle"}, {dccon: "code1"});
+
+        const [entry] = await list("DCCON");
+        expect(entry).toMatchObject({content: `^(?:${RegExp.escape("pkg1234")}(?:aa|bb))$`, isRegex: true});
+        const pattern = new RegExp(entry?.content ?? "");
+        expect(pattern.test("pkg1234aa")).toBe(true);
+        expect(pattern.test("pkg1234bb")).toBe(true);
+        expect(pattern.test("pkg1234cc")).toBe(false);
+    });
+
+    it("순수 16진수 경로는 이스케이프 없이 그대로 저장한다", async () => {
+        vi.mocked(getDcconPackage).mockResolvedValue(dcconPackage(["36ab12cd", "36ab12ef"]));
+
+        await handleBlockRequest({target: "dccon", dcconPackage: "bundle"}, {dccon: "code1"});
+
+        const [entry] = await list("DCCON");
+        expect(entry).toMatchObject({content: "^(?:36ab12(?:cd|ef))$", isRegex: true});
+        const pattern = new RegExp(entry?.content ?? "");
+        expect(pattern.test("36ab12cd")).toBe(true);
+        expect(pattern.test("36ab12ef")).toBe(true);
+        expect(pattern.test("36ab12ff")).toBe(false);
+    });
+
+    it("묶음이 하나뿐이면 접두사 없이 그대로 넣는다", async () => {
+        vi.mocked(getDcconPackage).mockResolvedValue(dcconPackage(["x"]));
+
+        await handleBlockRequest({target: "dccon", dcconPackage: "bundle"}, {dccon: "code1"});
+
+        const [entry] = await list("DCCON");
+        expect(entry).toMatchObject({content: `^(${RegExp.escape("x")})$`, isRegex: true});
     });
 });
