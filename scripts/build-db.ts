@@ -1,11 +1,6 @@
 /// <reference types="bun" />
 
-/**
- * IP, 밴 DB 만들기. .github/workflows/db.yml이 수, 토요일에 돌려 db/ 폴더를 data 브랜치로 올린다.
- *
- * - ip.json: MaxMind(국가, ASN), VPN 목록, KISA 기관명 → /16 대역마다 유력한 후보 → 확장이 저장하는 형식 (core/ipdb)
- * - ban.json: 손으로 관리하는 "갤러리 → 아이디 목록". 워크플로가 data 브랜치에서 가져다 두면 검사하고 정리한다.
- */
+/** IP, 밴 DB 만들기. 워크플로(db.yml)가 db/ 폴더를 data 브랜치로 올린다. */
 
 import ky from "ky";
 import {type AsnResponse, type CountryResponse, Reader} from "mmdb-lib";

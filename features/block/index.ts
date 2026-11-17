@@ -23,10 +23,7 @@ const applyBlurStyle = (ctx: Ctx): void => {
     root.classList.toggle("refresherBlurReveal", ctx.settings.blurReveal);
 };
 
-/**
- * 이 페이지에서만 차단 내용 보기. 저장하지 않아 새로고침하면 다시 가린다.
- * 상태는 <html>의 이 클래스 하나뿐이라(assets/styles/content.css) 확장이 업데이트되어 다시 주입된 인스턴스도 같은 상태를 읽는다.
- */
+/** 이 페이지에서만 차단 내용 보기. <html> 클래스 하나뿐이라 재주입 인스턴스도 같은 상태를 읽는다. */
 const REVEAL_CLASS = "refresherBlockReveal";
 const isRevealed = (): boolean => document.documentElement.classList.contains(REVEAL_CLASS);
 
@@ -48,7 +45,6 @@ const toggleReveal = (): void => {
     useUiStore.getState().showToast(isRevealed() ? `이 페이지에서 가린 내용을 보입니다. (${hiddenCount()}개)` : "가린 내용을 다시 숨겼습니다.");
 };
 
-/** 작성자 칸(checkWriter)이 보는 차단 유형. */
 const WRITER_TYPES: BlockType[] = ["NICK", "ID", "IP", "TITLE", "TAB", "COMMENT"];
 
 const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
@@ -86,8 +82,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
                 TITLE: read("TITLE", () => textWithoutScripts(row?.querySelector(".gall_tit > a:not([class]), .title_subject"))),
                 // 잘린 말머리는 툴팁(.subject_inner)에 전체가 있다. 글 보기 머리의 말머리는 [대괄호]로 감싸 있다.
                 TAB: read("TAB", () => textWithoutScripts(row?.querySelector(".gall_subject .subject_inner, .title_headtext") ?? row?.querySelector(".gall_subject")).replace(/^\[(.*)]$/, "$1")),
-                // 글자콘 댓글은 .usertxt 없이 .txtcon_txt에, 댓글 검색 결과 행은 .sch_cmt에 내용이 있다.
-                // 미리보기 댓글(processComments)처럼 앞뒤 공백을 떼야 일치 검사가 같다.
+                // 글자콘 댓글은 .txtcon_txt에, 댓글 검색 행은 .sch_cmt에 내용이 있다. 앞뒤 공백을 떼야 일치 검사가 같다.
                 COMMENT: read("COMMENT", () => (isViewPage ? element.closest(".reply_info, .cmt_info") : null)?.querySelector(".usertxt, .txtcon_txt")?.textContent ?? row?.querySelector(".sch_cmt")?.textContent)?.trim()
             },
             gallery
@@ -106,8 +101,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
         else hide(element);
     };
 
-    // 본문 이미지, 움짤(<video>) 차단. 파일 해시로 보므로 다 받은 뒤에 본다. 지연 로딩, 디시의 가린 이미지 보기로 주소가 바뀌면 load 때,
-    // 움짤은 VIDEO_CHECK_EVENTS 때 다시 본다. 디시가 움짤을 gif <img>로 바꾸면 그 <img>는 필터가 따로 본다.
+    // 본문 이미지·움짤 차단은 파일 해시로 보므로 다 받은 뒤(load, VIDEO_CHECK_EVENTS)에 본다.
     const watchedImages = new WeakSet<HTMLElement>();
     const checkImage = (element: HTMLElement): void => {
         if (!(element instanceof HTMLImageElement || element instanceof HTMLVideoElement)) return;
@@ -124,8 +118,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
         });
     };
 
-    // 본문 차단은 본문이 다 읽힌 뒤 한 번만 본다. 작성자 필터에서 보면 아래 글 목록 행마다 본문을 다시 읽고,
-    // .write_div 필터에서 보면 파싱 중인 본문 일부로 판정해 NOT_*, SAME 항목이 오탐한다.
+    // 본문 차단은 다 읽힌 뒤 한 번만 본다. 필터에서 보면 행마다 다시 읽거나 파싱 중 일부로 오탐한다.
     const checkText = (): void => {
         const writeDiv = document.querySelector<HTMLElement>(".write_div");
         if (!writeDiv) return;
@@ -141,9 +134,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
         writeDiv.before(Object.assign(document.createElement("div"), {className: "refresherTextNotice", textContent: BLOCKED_TEXT}));
     };
 
-    // 같은 댓글 접기. 댓글 목록은 페이지를 넘기거나 새로 고칠 때마다 통째로 다시 그려져 필터로 다시 불린다.
-    // 차단, 깡계로 가린 댓글(대댓글은 감싼 칸이 가려진다)은 세지 않는다(core/preview/comments도 같다). 세면 가려진 댓글이 배지를 가져가 같은 내용의 다른 댓글까지 모두 사라진다.
-    // 지난 판정의 표시는 맞춰 떼되 결과가 같으면 DOM을 건드리지 않는다. 배지를 넣거나 빼면 조상인 목록에 필터가 다시 불려 끝없이 돈다.
+    // 같은 댓글 접기. 가린 댓글은 세지 않고(세면 배지가 다른 댓글까지 없앤다) 결과가 같으면 DOM을 건드리지 않는다.
     const foldDuplicates = (list: HTMLElement): void => {
         const duplicate = duplicateOf(ctx.settings);
         if (!duplicate) return;
@@ -152,9 +143,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
         const textOf = (item: HTMLElement): string => item.querySelector(".usertxt, .txtcon_txt")?.textContent ?? "";
         const all = [...list.querySelectorAll<HTMLElement>("li.ub-content")];
         const shown = all.filter((item) => !item.closest(HIDDEN_ROW_SELECTOR));
-        // 접힌 댓글의 답글 칸을 남기면 그 답글이 위 댓글의 답글처럼 보여, 대댓글 가리기(replyRemove)와 상관없이 같이 접는다.
-        // 접을 답글 칸은 댓글끼리만 묶어 정하고, 그 칸의 답글은 세지 않는다. 세면 같이 접힐 답글이 배지를 가져간다.
-        // 답글을 더해 세도 이 댓글들은 계속 접히므로, 답글 덕에 새로 접히는 댓글의 답글 칸만 남는다.
+        // 접힌 댓글의 답글 칸도 같이 접는다 (남기면 위 댓글의 답글처럼 보인다). 답글 칸을 뺀 댓글끼리만 묶어 정한다.
         const foldedBoxes = new Set<HTMLElement>();
         for (const [item, repeats] of groupDuplicates(shown.filter((item) => !item.closest(".reply")), textOf, duplicate)) {
             const box = repeats === 0 ? replyBoxOf(item) : null;
@@ -217,8 +206,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
 
 const setupSelection = (ctx: Ctx): void => {
     const onContextMenu = (ev: MouseEvent): void => {
-        // Shift+우클릭은 유저 버블 대신 브라우저 기본 메뉴를 연다 (링크 복사, 요소 검사 등이 막히지 않게).
-        // 작성자 칸을 유저 정보 모듈이 먼저 받아 버블을 열었으면 defaultPrevented다.
+        // Shift+우클릭은 브라우저 기본 메뉴, 유저 정보 모듈이 버블을 열었으면(defaultPrevented) 건너뛴다.
         if (ev.shiftKey || ev.defaultPrevented) return;
 
         const target = eventTarget(ev);

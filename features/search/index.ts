@@ -14,10 +14,7 @@ import {whenDomReady, writeStyle} from "@/utils/dom";
 import meta from "./meta";
 import {addWriterTypes, keepWriterFilter, removeWriterTypes, writerSearchUrl} from "./writer";
 
-/**
- * 검색 결과 행: 글(data-no)과 그 아래 댓글 검색 행(data-cmt). 설문, AD 행은 뺀다.
- * 검색 구간은 번호로 나뉘어 겹치지 않으므로 중복을 거르지 않는다. 댓글 검색에선 댓글마다 글 행이 되풀이되는 게 정상이다.
- */
+/** 검색 결과 행: 글(data-no)과 그 아래 댓글 행(data-cmt). 설문, AD는 뺀다. */
 const RESULT_ROW = ":scope > tr:is([data-no], [data-cmt])";
 /** 이어 붙인 행. 모듈을 끄면 뺀다. */
 const ADDED_ROW = "refresherSearchAdded";
@@ -46,10 +43,7 @@ const searchWriter = async (filter: WriterFilter): Promise<void> => {
     }
 };
 
-/**
- * 유저 버블의 검색. by가 "nick"이면 닉네임으로만 찾고(디시 글쓴이 검색), "identity"면 닉네임으로 찾은 글을 아이디(반고닉, 고닉)나 IP(유동)로 거른다.
- * 닉네임이 없으면 목록을 넘기며 거른다.
- */
+/** by가 "nick"이면 닉네임으로만 찾고, "identity"면 아이디나 IP로 거른다. */
 const searchUserPosts = (user: SelectedUser, by: "nick" | "identity"): void => {
     if (by === "nick") {
         if (user.nick) location.href = writerSearchUrl(null, user.nick);
@@ -99,22 +93,19 @@ export default defineModule(meta, {
         const counted = (row: HTMLElement): boolean => Boolean(row.dataset.no) && (!filter || row.querySelector(writerSelector(filter)) !== null);
 
         const gallery = pageGallery ?? "";
-        // 받은 검색 페이지(칠한 결과 행과 페이징 HTML). 새로고침 모듈이 목록을 갈아끼워 다시 이을 때 요청, 파싱을 건너뛴다.
-        // 다시 이을 때 같은 다음 검색을 처음부터 따라가므로 최대 다음 검색 횟수만큼 둔다. 더 작으면 따라가는 동안 앞 페이지가 밀려나 하나도 맞지 않는다.
+        // 받은 검색 페이지(결과 행, 페이징). 새로고침 모듈이 목록을 갈아끼워 다시 이을 때 요청을 건너뛴다.
         const pages = new QuickLRU<string, { rows: HTMLTableRowElement[]; paging: string }>({maxSize: ctx.settings.maxSearches});
         ctx.onSettingsChanged(() => pages.resize(ctx.settings.maxSearches));
         // 행을 붙이면 같은 tbody로 필터가 다시 불리므로 한 번만 채운다.
         const filled = new WeakSet<HTMLElement>();
         let running: AbortController | null = null;
-        // 거르기만 하는 목록에서 앞 목록에 이어 붙인 행과 그때의 1쪽 (이 작성자 글 번호), 받은 시각. 1쪽의 이 작성자 글이 그대로면
-        // 새로고침이 목록을 갈아끼워도(조회수만 바뀌거나 다른 사람 글이 들어와도) REUSE_TTL 동안은 다음 쪽들을 다시 받지 않고 이 행을 옮겨 온다.
+        // 거르기만 하는 목록에서 이어 붙인 행과 그때의 1쪽. 1쪽이 그대로면 REUSE_TTL 동안은 다시 받지 않고 옮겨 온다.
         let lastFill: { key: string; rows: HTMLTableRowElement[]; paging: string; at: number } | null = null;
 
         const fill = async (list: HTMLElement): Promise<void> => {
             if (filled.has(list)) return;
             filled.add(list);
-            // 파이어폭스 재주입 전 인스턴스가 이미 이어 붙인 목록이다. 페이징도 그쪽이 바꾼 것이라 원본으로 저장할 수 없고,
-            // 더 이으면 최대 다음 검색 횟수를 넘는다.
+            // 파이어폭스 재주입 전 인스턴스가 이미 이어 붙인 목록이다.
             if (list.querySelector(`.${ADDED_ROW}`)) return;
 
             running?.abort();
@@ -158,8 +149,7 @@ export default defineModule(meta, {
             status.setAttribute("role", "status");
             paging.after(status);
             let added = 0;
-            // 검색 구간은 바뀌지 않지만 거르기만 하는 목록의 다음 쪽은 새 글이 들어올 때마다 밀린다.
-            // 받아 둔 옛 쪽으로 이으면 1쪽에서 밀려난 글이 어디에도 없으므로 다시 받는다.
+            // 거르기만 하는 목록의 다음 쪽은 새 글에 밀리므로 받아 둔 옛 쪽을 버리고 다시 받는다.
             if (!searching) pages.clear();
 
             // 받으러 가기 직전에 만든다. 위 가드에서 돌아갈 때 ctx.signal에 합성 signal을 남기지 않는다.
@@ -173,7 +163,7 @@ export default defineModule(meta, {
                     const next = paging.querySelector<HTMLAnchorElement>(searching ? "a.search_next" : "em + a");
                     if (!next) break;
 
-                    status.textContent = `${searching ? "다음 검색" : "다음 쪽 확인"} 중… (${step}/${max})`;
+                    status.textContent = `${searching ? "다음 검색" : "다음 쪽 확인"} 중... (${step}/${max})`;
                     let page = pages.get(next.href);
                     if (!page) {
                         const dom = new DOMParser().parseFromString(await http.get(next.href, {signal}).text(), "text/html");

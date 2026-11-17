@@ -12,11 +12,7 @@ import {initMemosStore} from "@/stores/memos";
 
 import {mountOverlayWhenNeeded} from "./overlay";
 
-/**
- * 콘텐츠 스크립트 본문. index.tsx(부트스트랩)가 청크(chunks/content-main.js)로 나눠 부르므로 export로만 낸다.
- * 같은 폴더의 파일이 하나씩 맡는다:
- * - overlay.tsx: 오버레이(shadow DOM)를 처음 필요할 때 띄우기
- */
+// 부트스트랩(index.ts)이 청크로 나눠 부르므로 export로만 낸다.
 export const start = async (ctx: ContentScriptContext): Promise<void> => {
     bindUsageContext(ctx.signal);
 
@@ -30,8 +26,7 @@ export const start = async (ctx: ContentScriptContext): Promise<void> => {
         return pageState();
     }));
 
-    // 확장을 끄거나 업데이트해도 이 스크립트는 남아 새로고침 폴링, 저장소 호출을 하다 실패하므로 모듈을 멈춘다.
-    // 부트스트랩의 await보다 먼저 등록한다. 저장소를 읽는 중에 무효화되면 그 호출이 실패하거나 끝나지 않아 await 뒤의 등록까지 가지 못한다.
+    // 확장이 꺼져도 스크립트는 남아 실패하므로 무효화 때 모듈을 멈춘다 - 저장소 읽기 중 무효화돼도 뒤 등록에 가게 먼저 건다.
     ctx.onInvalidated(() => {
         stopAll();
         releaseDatabase();
@@ -44,12 +39,10 @@ export const start = async (ctx: ContentScriptContext): Promise<void> => {
     mountOverlayWhenNeeded(ctx);
 
     // ===== 모듈 부트스트랩 =====
-    // 차단, 메모는 글 목록, 본문(BOARD_PAGE)에서만 읽는다.
-    // 가장 큰 IP/밴 DB는 여기서 읽지 않는다. 필요할 때 유저 정보 모듈(needsDatabase)이나 버블이 처음 그릴 때 읽는다 (core/database의 subscribeDatabase).
+    // 차단, 메모는 BOARD_PAGE에서만 읽고 IP/밴 DB는 처음 필요할 때 읽는다.
     const board = BOARD_PAGE.test(documentUrl.pathname);
     await loadAll(features, ctx.signal, board ? Promise.all([initBlocksStore(ctx.signal), initMemosStore(ctx.signal)]) : undefined);
 };
 
-// 이 청크를 만드는 HTML 엔트리는 이 모듈을 부수 효과만으로 읽어, export의 start와 이 아래 전부가 트리셰이킹된다.
-// 부트스트랩이 런타임에 찾을 수 있게 격리 세계 전역에 심는다.
+// HTML 엔트리는 이 모듈을 부수 효과만으로 읽어 export가 트리쉐이킹되므로 전역에 심는다.
 (globalThis as Record<string, unknown>)["__refresherContentStart"] = start;

@@ -88,7 +88,6 @@ describe("initModulesStore", () => {
         await state().changeSetting("fonts", "bodyFontSize", 20);
         await state().toggle("stealth", true);
 
-        // 화면에 먼저 반영한 두 번뿐이다.
         expect(listener).toHaveBeenCalledTimes(2);
     });
 
@@ -107,7 +106,6 @@ describe("initModulesStore", () => {
 
         await expect.poll(() => fakeBrowser.storage.local.get(null)).toEqual({
             "refresher:modules": {fonts: false},
-            // 남은 값은 검사 전 그대로 둔다.
             "refresher:module:fonts:settings": {bodyFontSize: 99},
             "refresher:module:preview:data": {kept: true},
             "refresher:block:NICK": []

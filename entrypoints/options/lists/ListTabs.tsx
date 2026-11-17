@@ -34,15 +34,12 @@ const PAGE = 200;
 
 /** 마지막으로 쓰인 시각 표시 ("오늘", "3일 전"). */
 const formatUsed = (time: number | undefined): string => {
-    if (time === undefined) return "—";
+    if (time === undefined) return "-";
     const days = Math.floor((Date.now() - time) / DAY);
     return days < 1 ? "오늘" : `${days}일 전`;
 };
 
-/**
- * 지운 항목(index는 지우기 전 저장된 자리)을 그 자리에 되살린다. 그사이 같은 키의 항목이 다시 생겼으면 그것을 두고 건너뛴다.
- * 그사이 목록이 바뀌었으면 자리는 어림이다. removed는 index 순이어야 한다.
- */
+// 지운 항목을 저장된 자리에 되살린다 - 같은 키가 다시 생겼으면 두고 건너뛴다.
 export const restoreRemoved = <I, >(current: readonly I[], removed: readonly { index: number; item: I }[], key: (item: I) => string): I[] => {
     const next = [...current];
     const kept = new Set(current.map(key));
@@ -52,13 +49,10 @@ export const restoreRemoved = <I, >(current: readonly I[], removed: readonly { i
     return next;
 };
 
-/** 표 한 줄. 줄을 누르면 편집하고, 휴지통 버튼은 확인을 받고 삭제한다. */
 export const ListRow = ({head, label, info, used, onEdit, onRemove}: {
     head: ReactNode;
-    /** 항목 이름 (내용/유저). 삭제 버튼 이름과 확인 문구에 쓴다. */
     label: string;
     info: ReactNode;
-    /** 마지막으로 쓰인 시각 (useUsage). */
     used?: number;
     onEdit: () => void;
     onRemove: () => void;
@@ -70,8 +64,7 @@ export const ListRow = ({head, label, info, used, onEdit, onRemove}: {
         <>
             <TableRow className="cursor-pointer [content-visibility:auto] [contain-intrinsic-size:auto_45px]" onClick={onEdit}>
                 <TableHead scope="row" className="font-normal">
-                    {/* 줄(tr)은 버튼이 될 수 없어 키보드, 스크린 리더에는 첫 칸을 편집 버튼으로 알린다.
-                        따로 onClick을 달지 않는다. 누르면(Enter/Space 포함) click이 줄로 올라가 편집이 열린다. */}
+                    {/* 줄(tr)은 버튼이 될 수 없어 첫 칸을 편집 버튼으로 알린다 - click이 줄로 올라가 편집이 열린다. */}
                     <button type="button" title="수정" className={cn(FOCUS_RING, "block w-full text-left")}>
                         {head}
                     </button>
@@ -79,8 +72,7 @@ export const ListRow = ({head, label, info, used, onEdit, onRemove}: {
                 <TableCell className="whitespace-normal">{info}</TableCell>
                 <TableCell className="text-muted-foreground">{formatUsed(used)}</TableCell>
                 <TableCell className="text-right">
-                    {/* 툴팁은 브라우저 기본(title)을 쓴다. 줄마다 툴팁 부품이나 Base UI Button을 달면 수천 줄 목록을
-                        열거나 검색할 때마다 느려지므로 맨 button에 포커스 링만 얹는다(focusRing.ts). */}
+                    {/* 줄마다 툴팁 부품이나 Base UI Button을 달면 수천 줄에서 느려지므로 title과 맨 button 포커스 링을 쓴다. */}
                     <button type="button" aria-label={`${label} 삭제`} title="삭제"
                             className={cn(FOCUS_RING, "grid size-8 place-items-center rounded-[min(var(--radius-md),10px)] text-destructive hover:bg-accent")}
                             onClick={(ev) => {
@@ -109,10 +101,7 @@ export const ListRow = ({head, label, info, used, onEdit, onRemove}: {
     );
 };
 
-/**
- * 차단/메모 탭 공용 틀. 종류별 탭, 검색, 클립보드, 파일 내보내기/가져오기, 전체 삭제/추가, 빈 목록 안내, 표 머리를 그린다.
- * 줄(ListRow)은 row가 그린다.
- */
+/** 차단/메모 탭 공용 틀 - 종류 탭, 검색, 내보내기/가져오기, 삭제/추가, 표 머리. 줄은 row가 그린다. */
 export const ListTabs = <T extends string, I>({
                                                   types,
                                                   names,
@@ -136,34 +125,24 @@ export const ListTabs = <T extends string, I>({
                                               }: {
     types: readonly T[];
     names: Record<T, string>;
-    /** "차단 목록", "메모" 등. 알림, 확인 문구에 쓴다. */
     label: string;
-    /** 파일로 내보낼 때 이름 앞부분 (뒤에 날짜가 붙는다). */
     fileName: string;
     columns: [string, string];
     emptyText: (type: T) => string;
     exportData: () => unknown;
-    /** 붙여넣은 JSON에서 가져온 유효한 항목 수를 돌려준다. 0이면 다른 데이터(또는 항목이 모두 틀린 JSON)로 보고 실패로 알린다. */
+    /** 돌려준 수가 0이면 다른 데이터로 보고 실패로 알린다. */
     importData: (parsed: Record<string, unknown>) => Promise<number>;
     onClear: (type: T) => Promise<void>;
     onAdd: (type: T) => void;
-    /** 목록 위 왼쪽에 둘 도구(차단 탭의 기본 차단 모드). */
     toolbar: (type: T) => ReactNode;
     /** 오래된 것부터 준다. 표시할 때 뒤집는다. */
     items: (type: T) => readonly I[];
-    /** 검색 대상 글자 (내용/유저/메모/갤러리 등). */
     searchText: (item: I) => (string | undefined)[];
-    /** 갤러리 한정 항목의 갤러리 ID (없으면 모든 갤러리). 갤러리로 거를 때 쓴다. */
     galleryOf: (item: I) => string | undefined;
-    /** 마지막으로 쓰인 시각 (useUsage). 오래 안 쓴 항목을 거를 때 쓴다. */
     usedAt: (type: T, item: I) => number | undefined;
-    /** 주어진 항목(줄 하나, 걸러 보이는 항목)을 지운다. */
     onRemoveMany: (type: T, items: readonly I[]) => Promise<void>;
-    /** 항목을 가리키는 키 (차단은 content+gallery, 메모는 대상). 지운 항목을 되살릴 때 쓴다. */
     itemKey: (item: I) => string;
-    /** 저장소의 현재 목록에 restore를 붙여 쓴다. 삭제 알림의 되돌리기가 부른다. */
     onRestore: (type: T, restore: (current: I[]) => I[]) => Promise<void>;
-    /** remove: 이 줄을 지운다 (ListRow의 onRemove). */
     row: (type: T, item: I, remove: () => void) => ReactNode;
 }) => {
     // 모든 탭이 같은 검색어를 쓴다. 탭 배지에 탭마다 걸린 개수가 보여 다른 탭에 있는지도 알 수 있다.
@@ -173,12 +152,10 @@ export const ListTabs = <T extends string, I>({
     const [gallery, setGallery] = useState("all");
     // 이만큼(일) 넘게 안 쓰인 항목만. 0이면 거르지 않는다.
     const [unusedDays, setUnusedDays] = useState("0");
-    // 표에 그리는 줄 수. 종류마다 따로 센다 (한 탭에서 펼친 뒤 탭을 바꿔도 그 탭이 PAGE줄로 시작한다).
-    // 거르는 조건이 바뀌면 모두 처음 PAGE줄로 돌린다.
+    // 표에 그리는 줄 수 - 종류마다 따로 세고 거르기가 바뀌면 처음 PAGE줄로 돌린다.
     const [limits, setLimits] = useState<Record<string, number>>({});
     const resetLimits = (): void => setLimits({});
-    // 걸르기(종류 전체 × searchText의 배열 할당)와 갤러리 목록은 조건이 바뀔 때만 한다.
-    // 확인 창, 가져오기 창, 더 보기(그리는 줄 수)가 바뀔 때에는 다시 하지 않는다.
+    // 걸르기와 갤러리 목록은 조건이 바뀔 때만 한다 (확인 창, 더 보기에는 다시 하지 않는다).
     const galleries = useMemo(
         () => [...new Set(types.flatMap((type) => items(type).map(galleryOf)).filter((id): id is string => Boolean(id)))].sort(),
         [types, items, galleryOf]
@@ -196,9 +173,7 @@ export const ListTabs = <T extends string, I>({
         // 기록이 아직 없으면(옵션이 맞추기 전) 오래된 것으로 보지 않는다.
         return !cutoff || (usedAt(type, item) ?? Date.now()) < cutoff;
     };
-    // items가 오래된 것부터 주므로 뒤집어 최신순으로 보여 준다(저장 순서는 그대로).
-    // 종류마다 한 번만 걸러 탭 배지와 표가 같이 쓴다. total은 거르기 전 개수다.
-    // visible은 나열한 조건(needle, galleryFilter, cutoff)만 보므로 같은 조건이면 다시 걸르지 않는다.
+    // items는 오래된 순이므로 뒤집고, 종류마다 한 번만 걸러 탭 배지와 표가 같이 쓴다 (total은 거르기 전 개수).
     const shown = useMemo(() => new Map(types.map((type) => {
         const all = items(type);
         return [type, {total: all.length, list: all.filter((item) => visible(type, item)).reverse()}];
@@ -206,8 +181,7 @@ export const ListTabs = <T extends string, I>({
 
     // 떠 있는 확인 창: 그 종류 전체 삭제(clear)나 보이는 항목 삭제(shown).
     const [confirm, setConfirm] = useState<{ kind: "clear" | "shown"; type: T } | null>(null);
-    // 삭제를 확인하면 연 버튼이 사라지거나(보이는 항목 삭제) 막혀(전체 삭제) 확인 창이 포커스를 돌려줄 곳이 없다. 지우기 전에 탭 패널로 옮겨 둔다.
-    // 확인 창은 창 밖으로 옮긴 포커스를 빼앗지 않는다 (useReturnFocus).
+    // 삭제를 확인하면 연 버튼이 사라지거나 막히므로 지우기 전에 탭 패널로 포커스를 옮겨 둔다.
     const filterRow = useRef<HTMLDivElement>(null);
     const [importOpen, setImportOpen] = useState(false);
     const object = label + objectParticle(label);
@@ -245,7 +219,7 @@ export const ListTabs = <T extends string, I>({
 
         try {
             if (isRecord(data) && (await importData(data)) > 0) return `${object} 가져왔습니다.`;
-            // 데이터 탭의 전체 내보내기는 저장소 키(refresher:…)로 되어 있다.
+            // 데이터 탭의 전체 내보내기는 저장소 키(refresher:...)로 되어 있다.
             notify(isRecord(data) && Object.keys(data).some((key) => key.startsWith("refresher:"))
                 ? "전체 데이터는 데이터 탭에서 가져와 주세요."
                 : `${label} 데이터가 아닙니다. 이 탭에서 내보낸 JSON인지 확인해 주세요.`);

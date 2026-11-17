@@ -179,7 +179,6 @@ describe("writeSettings", () => {
         expect(undo).toEqual({data: {[MODULES]: {a: true}, [NICK]: [entry("b")], [SETTINGS]: {width: 900}}, createdAt: at});
         await writeSettings(undo?.data ?? {}, "replace");
         expect(await settings()).toEqual({[MODULES]: {a: true}, [NICK]: [entry("b")], [SETTINGS]: {width: 900}});
-        // 되돌리기도 직전 상태(빈 설정)를 남겨 다시 앞으로 갈 수 있다.
         expect(await stored(UNDO)).toEqual({data: {}, createdAt: expect.any(Number)});
     });
 
@@ -235,7 +234,6 @@ describe("parseImport", () => {
         expect(() => parseImport(`{"${SETTINGS}":42}`)).toThrow("형태가 올바르지 않습니다");
         expect(() => parseImport(`{"${DEFAULTS}":42}`)).toThrow("형태가 올바르지 않습니다");
         expect(() => parseImport("{\"refresher:memo:UID\":42}")).toThrow("형태가 올바르지 않습니다");
-        // 배열은 객체(isRecord)가 아니다.
         expect(() => parseImport("{\"refresher:memo:UID\":[]}")).toThrow("형태가 올바르지 않습니다");
         expect(parseImport("{\"refresher:memo:UID\":{}}")).toEqual({"refresher:memo:UID": {}});
     });

@@ -1,9 +1,6 @@
 /* ===== 레이아웃 수정 (layout 모듈) ===== */
 
-/*
- * 컴팩트 모드 (html.refresherCompact): 창이 좁을 때 디시의 1160px 고정폭 레이아웃을 창 폭에 맞춘다.
- * 고정폭 상자는 auto로 풀고, 오른쪽 사이드바, 큰 머리글, 줄어들지 않는 광고는 숨긴다.
- */
+/* 컴팩트 모드(html.refresherCompact): 디시 1160px 고정폭 레이아웃을 창 폭에 맞춘다 - 고정폭은 auto로 풀고 사이드바, 큰 머리글, 광고는 숨긴다. */
 .refresherCompact {
     /* 머리글, 최근 방문 줄, 본문이 같이 쓰는 최대 폭. */
     --refresher-compact-width: 1000px;
@@ -193,7 +190,7 @@
         font-size: 23px !important;
     }
 
-    /* 갤러리 제목 옆 링크(설정, 새로고침…)가 좁으면 두 줄이 되는데 머리가 37px 고정이라 밑줄을 덮는다. */
+    /* 갤러리 제목 옆 링크(설정, 새로고침...)가 좁으면 두 줄이 되는데 머리가 37px 고정이라 밑줄을 덮는다. */
     .page_head {
         height: auto !important;
     }
@@ -312,13 +309,13 @@
     }
 }
 
-/* 목록 양옆 날개 광고 — 목록 상자 가운데에서 780px씩 떨어져 있어 좁은 창(컴팩트)에선 밖으로 나가고, 목록 상자를 넓히면(본문 영역 확장) 창 밖으로 밀려 가로 스크롤이 생긴다. */
-/* 왼쪽 날개 광고(.stickyunit) — setup(document_start) 때는 아직 파싱 전이라 JS로 찾으면 놓친다. */
+/* 목록 양옆 날개 광고 - 목록 상자 가운데에서 780px씩 떨어져 있어 좁은 창(컴팩트)에선 밖으로 나가고, 목록 상자를 넓히면(본문 영역 확장) 창 밖으로 밀려 가로 스크롤이 생긴다. */
+/* 왼쪽 날개 광고(.stickyunit) - setup(document_start) 때는 아직 파싱 전이라 JS로 찾으면 놓친다. */
 :is(.refresherCompact, .refresherPushToRight) :is(.stickyunit, [class*="ad_left_wing"]) {
     display: none !important;
 }
 
-/* 본문 영역 전체로 확장 (html.refresherPushToRight — "잡다 링크 숨기기"와 함께 켜졌을 때). */
+/* 본문 영역 전체로 확장 (html.refresherPushToRight - "잡다 링크 숨기기"와 함께 켜졌을 때). */
 .refresherPushToRight {
     .list_array_option,
     .listwrap .left_content,

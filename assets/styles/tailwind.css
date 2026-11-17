@@ -1,13 +1,10 @@
-/*
- * Tailwind + shadcn 토큰. 색은 shadcn 테마 값 그대로다 (base-vega, 기본색 zinc, 테마 indigo. https://ui.shadcn.com/init?base=base&style=vega&baseColor=zinc&theme=indigo&only=theme의 cssVars). --link 말고는 손으로 고치지 않는다 (오버레이의 다크 색은 overlay.css).
- * 오버레이 shadow에서도 쓰도록 :root와 :host에 같이 건다. 다크 모드는 조상의 .dark 클래스가 정한다 (utils/appearance.ts).
- */
+/* Tailwind + shadcn 토큰(base-vega, zinc/indigo) - 테마 값 그대로, --link 말고는 손대지 않는다.
+   :root와 :host에 같이 건다(오버레이 shadow). 다크는 조상의 .dark 클래스가 정한다. */
 @import "tailwindcss" source(none);
 @import "tw-animate-css";
 /* shadcn 부품이 쓰는 variant(data-horizontal, data-open 등, Base UI 데이터 속성에 맞춘 것)와 유틸리티. */
 @import "shadcn/tailwind.css";
-/* 클래스를 찾을 폴더를 직접 정한다. 자동 탐색은 .gitignore에 기대는데 파이어폭스 심사용 소스 zip에는 .gitignore가 없어,
-   심사 쪽 빌드의 CSS와 해시 붙은 파일 이름이 우리가 올린 빌드와 달라진다. */
+/* 스캔 폴더 직접 지정 - 파이어폭스 심사 zip엔 .gitignore가 없어 자동 탐색을 못 쓴다. */
 @source "../../{components,core,entrypoints,features,stores,utils}";
 /* cn 플러그인이 만드는 클래스 그룹 표(wxt.config.ts). 표의 낱말이 클래스로 읽혀 쓰지 않는 유틸리티가 생긴다. */
 @source not "../../utils/cn-tables.ts";

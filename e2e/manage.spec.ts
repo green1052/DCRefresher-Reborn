@@ -33,7 +33,6 @@ test.describe("관리", () => {
     });
 
     test("유동 글의 체크박스를 Shift+클릭하면 IP가 같은 글만 같이 체크한다", async ({listPage, site}) => {
-        // 2번 글(ㅇㅇ, 1.2)과 IP가 같은 글 하나, 닉네임만 같은 글 하나를 더한다.
         site.manager = true;
         site.rows = [
             {no: 5, title: "다섯 번째 글", nick: "ㅇㅇ", uid: "", ip: "1.2"},

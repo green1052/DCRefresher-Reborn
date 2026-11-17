@@ -20,11 +20,11 @@ const VERSION = browser.runtime.getManifest().version;
 interface Page {
     tabId: number;
     gallery: string;
-    /** 처음 물었을 때의 탭 상태. 콘텐츠 스크립트가 없으면(설치, 업데이트 전에 열린 탭 등) null이다. */
+    /** 콘텐츠 스크립트가 없는 탭(설치 전에 열린 탭 등)이면 null. */
     state: PageState | null;
 }
 
-/** 활성 탭이 디시 갤러리 페이지면 탭과 갤러리 id를 돌려준다. tabs 권한이 없어 탭 주소는 host_permissions가 있는 디시 탭에서만 보인다. */
+/** 활성 탭이 디시 갤러리면 탭과 갤러리 id - tabs 권한이 없어 url은 디시 탭에서만 보인다. */
 const findPage = async (): Promise<Page | null> => {
     const [tab] = await browser.tabs.query({active: true, currentWindow: true});
     const url = tab?.url ? URL.parse(tab.url) : null;
@@ -83,8 +83,7 @@ function PageSection({tabId, gallery, state: initial, toggled}: Page & { toggled
     const memos = useMemosStore((state) => state.memos);
     const [state, setState] = useState(initial);
 
-    // 모듈을 켜고 끄면 탭의 모듈도 멈추거나 시작하므로 다시 묻는다. 저장이 끝난 뒤에 물어야 탭이 새 값으로 답한다
-    // (탭은 저장소를 다시 읽고 모듈이 다 뜬 뒤에 답한다). 늦게 온 이전 응답은 버린다.
+    // 모듈을 끄면 탭의 모듈도 멈추므로 저장 뒤에 다시 묻는다 - 늦게 온 이전 응답은 버린다.
     useEffect(() => {
         if (toggled === 0) return;
         let current = true;
@@ -184,14 +183,11 @@ export function App() {
     const [loaded, setLoaded] = useState<{ page: Page | null; backupError: string } | null>(null);
     const [toggled, setToggled] = useState(0);
 
-    // 한 번에 그려야 팝업 크기가 여러 번 바뀌지 않는다. 모두 로컬 읽기라 금방 끝난다.
-    // 하나가 실패해도 빈 팝업으로 남지 않게 기본값으로 그린다.
-    // useEffect는 한 프레임 뒤에 돌아 읽기가 그만큼 늦게 시작하므로 그리기 전에 시작한다.
+    // 한 번에 그리기 전 읽기를 시작한다(useEffect는 한 프레임 늦다) - 하나가 실패해도 기본값으로 그린다.
     useLayoutEffect(() => {
         void Promise.all([
             findPage().catch(() => null),
-            // 자동 백업은 배경에서 돌아 실패해도 데이터 탭을 열기 전에는 모른다. 켜져 있을 때만 팝업에서 한 줄로 알린다.
-            // 오류는 백업이 성공해야 지워지므로 꺼진 뒤에도 알리면 경고가 사라지지 않는다 (지난 실패는 데이터 탭에 남는다).
+            // 자동 백업 실패는 백업이 성공해야 지워지므로 켜져 있을 때만 한 줄로 알린다.
             Promise.all([backupStorage.auto().getValue(), backupStorage.error().getValue()]).then(([auto, error]) => (auto ? error : "")).catch(() => ""),
             initBlocksStore().catch(console.error),
             initMemosStore().catch(console.error),

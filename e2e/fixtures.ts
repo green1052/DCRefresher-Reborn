@@ -51,14 +51,7 @@ const routeLive = async (context: BrowserContext): Promise<void> => {
 type Background = { kind: "chromium"; worker: Worker } | { kind: "firefox"; addon: FirefoxAddon };
 const backgrounds = new WeakMap<BrowserContext, Background>();
 
-/**
- * 확장을 올린 브라우저 컨텍스트를 테스트마다 새 프로필로 띄운다.
- * - Chromium: 확장은 영속 컨텍스트에서만 올라가고, headless shell이 아니라 Chromium 본체(channel: chromium)여야 한다.
- *   PLAYWRIGHT_CHROMIUM에 실행 파일을 주면 그것을 쓴다.
- * - 파이어폭스: 원격 디버깅 서버로 임시 부가 기능을 설치한다 (firefox.ts). 확장 페이지로는 이동하지 못해 팝업, 옵션 테스트는 Chromium에서만 돈다.
- * - dcinside.com 요청은 가짜 디시(site)가 응답하고 IP DB 서버는 끊는다. live 프로젝트만 실제 디시에 읽기 요청을 보낸다.
- * - serveIpDb를 켜면 Chromium에서는 IP DB 서버 요청에 가짜 DB(ipDb)가 응답한다. 파이어폭스는 배경 요청을 route로 가로채지 못해 끊은 그대로다 (OFFLINE_PREFS).
- */
+/** 확장을 올린 컨텍스트를 테스트마다 새 프로필로 띄운다. Chromium은 영속 컨텍스트(channel: chromium)여야 하고, 파이어폭스는 디버깅 서버로 설치해 확장 페이지를 못 연다. */
 export const test = base.extend<{ live: boolean; serveIpDb: boolean }>({
     live: [false, {option: true}],
     serveIpDb: [false, {option: true}]

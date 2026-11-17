@@ -209,7 +209,6 @@ describe("replaceList", () => {
             kept.classList.add("refresherNewPost");
             kept.style.animationDelay = "50ms";
             replaceList(current(), tbody([row("3"), row("1"), row("0")]), KEEP);
-            // 남긴 행은 등장 효과를 다시 재생하지 않는다.
             expect(kept.classList.contains("refresherNewPost")).toBe(false);
             expect(kept.style.animationDelay).toBe("");
             expect(nos(current())).toEqual(["3", "2", "1"]);
@@ -284,13 +283,11 @@ describe("replaceList", () => {
             const kept = list.querySelector("[data-no='2']");
             expect(kept?.classList.contains("refresherDeleted")).toBe(true);
 
-            // 같은 목록을 다시 받으면 남긴 행은 그대로 두고 아무것도 갈아끼우지 않는다.
             const {changed} = replaceList(list, tbody([row("3", {count: 9}), row("1"), row("0")]), KEEP);
             expect(changed).toBe(false);
             expect(current()).toBe(list);
             expect(list.querySelector("[data-no='2']")).toBe(kept);
 
-            // 새 글이 들어오면 남긴 행이 한 칸 내려가고 맨 아래 행이 밀려난다.
             replaceList(list, tbody([row("4"), row("3"), row("1")]), KEEP);
             expect(current()).toBe(list);
             expect(nos(list)).toEqual(["4", "3", "2"]);
@@ -306,7 +303,6 @@ describe("isWholeFirstPage", () => {
         expect(isWholeFirstPage("https://gall.dcinside.com/board/lists/?id=test&page=2")).toBe(false);
         expect(isWholeFirstPage("https://gall.dcinside.com/board/lists/?id=test&exception_mode=recommend")).toBe(false);
         expect(isWholeFirstPage("https://gall.dcinside.com/board/lists/?id=test&search_head=10")).toBe(false);
-        // 작성자 거르기는 다음 쪽 글을 이어 붙인다.
         expect(isWholeFirstPage("https://gall.dcinside.com/board/lists/?id=test&rf_ip=1.2")).toBe(false);
     });
 });

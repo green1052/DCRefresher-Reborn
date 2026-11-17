@@ -29,7 +29,7 @@ const colorsOf = (ctx: Ctx): BadgeColors =>
 
 /** 한 번의 실행(setup)이 그리는 데 쓰는 값. 모듈을 다시 켜면 새로 만든다. */
 interface BadgeState {
-    /** 설정에서 만든 배지 색, 표시 조건. 작성자 칸마다(목록 새로고침마다 수십 개) 다시 만들지 않고 설정이 바뀔 때(readBadgeSettings) 한 번 만든다. */
+    /** 배지 색, 표시 조건. 칸마다 다시 만들지 않고 설정이 바뀔 때 한 번 만든다. */
     colors: BadgeColors;
     view: BadgeView;
     ratios: Record<string, RatioInfo>;
@@ -43,10 +43,7 @@ const BADGES_CLASS = "refresher-user-badges";
 /** 글댓비 저장 상한. 최근에 받은 사람부터 이만큼만 남긴다. */
 const MAX_RATIOS = 500;
 
-/**
- * 받은 글댓비를 모아 두었다가 저장하는 간격 (ms). 저장할 때마다 캐시 전체가 열린 디시 탭마다 전달되고 크롬 서비스 워커도 깨므로,
- * 자동 새로고침마다 쓰지 않는다. 이 탭은 받은 즉시 그리고, 탭을 숨기거나 떠날 때도 저장한다.
- */
+/** 글댓비를 모아 저장하는 간격 (ms). 저장마다 캐시 전체가 열린 탭마다 전달되고 워커도 깬다. */
 const RATIO_SAVE_DELAY = 30_000;
 
 const trimRatios = (all: Record<string, RatioInfo>): Record<string, RatioInfo> =>
@@ -72,10 +69,7 @@ const LOW_ACTIVITY_CLASSES = {blur: "refresherLowActivityBlur", hide: "refresher
 const LOW_ACTIVITY_CLASS_LIST = Object.values(LOW_ACTIVITY_CLASSES);
 const LOW_ACTIVITY_SELECTOR = LOW_ACTIVITY_CLASS_LIST.map((name) => `.${name}`).join(",");
 
-/**
- * 깡계 숨김, 흐림이 바뀌었다고 알려 차단 모듈이 같은 댓글을 다시 접게 한다. 그 접기는 이 모듈이 DB를 읽기 전에 먼저 돈다.
- * 작성자마다 불리므로 한 번에 모아 보낸다.
- */
+/** 깡계 숨김 변화를 알려 차단 모듈이 다시 접게 한다. 작성자마다 불리므로 모아 보낸다. */
 let notifyQueued = false;
 const notifyRowsHidden = (): void => {
     if (notifyQueued) return;
@@ -202,8 +196,7 @@ export default defineModule(meta, {
         readBadgeSettings(ctx, state);
         /** 글댓비를 받지 못한 유저 (임시 차단 포함). 디시가 막거나 실패하는 동안 새 목록마다 다시 묻지 않게 5분 동안 건너뛴다. */
         const failedRatios = new QuickLRU<string, true>({maxSize: 500, maxAge: 5 * 60_000});
-        // IP 정보를 보이지 않고 갱차도 보지 않으면 수백 KB짜리 IP DB를 읽지 않는다. 유저 버블은 열 때 따로 읽는다 (subscribeDatabase).
-        // 갱차 목록은 banReasonsOf가 처음 불릴 때 읽지만, 갱신 감시는 initDatabase가 건다.
+        // IP 정보·갱차 표시가 없으면 수백 KB DB를 읽지 않는다 (버블은 열 때 따로 읽는다).
         const needsDatabase = (): boolean => state.view.ipFilter !== "none" || ctx.settings.checkPermBan;
         ctx.onSettingsChanged(() => {
             readBadgeSettings(ctx, state);
@@ -216,18 +209,15 @@ export default defineModule(meta, {
         // await 뒤마다 확인해, 그사이 모듈이 꺼졌으면 onRevoke가 지운 배지, 글댓비를 다시 그리지 않는다.
         const {signal} = ctx;
 
-        // 글댓비 캐시. moduleDataStorage 키라 백업, 내보내기에서 빠진다.
-        // 읽기, 감시는 키로 하고 항목은 처음 저장할 때 만든다. defineItem은 만드는 순간 값을 읽어, 미리 만들면 같은 캐시를 두 번 읽는다.
+        // 글댓비 캐시. moduleDataStorage 키라 백업·내보내기에서 빠진다. 항목은 처음 저장할 때 만든다 (미리 만들면 두 번 읽는다).
         const ratioKey = moduleDataKey("userinfo");
         let ratioStorage: WxtStorageItem<RatioData, {}> | undefined;
 
         // 작성자 우클릭으로 유저 버블(메모, 차단, 갤로그)을 연다. 메모는 이 모듈의 기능이라 차단 모듈이 꺼져 있어도 열려야 한다.
         document.addEventListener("contextmenu", openWriterBubble, {capture: true, signal});
 
-        // 받았지만 아직 저장하지 않은 글댓비 (RATIO_SAVE_DELAY).
         let unsaved: Record<string, RatioInfo> = {};
-        // 저장소의 글댓비를 받아 합친다. 다른 탭의 저장(이 탭의 저장도 돌아온다)과 bfcache 복원이 여기로 온다.
-        // 열린 디시 탭마다 오므로, 값이 바뀐 유저의 칸만 다시 그린다.
+        // 저장소 글댓비를 합친다. 다른 탭의 저장과 bfcache 복원이 여기로 오니, 바뀐 유저의 칸만 다시 그린다.
         const applyStored = (next: RatioData | null): void => {
             const before = state.ratios;
             const ratios = trimRatios({...next?.ratio, ...unsaved});
@@ -240,8 +230,7 @@ export default defineModule(meta, {
             rebuildUsers(ctx, state, changed);
         };
 
-        // 감시는 읽기 전에 건다. 읽는 사이 다른 탭이 저장한 값을 놓치면 아래 저장이 그 값을 지운다 (storageSync와 같다).
-        // 읽는 동안 온 값은 모아 두었다가 읽은 값 대신 쓴다.
+        // 감시는 읽기 전에 건다. 읽는 사이 온 값은 모아 뒀다가 읽은 값 대신 쓴다.
         let loading = true;
         let early: RatioData | null | undefined;
         watchStorage<RatioData>(ratioKey, (next) => {
@@ -257,8 +246,7 @@ export default defineModule(meta, {
         loading = false;
         state.ratios = (early === undefined ? stored : early)?.ratio ?? {};
         publishRatios(ctx, state);
-        // 페이지를 떠날 때도 끝나도록 저장소 호출은 한 번이다. ratios에는 위 감시가 다른 탭의 저장을 이미 합쳐 두었다.
-        // unsaved는 쓰기가 끝난 뒤 비워야 그사이 온 다른 탭의 저장에도 이 탭의 값이 남는다. 쓰는 사이 받은 글댓비는 남기도록 batch에 든 것만 지운다.
+        // unsaved는 쓰기가 끝난 뒤 batch에 든 것만 지워, 쓰는 사이 받은 글댓비를 지우지 않는다.
         const saver = batchedSave(ctx, RATIO_SAVE_DELAY, async () => {
             const batch = {...unsaved};
             if (Object.keys(batch).length === 0) return;
@@ -289,8 +277,7 @@ export default defineModule(meta, {
             saver.schedule();
         };
 
-        // 미리보기, 버블, 새 글 조회가 갤로그에서 새로 받은 값을 모두 저장한다. 이미 받은 사람을 다시 묻지 않는다.
-        // 새 글 조회는 한 번에 최대 10명을 받아 uid마다 불린다. 모아서 한 번만 올리고 다시 그린다 (notifyRowsHidden과 같은 식).
+        // 미리보기, 버블, 새 글 조회가 받은 값을 모두 저장한다. 새 글 조회는 uid마다 불리므로 모아 한 번만 한다.
         let incoming: (readonly [string, GallogActivity])[] = [];
         ctx.addCleanup(onGallogActivity((uid, activity) => {
             if (!ctx.settings.checkRatio || incoming.push([uid, activity]) > 1) return;
@@ -313,8 +300,7 @@ export default defineModule(meta, {
             if (stale.length === 0) return;
             for (const uid of stale) pending.add(uid);
 
-            // 실패는 uid마다 흡수한다. 한 명이 실패해도 받아 온 나머지는 저장한다 (실패한 사람은 배지만 빠진다).
-            // 버블, 미리보기가 이미 받았거나 받는 중인 사람은 그 결과를 같이 쓴다 (getGallogActivity의 캐시).
+            // 실패는 uid마다 흡수해 나머지는 저장한다. 버블·미리보기가 받은 값도 같이 쓴다 (캐시).
             void Promise.all(stale.map(async (uid) => [uid, await getGallogActivity(uid)] as const)).then(async (results) => {
                 for (const [uid, info] of results) {
                     if (!info) failedRatios.set(uid, true);

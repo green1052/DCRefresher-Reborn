@@ -6,7 +6,7 @@ import {isRecord} from "@/utils/record";
 import {dcBody, resultMessage, type SubmitResult, submitResult} from "./response";
 import type {BlockDay, BlockReason, GalleryPreData, PostInfo} from "./types";
 
-/** 관리 요청 결과. 디시 관리 API는 {"result": "success" | "fail", "msg": "…"}를 돌려준다. */
+/** 관리 요청 결과. 디시 관리 API는 {"result": "success" | "fail", "msg": "..."}를 돌려준다. */
 export interface ManageResult {
     success: boolean;
     /** 디시가 준 안내 문구 (없을 수 있음). */

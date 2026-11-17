@@ -22,16 +22,12 @@ import {NO_REPLY, parseDate, refreshCommentsOf, toggled, usePreviewStore} from "
 import {TimeStamp} from "./TimeStamp";
 import {UserCard} from "./UserCard";
 
-// 닉콘(a.writer_nikcon img)의 src. 댓글마다 DOMParser를 돌리지 않게 정규식으로 읽는다.
-// 디시는 작은따옴표를 쓰지만 따옴표 없는 값도 받는다.
+// 닉콘의 src - 댓글마다 DOMParser를 돌리지 않게 정규식으로 읽는다.
 export const extractIcon = (html: string | undefined): string | undefined => html?.match(/writer_nikcon[^>]*>\s*<img\b[^>]*?\ssrc=["']?([^"'\s>]+)/)?.[1];
 
 export const extractIp = (html: string | undefined): string | undefined => html?.match(/class=["']?ip["']?[^>]*>\s*\(([^)]+)\)/)?.[1];
 
-/**
- * 유튜브식 답글 트리. 부모 이름 아래에서 내려온 선이 답글마다 ㄴ자로 꺾여 들어간다 (x좌표: 부모 본문 시작 32px + 12px = 답글 안에서 12px).
- * 선은 모두 칸 안에 그려 content-visibility로 잘리지 않는다. 불투명 색을 쓴다: ㄴ과 이어지는 세로선이 겹치는 구간이 반투명이면 두 번 칠해져 진해진다.
- */
+/** 유튜브식 답글 트리 - 선은 칸 안에 그려 content-visibility에 잘리지 않고, 이중 칠을 피해 불투명 색을 쓴다. */
 // Tailwind가 소스에서 클래스 이름을 읽어 CSS를 만들므로 이어 붙이지 않고 다 적는다.
 /** 부모: 본문 아래 여백만큼 세로선 (본문이 여러 줄이어도 글자를 가로지르지 않게) → 첫 답글의 ㄴ으로 이어진다. */
 const THREAD_OPEN = "after:pointer-events-none after:absolute after:bottom-0 after:left-11 after:h-2 after:border-l-2 after:border-zinc-300 after:content-[''] dark:after:border-zinc-700";
@@ -52,10 +48,7 @@ interface CommentProps {
     isAdmin: boolean;
 }
 
-/**
- * memo로 감싸 keepUnchanged가 객체를 유지한 댓글은 다시 그리지 않는다.
- * 감싸지 않으면 자동 새로고침, 추천, 차단 목록 변경마다 댓글 전부를 다시 그린다.
- */
+/** memo - processKeepingUnchanged가 유지한 댓글은 다시 그리지 않는다. */
 export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply, isAdmin}: CommentProps) => {
     // reply 객체째 구독하면 답글 버튼 하나에 모든 댓글이 다시 그려지므로, 이 댓글이 대상인지만 구독한다.
     const replying = usePreviewStore((s) => s.reply.replyNo === comment.no);
@@ -80,21 +73,17 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
     const who = user.nick ?? user.id ?? user.ip;
 
     const isDeleted = comment.is_delete === "1";
-    // 디시처럼 멤버만 댓글(allow_reply)이면 답글도 막고, 답글이 막힌 댓글(reply_w)엔 버튼을 두지 않는다.
-    // 음성 댓글은 디시도 reply_w와 상관없이 답글 버튼을 단다.
-    // 그린 깊이(depth prop)가 아니라 댓글 자체의 깊이로 본다. 부모를 숨겨 들여쓰지 않은 답글도 답글이다.
+    // 멤버만 댓글이면 답글도 막고 reply_w가 막힌 댓글엔 버튼을 두지 않는다(음성은 예외).
     const canReply = !isDeleted && allowReply && (comment.depth > 0 || comment.voice !== undefined || comment.reply_w !== "N");
     const canDelete =
         !isDeleted && (comment.del_btn === "Y" || comment.my_cmt === "Y" || isAdmin || (!comment.user_id && Boolean(comment.ip)));
 
-    // 요청 중에는 X를 막는다. 다시 누르면 같은 삭제가 또 나가 성공 알림 뒤에 실패 알림이 뜬다.
-    // 이 댓글이 요청 중인지만 구독한다 (replying과 같은 까닭).
+    // 요청 중에는 X를 막는다 - 다시 누르면 같은 삭제가 또 나간다.
     const deleting = usePreviewStore((s) => s.deletingComments.has(comment.no));
 
     // 디시콘(img/video)과 글자콘. 답글이면 앞에 멘션이 붙어 오므로 ^로 고정하지 않고 찾는다.
     const isDccon = /<(img|video) class=|<div class="coment_dccon_txt/.test(comment.memo);
-    // 정화한 HTML(core/preview/comments.ts)을 그대로 넣는다. 정화 뒤에 고치면(줄바꿈을 <br>로 등) 브라우저가 다른 트리로 읽을 수 있어
-    // 글 댓글의 줄바꿈은 CSS(whitespace-pre-line)로 보인다. 붙어 온 디시콘 태그는 splitDccons가 이미 나눴다.
+    // 정화한 HTML을 그대로 넣는다 - 고치면 다른 트리로 읽힐 수 있어 줄바꿈은 CSS로 보인다.
     const html = comment.memo;
 
     // 글자콘 크기는 그려진 뒤, 화면 근처에 오면 잰다 (fitTxtconNearView). html이 바뀌면 내용을 새로 넣으므로 다시 잰다. 글만 있는 댓글(대부분)은 훑지 않는다.
@@ -114,8 +103,7 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
     }, [html, isDccon]);
 
     return (
-        // 화면 밖 댓글은 레이아웃, 스타일 계산을 건너뛴다 (댓글 수백 개인 글을 열 때 크게 준다).
-        // 그리지 않은 댓글은 가장 흔한 한 줄 댓글 높이(48px)로 어림한다. 크게 잡으면 답글을 펼칠 때 높이와 스크롤 길이가 부풀었다가 줄어든다.
+        // 화면 밖 댓글은 레이아웃 계산을 건너뛴다 - 그리지 않은 댓글은 한 줄 댓글 높이(48px)로 어림한다.
         <div className={cn("refresher-comment relative px-8 py-2 [contain-intrinsic-size:auto_48px] [content-visibility:auto] hover:bg-muted/50",
                            // 자동 새로고침으로 새로 들어온 댓글 (previewStore의 freshComments). 강조색으로 깔았다가 걷는다.
                            fresh && "animate-fresh-comment",
@@ -131,9 +119,7 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
                     <UserCard user={user} op={isOp}/>
                     {comment.duplicates ? <span className="text-xs whitespace-nowrap text-muted-foreground">같은 댓글 ×{comment.duplicates}</span> : null}
                     {/* 툴팁은 브라우저 기본(title)을 쓴다. 스레드마다 툴팁 부품을 달면 댓글이 많은 글을 열 때 느려진다. */}
-                    {/* 댓글마다 되풀이되는 버튼(접기, 답글, 삭제)은 Base UI Button 대신 shadcn 버튼 모양(buttonVariants)의 기본 button을 쓴다.
-                        Base UI Button은 버튼마다 이벤트 리스너를 여럿 달아 댓글이 천 개면 그것만 8천 개가 넘는다. 기본 button도 키보드, disabled 동작은 같다. */}
-                    {/* 펼친 상태는 aria-expanded로 알린다. ghost 버튼이 펼친 상태에 까는 배경은 지워 보이는 모습은 그대로 둔다. */}
+                    {/* 되풀이되는 버튼은 Base UI가 리스너를 여럿 달아 느려서 buttonVariants 모양의 기본 button을 쓴다. */}
                     {depth === 0 && replyCount > 1 && (
                         <button type="button" className={cn(buttonVariants({size: "icon-xs", variant: "ghost", className: "aria-expanded:not-hover:bg-transparent"}))}
                                 aria-label={`${who} 댓글의 답글 ${replyCount}개`} aria-expanded={!collapsed}
@@ -210,10 +196,7 @@ export const notifyDeleted = async (preData: GalleryPreData, request: Promise<Ma
     return deleted;
 };
 
-/**
- * 디시의 댓삭튀 차단 경고 (comment.js chk_notice_comment_avoid). 이 규칙을 켠 갤러리는 공지글에 notice_comment_del_avoid를 '1'로 두고,
- * 5분 안에 지운 댓글의 작성자를 매니저 이름으로 차단한다. 차단은 디시 서버가 하므로 미리보기에서 지워도 똑같이 당한다.
- */
+/** 디시 댓삭튀 차단 - 켠 갤러리에선 5분 안에 지운 댓글 작성자가 매니저 이름으로 차단된다. */
 export const noticeDeleteWarning = (fields: CommentForm["fields"], date: string): string | undefined => {
     const field = (key: string): string | undefined => fields.find(([name]) => name === key)?.[1];
     if (field("notice_comment_del_avoid") !== "1" || !date || Date.now() - parseDate(date).getTime() >= 5 * 60_000) return undefined;
@@ -221,12 +204,7 @@ export const noticeDeleteWarning = (fields: CommentForm["fields"], date: string)
     return `공지글에 작성한 댓글을 5분 내 삭제 시 매니저에 의해 [${field("notice_comment_del_avoid_msg") ?? ""}] 사유로 차단됩니다.`;
 };
 
-/**
- * 댓글 X가 띄운 삭제 확인 창(deletePrompt). CommentList가 한 번만 그린다.
- * 댓글 안에 그리면 답글 수가 1개와 2개 사이를 오갈 때(Thread가 답글을 Collapsible 안팎으로 옮긴다) 그 답글이 새로 마운트되어
- * 창이 말없이 닫히고 입력하던 비밀번호도 사라진다.
- * 비밀번호 없이 지워지는 삭제(관리자, 회원 본인)는 X 한 번에 되돌릴 수 없으니 확인한다 (디시 comment.js와 같음). 비밀번호 삭제는 비밀번호 창이 확인을 겸한다.
- */
+/** 삭제 확인 창 - CommentList가 한 번만 그린다(댓글 안에 두면 답글 이동에 새로 마운트되어 창이 닫힌다). */
 export const CommentDeletePrompt = ({comments, isAdmin}: { comments: ProcessedComment[]; isAdmin: boolean }) => {
     const prompt = usePreviewStore((s) => s.deletePrompt);
     const fields = usePreviewStore((s) => s.post?.commentForm.fields);
@@ -249,10 +227,7 @@ export const CommentDeletePrompt = ({comments, isAdmin}: { comments: ProcessedCo
     );
 };
 
-/**
- * 유동 댓글을 지울 비밀번호를 묻는다. 미리보기에서 쓴 댓글은 저장해 둔 비밀번호를 썼으므로 비워 두면 그것을 쓴다.
- * 저장된 비밀번호는 칸에 채우지 않는다 (WriteComment와 같은 까닭).
- */
+/** 유동 댓글 삭제 비밀번호 - 비워 두면 저장해 둔 비밀번호를 쓴다. */
 const PasswordDialog = ({warning, onSubmit, onClose}: { warning?: string; onSubmit: (password: string) => void; onClose: () => void }) => {
     const [saved] = useState(() => savedNonmember().pw);
     const [password, setPassword] = useState("");

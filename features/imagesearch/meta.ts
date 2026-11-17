@@ -17,8 +17,7 @@ export const ENGINE_IDS = objectKeys(ENGINES);
 
 export default defineModuleMeta({
     id: "imagesearch",
-    // 메뉴는 background.ts가 만들고 처리한다. 페이지에선 할 일이 없어 index.ts를 두지 않는다.
-    // 엔진마다 켜기/끄기. background.ts가 이 값으로 메뉴를 만든다.
+    // 메뉴는 background.ts가 만든다. 페이지에 할 일이 없어 index.ts가 없다.
     settings: Object.fromEntries(ENGINE_IDS.map((id) => [id, {type: "check", default: id === "saucenao"}])) as
         Record<(typeof ENGINE_IDS)[number], Extract<SettingSchema, { type: "check" }>>
 });

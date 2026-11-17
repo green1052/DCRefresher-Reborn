@@ -6,7 +6,6 @@ import {COUNT_CELLS, COUNT_TEXT, NOTICE_ICON} from "./markup";
 
 // 받아온 목록을 지금 목록 자리에 넣는 일. 요청, 주기와 상관없이 DOM만 다룬다.
 
-/** 새 글 등장 효과(refresherNewPost와 그 지연)를 뗀다. */
 export const clearNewPost = (row: HTMLElement): void => {
     row.classList.remove("refresherNewPost");
     row.style.removeProperty("animation-delay");
@@ -15,11 +14,7 @@ export const clearNewPost = (row: HTMLElement): void => {
 /** 새 글 판정용 행 키. 번호 없는 행(설문, AD, 다른 갤러리 공지)은 번호 칸 글자로 구분한다. */
 const rowKey = (row: HTMLElement): string => rowPostNo(row) ?? row.querySelector(".gall_num")?.textContent ?? "";
 
-/**
- * 받아온 행의 원래 HTML(체크박스 칸, 강조, 효과를 입히기 전)에서 수 칸 글자를 비운 틀. 틀이 같은 행은 갈아끼우지 않고 수만 고친다.
- * 갈아끼우면 필터, 차단 검사, 배지, 리스너가 다시 돌고 hover가 풀린다. 정규식이 못 비우면 달라 보여 갈아끼울 뿐이다.
- * 틀은 해시로만 둔다. HTML을 그대로 두면 목록 탭마다 행 HTML(약 150KB)을 계속 들고 있는다.
- */
+/** 수 칸을 비운 행 HTML의 해시. 틀이 같으면 갈아끼우지 않고 수만 고친다. */
 const rowFrames = new WeakMap<Element, number>();
 const frameOf = (html: string): number => hash53(html.replace(COUNT_TEXT, "$1"));
 
@@ -32,19 +27,13 @@ const syncCounts = (target: Element, source: Element): void => {
     }
 };
 
-/**
- * 새 목록에서 빠진 글 행을 제자리에 붉게 남긴다. 한 번 남긴 행은 다음 새로고침에도 남는다.
- * 위에 새 글이 n개 들어오면 맨 아래 n개는 다음 페이지로 밀려난 것이라 남기지 않고, 남긴 만큼 아래 행을 빼 행 수를 맞춘다.
- * first: 남아 있던 마지막 글 다음 행(다음 페이지에서 올라온 첫 행). 맨 아래 글이 지워졌으면 그 앞에 끼워야 행 수를 맞출 때 잘리지 않는다.
- * 새 목록에는 복제본을 끼우고 옛 행은 둔다. 틀이 같아 replaceList가 제자리에서 고칠 수 있다. 옮겨 넣으면 남긴 행이 있는 동안 매번 목록을 통째로 갈아끼운다.
- */
+/** 새 목록에 빠진 글 행을 붉게 제자리에 남긴다. 새 글 n개가 들어오면 맨 아래 n개는 밀려난 것이니 남기지 않는다. */
 const keepDeletedRows = (oldRows: HTMLTableRowElement[], newKeys: Set<string>, newList: HTMLElement, newPostCount: number, first: Element | null): void => {
     const newRows = new Map(Array.from(newList.querySelectorAll<HTMLTableRowElement>(":scope > tr"), (row) => [rowKey(row), row]));
     // 받은 행 수. 한 페이지가 안 차는 갤러리는 목록이 길어지므로, 옛 행 수가 아니라 남긴 행 수만큼만 뺀다.
     const received = newList.children.length;
 
-    // 옛 목록에서 바로 아래에 있던 행 앞에 끼운다. 새 글이 위에 들어오면 같이 내려가다 다음 페이지로 밀려난다.
-    // 위 행 뒤에 끼우면 공지 바로 아래 글이 새 글보다 위에 붙박이고, 인덱스로 세면 새로고침마다 조금씩 밀린다.
+    // 옛 목록에서 바로 아래에 있던 행 앞에 끼운다. 위 행 뒤에 끼우면 공지 아래 글이 새 글보다 위에 붙박인다.
     let next = first;
     for (let index = oldRows.length - 1; index >= 0; index--) {
         const row = oldRows[index]!;
@@ -68,10 +57,7 @@ const keepDeletedRows = (oldRows: HTMLTableRowElement[], newKeys: Set<string>, n
     while (newList.children.length > Math.max(oldRows.length, received)) newList.lastElementChild?.remove();
 };
 
-/**
- * 새 목록이 옛 목록의 한 자리(at)에 행 count개가 끼어들고 그만큼 아래가 잘린 모양이면 그 자리와 개수, 아니면 null.
- * 순서가 같으면 count는 0이다. 자리로 짝지으므로 키가 겹치는 행(번호 없는 설문, AD)도 된다.
- */
+/** 새 목록이 옛 목록의 한 자리에 count개 끼어들고 아래가 그만큼 잘렸으면 그 자리와 개수, 아니면 null. */
 const insertionOf = (oldKeys: string[], newKeys: string[]): { at: number; count: number } | null => {
     let at = 0;
     while (at < oldKeys.length && at < newKeys.length && oldKeys[at] === newKeys[at]) at++;
@@ -102,19 +88,13 @@ interface ReplaceOptions {
     keepDeleted: boolean;
 }
 
-/**
- * 거르지 않은 목록(개념글, 공지, 말머리, 작성자 거르기가 아닌)의 1페이지인지. 새 글이 들어오고, 빠진 글이 지워진 글인 목록이다.
- * 작성자 거르기(features/search)는 다음 쪽 글을 이어 붙이므로, 1쪽에 없다고 지워진 글이 아니다.
- */
+/** 새 글이 들어오고 빠진 글이 지워진 글인, 거르기 없는 1페이지인지. 작성자 거르기는 다음 쪽을 이어 붙인다. */
 export const isWholeFirstPage = (url: string): boolean => {
     const params = new URL(url).searchParams;
     return (params.get("page") ?? "1") === "1" && !params.has("exception_mode") && !params.has("search_head") && !writerFilter(url);
 };
 
-/**
- * 같은 자리의 같은 글 행인지 제목과 작성자로 본다. 틀이 없는 행(페이지가 처음 그린 행)을 견줄 때 쓴다.
- * 수 칸 개수도 같아야 한다. 댓글이 처음 달리거나 다 지워지면 댓글 수 칸이 생기거나 없어져, syncCounts가 자리로 짝지은 조회, 추천 칸이 밀린다.
- */
+/** 제목·작성자로 같은 행인지 본다. 수 칸 개수도 같아야 syncCounts가 밀리지 않는다. */
 const sameRow = (a: Element, b: Element): boolean => {
     const title = (row: Element) => row.querySelector(".gall_tit > a")?.textContent;
     const writer = (row: Element) => {
@@ -125,10 +105,7 @@ const sameRow = (a: Element, b: Element): boolean => {
     return title(a) === title(b) && writer(a) === writer(b) && counts(a) === counts(b);
 };
 
-/**
- * 받아온 목록(newList)을 지금 목록(oldList) 자리에 넣고, 새로 들어온 글 행(added)과 행을 넣거나 빼거나 갈아끼웠는지(changed)를 돌려준다.
- * 수 칸 글자만 고친 것은 바뀐 것이 아니다.
- */
+/** 받아온 목록을 지금 목록 자리에 넣고 새 글 행(added)과 행을 고쳤는지(changed)를 돌려준다. */
 export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigated, search, searchType, fadeIn, keepDeleted}: ReplaceOptions): { added: HTMLTableRowElement[]; changed: boolean } => {
     const oldRows = Array.from(oldList.querySelectorAll<HTMLTableRowElement>(":scope > tr"));
     const oldKeys = oldRows.map(rowKey);
@@ -137,8 +114,7 @@ export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigat
     const newRows = Array.from(newList.querySelectorAll<HTMLTableRowElement>(":scope > tr"));
     const newKeys = newRows.map(rowKey);
     const newPostList: HTMLTableRowElement[] = [];
-    // 남아 있던 글 가운데 마지막 것보다 아래에 나타난 행은 위 글이 지워져 다음 페이지에서 올라온 것이라 새 글이 아니다.
-    // 남은 글이 하나도 없으면(한꺼번에 많이 올라온 경우) 모두 새 글로 본다.
+    // 남아 있던 마지막 글보다 아래의 새 행은 지워진 글이 올라온 것이니 새 글이 아니다.
     const lastKept = newKeys.findLastIndex((key) => oldCacheSet.has(key));
 
     const commentSearch = searchType === "search_comment";
@@ -177,9 +153,7 @@ export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigat
         keepDeletedRows(oldRows, new Set(newKeys), newList, newPostList.length, newRows[lastKept + 1] ?? null);
     }
 
-    // 행 순서가 같거나 한 자리(공지 아래)에 새 글이 끼어들고 그만큼 아래가 밀려난 것뿐이면 제자리에서 고친다.
-    // 그대로인 행은 hover, 리스너가 남고 필터, 배치도 다시 돌지 않는다.
-    // 검색 결과는 강조와 글, 댓글 행 짝이 얽혀 있어 통째로 바꾼다. 남긴 삭제된 글 행(복제본)도 새 목록의 행으로 친다.
+    // 순서가 같거나 한 자리에 새 글이 끼어든 것뿐이면 제자리에서 고친다 (hover·리스너 유지). 검색 결과는 통째로 바꾼다.
     const rows = keepDeleted ? Array.from(newList.querySelectorAll<HTMLTableRowElement>(":scope > tr")) : newRows;
     const shift = !navigated && search === undefined ? insertionOf(oldKeys, rows.map(rowKey)) : null;
     if (shift) {

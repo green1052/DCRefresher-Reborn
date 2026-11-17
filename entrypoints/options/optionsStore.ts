@@ -3,9 +3,8 @@ import {create} from "zustand";
 import {useUiStore} from "@/stores/ui";
 
 interface OptionsState {
-    /** 디시콘 비(로고 이스터에그). 누를 때마다 새 값(Date.now())이 들어가 비를 다시 마운트한다. 0이면 없다. */
+    /** 디시콘 비 이스터에그 - 새 값이 들어가면 비가 다시 마운트된다. */
     rain: number;
-    /** 확인 버튼만 있는 알림. App이 하나만 그린다. null이면 닫혀 있다. */
     notice: string | null;
     startRain: () => void;
     endRain: () => void;
@@ -22,13 +21,11 @@ export const useOptionsStore = create<OptionsState>()((set) => ({
     endRain: () => set({rain: 0})
 }));
 
-/** 확인해야 하는 옵션 페이지 알림(실패 등)을 띄운다. 탭마다 알림 상태를 따로 두지 않고 이것을 쓴다. */
+/** 확인 알림(실패 등) - 탭마다 상태를 두지 않고 이것으로 띄운다. */
 export const notify = (message: string): void => useOptionsStore.setState({notice: message});
 
-/** 성공 알림. undo가 있으면 토스트에 되돌리기 버튼을 단다. */
 export type Done = string | { message: string; undo: () => void };
 
-/** 성공을 알린다. 확인할 것이 없으니 막지 않는 토스트로 띄운다 (App의 ToastHost). */
 export const notifyDone = (done: Done): void => {
     const {showToast} = useUiStore.getState();
     if (typeof done === "string") showToast(done);
@@ -36,6 +33,5 @@ export const notifyDone = (done: Done): void => {
     else showToast(done.message, "info", 20_000, {label: "되돌리기", run: done.undo});
 };
 
-/** text를 클립보드에 복사하고 결과를 알린다. */
 export const copyText = (text: string, done: Done, failed: string): Promise<void> =>
     navigator.clipboard.writeText(text).then(() => notifyDone(done), () => notify(failed));

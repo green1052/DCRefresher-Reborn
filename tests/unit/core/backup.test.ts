@@ -94,7 +94,6 @@ describe("runBackup / readCloudBackup", () => {
 
         await browser.storage.local.set({"refresher:modules": {small: true}});
         await runBackup("manual");
-        // 다른 칸(auto)의 조각은 그대로다.
         expect(await syncKeys()).toEqual(["autoBackup", "autoBackup:0", "backup", "backup:0"]);
         expect((await readCloudBackup("manual"))?.data).toEqual({"refresher:modules": {small: true}});
     });
@@ -125,7 +124,6 @@ describe("runBackup / readCloudBackup", () => {
         await runBackup("manual");
 
         expect(remove).not.toHaveBeenCalled();
-        // 다음 백업이 그때 남은 조각을 치운다.
         set.mockRestore();
         remove.mockRestore();
         await runBackup("manual");

@@ -8,8 +8,7 @@ export default defineConfig({
     modules: ["@wxt-dev/auto-icons"],
     vite: () => ({
         plugins: [
-            // Tailwind의 자체 최적화는 대상 브라우저가 고정(Chrome 111, Firefox 128)이라 CSS 중첩을 풀고 접두어를 붙인다.
-            // 끄고 Vite의 압축(lightningcss)이 아래 cssTarget, 곧 manifest의 최소 버전에 맞추게 한다.
+            // Tailwind 최적화는 대상이 고정이라 끄고 Vite 압축(lightningcss)이 cssTarget에 맞추게 한다.
             tailwindcss({optimize: false})
         ],
         build: {
@@ -19,14 +18,11 @@ export default defineConfig({
         }
     }),
     hooks: {
-        // components, utils 자동 import 스캔은 제네릭 타입 인자(V 등)를 export로 잘못 읽어 경고만 낸다. 직접 import하므로 끈다.
-        // imports.dirs는 기본값과 합쳐지므로 여기서 비운다. WXT API(defineContentScript, browser 등) 자동 import는 남는다.
+        // 제네릭 타입 인자를 export로 잘못 읽어 경고만 내니 직접 import한다 - dirs는 기본값과 합쳐지므로 비운다.
         "config:resolved": (wxt) => {
             if (wxt.config.imports) wxt.config.imports.dirs = [];
         },
-        // 멀티페이지(HTML) 그룹에서 content-main의 파일 이름을 고정한다. 부트스트랩이 런타임에 찾는 경로라
-        // 해시가 들어가면 안 된다. WXT가 파일 이름 옵션을 일부러 덮어쓰므로(이슈 #177) 빌드가 끝난 설정을
-        // 이 훅에서 고친다(공식 예제 esm-content-script-ui가 같은 훅을 쓴다). 0.21에는 타입이 없어 캐스팅한다.
+        // 부트스트랩이 런타임에 찾는 경로라 content-main 파일 이름의 해시를 빼고, WXT가 덮어쓴 설정(이슈 #177)을 빌드 뒤에 고친다.
         "vite:build:extendConfig": ((group: unknown, config: {build?: {rollupOptions?: {output?: {entryFileNames?: unknown}}}}) => {
             if (!Array.isArray(group) || !group.some((entry) => entry?.name === "content-main")) return;
             const output = config.build?.rollupOptions?.output;
@@ -46,9 +42,7 @@ export default defineConfig({
         const firefox = browser === "firefox";
         return {
             name: "DCRefresher Reborn",
-            // 코드가 쓰는 API 중 가장 늦게 들어온 것에 맞춘다 (빌드가 바꿔 주지 않는다).
-            // Chrome 140: Uint8Array의 toBase64, fromBase64(백업, IP DB). Firefox 144: storage.local.getBytesInUse(정보 탭), getKeys(143).
-            // 다른 브라우저의 키는 알 수 없는 키라 manifest 경고로 남으므로 그 브라우저에만 넣는다.
+            // 코드가 쓰는 API 중 가장 늦은 것에 맞춘다 - Chrome 140(Uint8Array toBase64), Firefox 144(getBytesInUse).
             ...(firefox
                 ? {
                     browser_specific_settings: {
@@ -62,8 +56,7 @@ export default defineConfig({
                     }
                 }
                 : {minimum_chrome_version: "140"}),
-            // 이미지 차단(features/block/background.ts)이 본문 이미지를 다시 받지 않고 읽는 데 쓴다.
-            // 크롬은 CORS 헤더를 붙이는 규칙, 파이어폭스는 응답 스트림 필터다. 둘 다 설치, 업데이트 때 묻지 않는 권한이다.
+            // 이미지 차단이 본문 이미지를 다시 받지 않고 읽는 데 쓴다 - 설치 때 묻지 않는 권한이다.
             permissions: ["alarms", "contextMenus", "storage", "scripting", "unlimitedStorage",
                           ...(firefox ? ["declarativeNetRequest"] : ["declarativeNetRequestWithHostAccess"])],
             host_permissions: ["https://*.dcinside.com/*"],
@@ -77,8 +70,7 @@ export default defineConfig({
                     run_at: "document_start"
                 }
             ],
-            // 콘텐츠 스크립트 본문 청크(entrypoints/content/index.ts가 런타임에 불러온다)와 오버레이가 읽는 CSS.
-            // 웹 페이지에서도 접근할 수 있게 되므로 DC 페이지에만 연다. 양 브라우저 MV3 형태다.
+            // 콘텐츠 본문 청크와 오버레이 CSS - 웹 페이지에서 접근할 수 있으니 DC 페이지에만 연다.
             web_accessible_resources: [{matches: CONTENT_MATCHES, resources: ["chunks/*.js", "content-scripts/content.css"]}]
         };
     }

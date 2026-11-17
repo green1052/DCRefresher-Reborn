@@ -1,22 +1,14 @@
-/**
- * IP 대역(a.b) → 후보(조직명, 국가, VPN) 데이터.
- * 저장 형식(CompactIpData)은 DB 워크플로(scripts/build-db.ts)가 encodeIpData로 만들어 data 브랜치 ip.json으로 올리고,
- * 확장은 받은 문자열을 그대로 저장해 createIpLookup으로 읽는다. 쓰는 쪽과 읽는 쪽을 한 파일에 둔다.
- */
+/** IP 대역(a.b) → 후보 데이터. 인코더와 디코더를 한 파일에 둔다. */
 
 import {isRecord} from "@/utils/record";
 
-/** 저장 형식 버전. DB 메타(meta.format)에 적어 두고, 확장 업데이트로 바뀌면 같은 DB 버전이어도 다시 받는다 (core/database.ts). 파일에는 넣지 않는다 (모양으로 검사한다). */
+/** 저장 형식 버전. 메타에 두고 바뀌면 같은 DB 버전이어도 다시 받는다. */
 export const IP_FORMAT = 2;
 
 export interface CompactIpData {
-    /** 만든 시각 (UTC, 분까지. data 브랜치 version 파일과 같다). 두 파일은 CDN에 따로 캐시되므로 저장할 버전은 이것을 쓴다. */
+    /** 만든 시각. version 파일과 따로 캐시되어 저장 버전은 이것을 쓴다. */
     version?: string;
-    /**
-     * 65536칸 표(칸 번호 a*256+b)를 값이 같은 구간으로 줄인 것. base64(Uint16Array[구간 시작 × n, 값 × n]).
-     * 이웃 대역은 대개 같은 기관이라 구간이 칸 수의 절반도 안 된다. 값 0은 정보 없음,
-     * 그 밖에는 값-1이 meta 개수보다 작으면 meta 번호, 아니면 meta 개수 + lists 번호다.
-     */
+    /** 65536칸 표를 같은 값 구간으로 줄인 base64. 값-1이 meta 수 미만이면 meta 번호, 아니면 meta 수+lists 번호. */
     runs: string;
     /** 조직명. ""는 조직 없음 (국가만 아는 해외 대역 등). */
     orgs: string[];
@@ -43,10 +35,7 @@ const prefixIndex = (ip: string): number | undefined => {
 /** 후보를 같은지 견주는 키. */
 export const candidateKey = ({org, country, vpn}: IpCandidate): string => `${org ?? ""}\u0000${country ?? ""}\u0000${vpn ? 1 : 0}`;
 
-/**
- * 대역(a*256+b) → 후보들(유력한 순) → 저장 형식. 대역 순으로 넘기면 결과가 늘 같다.
- * 자주 나오는 후보가 앞 번호를 받게 해 meta, lists의 JSON을 줄인다.
- */
+/** 대역 → 후보들 → 저장 형식. 자주 나오는 후보에 앞 번호를 줘 JSON을 줄인다. */
 export const encodeIpData = (prefixes: ReadonlyMap<number, readonly IpCandidate[]>): CompactIpData => {
     const frequency = new Map<string, { candidate: IpCandidate; count: number }>();
     for (const candidates of prefixes.values()) {
@@ -59,7 +48,7 @@ export const encodeIpData = (prefixes: ReadonlyMap<number, readonly IpCandidate[
     const ordered = [...frequency.values()].sort((a, b) => b.count - a.count).map(({candidate}) => candidate);
     const metaIndex = new Map(ordered.map((candidate, index) => [candidateKey(candidate), index]));
 
-    // 처음 나온 순서대로 번호를 매긴다. Map이 그 순서를 지키므로 키 목록이 곧 표다 (indexOf로 찾으면 조직 수천 개에 후보마다 훑는다).
+    // Map이 삽입 순서를 지키므로 키 목록이 곧 번호 표다.
     const orgIndex = new Map<string, number>();
     const countryIndex = new Map<string, number>();
     const indexIn = (index: Map<string, number>, value: string): number => {
@@ -106,23 +95,17 @@ export const encodeIpData = (prefixes: ReadonlyMap<number, readonly IpCandidate[
     return {runs: new Uint8Array(Uint16Array.from([...starts, ...values]).buffer).toBase64(), orgs, countries, meta, lists};
 };
 
-/** 저장된(받은) 문자열 → 저장 형식. 비었거나 옛 형식이면 null (옛 형식은 다음 갱신이 새로 받는다). JSON이 깨졌으면 던진다. */
+/** 받은 문자열 → 저장 형식. 비었거나 옛 형식이면 null. */
 export const parseIpData = (text: string): CompactIpData | null => {
     if (!text) return null;
     const data: unknown = JSON.parse(text);
     return isCompactIpData(data) ? data : null;
 };
 
-/**
- * 배경이 모양을 검사하고 저장한 문자열 → 저장 형식. 페이지마다 다시 검사하지 않는다 (탭마다 수 ms). 저장 형식 번호는 부르는 쪽이 본다.
- * JSON이 깨졌으면 던진다.
- */
+/** 배경이 검사한 문자열 → 저장 형식. 페이지마다 다시 검사하지 않는다. */
 export const parseStoredIpData = (text: string): CompactIpData => JSON.parse(text);
 
-/**
- * 모양까지 본다. 받은 파일은 그대로 저장되고 페이지마다 읽히므로, 필드 하나만 틀려도 배지, 미리보기가 깨진다.
- * 번호가 범위를 벗어나면 다른 기관, 국가가 조용히 보이므로 meta, lists의 번호도 본다.
- */
+/** 번호가 벗어나면 다른 기관이 조용히 보이므로 meta, lists 번호 범위까지 본다. */
 const isCompactIpData = (data: unknown): data is CompactIpData => {
     if (!isRecord(data) || typeof data.runs !== "string" || (data.version !== undefined && typeof data.version !== "string")) return false;
     const {orgs, countries, meta, lists} = data;
@@ -147,7 +130,7 @@ export const createIpLookup = (data: CompactIpData): ((ip: string) => IpCandidat
     if (runs.length % 2 !== 0) throw new Error("IP 데이터 형식이 올바르지 않습니다.");
     const count = runs.length / 2;
 
-    // 시작점이 늘지 않거나 값(=후보 번호+1)이 meta, lists 범위 밖이면 표, 조회가 조용히 어긋나므로 여기서 던진다.
+    // 시작점이나 값이 어긋나면 조용히 잘못 보이므로 여기서 던진다.
     const total = data.meta.length / 3 + data.lists.length;
     for (let run = 0; run < count; run++) {
         if ((run > 0 && runs[run]! <= runs[run - 1]!) || runs[count + run]! - 1 >= total) throw new Error("IP 데이터 형식이 올바르지 않습니다.");
@@ -156,9 +139,7 @@ export const createIpLookup = (data: CompactIpData): ((ip: string) => IpCandidat
     const table = new Uint16Array(65536);
     for (let run = 0; run < count; run++) table.fill(runs[count + run]!, runs[run]!, run + 1 < count ? runs[run + 1]! : 65536);
 
-    // 조회에 쓰는 필드만 클로저에 남긴다. data를 통째로 잡으면 이미 디코드한 base64 문자열이 탭마다 남는다.
-    // meta와 lists는 작은 JS 배열 1만 개쯤이라 탭마다 0.5MB를 차지한다. 형식화 배열 하나로 이어 두면 그 10분의 1이다.
-    // 번호는 모두 표 값(Uint16) 범위 안이다. orgs, countries도 쓰이는 것만 담기므로 후보 수(65535개)를 넘지 않는다.
+    // 조회에 쓰는 필드만 남긴다. data를 통째로 잡으면 base64 문자열과 JS 배열이 탭마다 남는다.
     const {orgs, countries} = data;
     const meta = Uint16Array.from(data.meta);
     const metaCount = meta.length / 3;

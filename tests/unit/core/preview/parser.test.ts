@@ -133,7 +133,6 @@ describe("parsePostInfo", () => {
         const box = contents(parse(page({body: "<img data-original=\"https://a.dcinside.com/1.jpg\"><img data-original=\"https://a.dcinside.com/2.jpg\" data-block=\"1\">"})));
         const [shown, hidden] = box.querySelectorAll("img");
         expect(shown?.getAttribute("src")).toBe("https://a.dcinside.com/1.jpg");
-        // 관리자가 가린 이미지는 가림 버튼을 누를 때 옮긴다.
         expect(hidden?.hasAttribute("src")).toBe(false);
     });
 

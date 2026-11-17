@@ -32,7 +32,7 @@ describe("메모 탭의 색 점", () => {
         expect((await dotOf("#ff0000")).style.backgroundColor).toBe("rgb(255, 0, 0)");
     });
 
-    it("가져온 메모 색의 url(…)을 배경 이미지로 불러오지 않는다", async () => {
+    it("가져온 메모 색의 url(...)을 배경 이미지로 불러오지 않는다", async () => {
         const dot = await dotOf("url(https://example.com/x.png)");
         expect(dot.style.backgroundImage).toBe("");
         expect(dot.getAttribute("style") ?? "").not.toContain("url(");

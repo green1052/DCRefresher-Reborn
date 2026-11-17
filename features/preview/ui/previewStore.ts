@@ -19,7 +19,6 @@ export interface ErrorState {
 
 export type ManageKind = "notice" | "recommend" | "delete" | "bump";
 
-/** 댓글 스레드 순서: 등록순, 최신순, 답글순 (CommentList.tsx의 threadParents). */
 export type CommentOrderValue = "oldest" | "newest" | "replies";
 
 /** 공지, 개념글 [등록, 해제] 동작. 관리 패널의 확인 문구와 결과 알림이 같이 쓴다. */
@@ -34,10 +33,7 @@ export interface ViewerImage {
     pop?: string;
 }
 
-/**
- * blockMedia: blockImage로 이미지를 가릴지. 전체 미리보기와 같은 클래스로 가린다.
- * interactive: 마우스로 카드를 조작할 수 있다 (tooltipInteraction). 커서를 따라다니지 않는다.
- */
+/** blockMedia: 전체 미리보기와 같은 클래스로 이미지를 가린다. interactive: 마우스로 카드를 조작할 수 있다. */
 type MiniState = { x: number; y: number; title: string; contents: string; blockMedia: boolean; interactive: boolean; gallery: string };
 
 /** 게시글을 새로 열 때마다 초기화되는 상태. */
@@ -205,10 +201,7 @@ let signalSeq = 0;
 
 const KST = 9 * 3_600_000;
 
-/**
- * 디시 시각 문자열을 읽는다 ("2026.09.26 02:29:40", 올해 것은 연도 없이 "09.26 02:29:40").
- * 한국 시간이므로 +09:00을 붙인다. 브라우저 시간대로 읽으면 해외에서 어긋난다.
- */
+/** 디시 시각 문자열(올해 것은 연도 없음)을 +09:00을 붙여 읽는다 - 브라우저 시간대로 읽으면 해외에서 어긋난다. */
 export const parseDate = (value: string): Date => {
     const missingYear = value.substring(0, 4).includes(".");
     // 빠진 연도도 한국 날짜 기준으로 채운다. 로컬 연도를 쓰면 해가 바뀌는 무렵 시차로 한 해 어긋난다.
@@ -267,18 +260,13 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     moveMini: (clientX, clientY) => set((state) => (state.mini ? {mini: {...state.mini, ...miniPosition(clientX, clientY)}} : state))
 }));
 
-/**
- * 미리보기에서 연 유저 버블, 메모 창이 갤러리 한정 차단, 메모에 쓰는 갤러리 (SelectedUser.gallery). 미리보기가 떠 있지 않으면 undefined라 이 문서의 갤러리를 쓴다.
- */
+/** 유저 버블, 메모 창이 쓸 갤러리 - 미리보기가 아니면 undefined라 이 문서의 갤러리를 쓴다. */
 export const previewGallery = (): string | undefined => {
     const {visible, preData} = usePreviewStore.getState();
     return visible ? preData?.gallery : undefined;
 };
 
-/**
- * 댓글을 올리거나 지운 글의 댓글 목록을 새로 받는다. 이 글이 열려 있을 때만 받고, 캐시의 목록은 늘 낡은 것으로 표시한다.
- * 두면 보내는 사이 다른 글에 갔다 10초 안에 돌아올 때 바뀌기 전 목록을 방금 받은 것(COMMENTS_REUSE)으로 쳐 다시 받지 않는다.
- */
+/** 댓글을 올리거나 지운 글의 목록을 새로 받는다 - 캐시 목록은 낡은 것으로 표시해 10초 재사용 창을 피한다. */
 export const refreshCommentsOf = (preData: GalleryPreData): void => {
     setEntry(preData, {commentsAt: 0});
     const current = usePreviewStore.getState();

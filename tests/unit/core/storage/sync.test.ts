@@ -93,7 +93,6 @@ describe("storageSync", () => {
         apply.mockClear();
         await fakeBrowser.storage.local.set({a: 1});
 
-        // 감시가 두 번 걸렸으면 두 번 불린다.
         expect(apply).toHaveBeenCalledTimes(1);
     });
 
@@ -164,7 +163,6 @@ describe("typedListSync", () => {
         expect(lists()).toEqual({X: ["a"], Y: []});
         set.mockClear();
 
-        // 정규화하면 같은 값이다.
         await fakeBrowser.storage.local.set({"list:X": ["a", 2]});
         expect(set).not.toHaveBeenCalled();
 
@@ -195,7 +193,6 @@ describe("typedListSync", () => {
     it("update는 다른 창이 쓴 저장소 값에 붙인다", async () => {
         const {sync, lists} = create();
         await sync.start(contextSignal());
-        // 이 창은 아직 알림을 받지 못했다.
         const trigger = vi.spyOn(fakeBrowser.storage.local.onChanged, "trigger").mockResolvedValue([]);
         await fakeBrowser.storage.local.set({"list:X": ["other"]});
         trigger.mockRestore();

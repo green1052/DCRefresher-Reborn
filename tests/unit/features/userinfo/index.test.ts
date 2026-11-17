@@ -106,7 +106,6 @@ describe("아이디, IP 배지", () => {
         expect(badges("2")).toEqual(["[KT]"]);
         expect(badge("2", "[KT]")?.title).toBe("KT\nSK");
         expect(badge("2", "[KT]")?.style.color).toBe("rgb(100, 149, 237)");
-        // IP 정보가 없는 유동은 배지 묶음을 만들지 않는다.
         expect(document.querySelector("tr[data-no='3'] .refresher-user-badges")).toBeNull();
     });
 
@@ -295,11 +294,9 @@ describe("글댓비, 깡계", () => {
         api.checkNewPosts([...document.querySelectorAll<HTMLElement>("tr")]);
         await vi.waitFor(() => expect(badges("1")).toEqual(["(fresh)", "[3/4]"]));
         expect(badges("2")).toEqual(["(fresh)", "[3/4]"]);
-        // 같은 사람은 한 번만 묻는다.
         expect(gallog.asked).toEqual(["fresh"]);
         expect(await stored(RATIO_KEY)).toBeUndefined();
 
-        // 모듈을 끌 때 모아 둔 것을 저장한다.
         stop();
         running = undefined;
         await vi.waitFor(async () => expect(await stored(RATIO_KEY)).toEqual({ratio: {fresh: {article: 3, comment: 4, date: expect.any(Number)}}}));

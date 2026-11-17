@@ -1,9 +1,4 @@
-/**
- * 받은 바이트가 mp4 파일 전체인지: 첫 상자가 ftyp이고, 최상위 상자 크기를 이어 더하면 받은 길이와 같다.
- * 움짤은 구간 요청(Range)으로 받아 파일 일부만 오기도 한다. 그것을 파일로 해시하지 않으려고 본다
- * (파이어폭스 배경의 응답 필터, 크롬이 캐시에서 주는 206).
- * 상자 경계에서 딱 잘린 일부는 통과하지만, 그때는 그 주소의 해시가 틀릴 뿐이다.
- */
+/** mp4 파일 전체인지: 첫 상자가 ftyp이고 상자 크기 합이 길이와 같다. Range로 일부만 온 움짤을 걸른다. */
 export const isWholeMp4 = (bytes: Uint8Array): boolean => {
     if (bytes.length < 8 || String.fromCharCode(...bytes.subarray(4, 8)) !== "ftyp") return false;
     const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);

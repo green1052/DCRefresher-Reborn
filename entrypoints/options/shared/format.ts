@@ -3,7 +3,7 @@ export const formatTime = (time: number): string => (time === 0 ? "기록 없음
 export const formatBytes = (bytes: number): string =>
     bytes < 1024 ? `${bytes}B` : bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)}KB` : `${(bytes / 1024 / 1024).toFixed(2)}MB`;
 
-/** data를 JSON 파일(name-YYYYMMDD.json)로 내려받는다. 옵션 페이지라 downloads 권한 없이 a[download]로 된다. */
+/** data를 JSON 파일로 내려받는다 - 옵션 페이지라 downloads 권한 없이 a[download]로 된다. */
 export const downloadJson = (name: string, data: unknown): void => {
     const now = new Date();
     const date = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;

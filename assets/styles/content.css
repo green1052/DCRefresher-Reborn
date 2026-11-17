@@ -36,7 +36,7 @@
     color: color-mix(in srgb, currentColor 70%, transparent);
 }
 
-/* 이 페이지에서만 가린 내용 보기 (block 모듈) — 가린 것을 흐리게 다 보인다. 숨김 규칙도 !important라 명시도로 이긴다. */
+/* 이 페이지에서만 가린 내용 보기 (block 모듈) - 가린 것을 흐리게 다 보인다. 숨김 규칙도 !important라 명시도로 이긴다. */
 .refresherBlockReveal {
     :is(.refresherBlocked, .refresherDuplicate, .refresherLowActivityHide) {
         display: revert !important;

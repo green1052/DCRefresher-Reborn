@@ -118,8 +118,7 @@ export function App() {
             <ToastHost/>
 
             <div className="min-w-0 grow px-4 py-8 md:px-8">
-                {/* 탭마다 새로 마운트해 들어오는 애니메이션을 다시 건다.
-                    연 버튼이 막혀(데이터 초기화 중) 돌아갈 곳이 없으면 다이얼로그가 포커스를 이 탭으로 돌려준다 (useReturnFocus). */}
+                {/* 탭마다 새로 마운트해 들어오는 애니메이션을 다시 건다 - 포커스도 이 탭으로 돌아온다. */}
                 <div key={current.id} className="tab-enter mx-auto max-w-[880px] outline-none" tabIndex={-1}>
                     <h1 className="mb-6 text-2xl font-bold">{current.label}</h1>
                     {status === "failed"

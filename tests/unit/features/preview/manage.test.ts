@@ -28,9 +28,7 @@ vi.mock("@/core/preview/request", async (importOriginal) => ({
 // 기록에 쌓은 글 정보는 디시 주소일 때만 다시 읽힌다 (core/preview/history.ts의 isGalleryPreData).
 const preData = (id: string) => makePreData({id, link: `https://gall.dcinside.com/board/view/?id=test&no=${id}`});
 
-// jsdom은 history.go의 이동을 예약 뒤 한참 늦게 popstate로 터뜨린다. 한 테스트의 close가 예약한 것이
-// 다음 테스트에서 터져 onPopState가 창을 닫거나 옛 글을 다시 열면 signalId가 바뀌어 테스트가 어긋난다(부하에 따라 드물게).
-// 이 파일의 테스트는 뒤로 가기를 흉내 내지 않으므로 popstate를 통째로 막는다.
+// jsdom은 history.go를 예약 뒤 늦게 popstate로 터뜨려 다음 테스트가 어긋날 수 있어 이 파일에서는 popstate를 통째로 막는다.
 window.addEventListener("popstate", (ev) => ev.stopImmediatePropagation(), {capture: true});
 
 const press = (key: string, target: EventTarget = window): void =>

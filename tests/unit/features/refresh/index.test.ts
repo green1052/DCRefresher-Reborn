@@ -374,7 +374,6 @@ describe("자동 새로고침", () => {
         await start();
         await vi.advanceTimersByTimeAsync(5500);
         expect(get).toHaveBeenCalledTimes(1);
-        // 다음은 10초 + 0.5초 뒤다.
         await vi.advanceTimersByTimeAsync(10_499);
         expect(get).toHaveBeenCalledTimes(1);
         await vi.advanceTimersByTimeAsync(1);
@@ -413,7 +412,6 @@ describe("자동 새로고침", () => {
         await vi.advanceTimersByTimeAsync(5500);
         expect(get).toHaveBeenCalledTimes(1);
         await vi.advanceTimersByTimeAsync(30_000);
-        // 두 배로 늘어난 주기(10초 + 0.5초) 뒤에 받는다.
         await vi.advanceTimersByTimeAsync(10_500);
         expect(get).toHaveBeenCalledTimes(2);
     });
@@ -442,7 +440,6 @@ describe("페이지 이동 시 목록만 교체", () => {
         expect(location.search).toBe("?id=test&page=2");
         expect(get).toHaveBeenCalledWith("https://gall.dcinside.com/board/lists?id=test&page=2", expect.anything());
         expect(document.querySelector(".bottom_paging_box em")?.textContent).toBe("2");
-        // 교체 뒤 스크롤에서 던지면 목록은 바뀌어도 실패 토스트가 뜬다.
         expect(toasts()).toEqual([]);
     });
 
@@ -565,7 +562,6 @@ describe("탭 제목 새 글 수, 여기까지 읽음", () => {
         expect(get).toHaveBeenCalledTimes(1);
         expect(marked()).toEqual([]);
 
-        // 늘어난 주기(10초 + 0.5초) 뒤에 받는다.
         await vi.advanceTimersByTimeAsync(10_500);
         expect(listed()).toEqual(["4", "3", "2", "1"]);
         // 새 글은 필터가 돈 뒤 한 차례 뒤에 센다.

@@ -16,10 +16,7 @@ import {previewGallery, usePreviewStore} from "./previewStore";
 
 const close = (): void => usePreviewStore.setState({dcconInfo: null});
 
-/**
- * 본문, 댓글에서 누른 디시콘의 정보 창을 연다. 디시콘을 눌렀으면 true.
- * 차단으로 가린 디시콘은 '가린 내용 보기' 동안이거나 흐림이 풀려 있는 동안(blurReveal)만 연다 (isBlockedHidden, 큰 이미지와 같은 기준).
- */
+/** 누른 디시콘의 정보 창을 연다 - 가린 디시콘은 공개 중에만 연다. */
 export const openDcconInfo = (ev: MouseEvent<HTMLElement>): boolean => {
     const dccon = ev.target instanceof Element ? ev.target.closest<HTMLElement>(".written_dccon") : null;
     if (!dccon || isBlockedHidden(dccon)) return false;
@@ -29,10 +26,7 @@ export const openDcconInfo = (ev: MouseEvent<HTMLElement>): boolean => {
     return Boolean(code);
 };
 
-/**
- * 패키지 목록의 디시콘을 우클릭하면 본문 디시콘처럼 차단 버블을 연다 (features/block/index.ts의 setupSelection).
- * 목록 이미지는 .written_dccon이 아니라 페이지 쪽 리스너가 받지 않는다. 주소의 no가 차단 목록에 넣는 값과 같다.
- */
+/** 목록의 디시콘을 우클릭하면 차단 버블을 연다 - 페이지 쪽 리스너가 받지 못하는 요소다. */
 const openBlockBubble = (ev: MouseEvent<HTMLElement>): void => {
     const code = !ev.shiftKey && ev.target instanceof HTMLImageElement ? dcconCode(ev.target) : undefined;
     if (!code) return;
@@ -147,8 +141,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
                 </div>
             </div>
 
-            {/* 우클릭하면 차단 버블이 뜬다 (openBlockBubble). 목록은 최대 높이만 있어 불러오는 동안 그 높이로 잡아 두어야
-                다 불러왔을 때 창이 커지지 않는다. 스켈레톤은 넘치도록 깔고 스크롤바가 생기지 않게 자른다. */}
+            {/* 우클릭하면 차단 버블 - 목록 높이를 미리 잡아 창이 커지지 않게 한다. */}
             <div className="grid max-h-[420px] grid-cols-[repeat(auto-fill,minmax(96px,1fr))] content-start gap-2 overflow-y-auto aria-busy:h-[420px] aria-busy:overflow-hidden"
                  aria-busy={!dccon} onContextMenu={openBlockBubble}>
                 {dccon

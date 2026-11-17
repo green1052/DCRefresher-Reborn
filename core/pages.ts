@@ -13,7 +13,7 @@ export const CONTENT_EXCLUDE_MATCHES = [
     "https://sign.dcinside.com/*"
 ];
 
-/** 디시 본문 이미지(viewimage.php — dcimg*.dcinside.co.kr, image.dcinside.com 등)의 우클릭 메뉴 주소 패턴. 이미지 검색, 이미지 차단 메뉴가 쓴다. */
+/** 디시 본문 이미지(viewimage.php - dcimg*.dcinside.co.kr, image.dcinside.com 등)의 우클릭 메뉴 주소 패턴. 이미지 검색, 이미지 차단 메뉴가 쓴다. */
 export const IMAGE_URL_PATTERNS = ["*://*.dcinside.co.kr/viewimage.php*", "*://*.dcinside.com/viewimage.php*"];
 
 /**

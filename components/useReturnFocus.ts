@@ -12,12 +12,7 @@ export const panelOf = (from: Element | null | undefined): HTMLElement | null | 
 
 export const focusPanel = (from: Element | null | undefined): void => panelOf(from)?.focus({preventScroll: true});
 
-/**
- * 트리거 없이 여는 창(다이얼로그, 버블)의 포커스. 창과 같이 마운트되는 컴포넌트에서 부른다.
- * 마운트할 때 포커스된 요소(연 요소)를 기억했다가 닫을 때 돌려준다. 그사이 연 버튼이 막혔으면(전체 삭제, 초기화 중) panelOf로 돌린다.
- * Base UI는 트리거가 없거나 부모가 언마운트해 닫으면 포커스를 돌려주지 않아 언마운트할 때도 돌려준다.
- * 포커스가 창(popup) 안이나 body에 남았을 때만 돌려주고, 다른 곳(새로 뜬 창의 입력칸 등)으로 간 포커스는 빼앗지 않는다.
- */
+// 트리거 없이 연 창의 포커스 - Base UI가 안 돌려주는 경우(트리거 없음, 언마운트 종료)에도 닫을 때 연 요소로 돌려준다.
 export const useReturnFocus = (popup: RefObject<HTMLElement | null>) => {
     const [opener] = useState(focusedElement);
     // 키보드로 열었는지(연 요소에 포커스 링이 보였는지). 창이 포커스를 가져간 뒤에는 알 수 없으므로 열 때 잰다.
@@ -33,7 +28,6 @@ export const useReturnFocus = (popup: RefObject<HTMLElement | null>) => {
     return {
         /** 키보드로 열었을 때만 창 안으로 포커스를 옮긴다 (initialFocus). 마우스로 열었으면 그 자리에 둔다. */
         keyboard,
-        /** Base UI finalFocus에 넘긴다. */
         finalFocus: (): HTMLElement | true => target() ?? true,
         /** 닫힌 직후 포커스가 아직 돌아오지 않았을 때 돌려준다. */
         restoreFocus,

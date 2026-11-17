@@ -102,10 +102,10 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
                     <dt className="text-muted-foreground">차단, 메모</dt>
                     <dd>차단 {blockCount}개, 메모 {memoCount}개</dd>
                     <dt className="text-muted-foreground">로컬 저장소</dt>
-                    <dd>{usage === "error" ? "알 수 없음" : usage ? formatBytes(usage.local) : "…"}</dd>
+                    <dd>{usage === "error" ? "알 수 없음" : usage ? formatBytes(usage.local) : "..."}</dd>
                     <dt className="text-muted-foreground">클라우드 저장소</dt>
                     <dd>
-                        {usage === "error" ? "알 수 없음" : usage ? `${formatBytes(usage.sync)} / ${formatBytes(CLOUD_QUOTA)} (${Math.round((usage.sync / CLOUD_QUOTA) * 100)}%)` : "…"}
+                        {usage === "error" ? "알 수 없음" : usage ? `${formatBytes(usage.sync)} / ${formatBytes(CLOUD_QUOTA)} (${Math.round((usage.sync / CLOUD_QUOTA) * 100)}%)` : "..."}
                     </dd>
                 </dl>
             </Section>

@@ -5,17 +5,13 @@ import {isFresh, useUiStore} from "@/stores/ui";
 
 export type ActivityState = GallogActivity | undefined | "loading" | "error";
 
-/**
- * userinfo 글댓비 캐시에 1시간 안에 받은 값. 있으면 그 값을 쓴다. 버블과 작성자 배지의 숫자가 같아지고 요청도 줄어든다.
- * 처음 그릴 때도 이 값으로 시작해 '불러오는 중'이 깜박이지 않게 한다.
- */
+// 1시간 안에 받은 userinfo 글댓비 캐시를 쓴다 - 요청이 줄고 '불러오는 중' 깜박임도 없다.
 const cachedActivity = (uid: string): GallogActivity | undefined => {
     const known = useUiStore.getState().ratios?.cache;
     const cached = known && Object.hasOwn(known, uid) ? known[uid] : undefined;
     return isFresh(cached) ? cached : undefined;
 };
 
-/** 갤로그 글/댓글 수. uid가 없으면(유동) 요청하지 않고 undefined다. */
 export const useGallogActivity = (uid: string | undefined): ActivityState => {
     const [state, setState] = useState<ActivityState>(() => (uid ? (cachedActivity(uid) ?? "loading") : undefined));
 

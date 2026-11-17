@@ -25,7 +25,7 @@
 
 ## 사용법
 
-Chromium 140, Firefox 144 이상에서 동작합니다. 툴바의 확장 아이콘을 누르면 팝업이 열리고, 여기서 모듈을 켜고 끄거나 톱니바퀴 버튼으로 옵션 페이지를 엽니다.
+Chromium 140, Firefox 144 이상. 툴바 아이콘의 팝업에서 모듈을 켜고 끄고, 톱니바퀴로 옵션 페이지를 엽니다.
 
 - 목록에서 제목을 **우클릭**하면 미리보기 창이 열립니다. 원래 우클릭 메뉴는 **Shift+우클릭**으로 엽니다.
 - 미리보기 창에서 **PageUp** / **PageDown**으로 앞뒤 글로 넘어가고 **Esc**로 닫습니다.
@@ -58,6 +58,6 @@ Chromium 140, Firefox 144 이상에서 동작합니다. 툴바의 확장 아이�
 
 ## 개발, 기여
 
-[Bun](https://bun.sh) 1.4 이상과 [Node.js](https://nodejs.org) 25 이상이 필요합니다. `bun install` 뒤 `bun run dev`로 띄웁니다. 자세한 내용은 [개발 문서](docs/README.md)에 있고, 풀 리퀘스트는 `develop` 브랜치로 보내 주세요.
+[Bun](https://bun.sh) 1.4 이상, [Node.js](https://nodejs.org) 25 이상. `bun install` 뒤 `bun run dev`로 띄웁니다. 자세한 내용은 [개발 문서](docs/README.md)에 있고, 풀 리퀘스트는 `develop` 브랜치로 보내 주세요.
 
 [디스코드 서버](https://discord.gg/SSW6Zuyjz6), [리프레셔 미니 갤러리](https://gall.dcinside.com/mini/board/lists/?id=bjwg64)

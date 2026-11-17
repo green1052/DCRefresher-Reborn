@@ -24,11 +24,7 @@ export const urls = {
     }
 };
 
-/**
- * 갤러리 종류별 주소 경로 접두사, 디시 요청의 _GALLTYPE_ 값, 관리 API 접두사(<manager>_manager_board_ajax). 디시가 정한 값이라 바꾸면 안 된다.
- * 관리 접두사는 디시 get_gall_type_name()처럼 경로 첫 칸을 쓰고 mgallery만 minor로 바꾼다. 일반 갤러리엔 관리 기능이 없어 minor로 둔다.
- * 코드에서는 종류 이름(GalleryKind)으로 다루고, 이 값들은 주소, 요청을 만들 때만 꺼낸다.
- */
+/** 갤러리 종류별 경로 접두사, _GALLTYPE_ 값, 관리 API 접두사. 디시가 정한 값이라 바꾸면 안 된다. */
 const GALLERIES = {
     normal: {path: "", galltype: "G", manager: "minor"},
     minor: {path: "mgallery/", galltype: "M", manager: "minor"},
@@ -38,22 +34,19 @@ const GALLERIES = {
 
 type GalleryKind = keyof typeof GALLERIES;
 
-/**
- * https 디시 주소면 그 주소, 아니면 undefined. 페이지, 본문에서 읽은 주소로 이동하거나 새 탭을 열기 전에 거친다.
- * javascript:나 다른 사이트 주소가 섞여 들어와도 따라가지 않는다.
- */
+/** https 디시 주소만 통과 - javascript:나 다른 사이트로 따라가지 않게. */
 export const dcinsideHref = (url: string | URL | null | undefined): string | undefined => {
     const parsed = typeof url === "string" ? URL.parse(url) : url;
     return parsed?.protocol === "https:" && parsed.hostname.endsWith(".dcinside.com") ? parsed.href : undefined;
 };
 
-/** 주소의 경로 첫 칸으로 본다. 주소 전체에서 찾으면 검색어(s_keyword)에 든 "dcinside.com/mgallery" 같은 글자에 걸린다. */
+/** 주소의 경로 첫 칸으로 본다 - 전체에서 찾으면 검색어(s_keyword)에 든 글자에 걸린다. */
 export const galleryKind = (url: string): GalleryKind => {
     const path = /^\/(mgallery|mini|person)\//.exec(URL.parse(url)?.pathname ?? "")?.[1];
     return path === "mgallery" ? "minor" : path === "mini" || path === "person" ? path : "normal";
 };
 
-/** URL의 갤러리 경로 접두사 ("", "mgallery/", "mini/", "person/"). */
+/** URL의 갤러리 경로 접두사. */
 export const galleryPath = (url: string): string => GALLERIES[galleryKind(url)].path;
 
 /** 댓글, 관리, 캡차 요청에 넣는 _GALLTYPE_ 값. */
@@ -62,12 +55,7 @@ export const galltypeOf = (url: string): string => GALLERIES[galleryKind(url)].g
 /** 관리 API 주소 (ajax/<접두사>_manager_board_ajax/<action>). */
 export const managerAjaxUrl = (url: string, action: string): string => `${urls.base}ajax/${GALLERIES[galleryKind(url)].manager}_manager_board_ajax/${action}`;
 
-/**
- * 게시글/목록 URL → 같은 갤러리, 쿼리의 목록 URL.
- * 같은 목록이면 같은 문자열이 되도록 글 보기 전용 값(no, t)과 page=1을 빼고 쿼리를 정렬한다.
- * 글 주소는 목록과 쿼리가 같을 때만 원래 목록과 같은 값이 나온다. 미리보기가 쌓는 행 링크는 목록 주소의 기본값 쿼리
- * (sort_type=N, 빈 search_pos 등)가 빠져 다를 수 있다.
- */
+/** 같은 목록이면 같은 문자열이 나오게 글 보기 값(no, t), page=1을 빼고 쿼리를 정렬한다. */
 export const listUrl = (url: string): string => {
     const queries = new URL(url).searchParams;
     queries.delete("no");
@@ -84,14 +72,11 @@ export const mergeParamURL = (origin: string, from: string): string => {
     return `?${params}`;
 };
 
-/** 디시 통합검색의 최신순 글 검색 주소. 검색창처럼 검색어의 UTF-8 바이트를 ".XX"로 쓴다 (%2F가 든 주소는 404다). */
+/** 디시 통합검색의 최신순 글 검색 주소. 검색어의 UTF-8 바이트를 검색창처럼 ".XX"로 쓴다. */
 export const postSearchUrl = (query: string): string =>
     `https://search.dcinside.com/post/sort/latest/q/${Array.from(new TextEncoder().encode(query), (byte) => `.${byte.toString(16).padStart(2, "0").toUpperCase()}`).join("")}`;
 
-/**
- * 검색 모듈의 작성자 거르기(features/search/writer.ts)가 목록 주소에 얹는 쿼리 이름. 디시 글쓴이 검색(search_name)은 닉네임만 찾아,
- * 아이디, IP는 이 값으로 얹어 두고 그 작성자가 아닌 행을 숨긴다. 새로고침 모듈도 거르는 목록인지 볼 때 읽는다.
- */
+/** 작성자 거르기가 목록 주소에 얹는 쿼리 이름 - 디시 글쓴이 검색은 닉네임만 찾는다. */
 export const WRITER_PARAMS = {uid: "rf_uid", ip: "rf_ip"} as const;
 
 export type WriterKind = keyof typeof WRITER_PARAMS;
@@ -101,20 +86,14 @@ export interface WriterFilter {
     value: string;
 }
 
-/**
- * 지금 판단에 쓸 문서 주소. 문서를 불러온 주소(내비게이션 항목)가 있으면 그것으로 본다 — 미리보기, 페이지 넘김이
- * pushState로 주소창을 바꿔도 이 문서가 보여 주는 목록, 검색은 그대로다. 항목이 없으면(파이어폭스 확장 페이지처럼
- * 이름이 주소가 아니거나 테스트 환경) 지금 주소로 본다. 호출마다 읽는 것은 테스트(vi.spyOn) 때문이고, 브라우저에서는
- * 문서 수명 내내 같은 값이다.
- */
+/** 문서를 불러온 주소 - pushState로 주소창이 바뀌어도 문서가 보여 주는 페이지는 그대로다. */
 const loadedDocumentUrl = (): URL => {
-    // vitest 가짜 타이머가 performance를 통째로 바꿔 이 메서드가 없어질 수 있어 선택 호출로 한다.
-    // 배경을 ESM으로 묶으면 WXT가 빌드 설정을 읽으러 이 모듈을 Node에서도 평가한다 — 그땐 location이 없다.
+    // vitest가 performance를 통째로 바꿀 수 있고, Node 평가 시엔 location이 없어 선택 호출로 한다.
     const name = performance.getEntriesByType?.("navigation")[0]?.name ?? "";
     return URL.parse(name) ?? new URL(globalThis.location?.href ?? "https://gall.dcinside.com/");
 };
 
-/** 주소의 작성자 거르기. 없으면 null. 기본은 문서를 불러온 주소다 — 미리보기가 글 주소를 쌓아도 문서의 거르기를 그대로 준다. */
+/** 주소의 작성자 거르기. 기본은 문서를 불러온 주소다 (미리보기가 글 주소를 쌓아도). */
 export const writerFilter = (href = loadedDocumentUrl().href): WriterFilter | null => {
     const params = new URL(href).searchParams;
     for (const kind of ["uid", "ip"] as const) {
@@ -124,22 +103,17 @@ export const writerFilter = (href = loadedDocumentUrl().href): WriterFilter | nu
     return null;
 };
 
-/** 이 문서를 불러온 주소의 쿼리 값. 미리보기가 글 주소를 쌓아도 문서의 검색어를 그대로 준다. 이 문서의 갤러리 id는 pageGallery를 쓴다. */
+/** 이 문서를 불러온 주소의 쿼리 값 (미리보기가 주소를 바꿔도 그대로). */
 export const queryString = (name: string): string | null => loadedDocumentUrl().searchParams.get(name);
 
-/**
- * 이 문서를 불러온 주소. 미리보기, 페이지 넘김이 pushState로 주소를 바꿔도 이 문서가 보여 주는 페이지는 그대로다.
- * 지금 주소가 아니라 내비게이션 항목에서 읽는다. 파이어폭스는 확장을 업데이트하면 미리보기가 바꿔 둔 글 주소에서 스크립트를 다시 주입한다.
- * 파이어폭스 확장 페이지(배경, 옵션, 팝업)는 항목 이름이 URL이 아니라 "document"라 파싱되지 않으면 지금 주소를 쓴다 (던지면 번들 전체가 멈춘다).
- */
+/** 문서를 불러온 주소(내비게이션 항목). 주소창이 바뀌어도 문서의 페이지를 가린다. */
 export const documentUrl = loadedDocumentUrl();
 export const isViewPage = VIEW_PAGE.test(documentUrl.pathname);
-/** 글 보기 페이지가 보여 주는 글 번호. */
 export const pagePostNo = isViewPage ? documentUrl.searchParams.get("no") : null;
-/** 이 문서의 갤러리 id. 미리보기가 주소를 다른 갤러리 글로 바꿔도 그대로다. */
+/** 이 문서의 갤러리 id. 미리보기가 주소를 바꿔도 그대로다. */
 export const pageGallery = documentUrl.searchParams.get("id");
 
-/** 목록 행의 글 번호. 글 보기 아래 목록의 행에는 data-no가 없어 같은 갤러리로 가는 제목 링크의 no를 쓴다. */
+/** 목록 행의 글 번호. 글 보기 아래 목록의 행엔 data-no가 없어 제목 링크의 no를 쓴다. */
 export const rowPostNo = (row: HTMLElement): string | undefined => {
     if (row.dataset.no) return row.dataset.no;
 

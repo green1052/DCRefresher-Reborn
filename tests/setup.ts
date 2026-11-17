@@ -1,8 +1,4 @@
-/**
- * 단위 테스트 공통 준비 (vitest.config.ts의 setupFiles). 테스트 파일마다 먼저 돈다.
- * 목, 스파이는 vitest.config.ts의 mockReset, restoreMocks가 테스트마다 되돌린다.
- * 아래 polyfill은 jsdom, fake-browser에만 없는 것이다. 확장이 도는 브라우저에는 다 있다.
- */
+/** 단위 테스트 공통 준비 (setupFiles). 아래 polyfill은 브라우저에는 다 있고 jsdom, fake-browser에만 없는 것이다. */
 import {URLPattern} from "node:url";
 
 import {afterEach, beforeEach, vi} from "vitest";

@@ -22,10 +22,7 @@ afterEach(() => {
 });
 
 describe("Ctrl+클릭 삭제", () => {
-    /**
-     * manager: 관리 권한이 있는 목록(디시는 관리자에게만 체크박스 칸 머리를 둔다).
-     * 제목 링크에 href를 두지 않는다. 막지 않은 클릭에 jsdom이 문서 이동을 시도하며 경고를 찍는다. 글 번호는 행의 data-no에서 읽는다.
-     */
+    /** manager: 관리 권한이 있는 목록. 제목 링크에 href를 두지 않아(jsdom 이동 경고 방지) 글 번호는 data-no에서 읽는다. */
     const mountList = (manager: boolean): void => {
         document.body.innerHTML =
             "<table class=\"gall_list\">" +
@@ -44,7 +41,6 @@ describe("Ctrl+클릭 삭제", () => {
         const title = row().querySelector(".gall_tit a")!;
 
         expect(ctrlClick(title)).toBe(false);
-        // 응답 전에 다시 눌러도 요청을 또 보내지 않는다.
         ctrlClick(title);
         await tick();
         expect(deletePost).toHaveBeenCalledOnce();
@@ -90,7 +86,6 @@ describe("Shift+클릭으로 같은 작성자 글 체크", () => {
     const writer = "<td class=\"gall_writer ub-writer\" data-uid=\"a\" data-ip=\"\" data-nick=\"닉\"></td>";
 
     it("체크박스를 처음 볼 때 작성자 칸이 아직 없던 행도 누를 때 작성자를 찾는다", async () => {
-        // 문서를 읽는 중에는 체크박스 칸만 먼저 붙고 작성자 칸은 나중에 붙는다.
         document.body.innerHTML = "<table class=\"gall_list\"><tbody>" +
             "<tr class=\"ub-content\" data-no=\"1\"><td><input type=\"checkbox\" class=\"article_chkbox\"></td></tr>" +
             `<tr class="ub-content" data-no="2"><td><input type="checkbox" class="article_chkbox"></td>${writer}</tr></tbody></table>`;
@@ -114,7 +109,6 @@ describe("이미지 출처", () => {
     };
 
     it("다른 갤러리에서 올린 이미지와 첨부 파일을 번호와 함께 알린다", async () => {
-        // 외부 이미지는 디시처럼 번호를 세지 않는다.
         mountView("<img src=\"https://pbs.twimg.com/media/a.jpg\">" + image("2fbcc323e7d334aa51b1d3a2") + image("39b8c332") + image("2fbcc323e7d334aa51b1d3a2"));
         document.body.insertAdjacentHTML("beforeend", "<ul class=\"appending_file\"><li>baseball_new-20240101-123456-000.jpg</li></ul>");
         await start({imageOrigin: true});

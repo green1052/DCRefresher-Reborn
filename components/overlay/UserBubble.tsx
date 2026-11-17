@@ -25,11 +25,7 @@ import {SAVE_FAILED} from "@/utils/error";
 import {type ActivityState, useGallogActivity} from "@/components/overlay/gallogActivity";
 import {cn} from "cn";
 
-/**
- * 오버레이(shadow DOM) 안의 포털 칸에 그리는 PopoverContent. components/ui/popover.tsx는 순정 shadcn이라 포털 칸·가상 anchor를 못 넘기므로
- * Base UI 프리미티브로 직접 조립한다. 모양 문자열은 components/ui/popover.tsx와 맞춘다.
- * 버블은 트리거 요소 대신 anchor(가상 좌표)로 위치를 잡는다.
- */
+// components/ui는 순정 유지 - Base UI 프리미티브로 조립, 모양 문자열은 ui와 수동 맞춤
 const OverlayPopoverContent = ({className, align = "center", alignOffset = 0, side = "bottom", sideOffset = 4, anchor, ...props}:
     PopoverPrimitive.Popup.Props & Pick<PopoverPrimitive.Positioner.Props, "align" | "alignOffset" | "side" | "sideOffset" | "anchor">) => (
     <PopoverPrimitive.Portal container={overlay.portal}>
@@ -44,17 +40,13 @@ const OverlayPopoverContent = ({className, align = "center", alignOffset = 0, si
 
 import {overlay} from "./shadow";
 
-/** 버블 메뉴 한 줄. 우클릭 메뉴처럼 왼쪽에 맞춰 세로로 쌓는다. danger는 차단처럼 되돌리기 번거로운 동작이다. */
 const MenuItem = ({danger, className, ...props}: ComponentProps<typeof Button> & { danger?: boolean }) => (
     <Button variant="ghost" size="sm"
             className={cn("w-full cursor-pointer justify-start font-normal", danger && "text-destructive hover:bg-destructive/10 hover:text-destructive", className)}
             {...props}/>
 );
 
-/**
- * 디시콘 버블 맨 위의 패키지 이름과 설명. 누르면 디시콘 정보 창을 연다. 디시콘 하나의 이름("33" 등)은 뜻이 없는 것이 많아 쓰지 않는다.
- * 정보 창과 같은 캐시(dcconPackages)를 써 이어서 열어도 다시 받지 않는다. 받지 못하면 이름 없이 열기만 둔다.
- */
+// 디시콘 하나의 이름은 뜻이 없는 경우가 많아 패키지 정보를 쓴다 - 정보 창과 같은 캐시(dcconPackages)를 공유해 다시 받지 않는다.
 const DcconSummary = ({code, onOpen}: { code: string; onOpen: () => void }) => {
     const [dccon, setDccon] = useState(() => dcconPackages.get(code) ?? null);
     const [failed, setFailed] = useState(false);
@@ -94,8 +86,6 @@ const DcconSummary = ({code, onOpen}: { code: string; onOpen: () => void }) => {
     );
 };
 
-/** 클릭하면 복사되는 값 한 줄. 라벨 폭을 맞춰 값이 한 줄로 늘어서게 하고, 긴 값(IP 후보 등)은 띄어쓰기에서 다음 줄로 넘긴다. onSearch가 있으면 오른쪽에 그 값으로 글을 찾는 버튼을 둔다.
- * color, valueClassName은 값을 배지와 같은 색으로 칠한다. */
 const CopyRow = ({label, value, onCopy, onSearch, color, valueClassName}: {
     label: string;
     value: string;
@@ -119,7 +109,7 @@ const CopyRow = ({label, value, onCopy, onSearch, color, valueClassName}: {
 );
 
 const formatActivity = (activity: ActivityState): string | undefined => {
-    if (activity === "loading") return "불러오는 중…";
+    if (activity === "loading") return "불러오는 중...";
     if (activity === "error") return "불러오지 못함";
     if (!activity) return undefined;
     return `${activity.article.toLocaleString()} / ${activity.comment.toLocaleString()}`;
@@ -147,11 +137,7 @@ const unblock = async (type: BlockType, {id, ...fields}: BlockEntry): Promise<vo
 
 type BlockRule = { type: BlockType; entry: BlockEntry };
 
-/**
- * 이 대상을 막고 있는 차단 규칙 목록. 왜 가려졌는지 보여 주고 그 자리에서 풀 수 있게 한다.
- * 허용 목록(불일치, 불포함)은 이 대상이 어느 항목에도 맞지 않아 막힌 것이라, 항목을 지워도 풀리지 않고 지운 항목의 사람까지 막히므로 해제를 두지 않는다.
- * 허용 목록은 맞지 않은 항목 전부가 넘어오므로 유형마다 한 줄로 줄인다. 항목마다 그리면 버블이 화면을 넘고(스크롤하면 닫힌다) 해제 버튼이 밀려난다.
- */
+// 허용 목록은 이 대상이 어느 항목에도 맞지 않아 막힌 것이라 항목을 지워도 안 풀려 해제를 두지 않는다.
 const BlockRules = ({rules, defaults}: { rules: BlockRule[]; defaults: Record<BlockType, DetectMode> }) => {
     const isAllowList = ({type, entry}: BlockRule): boolean => (entry.mode ?? defaults[type]).startsWith("NOT_");
     const hits = rules.filter((rule) => !isAllowList(rule));
@@ -165,7 +151,7 @@ const BlockRules = ({rules, defaults}: { rules: BlockRule[]; defaults: Record<Bl
                     const name = blockLabel(type, entry);
                     return (
                         <div key={entry.id} className="flex items-center justify-between gap-2">
-                            <span className="truncate text-xs" title={entry.isRegex ? "정규식 — 풀면 이 규칙에 걸린 다른 대상도 함께 풀립니다." : undefined}>
+                            <span className="truncate text-xs" title={entry.isRegex ? "정규식 - 풀면 이 규칙에 걸린 다른 대상도 함께 풀립니다." : undefined}>
                                 <span className="text-muted-foreground">{TYPE_NAMES[type]}</span> {name}
                                 {entry.isRegex && <span className="text-muted-foreground"> (정규식)</span>}
                                 {entry.gallery && <span className="text-muted-foreground"> (이 갤러리만)</span>}
@@ -186,7 +172,6 @@ const BlockRules = ({rules, defaults}: { rules: BlockRule[]; defaults: Record<Bl
     );
 };
 
-/** 디시콘 패키지 전체를 어떻게 차단할지 고른다. 취소하면 아무것도 차단하지 않는다. */
 export const DcconPackageDialog = ({target, onClose}: { target: SelectedUser; onClose: () => void }) => {
     const choose = (dcconPackage: "bundle" | "each"): void => {
         onClose();
@@ -212,7 +197,6 @@ export const DcconPackageDialog = ({target, onClose}: { target: SelectedUser; on
 /** 버블이 여는 창. 창은 버블 밖(ContentRoot)에 그려 버블이 닫혀도 남는다. */
 interface BubbleActions {
     onBlockPackage: (target: SelectedUser) => void;
-    /** 디시콘 코드로 디시콘 정보 창(미리보기의 DcconInfoPopup)을 연다. */
     onDcconInfo: (code: string) => void;
 }
 
@@ -221,7 +205,6 @@ interface BubbleProps extends BubbleActions {
     selected: SelectedUser;
 }
 
-/** 유저 버블. 열 때 마운트되어 닫을 때 연 요소로 포커스를 돌려준다 (useReturnFocus). */
 const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) => {
     const popup = useRef<HTMLDivElement>(null);
     const focus = useReturnFocus(popup);
@@ -232,12 +215,10 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
     const entries = useBlocksStore((s) => s.entries);
     const defaults = useBlocksStore((s) => s.defaults);
     const rules = blockingEntries(selected.dccon ? {DCCON: selected.dccon} : {NICK: selected.nick, ID: selected.uid, IP: selected.ip}, gallery ?? undefined, {entries, defaults});
-    // DB를 읽을 때마다 오르는 번호를 구독해 다시 그린다. 0이면 아직 읽지 않아 IP, 밴을 찾지 않는다.
-    // 디시콘 버블은 IP, 밴을 그리지 않으므로 읽기를 시작하지 않는다(onDatabaseChange).
+    // DB를 읽을 때마다 오르는 번호를 구독해 다시 그린다 (0이면 아직 읽지 않아 IP, 밴을 찾지 않는다).
     const dbVersion = useSyncExternalStore(selected.dccon ? onDatabaseChange : subscribeDatabase, databaseVersion);
 
-    // Popover는 스크롤을 따라가지 않으므로 스크롤하면 닫는다.
-    // scroll 이벤트는 shadow root 밖으로 나가지 않으므로 미리보기 안의 스크롤은 루트에서 잡는다.
+    // Popover는 스크롤을 따라가지 않으므로 스크롤하면 닫는다 - 미리보기 스크롤은 shadow 밖으로 이벤트가 안 나가 루트에서도 잡는다.
     useEffect(() => {
         const onScroll = (): void => useUiStore.getState().closeBubble();
         const controller = new AbortController();
@@ -275,8 +256,7 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
     return (
         <Popover open onOpenChange={(open, details) => {
             if (open) return;
-            // 닫히는 동안(애니메이션)에도 잠시 클릭, Esc를 받는다. 지금 버블이 아니면 흘려보낸다.
-            // 받으면 곧바로 다시 연 버블을 그 클릭으로 닫고, 다음 Esc(미리보기 닫기 등)를 먹는다.
+            // 닫히는 동안 남은 클릭, Esc는 지금 버블이 아니면 흘려보낸다 (다시 연 버블을 그 클릭으로 닫지 않게).
             if (useUiStore.getState().bubble !== bubble) {
                 details.cancel();
                 details.allowPropagation();
@@ -289,10 +269,10 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
                             anchor={{getBoundingClientRect: () => DOMRect.fromRect({x: bubble.x, y: bubble.y, width: 0, height: 0})}}
                             initialFocus={focus.keyboard} finalFocus={focus.finalFocus}
                             aria-label={selected.dccon ? "디시콘 메뉴" : `${selected.nick || identity || "사용자"} 메뉴`}>
-                {/* 여기서 여는 창(메모, 패키지 차단)은 연 요소로 포커스를 먼저 옮겨 둔다. 그래야 그 창이 닫힐 때 사라진 버블 대신 그리로 돌아간다. */}
+                {/* 창이 닫힐 때 사라진 버블 대신 연 요소로 돌아오게 먼저 포커스를 옮겨 둔다. */}
                 {selected.dccon ? (
                     <>
-                        {/* 버블이 떠 있는 채로 다른 디시콘을 우클릭해도 그 디시콘의 정보를 새로 받게 코드로 다시 만든다. */}
+                        {/* 다른 디시콘을 우클릭해도 새로 받게 코드로 다시 만든다. */}
                         <DcconSummary key={selected.dccon} code={selected.dccon} onOpen={() => {
                             focus.returnFocus();
                             close();
@@ -353,7 +333,6 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
     );
 };
 
-/** 작성자를 우클릭하면 뜨는 유저 버블 (메모, 차단, 갤로그). */
 export const BubbleHost = (actions: BubbleActions) => {
     const bubble = useUiStore((s) => s.bubble);
     const selected = useUiStore((s) => s.selected);

@@ -24,22 +24,15 @@ export const useStorageItem = <T,>(item: WxtStorageItem<T, {}>): T => {
     return value;
 };
 
-/**
- * 지운 항목의 기록을 이미 정리한 종류. 탭을 옮겨 다시 마운트돼도 삭제 알림의 되돌리기(20초)는 남으므로 페이지당 한 번만 정리한다.
- */
+// 지운 항목 기록을 이미 정리한 종류 - 되돌리기(20초) 동안 재마운트해도 페이지당 한 번만 정리한다.
 const pruned = new Set<UsageKind>();
 
-/**
- * 차단 항목, 메모가 이 기기에서 마지막으로 쓰인 시각 (core/usage). 목록이 바뀌면 기록을 목록에 맞추고, 콘텐츠 스크립트가 적으면 따라간다.
- * 지운 항목의 기록은 페이지를 열 때 정리하고, 그 뒤에 지운 것은 되돌리기로 되살릴 수 있게 남긴다.
- * ids는 목록이 바뀔 때만 새로 만들어야 한다 (렌더마다 새 배열이면 매번 저장소를 읽는다).
- */
+// 마지막 사용 시각 - 목록이 바뀔 때만 ids를 새로 만들어야 저장소를 매번 안 읽는다.
 export const useUsage = (kind: UsageKind, ids: readonly string[]): Record<string, number> => {
     const [times, setTimes] = useState<Record<string, number>>({});
 
     useEffect(() => {
-        // 기록이 바뀌지 않았으면 저장소 이벤트가 오지 않으므로 응답으로 채운다. 응답을 기다리는 동안 watch가 먼저 오면
-        // (배경이 저장소에 쓰고 같은 값을 돌려준다) 그 새 값을 응답이 덮지 않게 버린다.
+        // 응답 전에 watch가 먼저 오면 그 새 값을 늦은 응답이 덮지 않게 버린다.
         let stale = false;
         sendMessage("refresher:syncUsage", {kind, ids: [...ids], prune: !pruned.has(kind)}).then((next) => {
             if (!stale) setTimes(next);
@@ -47,8 +40,7 @@ export const useUsage = (kind: UsageKind, ids: readonly string[]): Record<string
         pruned.add(kind);
         const unwatch = storage.watch<Record<UsageKind, Record<string, number>>>(USAGE_KEY, (next) => {
             stale = true;
-            // USAGE_KEY에는 차단, 메모 두 종류가 함께 들어 있어 다른 종류가 바뀌어도 이벤트가 온다. 이 종류의 값이
-            // 그대로면 상태를 그대로 두어 목록 걸르기(ListTabs)를 다시 하지 않는다.
+            // USAGE_KEY에는 두 종류가 함께 들어 있어 다른 종류 이벤트도 온다 - 이 종류 값이 그대로면 상태를 둔다.
             const incoming = next?.[kind] ?? {};
             setTimes((current) => {
                 const keys = Object.keys(current);

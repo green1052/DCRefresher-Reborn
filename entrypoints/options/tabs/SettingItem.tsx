@@ -20,7 +20,7 @@ import {RefresherSelect} from "../shared/RefresherSelect";
 interface SettingItemProps {
     schema: LabeledSetting;
     value: SettingValue;
-    /** 묶음 안에서 쓸 때. 설명은 숨겨 이름의 title과 컨트롤의 aria-describedby로 돌리고 이름, 컨트롤만 한 줄에 둔다. */
+    /** 묶음용 - 설명을 숨기고 이름과 컨트롤만 한 줄에 둔다. */
     compact?: boolean;
     /** key 설정 전용. 같은 모듈의 다른 key 설정이 쓰는 키라 고를 수 없다. */
     takenKeys?: string[];
@@ -33,19 +33,16 @@ type NarrowProps<T extends SettingSchema["type"]> = Omit<SettingItemProps, "sche
     schema: Extract<LabeledSetting, { type: T }>;
     value: ValueOf<T>;
     onChange: (value: ValueOf<T>) => void;
-    /** 설명 글의 id. 컨트롤의 aria-describedby로 달아 포커스했을 때 설명도 읽히게 한다. */
+    /** aria-describedby로 달아 포커스 때 설명도 읽히게 하는 id. */
     descId: string;
 };
 
 /** 범위 값 표시. 저장은 ms 그대로 하고, 보여 줄 때만 초로 바꾼다(5000ms → 5초). */
 const formatRange = (value: number, unit: string): string => (unit === "ms" ? `${value / 1000}초` : `${value}${unit}`);
 
-/**
- * 손잡이(aria) 속성을 받는 Slider. components/ui/slider.tsx는 순정 shadcn이라 손잡이에 속성을 못 심으므로
- * Base UI 프리미티브로 직접 조립한다. 모양 문자열은 components/ui/slider.tsx와 맞춘다.
- */
+// components/ui는 순정 유지 - Base UI 프리미티브로 조립, 모양 문자열은 ui와 수동 맞춤
 const Slider = ({className, thumbProps, value, defaultValue, min = 0, max = 100, ...props}: SliderPrimitive.Root.Props & {
-    /** 손잡이(role=slider)에 심을 속성. 이름(aria-label), 설명(aria-describedby), 읽는 값(getAriaValueText)을 여기로 넘겨야 읽힌다. */
+    /** 손잡이(role=slider)에 심을 속성 - 이름, 설명, 읽는 값은 여기로 넘겨야 읽힌다. */
     thumbProps?: SliderPrimitive.Thumb.Props;
 }) => (
     <SliderPrimitive.Root className={cn("data-horizontal:w-full data-vertical:h-full", className)} data-slot="slider"
@@ -80,10 +77,7 @@ const formatDefault = (schema: SettingSchema): string => {
     }
 };
 
-/**
- * 저장 전 편집값. 저장값이 바뀌면(되돌리기, 다른 탭) 따라간다.
- * effect가 아니라 렌더 중에 비교해야 옛 값이 한 번 그려지지 않는다.
- */
+// 저장값이 바뀌면(되돌리기, 다른 탭) 따라간다 - 렌더 중에 비교해야 옛 값이 안 그려진다.
 const useDraft = <T, >(value: T): [T, (next: T) => void] => {
     const [draft, setDraft] = useState(value);
     const [synced, setSynced] = useState(value);
@@ -138,15 +132,12 @@ const TextControl = ({schema, value, descId, onChange}: NarrowProps<"text">) => 
     );
 };
 
-/**
- * 단축키 하나. 버튼을 누른 뒤 원하는 키를 치면 바뀐다(영문, 숫자만, 다른 키는 취소).
- * 다른 단축키가 쓰는 키면 알려 주고 계속 기다린다.
- */
+// 버튼을 누른 뒤 키를 치면 바뀐다(영문, 숫자만) - 다른 단축키가 쓰는 키면 알리고 계속 기다린다.
 const KeyControl = ({schema, value, takenKeys = [], descId, onChange}: NarrowProps<"key">) => {
     const [listening, setListening] = useState(false);
     const [taken, setTaken] = useState("");
-    // 스크린 리더에 화면 글자와 같은 내용을 준다. 이름만 주면 '키 입력…', '이미 사용 중'이 들리지 않는다.
-    const shown = taken ? `${taken.toUpperCase()}: 이미 사용 중` : listening ? "키 입력…" : value.toUpperCase();
+    // 스크린 리더에 화면 글자와 같은 내용을 준다. 이름만 주면 '키 입력...', '이미 사용 중'이 들리지 않는다.
+    const shown = taken ? `${taken.toUpperCase()}: 이미 사용 중` : listening ? "키 입력..." : value.toUpperCase();
     const stop = (): void => {
         setListening(false);
         setTaken("");
@@ -210,10 +201,7 @@ const RangeControl = ({schema, value, descId, onChange}: NarrowProps<"range">) =
 /** 포커스를 받을 수 있는 요소 (막힌 것과 tabindex -1은 뺀다). */
 const FOCUSABLE = ":is(button, input, [tabindex]:not([tabindex='-1'])):not(:disabled)";
 
-/**
- * 누른 버튼이 막히거나 사라져 포커스가 빠졌으면(body) within 안의 포커스 받을 곳으로 옮긴다.
- * 그대로 두면 키보드 사용자가 페이지 맨 위로 돌아간다. 다시 그린 뒤에 부른다.
- */
+// 누른 버튼이 사라져 포커스가 body로 떨어졌으면 within 안의 포커스 받을 곳으로 옮긴다.
 const refocus = (within: Element | null | undefined): void => {
     const active = document.activeElement;
     if (active && active !== document.body && !(active instanceof HTMLButtonElement && active.disabled)) return;
@@ -260,8 +248,7 @@ const OrderControl = ({schema, value: order, descId, onChange}: NarrowProps<"ord
                     )}
                     draggable
                     onDragStart={(ev) => {
-                        // Firefox는 dataTransfer에 데이터가 없으면 드래그를 시작하지 않는다.
-                        // text/plain이면 입력칸에 떨어뜨렸을 때 번호가 글자로 들어가므로 입력칸이 받지 않는 종류로 둔다.
+                        // Firefox는 dataTransfer가 비면 드래그를 시작하지 않는다 - 입력칸에 떨어뜨려도 안 들어가는 종류로 둔다.
                         ev.dataTransfer.setData("application/x-refresher-order", String(index));
                         ev.dataTransfer.effectAllowed = "move";
                         setDragging(index);

@@ -108,14 +108,12 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
             {doubleDccon && selected.length > 0 && (
                 <div className="flex items-center gap-2">
                     <img src={selected[0]!.list_img} alt={selected[0]!.title} width={32} height={32}/>
-                    <span className="flex-1 text-muted-foreground">더블콘 {selected.length}/2 — 하나만 더 선택</span>
+                    <span className="flex-1 text-muted-foreground">더블콘 {selected.length}/2 - 하나만 더 선택</span>
                     <Button size="xs" variant="secondary" onClick={() => setSelected([])}>초기화</Button>
                 </div>
             )}
 
-            {/* 불러오는 동안은 스켈레톤을 칸이 넘치도록 깔아 꽉 찬 목록처럼 보인다. 넘친 스켈레톤에 스크롤바가 생기지 않게 자른다. */}
-            {/* 세로 휠로도 패키지를 옆으로 부드럽게 넘기므로 스크롤바는 숨긴다. 가로 휠(트랙패드), Shift(브라우저가 이미 가로로 굴림), Ctrl(확대)은 그대로 둔다. */}
-            {/* React의 onWheel은 루트에 수동(passive) 리스너로 붙어 preventDefault가 안 먹으니 네이티브로 건다. */}
+            {/* 스켈레톤은 넘치게 깔고 잘라 꽉 찬 목록처럼 보인다. 세로 휠도 옆으로 넘기므로 스크롤바는 숨긴다. */}
             <div ref={strip} className="flex gap-1 overflow-x-auto scrollbar-none aria-busy:overflow-hidden" aria-busy={loading} onScrollEnd={() => (wheelTarget.current = null)}>
                 {loading
                     ? Array.from({length: 12}, (_, index) => <Skeleton key={index} className="size-12 flex-none"/>)

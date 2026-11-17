@@ -1,6 +1,6 @@
 @reference "../../assets/styles/shared.css";
 
-/* ===== 미리보기 (preview 모듈) — 오버레이 shadow 안. 공용 호스트 스타일(:host, 포털)은 assets/styles/overlay.css, 토스트, 버블 등 컴포넌트는 Tailwind ===== */
+/* ===== 미리보기 (preview 모듈) - 오버레이 shadow 안. 공용 호스트 스타일(:host, 포털)은 assets/styles/overlay.css, 토스트, 버블 등 컴포넌트는 Tailwind ===== */
 
 /* 누르면 크게 보기나 원본 보기가 열리는 본문 이미지 (contentsClick.ts의 markPressable). */
 .refresher-preview-contents img[role="button"] {
@@ -11,12 +11,10 @@
 
 .refresher-html {
     word-break: break-word;
-    /* 본문 HTML은 class를 남겨 확장 UI와 같은 shadow 안의 Tailwind 유틸리티(fixed inset-0 z-50 등)를 쓸 수 있다.
-       상자 안에 가둬 창 머리, 버튼, 댓글을 덮는 가짜 창을 만들지 못하게 한다. 댓글은 content-visibility가 이미 가둔다. */
+    /* 본문 HTML은 class를 남겨 shadow 안의 Tailwind 유틸리티를 쓸 수 있다. contain으로 가둬 가짜 창이 창 머리, 댓글을 덮지 못하게 한다. */
     contain: layout paint;
 
-    /* 디시 다크모드는 본문 상자를 통째로 반전 필터로 뒤집어 글쓴이의 인라인 color:#000000까지 뒤집는다 (dark.css의 .darkmode .write_div).
-       페이지 CSS가 안 닿는 미리보기도 똑같이 뒤집어야 그 검은 글자가 검은 배경 위에 남지 않는다 (#275). */
+    /* 디시 다크모드는 본문 상자를 통째로 반전 필터로 뒤집는다(dark.css의 .darkmode .write_div). 미리보기도 똑같이 뒤집어야 인라인 color:#000000이 검은 배경에 남지 않는다 (#275). */
     .dark & {
         /* 테마 글자색(밝음)을 물려받으면 뒤집혀 검어진다. 검정을 넣어 뒤집히면 흰 글자가 된다. */
         color: #000;
@@ -27,12 +25,12 @@
             filter: invert(1);
         }
 
-        /* 전체화면은 최상위층에 그려져 상자 반전을 벗어나 나가므로 재반전도 끈다 — 아니면 반전이 한 번만 남어 색이 뒤집힌다. */
+        /* 전체화면은 최상위층에 그려져 상자 반전을 벗어나 나가므로 재반전도 끈다 - 아니면 반전이 한 번만 남어 색이 뒤집힌다. */
         :is(img, video, iframe, embed, object):fullscreen {
             filter: none;
         }
 
-        /* 글자콘 상자 — dark.css가 .writing_view_box .coment_dccon_txt를 다시 뒤집는 것과 같다. */
+        /* 글자콘 상자 - dark.css가 .writing_view_box .coment_dccon_txt를 다시 뒤집는 것과 같다. */
         .coment_dccon_txt {
             filter: invert(1);
         }
@@ -48,7 +46,7 @@
         }
     }
 
-    /* 지운 댓글의 회색 글자(Comment.tsx) — 미리 뒤집어 반전 후에도 본문용 회색으로 보인다. */
+    /* 지운 댓글의 회색 글자(Comment.tsx) - 미리 뒤집어 반전 후에도 본문용 회색으로 보인다. */
     .dark &.text-muted-foreground {
         color: rgb(from var(--muted-foreground) calc(255 - r) calc(255 - g) calc(255 - b));
     }
@@ -63,7 +61,7 @@
         color: var(--link);
     }
 
-    /* 답글 멘션은 디시처럼 따로 한 줄 — 인라인이면 디시콘, 글자콘 아래 끝에 붙는다. */
+    /* 답글 멘션은 디시처럼 따로 한 줄 - 인라인이면 디시콘, 글자콘 아래 끝에 붙는다. */
     .mention.deco {
         display: block;
         margin-bottom: 3px;
@@ -84,12 +82,12 @@
         margin: 0;
     }
 
-    /* 링크 미리보기 카드 — 디시 og.css를 옮겼다. 디시는 인라인 style로도 주지만 utils/sanitize.ts가 표시, float, 넘침 속성을 지워, 지워지는 것만 여기서 다시 준다. */
+    /* 링크 미리보기 카드 - 디시 og.css를 옮겼다. 디시는 인라인 style로도 주지만 utils/sanitize.ts가 표시, float, 넘침 속성을 지워, 지워지는 것만 여기서 다시 준다. */
     a.og-wrap {
         display: inline-block;
         box-sizing: border-box;
         overflow: hidden;
-        /* 디시 본문 글자색. 흰 바탕은 인라인으로 남는다 — 다크 테마에서는 위의 상자 반전이 알아서 어둡게 뒤집는다. */
+        /* 디시 본문 글자색. 흰 바탕은 인라인으로 남는다 - 다크 테마에서는 위의 상자 반전이 알아서 어둡게 뒤집는다. */
         color: #333;
         text-decoration: none;
     }
@@ -140,18 +138,18 @@
     }
 }
 
-/* 스텔스 모드(페이지의 html.refresherStealth)가 넘겨준 변수로 미리보기 미디어도 숨긴다 — 댓글 디시콘은 아래에서 따로 가린다. */
+/* 스텔스 모드(페이지의 html.refresherStealth)가 넘겨준 변수로 미리보기 미디어도 숨긴다 - 댓글 디시콘은 아래에서 따로 가린다. */
 .refresher-html:not([data-dccon]) :is(img, video, embed, iframe, image) {
     display: var(--refresher-stealth-media, inline);
 }
 
-/* 위 스텔스 규칙(0,2,1)과 명시도를 맞춰야 뒤에 선언된 이쪽이 이긴다 — :is는 가장 높은 인자(img:not(...))를 따른다. */
+/* 위 스텔스 규칙(0,2,1)과 명시도를 맞춰야 뒤에 선언된 이쪽이 이긴다 - :is는 가장 높은 인자(img:not(...))를 따른다. */
 /* 유튜브 <embed>는 정화하며 iframe으로 바뀐다 (utils/sanitize.ts). 디시콘은 mp4든 gif든(gifVideos.ts가 바꾼 것) 이미지로 치지 않는다. */
 .refresher-preview-block-media :is(iframe, image, img:not(.written_dccon), video:not(.written_dccon)) {
     display: none;
 }
 
-/* 관리자가 가린 이미지 — 디시는 인라인 style(display)로 숨기는데 정화하며 지워진다. '차단 이미지 보기'를 누르면 속성을 떼어 보인다 (ui/contentsClick.ts의 clickContents). */
+/* 관리자가 가린 이미지 - 디시는 인라인 style(display)로 숨기는데 정화하며 지워진다. '차단 이미지 보기'를 누르면 속성을 떼어 보인다 (ui/contentsClick.ts의 clickContents). */
 .refresher-html :is(img, video)[data-block] {
     display: none;
 }
@@ -215,7 +213,7 @@
         }
     }
 
-    /* 글자콘 — 디시 common.css를 옮겼다. 모르는 색 클래스면 디시 기본값(남색 바탕, 흰 글자)을 쓴다. */
+    /* 글자콘 - 디시 common.css를 옮겼다. 모르는 색 클래스면 디시 기본값(남색 바탕, 흰 글자)을 쓴다. */
     .coment_dccon_txt {
         display: flex;
         justify-content: center;
@@ -226,7 +224,7 @@
         box-sizing: border-box;
         border-radius: 10px;
         background-color: #3b4890;
-        /* 크기가 고정이라 가둔다 — 글자 크기를 잴 때(fitTxtcon)마다 스크롤 칸 전체가 다시 배치되지 않게. */
+        /* 크기가 고정이라 가둔다 - 글자 크기를 잴 때(fitTxtcon)마다 스크롤 칸 전체가 다시 배치되지 않게. */
         contain: strict;
     }
 
@@ -285,7 +283,7 @@
 
 /* ===== 차단 표시 ===== */
 
-/* 차단 — 페이지와 같은 차단 모듈 설정 (Frame의 data-*). 블러 강도 변수는 <html>에서 shadow 안으로 이어받는다. */
+/* 차단 - 페이지와 같은 차단 모듈 설정 (Frame의 data-*). 블러 강도 변수는 <html>에서 shadow 안으로 이어받는다. */
 .refresher-frame {
     [data-blocked="blur"] {
         @apply refresher-blurred;
@@ -310,7 +308,7 @@
         cursor: auto;
     }
 
-    /* 이 페이지에서만 가린 내용 보기 — 숨겼던 것도 흐리게 보인다. 이 글에서만 가린 댓글 보기(CommentList의 data-comments-revealed)도 같다. */
+    /* 이 페이지에서만 가린 내용 보기 - 숨겼던 것도 흐리게 보인다. 이 글에서만 가린 댓글 보기(CommentList의 data-comments-revealed)도 같다. */
     &[data-block-revealed] :is([data-blocked], [data-duplicate]),
     [data-comments-revealed] :is([data-blocked], [data-duplicate]) {
         filter: none;
@@ -318,7 +316,7 @@
     }
 }
 
-/* 다크 모드 본문 미디어는 다시 뒤집혀 있다 (.refresher-html). 본문 차단 디시콘, 이미지는 흐림, 풀기에서도 그 반전을 지킨다 — 아니면 흐림이 반전을 덮거나 반전이 흐림을 덮는다. */
+/* 다크 모드 본문 미디어는 다시 뒤집혀 있다 (.refresher-html). 본문 차단 디시콘, 이미지는 흐림, 풀기에서도 그 반전을 지킨다 - 아니면 흐림이 반전을 덮거나 반전이 흐림을 덮는다. */
 .dark .refresher-html :is(.written_dccon, img, video)[data-blocked="blur"] {
     filter: invert(1) blur(var(--refresher-blur, 5px));
 }
@@ -329,7 +327,7 @@
 
 /* ===== 미니 미리보기 ===== */
 
-/* 미니 미리보기의 스크롤바(Mini.tsx) — 다크 모드에서는 상자가 뒤집히므로(.refresher-html) 미리 뒤집는다. 내용이 더 있다는 유일한 표시다. */
+/* 미니 미리보기의 스크롤바(Mini.tsx) - 다크 모드에서는 상자가 뒤집히므로(.refresher-html) 미리 뒤집는다. 내용이 더 있다는 유일한 표시다. */
 .dark .refresher-mini-contents {
     scrollbar-color: rgb(from var(--border) calc(255 - r) calc(255 - g) calc(255 - b)) transparent;
 }
@@ -339,8 +337,7 @@
     display: none;
 }
 
-/* 미리보기를 연 채로 띄운 다이얼로그(메모, 디시콘, 차단, 확인 창 등)는 배경을 다시 깔지 않는다 — 미리보기 배경과 겹쳐 두 겹으로 어두워진다.
-   흐림은 '팝업 바깥 배경 흐리게' 설정을 따른다 (components/dialogs.tsx). */
+/* 미리보기 위에 띄운 다이얼로그는 배경을 다시 깔지 않는다 - 미리보기 배경과 겹쳐 두 겹으로 어두워진다. */
 #portal:has(.refresher-frame) :is([data-slot="dialog-overlay"], [data-slot="alert-dialog-overlay"]) {
     background: none;
 }

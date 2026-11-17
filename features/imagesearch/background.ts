@@ -32,7 +32,6 @@ export default defineBackgroundModule(meta, {
 
     async apply({enabled, settings}) {
         // removeAll은 다른 모듈의 메뉴까지 지우므로 이 모듈의 메뉴만 지운다.
-        // 크롬은 워커가 다시 떠도 메뉴를 남겨 두므로 첫 apply에도 지울 것이 있다.
         await Promise.all(ENGINE_IDS.map((engine) => browser.contextMenus.remove(MENU_PREFIX + engine).catch(() => {})));
         if (!enabled) return;
 

@@ -28,7 +28,7 @@ export default {
         reversePreviewKey: {name: "미리보기 키 반전", desc: "좌클릭으로 미리보기를 열고 우클릭으로 게시글로 이동합니다. 댓글 수도 같습니다."},
         longPressDelay: {
             name: "길게 누르기 판정 시간",
-            desc: "마우스 오른쪽 버튼을 이 시간 이상 눌렀다 뗄 때 기본 우클릭 메뉴가 나오게 합니다. (Windows 전용 — Shift+우클릭은 어디서나 기본 메뉴)"
+            desc: "마우스 오른쪽 버튼을 이 시간 이상 눌렀다 뗄 때 기본 우클릭 메뉴가 나오게 합니다. (Windows 전용 - Shift+우클릭은 어디서나 기본 메뉴)"
         },
         colorPreviewLink: {name: "주소창에 게시글 주소 표시", desc: "미리보기를 여는 동안 주소창과 탭 제목을 그 게시글로 바꿉니다. 연 글은 방문 기록에 남아 목록에서 방문한 글 색으로 보입니다."},
         autoRefreshComment: {name: "댓글 자동 새로고침", desc: "일정 주기로 댓글을 자동으로 새로고침합니다."},

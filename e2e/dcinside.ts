@@ -2,10 +2,7 @@ import type {Route} from "@playwright/test";
 
 import {D_ALPHABET} from "../core/preview/dcinside-js";
 
-/**
- * 가짜 디시. fixtures.ts가 dcinside.com 요청을 모두 여기로 보내 실제 디시에는 아무것도 가지 않는다.
- * 콘텐츠 스크립트가 읽는 최소한의 마크업만 흉내 낸다. 디시 마크업이 바뀌어 모듈을 고치면 여기도 같이 고친다.
- */
+/** 가짜 디시. fixtures.ts가 dcinside.com 요청을 모두 여기로 보낸다. 디시 마크업이 바뀌면 여기도 같이 고친다. */
 
 export interface FakeRow {
     no: number;
@@ -49,7 +46,6 @@ export const DCCON = {package_idx: "7", detail_idx: "71", title: "웃음", list_
 
 /** 테스트 하나가 보는 가짜 디시. 테스트가 값을 바꾸면 다음 요청부터 그대로 응답한다. */
 export class FakeSite {
-    /** 1쪽 목록. 첫 행은 글 3(고닉 user3, 댓글 2개)이다. */
     rows: FakeRow[] = [
         {no: 3, title: "세 번째 글", nick: "고닉", uid: "user3", replies: 2},
         {no: 2, title: "두 번째 글", nick: "ㅇㅇ", uid: "", ip: "1.2"},
@@ -58,7 +54,6 @@ export class FakeSite {
 
     page2: FakeRow[] = [{no: 51, title: "2쪽 첫 글", nick: "고닉", uid: "user51"}];
 
-    /** 글마다 같은 댓글: 고닉의 댓글 하나와 그 아래 유동의 답글 하나. */
     comments: FakeComment[] = [
         fakeComment(10, {user_id: "user1", name: "고닉", ip: "", memo: "댓글 하나"}),
         fakeComment(11, {c_no: "10", depth: 1, memo: "답글"})
@@ -79,10 +74,7 @@ export class FakeSite {
     /** 받은 쓰기 요청 (댓글 작성, 삭제, 디시콘 댓글, 관리자 글 삭제). fcmToken은 그 머리의 값이다. */
     readonly submitted: { path: string; body: URLSearchParams; fcmToken?: string }[] = [];
 
-    /**
-     * 갤러리 관리자로 본다. 목록 머리와 행에 관리 체크박스 열을 그린다 (utils/user.ts의 isGalleryManager).
-     * 디시가 주는 행에는 체크박스 칸이 없고 디시 JS가 붙인다 (core/list.ts). 여기서는 처음부터 넣어 둔다.
-     */
+    /** 갤러리 관리자로 본다. 목록 머리와 행에 관리 체크박스 열을 그린다. */
     manager = false;
 
     /** 받은 1쪽 목록 요청 수 (페이지 문서 포함). */
@@ -150,7 +142,7 @@ export class FakeSite {
                 return json({result: "success"});
             }
             case "/dccon/package_detail": {
-                // 디시콘 하나의 패키지 정보 (정보 창, 디시콘 버블). 목록의 path가 그 디시콘의 코드(dccon.php?no=)다. 81은 둘째 패키지의 디시콘이다.
+                // 디시콘 하나의 패키지 정보. 81은 둘째 패키지의 디시콘이다.
                 const second = form().get("code") === "81";
                 return json({info: {package_idx: second ? "8" : DCCON.package_idx, code: "", title: second ? "둘째콘" : "테스트콘", description: second ? "인사 모음" : "웃는 얼굴 모음",
                     seller_name: "판매자", reg_date_short: "2026.10.01", main_img_path: second ? "81" : DCCON.detail_idx, register: false, residual: false},
@@ -218,10 +210,7 @@ const pageCommentList = (comments: FakeComment[]): string => (comments.length ==
     : `<p class="usertxt ub-word">${memo}</p>`}</div></div></li>`).join("")}
 </ul></div>`);
 
-/**
- * 글 페이지. 미리보기가 받아 읽기도 하고(core/preview/parser.ts) 탭에서 직접 열리기도 한다.
- * 직접 열릴 때 아래 인라인 스크립트가 부르는 디시 전역(_d, $)을 빈 함수로 둔다.
- */
+/** 글 페이지. 직접 열릴 때 아래 인라인 스크립트가 부르는 디시 전역(_d, $)을 빈 함수로 둔다. */
 const viewPage = (no: string, comments: FakeComment[], target: { id: string; no: string } | null, commentCount: number, extra: string): string => `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>글 ${no}</title>
 <script>window._d = () => ""; window.$ = () => ({data() {}});</script></head><body>
 <input type="hidden" id="e_s_n_o" value="token">
@@ -245,10 +234,7 @@ const SERVICE_CODE = "abc0123456789";
 /** _d() 값을 풀면 나오는 끝 10자리. 보낸 service_code는 "abc" + 이것이어야 한다. */
 export const SERVICE_CODE_TAIL = "e2eRefresh";
 
-/**
- * core/preview/submit.ts가 _d() 값을 푸는 과정의 역.
- * 풀기: 섞은 base64 → 표준 base64 → atob → 첫 자리 숫자 f를 (f > 5 ? f − 5 : f + 4)로 → 쉼표로 나눈 수 v의 i번째는 글자 2(v − i − 1)/(12 − i).
- */
+/** core/preview/submit.ts가 _d() 값을 푸는 과정의 역. */
 function encodeServiceTail(tail: string): string {
     const standard = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
     const numbers = Array.from(tail, (char, index) => (char.charCodeAt(0) * (12 - index)) / 2 + index + 1).join(",");

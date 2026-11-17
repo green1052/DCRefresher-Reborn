@@ -45,8 +45,7 @@ export function DataTab() {
     const id = useId();
 
     useEffect(() => {
-        // 클라우드 메타에서 읽어 자동 백업(백그라운드)과 다른 기기의 백업도 반영한다.
-        // 백업은 sync를 연달아 여러 번 쓴다. 먼저 보낸 읽기가 늦게 와 새 상태를 덮지 않게 마지막 읽기만 반영한다.
+        // 클라우드 메타를 읽고 sync가 바뀌면 다시 읽는다 - 연달아 오는 읽기는 마지막 것만 반영한다.
         let latest = 0;
         let alive = true;
         const loadStatus = (): void => {
@@ -98,10 +97,7 @@ export function DataTab() {
         return true;
     };
 
-    // writeSettings가 남긴 직전 상태로 돌린다. 이것도 writeSettings로 쓰므로 한 번 더 하면 되돌리기 전으로 돌아온다.
-    // at: 알림의 되돌리기가 맡은 작업의 시각. 그 뒤에 다른 작업이 칸을 덮었으면 엉뚱한 작업을 되돌리지 않는다.
-    // auto: 그 작업(초기화)이 끈 자동 백업을 다시 켠다. 쓰기가 실패하면 빈 상태가 올라가지 않게 쓴 뒤에 켠다.
-    // 탭의 되돌리기는 켜지 않는다. 한참 뒤에 확인 없이 켜면 그사이 다른 기기가 올린 자동 백업을 덮는다.
+    // writeSettings가 남긴 직전 상태로 되돌린다 - 그 뒤 다른 작업이 칸을 덮었으면(at 불일치) 되돌리지 않는다.
     const revert = (at?: number, auto = false) =>
         run(async () => {
             const before = await backupStorage.undo().getValue();

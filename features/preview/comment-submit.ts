@@ -18,10 +18,7 @@ const DCCON_FAIL_MESSAGES: Record<string, string> = {
     fail: "디시콘 입력에 실패하였습니다."
 };
 
-/**
- * 댓글이 올라갔는지. 디시 comment.js처럼 'false'가 아니면 성공(새 댓글 번호)으로 보되, 확실한 실패는 거른다:
- * 실패 코드, 빈 응답, HTML 페이지(로그인이 풀렸거나 오류 페이지). 성공으로 잘못 보면 입력한 글을 지워 버린다.
- */
+/** 'false'가 아니면 성공으로 보되 실패 코드, 빈 응답, HTML은 거른다 - 성공으로 잘못 보면 입력한 글을 지운다. */
 export const isCommentPosted = ({result}: SubmitResult): boolean =>
     result !== "false" && result !== "" && !result.trimStart().startsWith("<") && !Object.hasOwn(FAIL_MESSAGES, result) && !Object.hasOwn(DCCON_FAIL_MESSAGES, result);
 
@@ -62,12 +59,7 @@ export const prefetchTurnstile = (config: TurnstileConfig): void => {
     if (!freshPrefetch(config)) prefetched = {sitekey: config.sitekey, at: Date.now(), result: hiddenToken(config)};
 };
 
-/**
- * 디시 ts_cmt_fields가 보내는 Turnstile 칸. 먼저 보이지 않게 토큰을 받고, 확인을 눌러야 하면(interactive) ask(확인 창)로 받는다.
- * 창을 닫으면 undefined다 (보내지 않는다). 토큰을 받지 못해도 디시처럼 상태를 담아 보낸다 (서버가 거절하면 그 메시지를 보인다).
- * mode 1은 디시도 기록만 하므로(화면 밖 위젯) 확인 창을 띄우지 않고 interactive 상태로 보낸다.
- * focusMs는 폼에 처음 들어온 뒤 지난 시간이다 (디시 ts_focus_ms, 들어온 적 없으면 0). 디시처럼 토큰을 받은 뒤에 잰다.
- */
+/** 디시 ts_cmt_fields의 Turnstile 칸 - 보이지 않게 받고 interactive면 확인 창으로 받는다(닫으면 undefined). */
 export const turnstileFields = async (
     config: TurnstileConfig,
     focusMs: () => number,
@@ -94,11 +86,7 @@ export const turnstileFields = async (
 /** captcha: 원문 페이지에서만 풀 수 있는 자동입력 방지 확인을 요구받았다. */
 type CommentOutcome = { ok: true } | { ok: false; captcha: true } | { ok: false; captcha: false; message: string };
 
-/**
- * 댓글, 디시콘, 글자콘을 보낸다. 처음엔 토큰 없이 보내고, 'false||captcha||v3'가 오면 reCAPTCHA v3 토큰을 붙여 한 번 더 보낸다
- * (디시 comment.js, dccon.js, txtcon.js와 같음). turnstile(turnstileFields)은 두 전송에 같이 붙인다 (디시도 formData에 한 번 붙인다).
- * 요청이 끊기면 던진다 (서버는 댓글을 올렸을 수 있다).
- */
+/** 댓글, 디시콘, 글자콘을 보낸다 - 'false||captcha||v3'가 오면 v3 토큰을 붙여 한 번 더 보낸다. 끊기면 던진다(서버가 올렸을 수 있다). */
 export const postComment = async (
     preData: GalleryPreData,
     post: PostInfo,
@@ -128,9 +116,7 @@ export const postComment = async (
     return {ok: false, captcha: false, message: (response.result === "false" ? resultMessage(response) : failMessage) || "댓글을 작성하지 못했습니다."};
 };
 
-/**
- * 본인 댓글 삭제 (비밀번호, 회원). 'false||captcha||v3'가 오면 작성처럼 v3 토큰을 붙여 한 번 더 보낸다 (디시 comment.js의 비밀번호 삭제).
- */
+/** 본인 댓글 삭제 - 'false||captcha||v3'가 오면 v3 토큰을 붙여 한 번 더 보낸다. */
 export const deleteOwnComment = async (preData: GalleryPreData, post: PostInfo, commentNo: string, password: string): Promise<ManageResult> => {
     const rcKey = pickRcKey();
     const response = await sendWithV3((token) => userDeleteComment(preData, post, commentNo, password, rcKey, token), {action: "comment_delete_submit", rcKey});

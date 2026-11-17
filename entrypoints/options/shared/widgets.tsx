@@ -33,7 +33,6 @@ export const SearchInput = ({className, ...props}: ComponentProps<typeof InputGr
     </InputGroup>
 );
 
-/** 빈 목록, 검색 결과 없음 안내. */
 export const EmptyList = ({children}: { children: ReactNode }) => (
     <Empty>
         <EmptyDescription>{children}</EmptyDescription>

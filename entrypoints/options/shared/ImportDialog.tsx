@@ -10,19 +10,14 @@ import {Textarea} from "@/components/ui/textarea";
 
 import {type Done, notify, notifyDone} from "../optionsStore";
 
-/**
- * 내보낸 JSON을 붙여넣거나 파일에서 불러오는 가져오기 다이얼로그(차단/메모/데이터 공용).
- * 열 때만 마운트하므로 닫으면 입력이 초기화되고, 가져오기에 실패해 열려 있으면 붙여넣은 텍스트가 남는다.
- */
+// 열 때만 마운트해 닫으면 입력이 초기화된다.
 export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 넣거나 파일에서 불러와 주세요.", placeholder = "JSON 데이터", fromFile = true, onClose, onSubmit}: {
     title: string;
     desc?: React.ReactNode;
-    /** 입력칸 안내이자 이름. */
     placeholder?: string;
-    /** JSON 파일에서 불러오기 버튼을 단다. 고른 파일의 내용을 바로 가져온다. */
     fromFile?: boolean;
     onClose: () => void;
-    /** 가져왔으면 알림 문구를 돌려준다. 실패는 직접 알리고 undefined를 돌려줘 다이얼로그를 열어 둔다. */
+    /** 성공 문구를 돌려주고 실패는 직접 알린다 - undefined면 창을 열어 둔다. */
     onSubmit: (text: string) => Promise<Done | undefined>;
 }) => {
     const [text, setText] = useState("");

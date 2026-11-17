@@ -45,7 +45,6 @@ beforeAll(() => {
     vi.stubGlobal("OffscreenCanvas", FakeOffscreenCanvas);
     vi.stubGlobal("createImageBitmap", createImageBitmap);
     hookUploads();
-    // 두 번 걸어도 한 번만 바꾼다.
     hookUploads();
 });
 
@@ -166,7 +165,6 @@ describe("파일 선택칸", () => {
         // 첫 변환이 끝나기 전에 다시 고른다.
         choose([png("2.png", ["IHDR", "IDAT"])]);
         await vi.waitFor(() => expect(received).toHaveLength(1));
-        // 늦게 끝난 옛 변환이 새 파일을 덮으면 안 된다.
         await new Promise((resolve) => setTimeout(resolve, 20));
         expect(received).toHaveLength(1);
         expect(received[0]?.map((file) => file.name)).toEqual(["2.webp"]);

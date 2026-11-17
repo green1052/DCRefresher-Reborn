@@ -25,13 +25,12 @@ const IMAGE_HINT = "보통은 본문 이미지를 우클릭해 '이 이미지 �
 
 interface BlockDialogProps {
     type: BlockType;
-    /** 수정할 기존 항목. 없으면 추가. */
     initial?: BlockEntry | null;
     onClose: () => void;
     onSubmit: (fields: BlockInputFields) => Promise<void>;
 }
 
-/** 차단 항목 추가/수정 다이얼로그. 입력 초기값을 마운트 시점의 initial에서 잡으므로 열 때만 마운트한다. */
+/** 초기값을 마운트 시점의 initial에서 잡으므로 열 때만 마운트한다. */
 export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps) => {
     const [content, setContent] = useState(initial?.content ?? "");
     const [isRegex, setIsRegex] = useState(type !== "IMAGE" && (initial?.isRegex ?? false));

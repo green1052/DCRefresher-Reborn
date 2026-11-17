@@ -33,7 +33,6 @@ describe("isBlocked", () => {
     it("유형의 기본 모드를 따른다", () => {
         setBlockLists({NICK: [entry("닉")], TITLE: [entry("광고")]});
         expect(isBlocked("NICK", "닉")).toBe(true);
-        // 닉네임 기본은 일치라 포함만으로는 막지 않는다.
         expect(isBlocked("NICK", "닉네임")).toBe(false);
         expect(isBlocked("TITLE", "무료 광고 글")).toBe(true);
     });
@@ -96,7 +95,6 @@ describe("isBlocked", () => {
 
     it("NOT_* 항목들은 하나의 허용 목록이다", () => {
         setBlockLists({NICK: [entry("가", {mode: "NOT_SAME"}), entry("나", {mode: "NOT_SAME"})]});
-        // 항목마다 뒤집었다면 '가'는 '나' 항목에, '나'는 '가' 항목에 막힌다.
         expect(isBlocked("NICK", "가")).toBe(false);
         expect(isBlocked("NICK", "나")).toBe(false);
         expect(isBlocked("NICK", "다")).toBe(true);
@@ -401,7 +399,6 @@ describe("이미지 차단", () => {
 
             const url = imageUrl();
             setBlockLists({IMAGE: [entry((await imageHash(url))!.file, {similar: FINGERPRINT, mode: "NOT_SAME"})]});
-            // 같은 파일이라 허용 목록에 맞는다. 지문으로 넓혀 막지 않는다.
             expect(await isImageBlocked(image(url), undefined, 12)).toBe(false);
         });
 
@@ -455,7 +452,6 @@ describe("이미지 차단", () => {
             expect(isSimilarSet).toHaveBeenCalledTimes(2);
             expect(usedIds().filter((id) => id === near.id)).toHaveLength(2);
 
-            // 목록이 바뀌면 다시 훑는다.
             setBlockLists({IMAGE: [entry("다른 파일", {similar: "5".repeat(32)})]});
             expect(await isImageBlocked(image(url), undefined, 4)).toBe(false);
             expect(isSimilarSet).toHaveBeenCalledTimes(3);

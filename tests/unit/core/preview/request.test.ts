@@ -147,7 +147,6 @@ describe("fetchComments", () => {
         serve(fetchMock, ({body, signal: requestSignal}) => {
             const page = Number(body.get("comment_page"));
             if (page === 2) return new Response("", {status: 500});
-            // 다른 쪽은 끊길 때까지 걸려 있다.
             return new Promise((_, reject) => requestSignal.addEventListener("abort", () => {
                 aborted.push(page);
                 reject(requestSignal.reason);

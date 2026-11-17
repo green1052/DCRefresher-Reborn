@@ -6,11 +6,7 @@ import {Button} from "@/components/ui/button";
 import {Tooltip, TooltipTrigger} from "@/components/ui/tooltip";
 import {cn} from "cn";
 
-/**
- * 오버레이(shadow DOM) 안의 포털 칸에 그리는 TooltipContent. components/ui/tooltip.tsx는 순정 shadcn이라 포털 칸을 못 바꾸므로
- * Base UI 프리미티브로 직접 조립한다. 모양 문자열은 components/ui/tooltip.tsx와 맞춘다.
- * 옵션, 팝업에서는 overlay.portal이 비어 body에 그린다(순정과 같은 행동).
- */
+// components/ui는 순정 유지 - Base UI 프리미티브로 조립, 모양 문자열은 ui와 수동 맞춤
 const OverlayTooltipContent = ({className, side = "top", sideOffset = 4, align = "center", alignOffset = 0, children, ...props}:
     TooltipPrimitive.Popup.Props & Pick<TooltipPrimitive.Positioner.Props, "align" | "alignOffset" | "side" | "sideOffset">) => (
     <TooltipPrimitive.Portal container={overlay.portal}>
@@ -26,10 +22,7 @@ const OverlayTooltipContent = ({className, side = "top", sideOffset = 4, align =
     </TooltipPrimitive.Portal>
 );
 
-/**
- * 툴팁을 단 요소. trigger는 툴팁을 여는 요소(주로 Button)이고, 그 안의 내용(아이콘 등)은 children으로 준다.
- * 줄마다 그리는 목록(차단 목록 줄, 댓글)에는 쓰지 않는다. 수천 개를 그리면 느려지므로 브라우저 기본(title)을 쓴다.
- */
+// 수천 개를 그리는 목록 줄, 댓글에는 느려지므로 브라우저 기본(title)을 쓴다.
 export const WithTooltip = ({tip, side, trigger, children}: {
     tip: ReactNode;
     side?: ComponentProps<typeof OverlayTooltipContent>["side"];
@@ -42,7 +35,6 @@ export const WithTooltip = ({tip, side, trigger, children}: {
     </Tooltip>
 );
 
-/** 툴팁 글이 곧 이름(aria-label)인 버튼. 아이콘만 있는 버튼에 쓴다. */
 export const TooltipButton = ({tip, side, children, ...props}: ComponentProps<typeof Button> & {
     tip: string;
     side?: ComponentProps<typeof OverlayTooltipContent>["side"];

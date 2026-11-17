@@ -48,7 +48,7 @@ export default defineModule(meta, {
         // 창 폭 감시. 기준이 바뀌면 새로 건다.
         let width: { query: MediaQueryList; watch: AbortController } | undefined;
         const compact = (): void => applyCompact(ctx, width?.query.matches === true);
-        /** 창 폭이 기준(activePixel)을 넘나들 때만 다시 맞춘다 — resize는 창 크기를 바꾸는 동안 수십 번 온다. */
+        /** 창 폭이 기준(activePixel)을 넘나들 때만 다시 맞춘다 - resize는 창 크기를 바꾸는 동안 수십 번 온다. */
         const watchWidth = (): void => {
             width?.watch.abort();
             width = {query: window.matchMedia(`(max-width: ${ctx.settings.activePixel}px)`), watch: new AbortController()};

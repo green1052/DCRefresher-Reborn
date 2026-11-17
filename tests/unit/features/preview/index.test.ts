@@ -58,7 +58,6 @@ it("다른 글로 넘어가면 늦게 온 옛 댓글은 그리지 않는다", as
     usePreviewStore.getState().requestOpen(preData("3"));
     await vi.waitFor(() => expect(names()).toEqual(["새"]));
 
-    // 2번 글의 댓글이 이제 와도 3번 글 화면을 덮지 않는다.
     late[0]?.({list: [comment("옛")], allowReply: true});
     await new Promise((resolve) => setTimeout(resolve));
     expect(names()).toEqual(["새"]);

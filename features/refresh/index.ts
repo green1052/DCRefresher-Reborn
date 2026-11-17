@@ -15,14 +15,12 @@ import meta, {type Ctx} from "./meta";
 import {createUnseenCounter} from "./title";
 
 const MINIMUM_REFRESH_INTERVAL = 2000;
-/** 목록 요청이 연달아 실패할 때 자동 새로고침 주기를 늘리는 상한. */
 const MAXIMUM_BACKOFF_INTERVAL = 60_000;
-/** 새 글 없는 자동 새로고침이 이어질 때 늘리는 주기의 상한 (설정한 주기의 배수). 한 번마다 0.5배씩 늘린다. */
+/** 새 글 없는 자동 새로고침이 이어질 때 늘리는 주기의 상한 (배수). */
 const MAXIMUM_QUIET_FACTOR = 4;
-/** 목록 요청 하나(차례 기다리기, 응답 머리, 본문)의 제한. 머리 제한(15초)에 수백 KB 본문을 받을 시간을 더했다. */
+/** 목록 요청 하나의 제한 (머리 제한 15초 + 본문 수신 시간). */
 const LIST_TIMEOUT = 30_000;
 
-/** setup()이 돌려주는 객체. 단축키, 팝업, 미리보기가 쓴다. */
 interface RefreshApi {
     refreshLists(): Promise<void>;
 
@@ -30,10 +28,8 @@ interface RefreshApi {
 
     isPaused(): boolean;
 
-    /** 목록을 곧바로 다시 받고 다음 주기를 새로 잡는다. 미리보기의 관리 동작(삭제, 차단 등) 뒤에 부른다. */
     reload(): Promise<void>;
 
-    /** 건너뛴 자동 새로고침이 있으면 곧바로 한다. 미리보기 창을 닫은 뒤 부른다. */
     catchUp(): void;
 }
 
@@ -62,15 +58,13 @@ export default defineModule(meta, {
         let rerun = false;
         // 연달아 실패한 목록 요청 수. 실패할 때마다 자동 새로고침 주기가 두 배가 된다.
         let failures = 0;
-        // 연달아 새 글 없이 끝난 자동 새로고침 수. 조용한 갤러리는 주기를 MAXIMUM_QUIET_FACTOR배까지 늘린다.
-        // 새 글, 강제 로드, 탭으로 돌아오기, 목록 위 마우스, 키 입력이 0으로 되돌린다.
+        // 새 글 없이 끝난 자동 새로고침 수. 주기를 배수까지 늘리고 새 글·사용자 활동이 0으로 되돌린다.
         let quiet = 0;
         // 페이지를 넘긴 주소. 그 목록으로 갈아끼운 직후 목록 위로 스크롤한다 (진행 중인 요청에 막혀 나중에 받아도).
         let scrollAfter: string | null = null;
         // 진행 중인 목록 요청. 주소가 바뀌면 끊는다.
         let inflight: AbortController | null = null;
-        // 지난번 갈아끼운 목록 tbody HTML의 SHA-256. 받은 것이 같으면 파싱, 교체를 건너뛴다.
-        // HTML을 그대로 들고 있으면 목록 탭마다 비교용으로만 150KB(UTF-16)쯤을 붙잡는다.
+        // 지난번 목록 tbody의 SHA-256. 같으면 파싱·교체를 건너뛴다 (HTML을 들고 있으면 탭마다 150KB를 붙잡는다).
         let lastListHash = "";
         // 글 보기 페이지에서 목록이 화면 밖인지. 글 아래의 목록은 대개 보이지 않는데 주기마다 받으면 분당 400KB쯤을 받는다.
         let offscreen = false;
@@ -86,13 +80,11 @@ export default defineModule(meta, {
             if (button) button.textContent = label();
         };
 
-        // 페이지를 다 읽은 뒤에 넣는다. 읽는 중에는 파서가 이 칸에 노드를 붙일 때마다 필터가 다시 불려 버튼을 옮기고
-        // 반쯤 읽은 페이지를 다시 배치해 목록 페이지가 30ms 넘게 늦게 열린다.
+        // 문서를 다 읽은 뒤 넣는다. 읽는 중엔 파서가 필터를 다시 불러 목록 페이지가 늦게 열린다.
         whenDomReady(() => ctx.addFilter(
             ".page_head > .gall_issuebox",
             (element) => {
-                // 버튼을 넣으면 필터가 다시 불리므로 이 실행의 버튼이면 둔다.
-                // 파이어폭스 재주입 전 인스턴스가 남긴 버튼은 반응이 없어 갈아끼운다.
+                // 이 실행의 버튼이면 둔다. 재주입 전 인스턴스가 남긴 버튼은 죽어 있어 갈아끼운다.
                 if (button && element.contains(button)) return;
                 element.querySelector("button[data-refresher-refresh]")?.remove();
 
@@ -109,16 +101,13 @@ export default defineModule(meta, {
 
         // 목록을 갈아끼우면 안 되는 때. 응답을 기다리는 동안 생길 수 있어 응답을 받은 뒤에도 본다.
         const holdList = (customURL?: string, force?: boolean): boolean => {
-            // pauseOnHover: 커서, 키보드 포커스가 목록 위에 있으면 건너뛴다. 글 제목을 마우스로 누르면 링크에 :focus가 남으므로
-            // :focus-visible만 본다. 숨은 탭은 목록 위에서 탭을 옮긴 :hover가 남아 있어 보지 않는다.
+            // 커서, :focus-visible이 목록 위에 있으면 건너뛴다. 숨은 탭엔 옛 :hover가 남아 보지 않는다.
             if (!force) {
                 const list = ctx.settings.pauseOnHover && !document.hidden ? document.querySelector(LIST_SELECTOR) : null;
                 if (list && (list.matches(":hover") || list.querySelector(":focus-visible"))) return true;
             }
 
-            // 관리자가 체크박스로 글을 고르는 중이거나 목록 행에 디시 유저 메뉴(작성자 좌클릭)가 열려 있으면 갈아끼우지 않는다.
-            // 댓글 쪽 체크박스, 유저 메뉴는 상관없으니 목록 표 안에서만 찾는다.
-            // 사용자가 직접 한 이동(페이지 전환/뒤로 가기)은 막으면 주소와 목록이 어긋나므로 거르지 않는다.
+            // 목록 표 안의 체크박스, 유저 메뉴가 열려 있으면 갈아끼우지 않는다.
             const held = !customURL && document.querySelector(".gall_list:not([id]) :is(.article_chkbox:checked, .user_data.add)") !== null;
             // 강제 로드(Alt+R, 미리보기 관리 동작 뒤)는 다시 시도하지 않아 말없이 버리면 지운 글이 목록에 남은 채 아무 반응이 없다.
             if (held && force) useUiStore.getState().showToast("고른 글이나 열린 유저 메뉴가 있어 글 목록을 새로고침하지 않았습니다.", "warning");
@@ -126,8 +115,7 @@ export default defineModule(meta, {
         };
 
         const load = async (customURL?: string, force?: boolean): Promise<boolean> => {
-            // 이번 호출이 막혀도 다음 새로고침부터 새 주소를 받도록 먼저 바꿔 둔다.
-            // 진행 중인 응답은 지난 주소의 목록이라 끊는다. finally가 새 주소로 다시 받는다.
+            // 먼저 바꿔 다음 새로고침부터 새 주소를 받게 한다. 진행 중인 응답은 지난 주소라 끊는다.
             if (customURL && customURL !== originalLocation) {
                 originalLocation = customURL;
                 inflight?.abort();
@@ -141,8 +129,7 @@ export default defineModule(meta, {
                 if (force) rerun = true;
                 return false;
             }
-            // 강제 로드는 숨긴 탭에서도 받는다. 미룬 강제 로드(rerun)를 버리면 자동 새로고침은 뒤 페이지, 멈춤에서 건너뛰므로
-            // 지운 글이나 옛 페이지가 그대로 남는다.
+            // 강제 로드는 숨은 탭에서도 받는다. 미룬 것(rerun)을 버리면 옛 목록이 그대로 남는다.
             if (!force && document.hidden && !ctx.settings.backgroundRefresh) return false;
             if (!force && (Date.now() - lastRefresh < MINIMUM_REFRESH_INTERVAL || paused)) return false;
 
@@ -177,10 +164,7 @@ export default defineModule(meta, {
             try {
                 lastRefresh = Date.now();
 
-                // 자동 새로고침은 재시도하지 않고 armNext가 주기를 늘린다. ky 재시도는 Retry-After를 10초까지 기다려 목록 요청이 묶인다.
-                // retry: undefined는 기본값을 덮으므로 키 자체를 뺀다.
-                // LIST_TIMEOUT은 본문이 멈춰 loading이 풀리지 않는 것을 막는다. 주기보다 짧게 잡으면 큰 갤러리 목록(2~3초)이
-                // 조금만 늦어도 실패가 되어 주기가 1분까지 늘어난다.
+                // ky 재시도는 Retry-After를 기다려 요청이 묶이므로 자동 새로고침은 retry 없이 armNext가 주기를 늘린다.
                 const response = await http.get(listUrl(target), {
                     signal: controller.signal,
                     totalTimeout: LIST_TIMEOUT,
@@ -189,14 +173,13 @@ export default defineModule(meta, {
 
                 // 목록이 그대로면 파싱, 교체를 건너뛴다. 응답 전체는 요청마다 바뀌는 값(s_key)이 있어 목록 표의 tbody만 비교한다.
                 const table = response.indexOf(LIST_TABLE);
-                // 표를 못 찾으면 -1로 둔다. indexOf(…, -1)은 처음부터 찾아 다른 tbody를 목록으로 잡는다.
+                // 표를 못 찾으면 -1로 둔다. indexOf(..., -1)은 처음부터 찾아 다른 tbody를 목록으로 잡는다.
                 const start = table === -1 ? -1 : response.indexOf("<tbody", table);
                 const end = start === -1 ? -1 : response.indexOf("</tbody>", start);
-                // 표가 없거나 잘린 응답(</tbody> 없음)은 비교, 부분 파싱 없이 문서 전체를 파싱한다. slice(start, -1)은 문서 끝까지를 준다.
+                // 표가 없거나 잘린 응답(</tbody> 없음)은 문서 전체를 파싱한다.
                 const listHtml = end === -1 ? "" : response.slice(start, end);
                 const listHash = listHtml && await sha256(new TextEncoder().encode(listHtml));
-                // 그사이 주소가 바뀌었으면 지난 주소의 목록이라 버린다. finally에서 새 주소로 다시 받는다.
-                // 해시를 구하는 사이 모듈을 껐으면 갈아끼우지 않는다. 끈 모듈이 목록을 갈아끼우면 onRevoke가 지운 삭제 표시 행이 다시 들어온다.
+                // 그사이 주소가 바뀌었거나 모듈을 껐으면 지난 주소의 목록이라 버린다.
                 if (target !== originalLocation || ctx.signal.aborted) return false;
                 if (!customURL && listHash && listHash === lastListHash) {
                     failures = 0;
@@ -207,8 +190,7 @@ export default defineModule(meta, {
                 // 응답을 기다리는 동안 커서를 올리거나 체크했으면 버린다. lastListHash를 아직 바꾸지 않아야 다음 주기에 이 목록이 들어간다.
                 if (holdList(customURL, force)) return false;
 
-                // 자동 새로고침은 목록 표만 파싱한다(문서의 1/3). 강제, 이동 로드, 검색 결과, 작성자 거르기(검색 모듈이 페이징을 보고 다시 잇는다),
-                // 실패 뒤(페이징이 옛 페이지일 수 있다)에는 문서 전체를 파싱해 페이징도 맞춘다.
+                // 자동 새로고침은 목록 표만 파싱하고, 검색·거르기·이동·실패 뒤엔 문서 전체를 파싱해 페이징도 맞춘다.
                 const filter = writerFilter(target);
                 const writer = filter !== null;
                 const partial = !force && failures === 0 && !queryString("s_keyword") && !writer && listHtml;
@@ -225,13 +207,11 @@ export default defineModule(meta, {
 
                 const {added: newPostList, changed} = replaceList(oldList, newList, {
                     navigated: Boolean(customURL),
-                    // 작성자 거르기도 검색 결과처럼 통째로 바꾼다. 제자리에서 고치면 검색 모듈이 이어 붙인 다음 쪽 행이 밀려난 행으로 지워지고,
-                    // tbody가 그대로라 다시 잇지도 않는다.
+                    // 작성자 거르기도 검색처럼 통째로 바꾼다. 제자리에서 고치면 검색 모듈이 이어 붙인 행이 어긋난다.
                     search: queryString("s_keyword") ? document.querySelector<HTMLInputElement>("#sch_q")?.value ?? "" : writer ? "" : undefined,
                     searchType: new URL(target).searchParams.get("s_type"),
                     fadeIn: ctx.settings.fadeIn,
-                    // 삭제된 글 보존은 미리보기의 archiveArticle 설정을 따르고(미리보기를 끄면 같이 꺼진다),
-                    // 빠진 글이 곧 지워진 글인 목록에서만 한다.
+                    // 삭제된 글 보존은 미리보기 archiveArticle 설정을 따르고, 빠진 글이 지워진 글인 목록에서만 한다.
                     keepDeleted: getModuleApi("preview")?.archiveArticle() === true && isWholeFirstPage(target)
                 });
                 lastListHash = listHash;
@@ -248,8 +228,7 @@ export default defineModule(meta, {
 
                 quiet = force || newPostList.length > 0 ? 0 : quiet + 1;
 
-                // 페이지를 넘긴 목록은 옛 목록과 겹치는 행이 없으면 전부 새 글로 잡히므로 알리지 않는다 (글댓비 조회가 몰린다).
-                // 작성자 거르기 중에는 숨긴 다른 작성자의 행을 뺀다. 앞 10개만 조회하므로 그대로 넘기면 보이는 글은 조회되지도 않는다.
+                // 페이지를 넘긴 목록은 모두 새 글로 잡히므로 알리지 않고, 거르기 중에는 이 작성자의 행만 조회한다.
                 const checked = filter ? newPostList.filter((row) => row.querySelector(writerSelector(filter))) : newPostList;
                 if (!customURL && checked.length > 0) getModuleApi("userinfo")?.checkNewPosts(checked);
                 unseen.count(customURL ? [] : newPostList);
@@ -298,7 +277,6 @@ export default defineModule(meta, {
 
         armNext();
 
-        // 건너뛴 자동 새로고침을 곧바로 하고 주기를 다시 잡는다.
         const catchUp = (): void => {
             if (!missed) return;
             missed = false;
@@ -339,8 +317,7 @@ export default defineModule(meta, {
             else armNext();
         };
 
-        // 뒤로/앞으로 가기: 인페이지 전환으로 쌓인 주소의 목록으로 되돌린다.
-        // 미리보기가 쌓은 글 주소 사이의 이동은 같은 목록이라 받지 않는다. 받으면 고르던 체크가 풀리고 일시정지를 무시한다.
+        // 뒤로/앞으로 가기: 쌓인 주소의 목록으로 되돌린다. 미리보기 기록은 같은 목록이라 건너뛴다.
         const onPopState = (): void => {
             // 미리보기 기록은 history.state로 가린다. 행 링크는 목록 주소의 기본값 쿼리(sort_type=N, 빈 search_pos 등)를 빼서 listUrl로는 가릴 수 없다.
             if (ownPreviewEntry(history.state)) return;
@@ -352,8 +329,7 @@ export default defineModule(meta, {
         const {signal} = ctx;
         document.addEventListener("visibilitychange", onVisibilityChange, {signal});
 
-        // 사용자가 목록을 보고 있으면 늘린 주기를 원래대로 되돌린다. 늘어난 동안 한 번만 다시 잡는다 (주기가 계속 밀리지 않게).
-        // 글보기 페이지의 댓글 입력은 목록을 보는 것이 아니므로 세지 않는다 (타이핑마다 주기를 다시 잡게 된다).
+        // 목록 위 활동은 늘린 주기를 되돌린다. 댓글 입력은 세지 않는다 (타이핑마다 다시 잡게 된다).
         const onActivity = (ev: Event): void => {
             if (quiet === 0 || (ev.type === "pointerover" ? !(ev.target instanceof Element && ev.target.closest(".gall_list")) : isTyping(ev))) return;
             quiet = 0;
@@ -380,8 +356,7 @@ export default defineModule(meta, {
             ev.preventDefault();
 
             const newUrl = new URL(isViewPage ? mergeParamURL(location.href, anchor.href) : anchor.href, location.href).href;
-            // 지금 페이지를 다시 누르면 기록을 쌓지 않는다. 쌓기가 실패해도(브라우저의 횟수 제한 등) 목록은 받는다.
-            // 기본 동작은 이미 막았으므로 여기서 끊기면 눌러도 아무 반응이 없다.
+            // 지금 페이지를 다시 누르면 기록을 쌓지 않는다. 쌓기가 실패해도 기본 동작을 이미 막았으니 목록은 받는다.
             try {
                 if (newUrl !== location.href) history.pushState(null, document.title, newUrl);
             } catch (e) {

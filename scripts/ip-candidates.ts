@@ -1,7 +1,4 @@
-/**
- * IP DB 후보 계산 (build-db.ts). 내려받은 구간 목록으로 /16 대역마다 후보를 고르고, ban.json을 검사, 정리한다.
- * 내려받기와 떼어 놓아 테스트에서 불러올 수 있다.
- */
+/** IP DB 후보 계산 (build-db.ts). 내려받기와 떼어 놓아 테스트에서 불러올 수 있다. */
 
 import {candidateKey, type IpCandidate} from "../core/ipdb";
 import type {BanList} from "../core/storage/types";
@@ -56,10 +53,7 @@ const cursor = <T>(ranges: Range<T>[]) => {
     };
 };
 
-/**
- * /16 대역(a*256+b, 오름차순) → 유력한 순 후보.
- * 세 출처의 값이 모두 같은 구간씩 건너뛰며 후보별 주소 수를 세고, 많은 순으로 고른다.
- */
+/** /16 대역(a*256+b, 오름차순) → 유력한 순 후보. 세 출처 값이 같은 구간씩 건너뛰며 주소 수를 센다. */
 export const buildCandidates = (asns: Range<Asn>[], countries: Range<string>[], vpns: Range<true>[], kisa: Map<number, string>): Map<number, IpCandidate[]> => {
     const atAsn = cursor(asns);
     const atCountry = cursor(countries);

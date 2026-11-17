@@ -21,7 +21,6 @@ describe("배경 메시지 처리기", () => {
         expect(types).toContain("refresher:markUsed");
         expect(types).toContain("refresher:searchPosts");
         expect(types.filter((type, index) => types.indexOf(type) !== index)).toEqual([]);
-        // listen이 실패한 모듈이 있으면 그 모듈의 이름은 모이지 않는다.
         expect(log).not.toHaveBeenCalled();
     });
 

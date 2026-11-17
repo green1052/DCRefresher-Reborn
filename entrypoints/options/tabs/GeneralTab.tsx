@@ -16,10 +16,7 @@ import {SettingItem} from "./SettingItem";
 
 type SettingEntry = [key: string, schema: LabeledSetting];
 
-/**
- * 검색어(소문자)에 맞는 설정. 모듈 이름, 설명이 맞으면 전부, 아니면 이름, 설명, 묶음 이름이 맞는 설정만 남긴다.
- * 맞는 것이 없으면 undefined. 검색어가 비면 전부다.
- */
+// 모듈 이름, 설명이 맞으면 그 모듈 전부, 아니면 맞는 설정만 - 없으면 undefined.
 export const matchSettings = (feature: Pick<ModuleInfo, "name" | "description" | "settings">, needle: string): SettingEntry[] | undefined => {
     const settings = Object.entries(feature.settings ?? {});
     const has = (...texts: string[]) => texts.some((text) => text.toLowerCase().includes(needle));
@@ -28,7 +25,6 @@ export const matchSettings = (feature: Pick<ModuleInfo, "name" | "description" |
     return matched.length > 0 ? matched : undefined;
 };
 
-/** 모듈 하나의 세부 설정. 같은 group 객체를 가진 설정은 첫 설정 자리에 한 칸으로 묶는다. shown은 그릴 설정(검색에 맞는 것)이다. */
 const ModuleSettings = ({feature, settings, shown}: { feature: ModuleInfo; settings: SettingEntry[]; shown: SettingEntry[] }) => {
     // 이 모듈의 값만 구독한다. 다른 모듈의 설정을 바꿔도 이 카드는 다시 그리지 않는다.
     const values = useModulesStore((state) => state.values[feature.id]);
@@ -77,7 +73,6 @@ const ModuleSettings = ({feature, settings, shown}: { feature: ModuleInfo; setti
     );
 };
 
-/** 모듈 카드. 헤더의 스위치로 켜고 끄며, 켜져 있거나 검색 중일 때 세부 설정(shown)을 펼친다. */
 const ModuleCard = ({feature, shown, searching}: { feature: ModuleInfo; shown: SettingEntry[]; searching: boolean }) => {
     const enabled = useModulesStore((state) => state.enables[feature.id] === true);
     const toggle = useModulesStore((state) => state.toggle);
@@ -117,10 +112,7 @@ const ModuleCard = ({feature, shown, searching}: { feature: ModuleInfo; shown: S
     );
 };
 
-/**
- * 검색어(소문자)가 든 글자를 칠한다 (CSS Custom Highlight API, assets/styles/pages.css의 ::highlight).
- * DOM을 바꾸지 않아 이름, 설명을 <mark>로 쪼개 그리지 않아도 된다.
- */
+// CSS Custom Highlight API로 검색어를 칠한다 - DOM을 바꾸지 않아 mark로 쪼갤 필요가 없다.
 const useSearchHighlight = (root: RefObject<HTMLElement | null>, needle: string): void => {
     useEffect(() => {
         if (!needle || !root.current) return;

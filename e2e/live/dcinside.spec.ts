@@ -4,11 +4,7 @@ import {AUTO, EDITOR, LEAVE, POSTED, SUBJECT, SUBMIT} from "@/features/write/mar
 import {expect, test} from "../fixtures";
 import {openListPage} from "../pages/list";
 
-/**
- * 실제 디시에서 읽기만 한다 (bun run e2e:live). 디시 마크업, API가 바뀌면 여기서 걸린다. 쓰기 요청은 픽스처가 끊는다.
- * 글, 댓글은 그때그때 다르므로 개수, 내용이 아니라 모양만 본다.
- * 갤러리는 미니 갤러리 bjwg64로 고정이다. 콘텐츠 스크립트는 모바일 페이지에서 돌지 않아 PC 주소로 연다.
- */
+/** 실제 디시에서 읽기만 한다 (bun run e2e:live). 디시 마크업, API가 바뀌면 여기서 걸린다. 쓰기는 픽스처가 끊는다. */
 const LIST_URL = "https://gall.dcinside.com/mini/board/lists/?id=bjwg64";
 const {pathname: LIST_PATH, searchParams} = new URL(LIST_URL);
 const GALLERY = searchParams.get("id") ?? "";
@@ -16,11 +12,7 @@ const GALLERY = searchParams.get("id") ?? "";
 const POSTS = ".gall_list tbody tr.us-post[data-no]:not([data-type=icon_notice], [data-type=icon_survey])";
 const escape = (text: string): string => text.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
 
-/**
- * 기능이 찾는 디시 마크업. 못 찾으면 오류 없이 조용히 멈추는 것들이라 여기서 하나 이상 맞는지 본다.
- * optional은 갤러리, 글에 따라 없을 수 있어 없으면 실패 대신 주석만 남긴다.
- * 선택자는 각 기능의 코드(core/list.ts, features/block, search, layout, stealth)에서 옮겼다. 그쪽을 바꾸면 여기도 바꾼다.
- */
+/** 기능이 찾는 디시 마크업. 선택자는 각 기능 코드에서 옮겼다(그쪽을 바꾸면 여기도). optional은 없으면 주석만 남긴다. */
 interface Markup {
     feature: string;
     selector: string;
@@ -136,7 +128,6 @@ test.describe("실제 디시", () => {
         const href = await page.locator(`${POSTS} .ub-word a`).first().getAttribute("href");
         await page.goto(new URL(href ?? "", LIST_URL).href);
         await expect(page.locator(".writing_view_box")).toBeVisible();
-        // 글 아래 목록에도 새로고침 버튼을 붙인다.
         await expect(page.locator("button[data-refresher-refresh]")).toHaveCount(1);
         await expect.poll(() => page.locator(".refresher-user-badges").count()).toBeGreaterThan(0);
     });
@@ -177,9 +168,9 @@ test.describe("실제 디시", () => {
         expect(hidden).toContain("2*(_rs[n]-n-1)/(13-n-1)");
         expect(hidden).toContain(".replace(/(.{10})$/");
 
-        // 글 페이지: 파서(core/preview/parser.ts)가 읽는 자리에 _d('…')와 service_code가 있고, 푼 값은 숫자 목록이다.
+        // 글 페이지: 파서(core/preview/parser.ts)가 읽는 자리에 _d('...')와 service_code가 있고, 푼 값은 숫자 목록이다.
         const dValue = /id="reply-setting-tmpl"[\s\S]*?<\/script>\s*<script[^>]*>[^<]*?_d\('([^']*)'\)/.exec(view)?.[1];
-        expect(dValue, "reply-setting-tmpl 다음 스크립트에 _d('…')가 있다").toBeDefined();
+        expect(dValue, "reply-setting-tmpl 다음 스크립트에 _d('...')가 있다").toBeDefined();
         expect(decodeD(dValue ?? "")).toMatch(/^\d+(\.\d+)?(,\d+(\.\d+)?)*$/);
         expect(view).toMatch(/name="service_code" value="[^"]{10,}"/);
 
@@ -234,7 +225,7 @@ test.describe("실제 디시", () => {
         const viewHtml = await check(new URL(href ?? "", LIST_URL).href, VIEW_MARKUP);
         // 디시 자체 차단을 다시 걸 때 인라인 스크립트에서 읽는 값이다. 미니 갤러리 글 페이지는 'mi$id'를 넘긴다.
         // 정규식은 entrypoints/background/page.ts(직렬화돼 import할 수 없다)에서 옮겼다. 그쪽을 바꾸면 여기도 바꾼다.
-        expect.soft(viewHtml, "디시 자체 차단 다시 걸기: 글 페이지에 chk_user_block('…') 호출이 없다").toMatch(/chk_user_block\('[^']*'\)/);
+        expect.soft(viewHtml, "디시 자체 차단 다시 걸기: 글 페이지에 chk_user_block('...') 호출이 없다").toMatch(/chk_user_block\('[^']*'\)/);
 
         const search = new URL(LIST_URL);
         search.searchParams.set("s_type", "search_subject");

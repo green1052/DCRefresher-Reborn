@@ -154,8 +154,7 @@ const MemoFormDialog = ({
     );
 };
 
-// 크롬 저장소는 객체 키를 정렬해 돌려주므로 키 순서는 추가 순서가 아니다. 추가 시각으로 세운다.
-// 정렬은 안정적이라 시각이 없는 옛 메모는 오래된 쪽에 저장소 순서대로 남는다.
+// 크롬 저장소는 객체 키를 정렬해 돌려주므로 추가 시각(added)으로 순서를 세운다.
 const byAdded = (map: Record<string, MemoEntry>): [string, MemoEntry][] => Object.entries(map).sort(([, a], [, b]) => (a.added ?? 0) - (b.added ?? 0));
 
 export function MemoTab() {
@@ -265,7 +264,7 @@ export function MemoTab() {
                         head={
                             // 편집 버튼 안에 들어가므로 div 대신 span으로 그린다.
                             <span className="flex items-center gap-2">
-                                {/* background 축약은 가져온 메모의 url(…)을 배경 이미지로 불러온다. 색 속성만 쓴다. */}
+                                {/* background 축약은 가져온 메모의 url(...)을 배경 이미지로 불러온다. 색 속성만 쓴다. */}
                                 <span className="size-2.5 shrink-0 rounded-full" style={{backgroundColor: entry.color}}/>
                                 <span className="font-medium">{user}</span>
                                 {entry.gallery && <Badge variant="secondary">{entry.gallery}</Badge>}

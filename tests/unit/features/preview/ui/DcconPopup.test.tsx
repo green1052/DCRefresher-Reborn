@@ -52,11 +52,9 @@ it("세로 휠로 패키지 줄을 옆으로 부드럽게 넘기고, 굴러가�
 
     wheel(strip, {deltaY: 100});
     scrolledTo(strip, 200);
-    // 끝을 넘지 않는다.
     wheel(strip, {deltaY: 1000});
     scrolledTo(strip, 500);
 
-    // 다 굴러가면 지금 위치부터 다시 센다.
     strip.scrollLeft = 300;
     strip.dispatchEvent(new Event("scrollend"));
     wheel(strip, {deltaY: -100});

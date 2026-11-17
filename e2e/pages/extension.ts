@@ -15,7 +15,6 @@ export async function openOptions(page: Page, extensionId: string, tab: OptionsT
     const cards = page.locator("[data-slot=card]");
     return {
         cards,
-        /** 모듈 카드 (제목으로 찾는다). */
         card: (name: string) => cards.filter({has: page.getByRole("heading", {name, exact: true})}),
         dialog: page.getByRole("dialog"),
         /** 확인, 알림 창 (ConfirmDialog, Notice). */
@@ -41,9 +40,7 @@ export async function openPopup(context: BrowserContext, extensionId: string, ta
     return {
         page,
         tiles,
-        /** 모듈 타일 (이름으로 찾는다). */
         tile: (name: string) => tiles.filter({hasText: name}),
-        /** 현재 페이지 토글 스위치. */
         pageToggle: (name: string | RegExp) => page.getByRole("switch", {name})
     };
 }

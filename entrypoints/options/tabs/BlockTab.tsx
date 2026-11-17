@@ -15,20 +15,14 @@ import {ListRow, ListTabs} from "../lists/ListTabs";
 import {notify} from "../optionsStore";
 import {RefresherSelect} from "../shared/RefresherSelect";
 
-/**
- * 디시콘 이미지 주소. 묶음 정규식("^(a|b…)$", 하나뿐이면 "^(code)$")이면 첫 코드의 이미지를 쓴다.
- * 묶을 때 쓴 RegExp.escape는 첫 글자가 영문, 숫자면 "\x36…"처럼 바꾸므로 되돌린다.
- */
+// 묶음 정규식("^(a|b...)$")이면 첫 코드의 이미지를 쓴다 - escape의 \xhh는 되돌린다.
 export const dcconImage = (entry: BlockEntry): string => {
     const first = entry.isRegex ? entry.content.match(/^\^\(((?:\\x[0-9a-f]{2})?\w+)[|)]/)?.[1] : undefined;
     const code = first?.replace(/^\\x([0-9a-f]{2})/, (_, hex: string) => String.fromCharCode(parseInt(hex, 16))) ?? entry.content;
     return `https://image.dcinside.com/dccon.php?no=${code}`;
 };
 
-/**
- * 이미지 호스트 권한이 있는지와 그 권한을 묻는 함수. 우클릭 차단이 처음 묻지만,
- * 백업 복원, 가져오기로 들어온 이미지 항목은 권한 없이 가리지 못하므로 여기서도 확인한다.
- */
+// 백업 복원, 가져오기로 들어온 이미지 항목은 권한 없이 가리지 못하므로 여기서도 확인한다.
 const useImageHostAccess = (): [granted: boolean | undefined, request: () => void] => {
     const [granted, setGranted] = useState<boolean>();
     useEffect(() => {
@@ -45,8 +39,7 @@ const useImageHostAccess = (): [granted: boolean | undefined, request: () => voi
     return [granted, request];
 };
 
-/** 정보 칸 텍스트. 필드로 만든 플래그와 별명(extra)을 이어 붙인다. */
-const entryInfo = (entry: BlockEntry): string => [composeExtra(entry), entry.extra].filter(Boolean).join(", ") || "—";
+const entryInfo = (entry: BlockEntry): string => [composeExtra(entry), entry.extra].filter(Boolean).join(", ") || "-";
 
 export function BlockTab() {
     const entries = useBlocksStore((state) => state.entries);
@@ -61,8 +54,7 @@ export function BlockTab() {
     const ids = useMemo(() => BLOCK_TYPES.flatMap((type) => entries[type].map((entry) => entry.id)), [entries]);
     const used = useUsage("block", ids);
 
-    // ListTabs의 걸르기 메모는 이 넷의 참조가 바뀔 때만 다시 한다. 인라인 화살표면 알림, 창 등 다른 이유의
-    // 다시 그림에도 전체 목록을 다시 훑는다 (수천 항목에서 수십 ms).
+    // ListTabs의 걸르기 메모는 이 넷의 참조가 바뀔 때만 다시 한다 (인라인이면 다른 다시 그림에도 수천 항목을 다시 훑는다).
     const items = useCallback((type: BlockType): readonly BlockEntry[] => entries[type], [entries]);
     const searchText = useCallback((entry: BlockEntry): (string | undefined)[] => [entry.content, entry.gallery, entry.extra], []);
     const galleryOf = useCallback((entry: BlockEntry): string | undefined => entry.gallery, []);
@@ -72,8 +64,7 @@ export function BlockTab() {
     const modeDescId = useId();
 
     const importBlocks = async (parsed: Record<string, unknown>): Promise<number> => {
-        // 모드가 '기본값'인 항목은 내보낸 기기의 기본 모드(JSON에 없으면 기본값)로 검사됐다.
-        // 이 기기와 다르면 그 모드를 적어 검사 방식을 지킨다 (데이터 탭 가져오기와 같다).
+        // '기본값' 모드 항목은 내보낸 기기의 기본 모드로 검사됐다 - 다르면 그 모드를 적어 방식을 지킨다.
         const source = normalizeDefaults(parsed.defaults);
         let count = 0;
         for (const type of BLOCK_TYPES) {

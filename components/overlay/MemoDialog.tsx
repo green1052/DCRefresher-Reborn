@@ -25,13 +25,11 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     const id = useId();
     const input = useRef<HTMLInputElement>(null);
 
-    // 지금 보고 있는 갤러리. 이 갤러리에서만 보이는 메모로 저장할 때 쓴다.
     const gallery = selectedGallery(state.gallery);
 
     const memoOf = (memoType: MemoType, user: string) => ownMemo(memos[memoType], user);
 
-    // 열릴 때와 종류를 바꿀 때 기존 메모로 채운다.
-    // 범위(scope)는 저장된 갤러리를 그대로 가져와, 다른 갤러리 전용 메모를 여기서 저장해도 범위가 바뀌지 않게 한다.
+    // 열거나 종류를 바꿀 때 기존 메모로 채운다 - scope는 저장된 갤러리를 그대로 가져온다.
     const prefill = (memoType: MemoType): { text: string; color: string; scope?: string } => {
         const memo = memoOf(memoType, state.targets[memoType] ?? "");
         return {text: memo?.text ?? "", color: memo?.color ?? randomColor(), scope: memo?.gallery};
@@ -50,7 +48,6 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     const value = state.targets[type] ?? "";
     const existing = Boolean(memoOf(type, value));
 
-    /** 저장, 삭제를 마치면 알리고 닫는다. 실패하면 창을 열어 둔다. 닫으면 입력한 메모가 사라진다. */
     const save = async (write: Promise<void>, done: string): Promise<void> => {
         try {
             await write;

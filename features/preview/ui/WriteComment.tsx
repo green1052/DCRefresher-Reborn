@@ -23,7 +23,6 @@ import {NO_REPLY, refreshCommentsOf, usePreviewStore} from "./previewStore";
 /** 비회원 댓글 비밀번호 (영문 소문자, 숫자 8자). */
 const randomPassword = (): string => Array.from(crypto.getRandomValues(new Uint8Array(8)), (byte) => (byte % 36).toString(36)).join("");
 
-/** 글자콘 색 스와치. ToggleGroup 안에 둔다. */
 const Swatch = ({color, label}: { color: string; label: string }) => (
     // 고른 색은 한 칸 띄운 테두리(outline)로 보인다. 키보드 포커스 링(box-shadow)은 그 틈을 채워 고른 색에 포커스가 있어도 구분된다.
     <ToggleGroupItem
@@ -36,10 +35,7 @@ const Swatch = ({color, label}: { color: string; label: string }) => (
 
 const NO_DCCON: { list: DcinsideDccon[]; big: boolean } = {list: [], big: false};
 
-/**
- * 쓰던 댓글을 글마다 모듈 전역에 둔다. 다른 글에 갔다 오거나 창을 닫았다 다시 열면 되살린다. 페이지가 살아 있는 동안만 기억한다.
- * quick-lru는 두 세대로 나눠 두어 maxSize의 두 배 가까이 남긴다.
- */
+/** 글마다 쓰던 댓글을 전역에 둔다 - 다시 열면 되살린다(페이지가 살아 있는 동안만). */
 const drafts = new QuickLRU<string, string>({maxSize: 10});
 /** 댓글을 보내는 중인 글. 보내는 사이 폼이 다시 마운트돼도(다른 글에 갔다 돌아옴) 같은 댓글을 또 보내지 않게 모듈 전역에 둔다. */
 const sendingKeys = new Set<string>();
@@ -48,8 +44,7 @@ export const WriteComment = () => {
     const reply = usePreviewStore((s) => s.reply);
     // 입력칸 위에 보일 답글 대상의 이름 (Comment의 UserCard가 보여 주는 닉네임).
     const replyName = usePreviewStore((s) => s.comments?.find((comment) => comment.no === s.reply.replyNo)?.name);
-    // 폼은 글마다 새로 마운트된다 (Frame의 key). 마운트할 때 이 글에서 쓰던 댓글이 있으면 되살린다.
-    // 보내는 중인 댓글은 되살리지 않는다. 올라간 댓글이 입력칸에 남아 한 번 더 보내게 된다.
+    // 쓰던 댓글을 되살리되 보내는 중이라면 비운다 - 올라간 댓글이 남아 한 번 더 보내진다.
     const [draftKey] = useState(() => {
         const preData = usePreviewStore.getState().preData;
         return preData ? postKey(preData) : "";
@@ -84,8 +79,7 @@ export const WriteComment = () => {
         setShowInputs((v) => !v);
     };
 
-    // 입력칸 위에 닉네임, 비밀번호 칸이 생기면 입력칸과 아래 줄이 밀려 창 밖으로 나간다.
-    // 늘어난 만큼 스크롤해 아래 끝을 제자리에 두고, 새 칸은 위로 펼친다.
+    // 칸이 늘어나면 아래 끝이 창 밖으로 나가므로 늘어난 만큼 스크롤해 제자리에 둔다.
     useLayoutEffect(() => {
         const before = bottomBefore.current;
         bottomBefore.current = null;
@@ -149,8 +143,7 @@ export const WriteComment = () => {
             }
 
             const user = {name: login ? "" : nick, pw: login ? undefined : password};
-            // 글 페이지가 Turnstile을 켰으면 캡차처럼 먼저 받는다. 확인 창을 닫으면 보내지 않는다.
-            // 기다리는 사이 미리보기를 닫거나 다른 글로 옮겼으면 확인 창을 띄우지 않는다 (보이지 않는 글에 보내게 된다).
+            // Turnstile은 캡차처럼 먼저 받는다 - 넘어갔으면 확인 창을 띄우지 않는다.
             let turnstile: Record<string, string> | undefined;
             if (post.commentForm.turnstile) {
                 const focused = focusedAt.current;
@@ -206,10 +199,7 @@ export const WriteComment = () => {
         }
     };
 
-    /**
-     * 글자콘 입력 제한을 적용한다. 값이 바뀔 때만 다시 써서 커서가 튀지 않게 한다.
-     * 한글 조합 중엔 부르지 않고 조합이 끝난 뒤 부른다 (디시 txtcon.js와 같다).
-     */
+    /** 글자콘 제한을 적용한다 - 값이 바뀔 때만 쓰고 조합이 끝난 뒤 부른다(커서 방지). */
     const applyTxtcon = (): void => {
         const element = textarea.current;
         if (!element) return;

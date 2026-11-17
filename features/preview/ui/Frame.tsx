@@ -31,10 +31,7 @@ import {useWheelGesture} from "./useWheelGesture";
 import {Votes} from "./Votes";
 import {WriteComment} from "./WriteComment";
 
-/**
- * 목록에서 앞(-1)/뒤(1) 글로 넘어간다. PageUp/Down과 스크롤 끝 넘기기가 같이 쓴다.
- * 방향을 넘겨 컨트롤러가 그 방향 다음 글을 미리 받게 한다.
- */
+/** 목록에서 앞(-1)/뒤(1) 글로 넘어간다 - 방향을 넘겨 다음 글을 미리 받게 한다. */
 const goToAdjacent = (dir: number): void => {
     const st = usePreviewStore.getState();
     const next = st.preData && adjacentPreData(st.preData, dir);
@@ -61,10 +58,7 @@ const RefreshButton = ({label, run}: { label: string; run: () => Promise<void> }
     );
 };
 
-/**
- * 스크롤 끝에서 한 번 더 굴리면 넘어간다는 안내 (v5와 같은 모양). 목록은 번호가 큰 글이 위라 위로 넘기면 다음 글이다.
- * 창 위에 겹치되 누르거나 굴리는 것은 막지 않는다.
- */
+/** 스크롤 끝에서 한 번 더 굴리면 넘어간다는 안내(v5 모양) - 누르거나 굴리는 것은 막지 않는다. */
 const SkipHint = ({dir}: { dir: number }) => (
     <div className={cn("refresher-skip-hint pointer-events-none fixed inset-x-0 flex h-[40%] items-center justify-center text-white motion-reduce:animate-none",
                        dir < 0
@@ -76,10 +70,7 @@ const SkipHint = ({dir}: { dir: number }) => (
     </div>
 );
 
-/**
- * 미리보기 본문 칸. 댓글만 보기, 오류일 때는 빠지고 글마다(Frame의 Fragment key) 새로 마운트되며, 창을 닫으면 페이드가 끝난 뒤 빠진다.
- * 그래서 넣은 HTML이 바뀔 때만 다시 보면 되고, 떨어진 영상의 감시, 받기는 언마운트 정리가 끊는다.
- */
+/** 본문 칸 - 글마다 새로 마운트되므로 HTML이 바뀔 때만 다시 보면 된다. */
 const PostContents = () => {
     const post = usePreviewStore((s) => s.post);
     const imageBlocked = usePreviewStore((s) => s.imageBlocked);
@@ -132,10 +123,8 @@ export const Frame = () => {
     const listTitle = usePreviewStore((s) => s.preData?.title);
     const scroller = useRef<HTMLDivElement>(null);
     const commentsSection = useRef<HTMLDivElement>(null);
-    // 창은 비모달이라(아래 Dialog.Root) 포커스를 가두지 않는다. 연 동안 뒤 페이지를 inert로 막아 Tab, 스크린 리더가 목록으로 나가지 않게 한다.
-    // 오버레이(refresher-root: 버블, 토스트, 관리 패널)와 body에 붙인 확장 UI(data-refresher-ui)는 남긴다.
-    // 키보드로 열었을 때(:focus-visible)만 닫으며 연 요소로 포커스를 돌려준다. 마우스로 연 창까지 돌려주면 Esc로 닫을 때
-    // 제목 링크에 포커스 링이 생겨 새로고침 모듈이 자동 갱신을 멈춘다. 연 요소는 아래 스크롤 칸 포커스 효과보다 먼저 읽어야 한다.
+    // 비모달이라 뒤 페이지를 inert로 막아 Tab, 스크린 리더가 목록으로 나가지 않게 한다(오버레이는 남긴다).
+    // 키보드로 열었을 때만 연 요소로 포커스를 돌려준다 - 마우스로 연 창까지 돌리면 새로고침 모듈이 갱신을 멈춘다.
     useEffect(() => {
         if (!visible) return;
 
@@ -162,8 +151,7 @@ export const Frame = () => {
         if (visible) scroller.current?.focus({preventScroll: true});
     }, [visible, postKey]);
 
-    // 글을 바꾸면 맨 위에서 보인다. 캐시 hit이면 새 글이 한 번에 그려져 앞 글의 스크롤 위치가 남는다.
-    // 닫을 때도 오르는 signalId가 아니라 글 주소로 건다. 페이드아웃 중에 맨 위로 튀면 안 된다.
+    // 글을 바꾸면 맨 위에서 - 캐시 hit이면 앞 글의 스크롤 위치가 남는다. 페이드아웃 중엔 튀지 않게 글 주소로 건다.
     useLayoutEffect(() => {
         if (scroller.current) scroller.current.scrollTop = 0;
     }, [postKey]);
@@ -220,8 +208,7 @@ export const Frame = () => {
                     details.allowPropagation();
                     return;
                 }
-                // Esc는 위에 뜬 것(유저 버블, 다이얼로그)부터 닫는다. 그것들은 따로 그려져 Base UI는 미리보기를 맨 위로 본다.
-                // 버블은 여기서 닫는다. Base UI는 Esc 리스너를 effect로 걸므로 막 뜬 버블은 아직 Esc를 받지 못한다.
+                // 버블은 여기서 닫는다 - Base UI는 Esc 리스너를 effect로 걸어 막 뜬 버블이 아직 Esc를 받지 못한다.
                 if (details.reason === "escape-key" && useUiStore.getState().bubble) {
                     details.cancel();
                     useUiStore.getState().closeBubble();
@@ -240,8 +227,7 @@ export const Frame = () => {
                 <div className={cn("fixed inset-0 bg-black/40 duration-150 animate-in fade-in data-fading:pointer-events-none data-fading:animate-out data-fading:fade-out data-fading:fill-mode-forwards",
                                    backgroundBlur && "backdrop-blur-[5px]")}
                      data-fading={fading || undefined}/>
-                {/* v5처럼 화면 전체가 스크롤 칸이고 창은 내용만큼 길어진다. 짧은 글은 가운데(margin: auto), 긴 글은 위아래 5vh를 띄운다.
-                    스크롤바 폭을 양쪽에 비워야 긴 글과 짧은 글을 오갈 때 창이 옆으로 흔들리지 않는다. 키보드 스크롤용 포커스(tabIndex -1)라 테두리는 그리지 않는다. */}
+                {/* 화면 전체가 스크롤 칸 - 스크롤바 폭을 양쪽에 비워 글을 오갈 때 창이 흔들리지 않게 한다. */}
                 <Dialog.Popup
                     className="refresher-frame-scroll fixed inset-0 flex overflow-y-auto overscroll-contain py-[5vh] outline-none duration-150 animate-in fade-in [scrollbar-color:var(--border)_transparent] [scrollbar-gutter:stable_both-edges] [scrollbar-width:thin] data-fading:pointer-events-none data-fading:animate-out data-fading:fade-out data-fading:fill-mode-forwards"
                     // Base UI가 Portal을 별도 커밋에 마운트해 [visible] effect가 돌 때는 아직 스크롤 칸이 없다(React). 붙는 순간 포커스한다.
@@ -258,8 +244,7 @@ export const Frame = () => {
                     initialFocus={false}
                     finalFocus={false}
                     onWheel={onWheel}
-                    // 창 바깥을 누르면 닫는다. pointerdown에서 닫으면 칸이 곧바로 사라져 이어지는 click/contextmenu가 아래 목록에 떨어진다
-                    // (우클릭으로 닫으면 다른 글 미리보기가 열린다). 그래서 click/contextmenu에서 닫는다.
+                    // click/contextmenu에서 닫는다 - pointerdown에서 닫으면 이어지는 click이 아래 목록에 떨어진다.
                     onPointerDown={(ev) => (pressedOutside.current = ev.target === ev.currentTarget)}
                     onPointerUp={(ev) => (pressedOutside.current = pressedOutside.current && ev.target === ev.currentTarget)}
                     onClick={(ev) => {
@@ -271,9 +256,7 @@ export const Frame = () => {
                         usePreviewStore.getState().requestClose();
                     }}
                 >
-                {/* 너비는 설정(previewWidth)을 쓰되 둘레에 배경이 보이게 화면의 90%까지만 쓴다.
-                    관리 패널(150px)이 있으면 양옆에 그 폭을 비운다 (최소 480px). 둥근 모서리 밖으로 댓글 배경이 나가지 않게 자르는데,
-                    hidden이면 스크롤 칸이 되어 맨 위로 버튼(sticky)이 붙지 않으므로 clip이다. */}
+                {/* 너비는 설정을 쓰되 90%까지, 관리 패널 폭을 비운다 - sticky 버튼을 위해 clip이다. */}
                 <div
                     className="refresher-frame m-auto flex min-h-[min(800px,90vh)] flex-col overflow-clip rounded-2xl bg-background text-sm shadow-2xl ring-1 ring-foreground/10"
                     data-blur-reveal={block?.blurReveal || undefined}
@@ -375,7 +358,7 @@ export const Frame = () => {
                     ))}
                     </Fragment>
 
-                    {/* 맨 위로 / 댓글로 — 창 오른쪽 아래. 높이 0인 칸을 화면 아래 끝에 sticky로 붙여 긴 글을 읽는 동안에도 보이게 한다. */}
+                    {/* 맨 위로 / 댓글로 - 창 오른쪽 아래. 높이 0인 칸을 화면 아래 끝에 sticky로 붙여 긴 글을 읽는 동안에도 보이게 한다. */}
                     <div className="sticky bottom-0 h-0">
                         <div className="absolute right-4 bottom-4 flex flex-col gap-2">
                             <TooltipButton tip="맨 위로" side="left" variant="secondary" size="icon" className="rounded-full"
@@ -391,8 +374,7 @@ export const Frame = () => {
                         </div>
                     </div>
                 </div>
-                {/* 화면 왼쪽에 fixed로 붙인다. 스크롤 칸에 transform이 없어 화면 기준 그대로이고,
-                    aria-modal 창 안에 두어야 스크린 리더가 창 밖 내용으로 보고 건너뛰지 않는다. */}
+                {/* aria-modal 창 안에 두어 스크린 리더가 건너뛰지 않게 한다. */}
                 {visible && adminVisible && <AdminPanel/>}
                 </Dialog.Popup>
                 {hintDir !== 0 && <SkipHint dir={hintDir}/>}

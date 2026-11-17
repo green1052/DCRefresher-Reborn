@@ -56,7 +56,6 @@ it("목록을 갈아끼우면 받아 둔 검색 페이지를 다시 받지 않�
     expect(first.querySelectorAll(".gall_tit .mark")).toHaveLength(4);
     const filled = first.innerHTML;
 
-    // 새로고침 모듈처럼 페이징을 처음 것으로 되돌리고 목록을 갈아끼운다.
     document.querySelector(".bottom_paging_box")!.innerHTML = paging(10000);
     const fresh = document.createElement("tbody");
     fresh.innerHTML = row("30", true) + row("29", true);
@@ -64,7 +63,6 @@ it("목록을 갈아끼우면 받아 둔 검색 페이지를 다시 받지 않�
 
     await vi.waitFor(() => expect(fresh.innerHTML).toBe(filled));
     expect(get).toHaveBeenCalledTimes(2);
-    // 캐시의 행을 옮기지 않고 복제해 붙였다.
     expect(first.innerHTML).toBe(filled);
 });
 
@@ -126,7 +124,6 @@ it("작성자 거르기만 하는 목록은 갈아끼울 때마다 다음 쪽을
         running = await runModule(search);
         await vi.waitFor(() => expect(nos(document.querySelector(".gall_list tbody")!)).toEqual(["30", "29"]));
 
-        // 새 글이 들어와 29가 1쪽으로 오고 28이 2쪽으로 밀렸다. 새로고침 모듈처럼 페이징을 되돌리고 목록을 갈아끼운다.
         second = writerRow("28");
         document.querySelector(".bottom_paging_box")!.innerHTML = "<em>1</em><a href=\"/board/lists/?id=test&page=2\">2</a>";
         const fresh = document.createElement("tbody");
@@ -155,7 +152,6 @@ it("작성자 거르기 목록을 갈아끼워도 1쪽의 이 작성자 글이 �
         await vi.waitFor(() => expect(nos(first)).toEqual(["30", "29", "28"]));
         const added = first.children[1];
 
-        // 다른 사람 글 31이 들어오고 28이 1쪽으로 올라왔다. 이 작성자 글(30)은 그대로다.
         document.querySelector(".bottom_paging_box")!.innerHTML = pagingHtml;
         const fresh = document.createElement("tbody");
         fresh.innerHTML = writerRow("31", "3.4") + writerRow("30") + writerRow("28", "3.4");
@@ -166,7 +162,6 @@ it("작성자 거르기 목록을 갈아끼워도 1쪽의 이 작성자 글이 �
         expect(fresh.children[3]).toBe(added);
         expect(document.querySelector(".bottom_paging_box em")?.textContent).toBe("2");
 
-        // 1분이 지나면 다음 쪽에서 지워진 글이 남지 않게 다시 받는다.
         vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
         document.querySelector(".bottom_paging_box")!.innerHTML = pagingHtml;
         const later = document.createElement("tbody");
@@ -193,7 +188,6 @@ it("미리보기가 글 주소를 쌓은 동안 목록을 갈아끼워도 이어
         const first = document.querySelector(".gall_list tbody")!;
         await vi.waitFor(() => expect(nos(first)).toEqual(["30", "29"]));
 
-        // 미리보기가 글 주소를 쌓았다 (관리 동작 뒤 강제 새로고침은 창이 열린 채 돈다).
         history.pushState({refresher: 1, doc: historyDoc, back: {title: "", url: location.href, state: null}}, "", "/board/view/?id=test&no=30");
         document.querySelector(".bottom_paging_box")!.innerHTML = pagingHtml;
         const fresh = document.createElement("tbody");

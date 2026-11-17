@@ -8,11 +8,7 @@ import type {Ctx} from "./meta";
 /** 탭 제목 앞의 새 글 수 "(3) ". */
 const TITLE_COUNT = /^\(\d+\) /;
 
-/**
- * 이 모듈이 탭 제목 앞에 수를 붙여 두었다는 문서 표시. 원래 "(1) "로 시작하는 제목은 건드리지 않는다.
- * 파이어폭스는 확장을 업데이트하면 정리 없이 새 인스턴스를 넣으므로,
- * 모듈 변수로 두면 새 인스턴스가 옛 인스턴스가 붙인 수를 떼지 못하고 또 붙인다.
- */
+/** 수를 붙였다는 문서 표시. 파이어폭스 재주입 시 새 인스턴스가 옛 인스턴스의 수를 뗄 수 있게 문서에 둔다. */
 const COUNTED_ATTRIBUTE = "data-refresher-title-count";
 
 /** 탭 제목 앞에 새 글 수를 붙인다. 0이면 붙여 둔 수를 뗀다. 미리보기가 제목을 바꿔도 앞에 붙은 수만 갈아 쓴다. */
@@ -41,20 +37,13 @@ const topPostNo = (): string | undefined => {
 /** 사용자가 이 탭을 보고 있는지. 다른 창을 보는 동안(창은 보이지만 포커스가 없다)도 안 보는 것으로 친다. */
 const isWatching = (): boolean => !document.hidden && document.hasFocus();
 
-/**
- * 이 탭을 보지 않는 동안 들어온 새 글 수를 탭 제목에 붙이고(titleCount), 돌아오면(창 포커스, 탭 표시) 지운다.
- * 가린 글(차단, 깡계 숨김과 흐리게)은 세지 않는다. 필터는 행을 넣은 뒤(MutationObserver)에 돌므로 한 차례 뒤에 센다.
- * 돌아왔을 때 센 글이 있거나 숨긴 탭에서 돌아온 뒤 첫 로드에 새 글이 있으면, 떠날 때 맨 위에 있던 글에
- * 다음에 돌아올 때까지 '여기까지 읽음' 선을 긋는다(readMark).
- */
+/** 떠나 있는 동안 들어온 새 글을 세어 제목에 붙이고, 돌아오면 지우고 읽음 선을 긋는다. 가린 글은 세지 않는다. */
 export const createUnseenCounter = (ctx: Ctx) => {
     let unseen = 0;
     // 탭을 떠나 있는지와 떠날 때 맨 위에 있던 글 번호. 창을 옮긴 뒤 탭을 숨기면 두 번 떠나므로 처음 것만 둔다.
     let away = false;
     let leftAt: string | undefined;
-    // 떠난 동안 탭이 숨었는지와, 숨긴 탭에서 돌아온 뒤 첫 로드에 쓸 leftAt.
-    // 숨은 탭은 새로고침을 쉬어 떠난 동안의 글이 돌아온 뒤 첫 로드에 오는데, 그때는 보고 있어 세지 않으므로 이 값으로 선을 긋는다.
-    // 실패로 주기가 늘어 돌아오자마자 받지 않으면 다음 로드까지 둔다.
+    // 숨은 탭에서 돌아온 뒤 첫 로드에 선을 그을 때 쓸 leftAt. 숨은 탭은 돌아온 뒤에야 글이 오는데 그때는 세지 않는다.
     let hiddenAway = false;
     let returnedFrom: string | undefined;
     // 구분선을 그은 글 번호.
@@ -114,8 +103,7 @@ export const createUnseenCounter = (ctx: Ctx) => {
     window.addEventListener("focus", onFocusChange, {signal: ctx.signal});
     window.addEventListener("blur", onFocusChange, {signal: ctx.signal});
     document.addEventListener("visibilitychange", onFocusChange, {signal: ctx.signal});
-    // 제목, 읽음 선은 문서 상태를 바꾼 것이므로 onRevoke(사용자가 모듈을 끈 때)에만 되돌린다. addCleanup은
-    // stopAll(확장 업데이트)에서도 도는데 그때 되돌리면 새 인스턴스가 붙인 수와 구분할 표시(COUNTED_ATTRIBUTE)가 필요해진다.
+    // 문서 상태를 바꾼 것이므로 onRevoke(모듈을 끈 때)에만 되돌린다. stopAll에서 되돌리면 새 인스턴스의 수와 구분할 표시가 필요해진다.
     ctx.onRevoke(() => {
         clearTitle();
         clearMark();

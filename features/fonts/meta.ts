@@ -3,13 +3,10 @@ import type {ModuleContext, SettingsSchema} from "@/core/module/types";
 
 const DEFAULT_FONTS = "Noto Sans CJK KR, NanumGothic";
 
-/** CSS 일반 글꼴군 — 따옴표로 감싸면 키워드가 아니라 그 이름의 폰트로 해석된다. */
+/** CSS 일반 글꼴군 - 따옴표로 감싸면 키워드가 아니라 그 이름의 폰트로 해석된다. */
 const GENERIC_FAMILIES = new Set(["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui", "math", "emoji", "fangsong", "ui-serif", "ui-sans-serif", "ui-monospace", "ui-rounded"]);
 
-/**
- * "A, B" → `"A", "B", sans-serif`. 이름마다 따옴표로 감싸 입력이 CSS 규칙으로 새어 나가지 않게 한다.
- * 정확히 일치하는 일반 글꼴군 키워드만 그대로 두고, 이미 일반 글꼴군으로 끝나면 sans-serif를 붙이지 않는다.
- */
+/** "A, B" → `"A", "B", sans-serif`. 따옴표로 감싸 입력이 CSS로 새어 나가지 않게 한다. */
 const toFontFamily = (value: string): string => {
     const fonts = value
         // 제어문자(줄바꿈 등)는 CSS 문자열을 끝내 뒷부분이 규칙으로 읽힌다.
