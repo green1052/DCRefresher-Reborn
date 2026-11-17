@@ -2,7 +2,6 @@ import {defineExtensionMessaging} from "@webext-core/messaging";
 
 import type {GallogActivity} from "@/core/gallog";
 import type {TurnstileConfig} from "@/core/preview/types";
-import type {Sample} from "@/utils/imageFingerprint";
 
 /** 콘텐츠 스크립트→페이지(MAIN world) CustomEvent. 파이어폭스는 객체를 못 읽어 detail은 원시값뿐이다. */
 export const LIST_REPLACED_EVENT = "refresher:list-replaced";
@@ -41,12 +40,6 @@ export interface TurnstileResult {
     tokenMs: number;
 }
 
-/** 이미지 파일의 SHA-256과 비슷한 이미지 표본 (undefined: 미구함, null: 디코딩 실패). */
-export interface ImageHashes {
-    file: string;
-    similar?: Sample[] | null;
-}
-
 interface ProtocolMap {
     /** 배경 → 탭: 단축키 실행 (commands). */
     "refresher:executeShortcut"(data: string): void;
@@ -74,9 +67,6 @@ interface ProtocolMap {
 
     /** 탭 → 배경: 글댓비 조회 결과. 실패는 activity 없이 보내 조회권만 푼다. */
     "refresher:gallogResult"(data: {uid: string; activity?: GallogActivity}): void;
-
-    /** 배경 → 탭: 우클릭 "이 이미지 차단". 탭이 해시를 구해 목록에 넣는다. */
-    "refresher:blockImage"(url: string): void;
 
     /** 옵션 → 배경: DB "지금 갱신". 배경 한 곳에서 받아 갱신이 겹치지 않게 한다. */
     "refresher:updateDatabase"(): void;

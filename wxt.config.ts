@@ -1,7 +1,7 @@
 import tailwindcss from "@tailwindcss/vite";
 import {defineConfig} from "wxt";
 
-import {CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES, IMAGE_HOST_ORIGINS} from "./core/pages";
+import {CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES} from "./core/pages";
 
 export default defineConfig({
     manifestVersion: 3,
@@ -56,12 +56,8 @@ export default defineConfig({
                     }
                 }
                 : {minimum_chrome_version: "140"}),
-            // 이미지 차단이 본문 이미지를 다시 받지 않고 읽는 데 쓴다 - 설치 때 묻지 않는 권한이다.
-            permissions: ["alarms", "contextMenus", "storage", "scripting", "unlimitedStorage",
-                          ...(firefox ? ["declarativeNetRequest"] : ["declarativeNetRequestWithHostAccess"])],
+            permissions: ["alarms", "contextMenus", "storage", "scripting", "unlimitedStorage"],
             host_permissions: ["https://*.dcinside.com/*"],
-            // 본문 이미지 호스트. 이미지를 처음 차단할 때 묻는다 (core/pages.ts의 IMAGE_HOST_ORIGINS).
-            optional_host_permissions: IMAGE_HOST_ORIGINS,
             content_scripts: [
                 {
                     matches: CONTENT_MATCHES,

@@ -11,7 +11,7 @@ let seq = 0;
 const nextPost = () => preData({id: String(++seq)});
 
 const block = (fields: Partial<ModuleSettings["block"]> = {}): ModuleSettings["block"] => ({
-    replyRemove: false, blur: false, blurReveal: false, blurStrength: 5, similarImages: false, similarThreshold: 12, foldDuplicate: false, duplicateCount: 3, duplicateMinLength: 5, ...fields
+    replyRemove: false, blur: false, blurReveal: false, blurStrength: 5, foldDuplicate: false, duplicateCount: 3, duplicateMinLength: 5, ...fields
 });
 
 // low는 글댓합 3(깡계), busy는 300, 기준은 10.

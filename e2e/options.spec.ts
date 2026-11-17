@@ -121,7 +121,7 @@ test.describe("옵션 - 차단 탭", () => {
         await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([{id: expect.any(String), content: "차단닉", isRegex: false}]);
     });
 
-    test("틀린 정규식과 64자가 아닌 이미지 해시는 저장하지 않고 알리며, 이미지 해시는 소문자로 저장한다", async ({page, extensionId, storage}) => {
+    test("틀린 정규식은 저장하지 않고 알린다", async ({page, extensionId, storage}) => {
         const {dialog} = await openOptions(page, extensionId, "block");
         const alert = dialog.getByRole("alert");
 
@@ -132,29 +132,12 @@ test.describe("옵션 - 차단 탭", () => {
         await expect(alert).toContainText("정규식이 올바르지 않습니다");
         await page.keyboard.press("Escape");
         await expect(dialog).toHaveCount(0);
-
-        await page.getByRole("tab", {name: /^이미지/}).click();
-        // 탭이 바뀌는 동안은 앞 탭의 추가 버튼도 잠깐 남는다. 하나만 남은 뒤 누른다.
-        const add = page.getByRole("button", {name: "추가", exact: true});
-        await expect(add).toHaveCount(1);
-        await add.click();
-        const input = dialog.getByPlaceholder("이미지 값을 입력해 주세요");
-        // 이미지 값은 파일 해시라 정규식을 고르지 않는다.
-        await expect(dialog.getByRole("checkbox", {name: "정규식", exact: true})).toHaveCount(0);
-        await input.fill("A".repeat(63));
-        await dialog.getByRole("button", {name: "추가", exact: true}).click();
-        await expect(alert).toContainText("16진수 64자");
-        // 파일 해시는 소문자 16진수라 대문자로 넣어도 소문자로 저장한다.
-        await input.fill("A".repeat(64));
-        await dialog.getByRole("button", {name: "추가", exact: true}).click();
-        await expect.poll(() => storage.get("refresher:block:IMAGE")).toEqual([{id: expect.any(String), content: "a".repeat(64), isRegex: false}]);
         expect(await storage.get("refresher:block:NICK")).toBeUndefined();
     });
 
-    test("같은 값, 갤러리 항목은 추가하지 않고, 자기 항목은 값 그대로 수정하며, 이미지 값을 바꿔야 비슷한 이미지 지문을 버린다", async ({page, extensionId, storage}) => {
+    test("같은 값, 갤러리 항목은 추가하지 않고, 자기 항목은 값 그대로 수정한다", async ({page, extensionId, storage}) => {
         const nick = {id: "a", content: "있는닉", isRegex: false, gallery: "g1"};
-        const image = {id: "i", content: "a".repeat(64), isRegex: false, similar: "0".repeat(32), frames: ["1".repeat(32)]};
-        await storage.set({"refresher:block:NICK": [nick], "refresher:block:IMAGE": [image]});
+        await storage.set({"refresher:block:NICK": [nick]});
         const {dialog, table} = await openOptions(page, extensionId, "block");
 
         await page.getByRole("button", {name: "추가", exact: true}).click();
@@ -170,17 +153,6 @@ test.describe("옵션 - 차단 탭", () => {
         await page.getByRole("option", {name: "포함", exact: true}).click();
         await dialog.getByRole("button", {name: "수정", exact: true}).click();
         await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([{...nick, mode: "CONTAIN"}]);
-
-        await page.getByRole("tab", {name: /^이미지/}).click();
-        await table.getByText(image.content, {exact: true}).click();
-        await dialog.getByRole("button", {name: "수정", exact: true}).click();
-        await expect(dialog).toHaveCount(0);
-        expect(await storage.get("refresher:block:IMAGE")).toEqual([image]);
-
-        await table.getByText(image.content, {exact: true}).click();
-        await dialog.getByPlaceholder("이미지 값을 입력해 주세요").fill("b".repeat(64));
-        await dialog.getByRole("button", {name: "수정", exact: true}).click();
-        await expect.poll(() => storage.get("refresher:block:IMAGE")).toEqual([{id: "i", content: "b".repeat(64), isRegex: false}]);
     });
 
     test("줄의 휴지통은 항목 이름을 달고, 확인해야 그 항목만 지운다", async ({page, extensionId, storage}) => {

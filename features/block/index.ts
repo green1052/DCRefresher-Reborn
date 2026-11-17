@@ -1,12 +1,10 @@
-import {BLOCKED_TEXT, dcconCode, duplicateOf, groupDuplicates, HIDDEN_ROW_SELECTOR, isAnyBlocked, isBlocked, isImageBlocked, loadedPixels, ROWS_HIDDEN_EVENT, similarImageThreshold, VIDEO_CHECK_EVENTS} from "@/core/block";
+import {BLOCKED_TEXT, dcconCode, duplicateOf, groupDuplicates, HIDDEN_ROW_SELECTOR, isAnyBlocked, isBlocked, ROWS_HIDDEN_EVENT} from "@/core/block";
 import {FILTER_SKIP_ATTR} from "@/core/filtering";
 import {defineModule} from "@/core/module/define";
 import {isViewPage, pageGallery} from "@/core/http/urls";
 import {BLOCK_TYPES} from "@/core/storage/items";
-import {onMessage} from "@/core/messaging/protocol";
 import {WRITER_ROW_SELECTOR} from "@/core/list";
 import type {BlockType} from "@/core/storage/types";
-import {blockImage} from "@/stores/blockRequest";
 import {useBlocksStore} from "@/stores/blocks";
 import {openWriterBubble, useUiStore} from "@/stores/ui";
 import {textWithoutScripts, whenDomReady} from "@/utils/dom";
@@ -117,28 +115,6 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
         else hide(element);
     };
 
-    // 본문 이미지·움짤 차단은 파일 해시로 보므로 다 받은 뒤(load, VIDEO_CHECK_EVENTS)에 본다.
-    const watchedImages = new WeakSet<HTMLElement>();
-    // 반복 재생 움짤은 progress, seeked가 계속 오므로 주소마다 한 번만 판정한다. 주소가 바뀌면(지연 로딩) 다시 본다.
-    const judgedSources = new WeakMap<HTMLElement, string>();
-    const checkImage = (element: HTMLElement, again = false): void => {
-        if (!(element instanceof HTMLImageElement || element instanceof HTMLVideoElement)) return;
-        if (!watchedImages.has(element)) {
-            watchedImages.add(element);
-            for (const type of element instanceof HTMLImageElement ? ["load"] : VIDEO_CHECK_EVENTS) {
-                element.addEventListener(type, () => checkImage(element), {signal: ctx.signal});
-            }
-        }
-        const src = element.currentSrc || element.src;
-        if (!src || (!again && judgedSources.get(element) === src)) return;
-        // 다 받은 것만 한 번으로 친다. 아직 못 얻은 것(버퍼링 중 움짤, 지연 로딩 이미지)은 다음 이벤트에 다시 온다.
-        if (loadedPixels(element) !== undefined) judgedSources.set(element, src);
-        // 지문은 한 번에 하나씩 구해 늦게 끝난다. 그사이 비슷한 이미지 설정이 바뀌면 recheck가 새 기준으로 다시 보므로 옛 기준의 결과는 버린다.
-        const threshold = similarImageThreshold(ctx.settings);
-        void isImageBlocked(element, gallery, threshold).then((blocked) => {
-            if (blocked && !ctx.signal.aborted && similarImageThreshold(ctx.settings) === threshold) hide(element);
-        });
-    };
 
     // 본문 차단은 다 읽힌 뒤 한 번만 본다. 필터에서 보면 행마다 다시 읽거나 파싱 중 일부로 오탐한다.
     const checkText = (): void => {
@@ -199,7 +175,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
 
     // 선택자마다 판정. 새로 그려지는 요소는 필터가, 이미 그려진 요소는 recheck가 같은 표로 돈다.
     const checks: [selector: string, check: (element: HTMLElement, again?: boolean) => void][] = [[".ub-writer", checkWriter], [".written_dccon", checkDccon]];
-    if (isViewPage) checks.push([".cmt_list", foldLater], [".write_div :is(img, video)", checkImage]);
+    if (isViewPage) checks.push([".cmt_list", foldLater]);
     for (const [selector, check] of checks) ctx.addFilter(selector, check);
     if (isViewPage) {
         whenDomReady(checkText, ctx.signal);
@@ -274,7 +250,6 @@ export default defineModule(meta, {
         publishRevealed();
         const recheck = setupFilters(ctx, gallery);
         setupSelection(ctx);
-        ctx.addCleanup(onMessage("refresher:blockImage", ({data: url}) => blockImage(url)));
         ctx.onSettingsChanged((keys) => {
             if (!keys.isDisjointFrom(BLUR_KEYS)) applyBlurStyle(ctx);
             if (!keys.isSubsetOf(BLUR_KEYS)) recheck();

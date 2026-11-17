@@ -298,13 +298,13 @@
         @apply refresher-blur-reveal;
     }
 
-    /* 본문에 든 차단 디시콘, 이미지 (Frame의 markBlockedDccons, markBlockedImages). 가린 내용 보기 동안은 아래 규칙으로 흐리게 보인다. */
-    &:not([data-block-revealed]) .refresher-preview-contents :is(.written_dccon, img, video)[data-blocked="hide"] {
+    /* 본문에 든 차단 디시콘 (blockedDccons.ts). 가린 내용 보기 동안은 아래 규칙으로 흐리게 보인다. */
+    &:not([data-block-revealed]) .refresher-preview-contents .written_dccon[data-blocked="hide"] {
         display: none;
     }
 
-    /* 가린 디시콘, 이미지(그 자체, 가린 본문, 가린 댓글 안)는 눌러도 정보 창, 크게 보기, 원본 보기가 열리지 않으므로 손가락 커서를 되돌린다 (openDcconInfo, contentsClick.ts). */
-    &:not([data-block-revealed]) :is(:is(.written_dccon, img)[data-blocked], [data-blocked] :is(.written_dccon, img)):not([data-comments-revealed] *) {
+    /* 가린 디시콘(그 자체, 가린 본문, 가린 댓글 안)은 눌러도 정보 창이 열리지 않으므로 손가락 커서를 되돌린다 (openDcconInfo). */
+    &:not([data-block-revealed]) :is(.written_dccon[data-blocked], [data-blocked] .written_dccon):not([data-comments-revealed] *) {
         cursor: auto;
     }
 
@@ -316,12 +316,12 @@
     }
 }
 
-/* 다크 모드 본문 미디어는 다시 뒤집혀 있다 (.refresher-html). 본문 차단 디시콘, 이미지는 흐림, 풀기에서도 그 반전을 지킨다 - 아니면 흐림이 반전을 덮거나 반전이 흐림을 덮는다. */
-.dark .refresher-html :is(.written_dccon, img, video)[data-blocked="blur"] {
+/* 다크 모드 본문 미디어는 다시 뒤집혀 있다 (.refresher-html). 본문 차단 디시콘은 흐림, 풀기에서도 그 반전을 지킨다 - 아니면 흐림이 반전을 덮거나 반전이 흐림을 덮는다. */
+.dark .refresher-html .written_dccon[data-blocked="blur"] {
     filter: invert(1) blur(var(--refresher-blur, 5px));
 }
 
-.dark :is(.refresher-frame[data-blur-reveal] .refresher-html :is(.written_dccon, img, video)[data-blocked="blur"]:is(:hover, :focus-visible), .refresher-frame[data-block-revealed] .refresher-html :is(.written_dccon, img, video)[data-blocked]) {
+.dark :is(.refresher-frame[data-blur-reveal] .refresher-html .written_dccon[data-blocked="blur"]:is(:hover, :focus-visible), .refresher-frame[data-block-revealed] .refresher-html .written_dccon[data-blocked]) {
     filter: invert(1);
 }
 
@@ -332,8 +332,8 @@
     scrollbar-color: rgb(from var(--border) calc(255 - r) calc(255 - g) calc(255 - b)) transparent;
 }
 
-/* 본문에 든 차단 디시콘, 이미지 (Mini의 markBlockedDccons, markBlockedImages). */
-.refresher-mini-contents :is(.written_dccon, img, video)[data-blocked] {
+/* 본문에 든 차단 디시콘 (blockedDccons.ts). */
+.refresher-mini-contents .written_dccon[data-blocked] {
     display: none;
 }
 

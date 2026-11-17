@@ -27,15 +27,6 @@
 - 자동 새로고침은 목록 표만 파싱하고 tbody가 지난번과 같으면 파싱도 하지 않습니다. 사용자 로드, 검색 결과는 문서 전체를 파싱해 페이징도 맞춥니다. 읽은 자리 선(`refresherReadMark`)은 행 class라 갈아끼우면 사라지고 바뀐 행이 있는 로드 뒤 `showMark`가 다시 긋습니다.
 - 목록 요청 하나에 30초 제한(`LIST_TIMEOUT`)([HTTP](architecture.md#http)). 실패하면 주기를 최대 60초까지 두 배씩 늘리고 성공하면 돌아갑니다. 새 글 없는 자동 새로고침이 이어지면 0.5배씩 최대 4배까지 늘리고 새 글, 강제 로드, 탭 복귀, 마우스, 키 입력이 되돌립니다(둘 중 긴 것). 간격에 0.5~2초가 무작위로 더해집니다.
 
-## 이미지 차단
-
-본문 이미지(`viewimage.php`)의 SHA-256을 차단 목록(`IMAGE`)에 넣어 비교합니다(`core/block.ts`의 `imageHash`, `isImageBlocked`). 해시는 짧은 정규식에 못 쓰므로 차단 창은 이미지 항목에 정규식을 고르지 않게 합니다(`entrypoints/options/BlockDialog.tsx`).
-
-- 우클릭 메뉴 "이 이미지 차단"은 목록, 본문에만 겁니다. 누르면 호스트 권한(`IMAGE_HOST_ORIGINS`)을 묻고 탭에 `refresher:blockImage`를 보냅니다(권한은 사용자 동작 안에서만 되므로 기다리지 않고 바로). 받는 쪽이 없으면 새로고침 안내를 띄웁니다.
-- declarativeNetRequest 세션 규칙으로 viewimage.php에 CORS 헤더를 붙입니다. 탭은 `cache: "force-cache"`로 요청하는데 크롬은 페이지 캐시에서, 파이어폭스는 다시 받습니다. 다 받은(`complete`) 이미지만 보고 주소별 결과는 탭에 남겨 다시 판정할 때 또 받지 않습니다.
-- 비슷한 이미지는 dHash, pHash 지문으로 비교합니다(`utils/imageFingerprint.ts`). 원본 크기로 디코딩해 두 브라우저 지문이 같고, 판정은 원본과 좌우 반전본 둘 다 견줍니다. 우클릭 차단은 원본 지문을 늘 넣습니다. 지문은 항목이 있고 `MAX_PIXELS` 이하일 때 하나씩 구하고(디코딩이 해시보다 무거움) 불일치, 불포함(`NOT_*`)은 넓히지 않으며 같은 파일은 해시로 바로 막습니다.
-- 움짤(mp4, 움직이는 gif, webp)은 0, 0.5, 1.5, 3초 장면마다 지문을 구해 첫 장면은 `similar`, 나머지는 `frames`에 넣습니다. mp4는 `VideoFrame` Y 평면, gif, webp는 `ImageDecoder`로 풉니다. 고른 장면은 빼고, 한쪽이 정지 이미지면 한 장면만, 둘 다 움짤이면 하나 빼고 다 맞아야 막습니다(`isSimilarSet`). 파일 전체가 들어온 뒤에 보고 `seeked`마다 다시 보며(`VIDEO_CHECK_EVENTS`) 결과는 기억해 둡니다. 디시는 같은 움짤을 mp4에서 gif(`<img>`)로 바꾸므로 두 주소를 짝으로 적어 두고(`pairedMediaUrl`) 차단할 때 두 항목을 넣습니다.
-
 ## 검색
 
 `features/search`는 목록, 본문 페이지에서 돕고 이어 붙이기는 목록에서만 합니다.

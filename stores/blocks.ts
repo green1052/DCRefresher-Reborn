@@ -26,7 +26,7 @@ interface BlocksState {
 export const blockLabel = (type: BlockType, entry: BlockEntry): string => (type === "DCCON" ? entry.extra || entry.content : entry.content);
 
 /** 유형마다 빈 차단 목록. 유형을 늘리면 여기서 타입 오류가 난다. */
-export const emptyEntries = (): Record<BlockType, BlockEntry[]> => ({COMMENT: [], DCCON: [], ID: [], IMAGE: [], IP: [], NICK: [], TAB: [], TEXT: [], TITLE: []});
+export const emptyEntries = (): Record<BlockType, BlockEntry[]> => ({COMMENT: [], DCCON: [], ID: [], IP: [], NICK: [], TAB: [], TEXT: [], TITLE: []});
 
 /** 차단 목록/기본 모드의 단일 출처. 콘텐츠, 옵션 모두 이 스토어를 쓰고 저장소와 양방향 동기화된다. */
 export const useBlocksStore = create<BlocksState>((set, get) => ({

@@ -1,17 +1,10 @@
 // @vitest-environment-options {"url": "https://gall.dcinside.com/board/view/?id=test&no=1"}
-import {webcrypto} from "node:crypto";
-
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
-import {imageHash} from "@/core/block";
 import block from "@/features/block/index";
-import {imageFingerprints} from "@/utils/imageFingerprint";
 
 import {blockEntry as entry, setBlockLists, tick} from "../../../helpers";
 import {type Running, runModule} from "../module";
-
-// jsdom은 이미지를 디코딩하지 못해 지문은 테스트가 정한다.
-vi.mock("@/utils/imageFingerprint", async (original) => ({...await original<typeof import("@/utils/imageFingerprint")>(), imageFingerprints: vi.fn()}));
 
 const comment = (text: string): string =>
     `<li class="ub-content"><span class="ub-writer" data-nick="ㅇㅇ" data-uid="" data-ip="1.2"></span><p class="usertxt">${text}</p></li>`;
@@ -118,108 +111,3 @@ describe("본문 차단", () => {
     });
 });
 
-describe("본문 이미지 차단", () => {
-    // 해시는 주소별로 모듈에 남으므로 테스트마다 다른 주소를 쓴다.
-    let seq = 0;
-    const imageUrl = (): string => `https://dcimg8.dcinside.co.kr/viewimage.php?id=x&no=${seq++}`;
-    const NEAR = `${"0".repeat(15)}f${"0".repeat(15)}f`;
-
-    // 다 받은 이미지처럼 보이게 한다. 지연 로딩으로 주소가 바뀌는 것을 흉내 내려고 다시 정할 수 있게 둔다.
-    const loaded = (element: HTMLImageElement, url: string): void => {
-        for (const [key, value] of Object.entries({currentSrc: url, complete: true, naturalWidth: 100, naturalHeight: 100})) {
-            Object.defineProperty(element, key, {value, configurable: true});
-        }
-    };
-    const bodyImage = (url: string): HTMLImageElement => {
-        const element = document.createElement("img");
-        loaded(element, url);
-        writeDiv().append(element);
-        return element;
-    };
-    const fileOf = async (url: string): Promise<string> => (await imageHash(url))!.file;
-
-    beforeEach(() => {
-        document.body.innerHTML = VIEW.replace("본문에 나쁜 말", "");
-        // 파일 해시에 WebCrypto(crypto.subtle)가 필요한데 jsdom의 crypto에는 없다.
-        // unstubAllGlobals로 되돌리지 않는다. WXT 테스트 설정이 넣은 가짜 chrome까지 지워져 runModule이 깨진다.
-        vi.stubGlobal("crypto", webcrypto);
-        vi.stubGlobal("fetch", vi.fn(async () => new Response("abc")));
-        vi.mocked(imageFingerprints).mockReset().mockResolvedValue([["0".repeat(32), "f".repeat(32)]]);
-    });
-
-    it("다 받은 본문 이미지를 파일 해시로 가린다", async () => {
-        const url = imageUrl();
-        setBlockLists({IMAGE: [entry(await fileOf(url))]});
-        const image = bodyImage(url);
-        await start();
-        await vi.waitFor(() => expect(image.classList.contains("refresherBlocked")).toBe(true));
-    });
-
-    it("주소가 바뀌면 load 때 다시 본다", async () => {
-        const url = imageUrl();
-        setBlockLists({IMAGE: [entry(await fileOf(url))]});
-        // 지연 로딩 자리 이미지는 viewimage.php가 아니라 보지 않는다.
-        const image = bodyImage("https://gall.dcinside.com/lazy.gif");
-        await start();
-        await tick();
-        expect(image.classList.contains("refresherBlocked")).toBe(false);
-
-        loaded(image, url);
-        image.dispatchEvent(new Event("load"));
-        await vi.waitFor(() => expect(image.classList.contains("refresherBlocked")).toBe(true));
-    });
-
-    it("움짤은 주소가 같으면 이벤트가 몇 번이나 와도 한 번만 본다", async () => {
-        setBlockLists({IMAGE: [entry("다른 파일", {similar: NEAR})]});
-        // jsdom은 영상을 받지 못해 다 받은 상태를 직접 심는다.
-        const video = document.createElement("video");
-        const arm = (url: string): void => {
-            video.src = url;
-            for (const [key, value] of Object.entries({currentSrc: url, readyState: HTMLMediaElement.HAVE_ENOUGH_DATA, duration: 10, videoWidth: 100, videoHeight: 100,
-                buffered: {length: 1, start: () => 0, end: () => 10}})) {
-                Object.defineProperty(video, key, {value, configurable: true});
-            }
-        };
-        arm(imageUrl());
-        writeDiv().append(video);
-        await start({similarImages: true});
-        await vi.waitFor(() => expect(imageFingerprints).toHaveBeenCalledTimes(1));
-        for (const type of ["progress", "seeked", "suspend", "progress", "seeked"]) video.dispatchEvent(new Event(type));
-        await tick();
-        expect(imageFingerprints).toHaveBeenCalledTimes(1);
-
-        arm(imageUrl());
-        video.dispatchEvent(new Event("canplaythrough"));
-        await vi.waitFor(() => expect(imageFingerprints).toHaveBeenCalledTimes(2));
-    });
-
-    it("차단 목록이 바뀐 뒤에도 지문을 기다리지 않고 다시 가린다", async () => {
-        const url = imageUrl();
-        const file = entry(await fileOf(url));
-        setBlockLists({IMAGE: [file, entry("다른 파일", {similar: NEAR})]});
-        // 앞선 이미지들의 지문 계산이 밀려 있어 끝나지 않는다.
-        vi.mocked(imageFingerprints).mockReturnValue(new Promise(() => {}));
-        const image = bodyImage(url);
-        await start({similarImages: true});
-        await vi.waitFor(() => expect(image.classList.contains("refresherBlocked")).toBe(true));
-
-        // recheck가 가린 것을 모두 풀고 다시 판정한다.
-        setBlockLists({IMAGE: [file, entry("또 다른 파일", {similar: NEAR})]});
-        await vi.waitFor(() => expect(image.classList.contains("refresherBlocked")).toBe(true), {timeout: 500});
-    });
-
-    it("지문을 기다리는 사이 비슷한 이미지 차단을 끄면 늦게 나온 지문으로 가리지 않는다", async () => {
-        const fingerprint = Promise.withResolvers<[string, string][]>();
-        vi.mocked(imageFingerprints).mockReturnValue(fingerprint.promise);
-        setBlockLists({IMAGE: [entry("다른 파일", {similar: NEAR})]});
-        const image = bodyImage(imageUrl());
-        const {change} = await start({similarImages: true});
-        await vi.waitFor(() => expect(imageFingerprints).toHaveBeenCalled());
-
-        change({similarImages: false});
-        fingerprint.resolve([["0".repeat(32), "f".repeat(32)]]);
-        await tick();
-        await tick();
-        expect(image.classList.contains("refresherBlocked")).toBe(false);
-    });
-});

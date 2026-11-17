@@ -13,10 +13,6 @@ export interface BlockEntry {
     mode?: DetectMode;
     gallery?: string;
     extra?: string;
-    /** 이미지 항목의 비슷한 이미지 지문. 움짤은 첫 장면의 것이다. */
-    similar?: string;
-    /** 움짤의 나머지 장면 지문. similar와 따로 둬 이것을 모르는 옛 버전 호환을 지킨다. */
-    frames?: string[];
 }
 
 export interface MemoEntry {

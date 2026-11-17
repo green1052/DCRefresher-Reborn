@@ -56,7 +56,6 @@ scripts/                IP DB 빌드 스크립트
 
 - `page.ts`: 탭의 페이지(MAIN world)에서 실행합니다. 갈아끼운 목록에 디시 스크립트(`chk_user_block`, `UserMemo.renderWriterMemoBadges`)를 다시 거는 다리를 페이지마다 겁니다(`refresher:installListBridge`). 그 뒤로 콘텐츠 스크립트는 `LIST_REPLACED_EVENT` 이벤트만 보냅니다. 한 모듈만 쓸 때는 그 `background.ts`가 `runInPage`로 합니다. import가 필요한 코드는 unlisted script로 번들해 `runFileInPage`로 넣습니다(글쓰기 이미지 변환).
 - `database.ts`: IP, 밴 DB를 하루마다 확인해 7일이 지났거나 형식이 옛것이면 받습니다. 알람은 배포 빌드에서만, 설치, 업데이트 때도 받습니다. "지금 갱신"은 배경에 메시지(`refresher:updateDatabase`)를 보냅니다. 통합검색, 갤로그는 CORS가 막혀 배경이 대신 받습니다(`refresher:searchPosts`, `refresher:gallogPage`).
-- 이미지 차단(`features/block/background.ts`)은 본문 이미지에 우클릭 메뉴를 걸고 누르면 이미지 호스트 권한(`IMAGE_HOST_ORIGINS`)을 묻습니다. 켜져 있는 동안 viewimage.php에 CORS 헤더를 붙이는 declarativeNetRequest 세션 규칙을 걸고 권한이 없으면 건너뜁니다. 해시는 콘텐츠 스크립트가 구합니다([기능별 구조](features.md#이미지-차단)).
 
 ## 저장소
 

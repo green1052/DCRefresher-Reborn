@@ -6,11 +6,6 @@ import {arrayIncludes} from "@/utils/typed";
 
 export type BlockInputFields = Omit<BlockEntry, "id">;
 
-/** 비슷한 이미지 지문 (utils/imageFingerprint.ts). */
-const FINGERPRINT = /^[0-9a-f]{32}$/;
-/** 나머지 장면 지문 수 상한. 백업 용량을 지킨다. */
-const MAX_FRAMES = 8;
-
 const isBlockEntry = (value: unknown): value is Omit<BlockEntry, "id"> & { id?: unknown } =>
     isRecord(value) &&
     // 빈 내용은 포함 검사에서 모든 글에 맞는다. 다이얼로그는 막지만 가져오기, 옛 데이터로 들어올 수 있다.
@@ -19,9 +14,6 @@ const isBlockEntry = (value: unknown): value is Omit<BlockEntry, "id"> & { id?: 
     typeof value.isRegex === "boolean" &&
     (value.gallery === undefined || typeof value.gallery === "string") &&
     (value.extra === undefined || typeof value.extra === "string") &&
-    (value.similar === undefined || (typeof value.similar === "string" && FINGERPRINT.test(value.similar))) &&
-    (value.frames === undefined || (Array.isArray(value.frames) && value.frames.length <= MAX_FRAMES &&
-                                    value.frames.every((frame) => typeof frame === "string" && FINGERPRINT.test(frame)))) &&
     (value.mode === undefined || arrayIncludes(DETECT_MODES, value.mode));
 
 /** 항목 플래그 표시 ([정규식] [갤러리: X] [모드명] 순). */

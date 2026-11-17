@@ -51,5 +51,5 @@ it("배경 시작 파일에서 닿는 모듈은 react, react-dom, zustand를 불
     // 훑은 파일이 없으면 통과한 것과 같으니 최소 한 파일은 닿았는지도 본다.
     expect(visited.size).toBeGreaterThan(5);
     // import.meta.glob이 붙잡는 기능별 배경 파일까지 닿았는지 본다.
-    expect(visited).toContain(resolve(process.cwd(), "features/block/background.ts"));
+    expect(visited).toContain(resolve(process.cwd(), "features/search/background.ts"));
 });

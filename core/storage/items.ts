@@ -13,8 +13,7 @@ export const TYPE_NAMES = {
     TEXT: "내용",
     COMMENT: "댓글",
     DCCON: "디시콘",
-    TAB: "말머리",
-    IMAGE: "이미지"
+    TAB: "말머리"
 };
 
 export const DETECT_MODE_NAMES = {
@@ -42,8 +41,7 @@ export const DEFAULT_DETECT_MODE: Record<BlockType, DetectMode> = {
     TEXT: "CONTAIN",
     COMMENT: "CONTAIN",
     DCCON: "SAME",
-    TAB: "SAME",
-    IMAGE: "SAME"
+    TAB: "SAME"
 };
 
 /** defineItem은 만드는 순간 저장소를 읽으므로 항목은 처음 쓸 때 만들어 재사용한다. */
