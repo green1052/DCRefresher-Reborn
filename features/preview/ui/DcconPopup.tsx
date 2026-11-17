@@ -86,7 +86,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
     };
 
     return (
-        <ModalDialog onClose={onClose} className="sm:max-w-[560px]" focusOnOpen="keyboard">
+        <ModalDialog onClose={onClose} className="sm:max-w-140" focusOnOpen="keyboard">
             <div className="flex items-center justify-between">
                 <DialogTitle>디시콘</DialogTitle>
                 <div className="flex items-center gap-4">
@@ -116,7 +116,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
             {/* 불러오는 동안은 스켈레톤을 칸이 넘치도록 깔아 꽉 찬 목록처럼 보인다. 넘친 스켈레톤에 스크롤바가 생기지 않게 자른다. */}
             {/* 세로 휠로도 패키지를 옆으로 부드럽게 넘기므로 스크롤바는 숨긴다. 가로 휠(트랙패드), Shift(브라우저가 이미 가로로 굴림), Ctrl(확대)은 그대로 둔다. */}
             {/* React의 onWheel은 루트에 수동(passive) 리스너로 붙어 preventDefault가 안 먹으니 네이티브로 건다. */}
-            <div ref={strip} className="flex gap-1 overflow-x-auto [scrollbar-width:none] aria-busy:overflow-hidden" aria-busy={loading} onScrollEnd={() => (wheelTarget.current = null)}>
+            <div ref={strip} className="flex gap-1 overflow-x-auto scrollbar-none aria-busy:overflow-hidden" aria-busy={loading} onScrollEnd={() => (wheelTarget.current = null)}>
                 {loading
                     ? Array.from({length: 12}, (_, index) => <Skeleton key={index} className="size-12 flex-none"/>)
                     : (
@@ -139,7 +139,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                     )}
             </div>
 
-            <div className="grid h-80 grid-cols-[repeat(auto-fill,minmax(72px,1fr))] content-start gap-1 overflow-y-auto [scrollbar-width:none] aria-busy:overflow-hidden" aria-busy={loading}>
+            <div className="grid h-80 grid-cols-[repeat(auto-fill,minmax(72px,1fr))] content-start gap-1 overflow-y-auto scrollbar-none aria-busy:overflow-hidden" aria-busy={loading}>
                 {loading
                     ? Array.from({length: 36}, (_, index) => <Skeleton key={index} className="aspect-square w-full"/>)
                     : (active?.detail ?? []).map((dccon) => (
