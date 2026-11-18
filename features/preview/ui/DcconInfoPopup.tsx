@@ -1,11 +1,6 @@
 import {type MouseEvent, useEffect, useState} from "react";
 
-import {ConfirmDialog, DialogCloseButton, ModalDialog} from "@/components/dialogs";
-import {Badge} from "@/components/ui/badge";
-import {Button} from "@/components/ui/button";
-import {DialogTitle} from "@/components/ui/dialog";
-import {Skeleton} from "@/components/ui/skeleton";
-import {Spinner} from "@/components/ui/spinner";
+import {ConfirmDialog, DialogCloseButton, DialogTitle, ModalDialog} from "@/components/dialogs";
 import {dcconCode, isBlockedHidden} from "@/core/block";
 import {urls} from "@/core/http/urls";
 import {addDcconPackage, dcconPackages, fetchDcconPackage} from "@/core/preview/request";
@@ -37,7 +32,7 @@ const openBlockBubble = (ev: MouseEvent<HTMLElement>): void => {
 
 /** 제작, 태그 줄 앞의 작은 딱지 (디시 정보창의 tbox). */
 const Label = ({children}: { children: string }) => (
-    <Badge variant="outline" className="rounded-sm text-muted-foreground">{children}</Badge>
+    <span className="badge badge-outline rounded-sm text-muted-foreground">{children}</span>
 );
 
 const ShopLink = ({href, children}: { href: string; children: string }) => (
@@ -104,7 +99,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
             </div>
 
             <div className="flex gap-4 rounded-lg bg-muted/50 p-4">
-                {info ? <img src={urls.dccon.image + info.main_img_path} alt={info.title} className="size-30 flex-none object-contain"/> : <Skeleton className="size-30 flex-none"/>}
+                {info ? <img src={urls.dccon.image + info.main_img_path} alt={info.title} className="size-30 flex-none object-contain"/> : <span className="size-30 flex-none animate-pulse rounded-md bg-muted"/>}
 
                 <div className="flex min-w-0 grow flex-col gap-2">
                     {info ? (
@@ -112,9 +107,9 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
                             <div className="flex items-start justify-between gap-3">
                                 <span className="text-lg font-bold">{info.title}</span>
                                 {!info.register && !info.residual && !added &&
-                                    <Button className="shrink-0" disabled={sending} onClick={() => setConfirming(true)}>
-                                        {sending && <Spinner aria-hidden data-icon="inline-start"/>}사용
-                                    </Button>}
+                                    <button type="button" className="btn btn-primary shrink-0" disabled={sending} onClick={() => setConfirming(true)}>
+                                        {sending && <span aria-hidden className="loading loading-spinner"/>}사용
+                                    </button>}
                             </div>
                             {info.description && <p>{info.description}</p>}
                             <div className="flex flex-wrap items-center gap-2">
@@ -133,9 +128,9 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
                         </>
                     ) : (
                         <>
-                            <Skeleton className="h-6 w-40"/>
-                            <Skeleton className="h-[18px] w-70"/>
-                            <Skeleton className="h-[18px] w-50"/>
+                            <span className="h-6 w-40 animate-pulse rounded-md bg-muted"/>
+                            <span className="h-[18px] w-70 animate-pulse rounded-md bg-muted"/>
+                            <span className="h-[18px] w-50 animate-pulse rounded-md bg-muted"/>
                         </>
                     )}
                 </div>
@@ -147,7 +142,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
                 {dccon
                     ? dccon.detail.map((item) => <img key={item.idx} src={urls.dccon.image + item.path} alt={item.title} title={item.title} loading="lazy" decoding="async"
                                                       className="aspect-square w-full cursor-context-menu object-contain"/>)
-                    : Array.from({length: 30}, (_, index) => <Skeleton key={index} className="aspect-square w-full"/>)}
+                    : Array.from({length: 30}, (_, index) => <span key={index} className="aspect-square w-full animate-pulse rounded-md bg-muted"/>)}
             </div>
 
             {/* 이 창 안에 그려야 확인 창을 누를 때 이 창이 바깥 클릭으로 닫히지 않는다. */}

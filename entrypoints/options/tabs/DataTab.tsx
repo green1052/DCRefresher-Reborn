@@ -1,23 +1,10 @@
 import {ClipboardCopy, CloudDownload, CloudUpload, FileDown, RefreshCw, Trash2, Undo2, Upload} from "lucide-react";
 import {useEffect, useId, useRef, useState} from "react";
 
-import {ConfirmDialog, DialogActions} from "@/components/dialogs";
-import {Button} from "@/components/ui/button";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger
-} from "@/components/ui/dialog";
-import {Field, FieldLabel} from "@/components/ui/field";
-import {Switch} from "@/components/ui/switch";
-import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
-import {panelOf} from "@/components/useReturnFocus";
+import {ConfirmDialog, DialogActions, DialogDescription, DialogHeader, DialogTitle, ModalDialog} from "@/components/dialogs";
 import {type CloudBackupStatus, readCloudBackupStatus} from "@/core/backup";
 import {backupStorage, dbMetaStorage} from "@/core/storage/items";
-import {arrayIncludes, objectKeys} from "@/utils/typed";
+import {cn} from "cn";
 
 import {formatTime} from "../shared/format";
 import {useStorageItem} from "../shared/hooks";
@@ -105,21 +92,22 @@ export function DataTab() {
         <div>
             <Section title="IP/밴 데이터베이스" desc={`버전: ${version.trim() || "없음"}`}
                      actions={
-                         <Button variant="secondary" disabled={loading} onClick={() => void forceUpdate()}>
-                             <RefreshCw data-icon="inline-start"/> 갱신
-                         </Button>
+                         <button type="button" className="btn btn-secondary" disabled={loading} onClick={() => void forceUpdate()}>
+                             <RefreshCw className="size-4"/> 갱신
+                         </button>
                      }/>
 
             <Section
                 title="클라우드 백업"
                 desc="브라우저 동기화 저장소에 설정을 백업합니다."
                 actions={
-                    <Field orientation="horizontal">
+                    <div className="flex items-center gap-3">
                         {/* 자동 칸은 기기끼리 같이 쓰고 켜는 즉시 이 기기 설정으로 덮인다. 새 기기에서 켰다가 복원할 백업을 잃지 않게 먼저 묻는다. */}
-                        <Switch id={`${id}-auto`} checked={autoBackup} disabled={loading || !cloud}
-                                onCheckedChange={(on) => (on && cloud?.auto ? setConfirm("auto") : void toggleAutoBackup(on))}/>
-                        <FieldLabel htmlFor={`${id}-auto`}>자동 백업</FieldLabel>
-                    </Field>
+                        <input id={`${id}-auto`} type="checkbox" role="switch" className="toggle"
+                               checked={autoBackup} disabled={loading || !cloud}
+                               onChange={(ev) => (ev.target.checked && cloud?.auto ? setConfirm("auto") : void toggleAutoBackup(ev.target.checked))}/>
+                        <label htmlFor={`${id}-auto`} className="text-sm font-medium leading-snug">자동 백업</label>
+                    </div>
                 }
             >
                 <p className="mb-3 text-muted-foreground">
@@ -127,51 +115,53 @@ export function DataTab() {
                     <br/>
                     자동 백업: {formatTime(cloud?.auto?.createdAt ?? 0)}
                 </p>
-                {/* 복원 버튼을 Trigger로 둬야 닫을 때 그 버튼으로 포커스가 돌아온다. */}
-                <Dialog open={restoreOpen} onOpenChange={setRestoreOpen}>
-                    <div className="flex flex-wrap gap-2">
-                        {/* 백업 버튼은 원래 수동 칸을 덮는다. 다른 기기가 올린 백업일 때만 묻는다(새 기기에서 복원과 헷갈려 누르는 경우). */}
-                        <Button variant="secondary" disabled={loading || !cloud}
-                                onClick={() => (cloud?.manual?.other ? setConfirm("manual") : void backupCloud())}>
-                            <CloudUpload data-icon="inline-start"/> 백업
-                        </Button>
-                        <DialogTrigger render={<Button ref={restoreRef} variant="secondary" disabled={loading}/>}>
-                            <CloudDownload data-icon="inline-start"/> 복원
-                        </DialogTrigger>
-                        <Button variant="secondary" disabled={loading || (!cloud?.manual && !cloud?.auto)}
-                                onClick={() => setConfirm("cloudClear")}>
-                            <Trash2 data-icon="inline-start"/> 삭제
-                        </Button>
-                    </div>
-
+                <div className="flex flex-wrap gap-2">
+                    {/* 백업 버튼은 원래 수동 칸을 덮는다. 다른 기기가 올린 백업일 때만 묻는다(새 기기에서 복원과 헷갈려 누르는 경우). */}
+                    <button type="button" className="btn btn-secondary" disabled={loading || !cloud}
+                            onClick={() => (cloud?.manual?.other ? setConfirm("manual") : void backupCloud())}>
+                        <CloudUpload className="size-4"/> 백업
+                    </button>
                     {/* 복원 중에는 복원 버튼이 막혀 포커스를 돌려줄 수 없으므로 가까운 조상(탭 패널)으로 돌린다. */}
-                    <DialogContent showCloseButton={false} className="sm:max-w-[420px]"
-                                   finalFocus={() => (restoreRef.current?.disabled ? panelOf(restoreRef.current) ?? true : true)}>
+                    <button ref={restoreRef} type="button" className="btn btn-secondary" disabled={loading}
+                            onClick={() => setRestoreOpen(true)}>
+                        <CloudDownload className="size-4"/> 복원
+                    </button>
+                    <button type="button" className="btn btn-secondary" disabled={loading || (!cloud?.manual && !cloud?.auto)}
+                            onClick={() => setConfirm("cloudClear")}>
+                        <Trash2 className="size-4"/> 삭제
+                    </button>
+                </div>
+
+                {restoreOpen && (
+                    <ModalDialog onClose={() => setRestoreOpen(false)} className="sm:max-w-[420px]">
                         <DialogHeader>
                             <DialogTitle>어느 백업으로 복원할까요?</DialogTitle>
                         </DialogHeader>
-                        <ToggleGroup aria-label="복원 방식" variant="outline" spacing={0} value={[restoreMode]}
-                                     onValueChange={([value]) => arrayIncludes(objectKeys(RESTORE_DESCRIPTIONS), value) && setRestoreMode(value)}>
-                            <ToggleGroupItem value="replace">덮어쓰기</ToggleGroupItem>
-                            <ToggleGroupItem value="merge">합치기</ToggleGroupItem>
-                        </ToggleGroup>
+                        <div role="group" aria-label="복원 방식" className="join">
+                            <button type="button" aria-pressed={restoreMode === "replace"}
+                                    className={cn("btn btn-outline join-item", restoreMode === "replace" && "btn-active")}
+                                    onClick={() => setRestoreMode("replace")}>덮어쓰기</button>
+                            <button type="button" aria-pressed={restoreMode === "merge"}
+                                    className={cn("btn btn-outline join-item", restoreMode === "merge" && "btn-active")}
+                                    onClick={() => setRestoreMode("merge")}>합치기</button>
+                        </div>
                         <DialogDescription>{RESTORE_DESCRIPTIONS[restoreMode]}</DialogDescription>
                         <div className="flex flex-col gap-2">
                             {([
                                 ["manual", "수동 백업", cloud?.manual ? formatTime(cloud.manual.createdAt) : undefined],
                                 ["auto", "자동 백업", cloud?.auto ? formatTime(cloud.auto.createdAt) : undefined]
                             ] as const).map(([slot, label, time]) => (
-                                <Button key={slot} variant="secondary" size="lg" className="justify-between"
+                                <button key={slot} type="button" className="btn btn-secondary btn-lg justify-between"
                                         disabled={!time}
                                         onClick={() => void recoverCloud(slot, restoreMode)}>
                                     {label}
                                     <span className="text-muted-foreground">{time ?? "없음"}</span>
-                                </Button>
+                                </button>
                             ))}
                         </div>
                         <DialogActions/>
-                    </DialogContent>
-                </Dialog>
+                    </ModalDialog>
+                )}
                 {autoBackup && (
                     <p className="mt-2 text-xs text-muted-foreground">설정이 바뀌면 1분 뒤에 자동으로 백업합니다.</p>
                 )}
@@ -183,15 +173,15 @@ export function DataTab() {
             <Section title="내보내기 / 가져오기"
                      desc="설정을 내보냅니다.">
                 <div className="flex flex-wrap gap-2">
-                    <Button variant="secondary" disabled={loading} onClick={() => void exportData()}>
-                        <ClipboardCopy data-icon="inline-start"/> 클립보드로 내보내기
-                    </Button>
-                    <Button variant="secondary" disabled={loading} onClick={() => void exportFile()}>
-                        <FileDown data-icon="inline-start"/> 파일로 내보내기
-                    </Button>
-                    <Button variant="secondary" disabled={loading} onClick={() => setImportOpen(true)}>
-                        <Upload data-icon="inline-start"/> 가져오기
-                    </Button>
+                    <button type="button" className="btn btn-secondary" disabled={loading} onClick={() => void exportData()}>
+                        <ClipboardCopy className="size-4"/> 클립보드로 내보내기
+                    </button>
+                    <button type="button" className="btn btn-secondary" disabled={loading} onClick={() => void exportFile()}>
+                        <FileDown className="size-4"/> 파일로 내보내기
+                    </button>
+                    <button type="button" className="btn btn-secondary" disabled={loading} onClick={() => setImportOpen(true)}>
+                        <Upload className="size-4"/> 가져오기
+                    </button>
                 </div>
             </Section>
 
@@ -199,17 +189,17 @@ export function DataTab() {
                 <Section title="되돌리기"
                          desc={`마지막 초기화, 복원, 가져오기, 되돌리기(${formatTime(undo.createdAt)}) 직전의 설정과 차단/메모 목록으로 돌아갑니다. 그 뒤에 바꾼 것은 사라집니다.`}
                          actions={
-                             <Button variant="secondary" disabled={loading} onClick={() => void revert()}>
-                                 <Undo2 data-icon="inline-start"/> 되돌리기
-                             </Button>
+                             <button type="button" className="btn btn-secondary" disabled={loading} onClick={() => void revert()}>
+                                 <Undo2 className="size-4"/> 되돌리기
+                             </button>
                          }/>
             )}
 
             <Section title="초기화" desc="모든 설정을 삭제합니다."
                      actions={
-                         <Button variant="destructive" disabled={loading} onClick={() => setConfirm("reset")}>
-                             <Trash2 data-icon="inline-start"/> 데이터 초기화
-                         </Button>
+                         <button type="button" className="btn btn-error" disabled={loading} onClick={() => setConfirm("reset")}>
+                             <Trash2 className="size-4"/> 데이터 초기화
+                         </button>
                      }/>
 
             {confirmed && (

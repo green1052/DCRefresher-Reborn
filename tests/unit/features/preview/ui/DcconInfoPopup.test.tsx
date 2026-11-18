@@ -11,20 +11,13 @@ import {useUiStore} from "@/stores/ui";
 
 import {tick} from "@/tests/helpers";
 
-// Base UI는 변환되지 않아 진짜 React를 불러 그려지지 않으므로 창, 버튼을 평범한 요소로 바꾼다.
+// 창과 버튼을 평범한 요소로 바꾼다(native <dialog> 등은 jsdom에서 안 그려진다).
 vi.mock("@/components/dialogs", () => ({
     ModalDialog: ({children}: { children?: ReactNode }) => <div>{children}</div>,
     DialogCloseButton: () => null,
+    DialogTitle: ({children}: { children?: ReactNode }) => <h2>{children}</h2>,
     ConfirmDialog: ({confirmLabel, onConfirm}: { confirmLabel?: string; onConfirm: () => void }) => <button onClick={onConfirm}>{confirmLabel}</button>
 }));
-vi.mock("@/components/ui/button", () => ({
-    Button: ({children, disabled, onClick}: { children?: ReactNode; disabled?: boolean; onClick?: () => void }) =>
-        <button disabled={disabled} onClick={onClick}>{children}</button>
-}));
-vi.mock("@/components/ui/badge", () => ({Badge: ({children}: { children?: ReactNode }) => <span>{children}</span>}));
-vi.mock("@/components/ui/dialog", () => ({DialogTitle: ({children}: { children?: ReactNode }) => <h2>{children}</h2>}));
-vi.mock("@/components/ui/skeleton", () => ({Skeleton: () => null}));
-vi.mock("@/components/ui/spinner", () => ({Spinner: () => null}));
 vi.mock("@/core/preview/dccon", () => ({clearDcconCaches: vi.fn()}));
 vi.mock("@/core/preview/request", () => ({addDcconPackage: vi.fn(), dcconPackages: new Map(), fetchDcconPackage: vi.fn()}));
 

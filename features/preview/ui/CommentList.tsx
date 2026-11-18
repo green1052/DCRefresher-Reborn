@@ -2,13 +2,10 @@ import {Ban, Trash2} from "lucide-react";
 import {Fragment, memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type MouseEvent} from "react";
 
 import {ConfirmDialog} from "@/components/dialogs";
-import {Button} from "@/components/ui/button";
-import {Checkbox} from "@/components/ui/checkbox";
-import {Collapsible, CollapsibleContent} from "@/components/ui/collapsible";
-import {Field, FieldLabel} from "@/components/ui/field";
-import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
+import {useCollapse} from "@/components/useCollapse";
 import type {ProcessedComment} from "@/core/preview/comments";
 import {adminDeleteComments} from "@/core/preview/request";
+import {cn} from "cn";
 import {useUiStore} from "@/stores/ui";
 import {eventTarget, isTyping} from "@/utils/event";
 import {isGalleryManager} from "@/utils/user";
@@ -55,29 +52,31 @@ export const CommentSummary = ({comments}: { comments: ProcessedComment[] }) => 
         <span className="text-muted-foreground">
             {hidden ? `${counts} (${hidden})` : counts}
             {hidden && !pageRevealed && (
-                <Button variant="link" size="xs" className="ml-1.5 h-auto p-0 align-baseline text-sm text-link"
+                <button type="button" className="btn btn-link btn-xs ml-1.5 h-auto p-0 align-baseline text-sm"
                         onClick={() => usePreviewStore.setState({commentsRevealed: !revealed})}>
                     {revealed ? "다시 숨기기" : "가린 댓글 보기"}
-                </Button>
+                </button>
             )}
         </span>
     );
 };
 
 const ORDER_NAMES: Record<CommentOrderValue, string> = {oldest: "등록순", newest: "최신순", replies: "답글순"};
-const isOrder = (value: string | undefined): value is CommentOrderValue => value !== undefined && value in ORDER_NAMES;
 
 /** 댓글 머리의 등록순, 최신순, 답글순 고르기. 순서는 여기와 CommentList만 구독한다. Frame이 구독하면 고를 때마다 본문까지 다시 그린다. */
 export const CommentOrder = () => {
     const order = usePreviewStore((s) => s.commentOrder);
 
     return (
-        <ToggleGroup aria-label="댓글 순서" variant="outline" spacing={0} value={[order]} onValueChange={([value]) => {
-            // 이미 고른 것을 다시 누르면 빈 값이 온다. 그대로 둔다.
-            if (isOrder(value)) usePreviewStore.setState({commentOrder: value});
-        }}>
-            {Object.entries(ORDER_NAMES).map(([value, name]) => <ToggleGroupItem key={value} value={value} className="h-6 min-w-0 px-2 text-xs">{name}</ToggleGroupItem>)}
-        </ToggleGroup>
+        <div role="group" aria-label="댓글 순서" className="join">
+            {(Object.keys(ORDER_NAMES) as CommentOrderValue[]).map((value) => (
+                <button key={value} type="button" aria-pressed={order === value}
+                        className={cn("btn btn-outline btn-xs join-item h-6 min-w-0 px-2 text-xs", order === value && "btn-active")}
+                        onClick={() => usePreviewStore.setState({commentOrder: value})}>
+                    {ORDER_NAMES[value]}
+                </button>
+            ))}
+        </div>
     );
 };
 
@@ -88,6 +87,7 @@ const NO_REPLIES: ProcessedComment[] = [];
 const Thread = memo(({parent, replies, isAdmin}: { parent: ProcessedComment; replies: ProcessedComment[]; isAdmin: boolean }) => {
     // 펼치기 버튼은 답글이 둘 이상일 때만 있다. 접은 뒤 답글이 하나로 줄면(삭제, 차단) 펼칠 수 없게 갇히므로 펼쳐 둔다.
     const isCollapsed = usePreviewStore((s) => replies.length > 1 && s.collapsed.has(parent.no));
+    const collapse = useCollapse(!isCollapsed);
 
     const children = replies.map((child, index) => (
         <Comment key={child.no} comment={child} depth={1} replyCount={0} lastReply={index === replies.length - 1} isAdmin={isAdmin}/>
@@ -98,12 +98,12 @@ const Thread = memo(({parent, replies, isAdmin}: { parent: ProcessedComment; rep
             <Comment comment={parent} depth={0} replyCount={replies.length} threadOpen={!isCollapsed && replies.length > 0} isAdmin={isAdmin}/>
             {/* 접고 펼 때 높이를 움직인다 - 답글 하나는 Collapsible 없이(그릴 때마다 높이를 재 느리다). */}
             {replies.length > 1 ? (
-                <Collapsible open={!isCollapsed}>
-                    <CollapsibleContent
-                        className="h-(--collapsible-panel-height) overflow-clip transition-[height,opacity] duration-200 ease-out data-ending-style:h-0 data-ending-style:opacity-0 data-starting-style:h-0 data-starting-style:opacity-0 motion-reduce:transition-none">
+                collapse.render && (
+                    <div ref={collapse.ref} style={collapse.style} onTransitionEnd={collapse.onTransitionEnd}
+                         className="overflow-clip transition-[height,opacity] duration-200 ease-out motion-reduce:transition-none">
                         {children}
-                    </CollapsibleContent>
-                </Collapsible>
+                    </div>
+                )
             ) : children}
         </>
     );
@@ -117,6 +117,11 @@ const SelectionTools = ({shownSelectable, foldable}: { shownSelectable: Processe
     const picked = selectable.filter((comment) => selected.has(comment.no)).map((comment) => comment.no);
     const all = picked.length > 0 && picked.length === selectable.length;
     const id = useId();
+    const allBox = useRef<HTMLInputElement>(null);
+    useLayoutEffect(() => {
+        // indeterminate는 속성이 아니라 프로퍼티로만 정한다.
+        if (allBox.current) allBox.current.indeterminate = picked.length > 0 && !all;
+    });
     const [confirming, setConfirming] = useState(false);
     // 요청 중에는 삭제를 막는다. 다시 누르면 같은 삭제가 또 나가 성공 알림 뒤에 실패 알림이 뜬다 (Comment.tsx와 같음).
     const [deleting, setDeleting] = useState(false);
@@ -135,21 +140,21 @@ const SelectionTools = ({shownSelectable, foldable}: { shownSelectable: Processe
 
     return (
         <div className="flex items-center gap-2 px-8 py-1">
-            <Field orientation="horizontal" className="w-auto">
-                <Checkbox id={id} checked={all} indeterminate={picked.length > 0 && !all}
-                          onCheckedChange={() => usePreviewStore.setState({selectedComments: all ? NO_FRESH : new Set(selectable.map((comment) => comment.no))})}/>
-                <FieldLabel htmlFor={id} className="font-normal">전체 선택</FieldLabel>
-            </Field>
+            <div className="flex w-auto items-center gap-3">
+                <input ref={allBox} type="checkbox" id={id} className="checkbox" checked={all}
+                       onChange={() => usePreviewStore.setState({selectedComments: all ? NO_FRESH : new Set(selectable.map((comment) => comment.no))})}/>
+                <label htmlFor={id} className="text-sm font-normal leading-snug">전체 선택</label>
+            </div>
             {picked.length > 0 && <span className="text-xs text-muted-foreground">{picked.length}개 선택</span>}
             <div className="ml-auto flex gap-1">
-                <Button size="xs" variant="destructive" disabled={picked.length === 0 || deleting} onClick={() => setConfirming(true)}>
-                    <Trash2 data-icon="inline-start"/>삭제
-                </Button>
+                <button type="button" className="btn btn-error btn-xs" disabled={picked.length === 0 || deleting} onClick={() => setConfirming(true)}>
+                    <Trash2 className="size-3"/>삭제
+                </button>
                 {/* 창을 여는 순간 고른 것을 지금 보이는 댓글로 좁힌다. 차단 창은 selectedComments를 그대로 보낸다. */}
-                <Button size="xs" variant="destructive" disabled={picked.length === 0}
+                <button type="button" className="btn btn-error btn-xs" disabled={picked.length === 0}
                         onClick={() => usePreviewStore.setState({selectedComments: new Set(picked), blockPopup: "comments"})}>
-                    <Ban data-icon="inline-start"/>차단
-                </Button>
+                    <Ban className="size-3"/>차단
+                </button>
             </div>
             {/* 미리보기 창 안에 그려 확인 창을 누를 때 미리보기가 바깥 클릭으로 닫히지 않는다. */}
             {confirming && (

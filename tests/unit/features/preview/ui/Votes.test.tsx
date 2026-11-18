@@ -1,5 +1,4 @@
 import {render, act} from "@/tests/helpers";
-import type {ReactNode} from "react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {getEntry, setEntry} from "@/core/preview/cache";
@@ -9,12 +8,7 @@ import {usePreviewStore} from "@/features/preview/ui/previewStore";
 import {Votes} from "@/features/preview/ui/Votes";
 import {preData, tick} from "@/tests/helpers";
 
-// Base UI, lucide는 평범한 요소로 바꾼다(그리기, 계산에 필요한 것만 남긴다).
-vi.mock("@/components/ui/button", () => ({
-    Button: ({children, disabled, onClick, "aria-label": label}: { children?: ReactNode; disabled?: boolean; onClick?: () => void; "aria-label"?: string }) =>
-        <button disabled={disabled} onClick={onClick} aria-label={label}>{children}</button>
-}));
-vi.mock("@/components/ui/spinner", () => ({Spinner: () => null}));
+// lucide, TooltipButton는 평범한 요소로 바꾼다(그리기, 계산에 필요한 것만 남긴다).
 vi.mock("lucide-react", () => ({ChevronDown: () => null, ChevronUp: () => null, ExternalLink: () => null, Link2: () => null}));
 vi.mock("@/components/WithTooltip", () => ({TooltipButton: () => null}));
 vi.mock("@/core/preview/request", async (importOriginal) => ({...await importOriginal<typeof import("@/core/preview/request")>(), vote: vi.fn()}));

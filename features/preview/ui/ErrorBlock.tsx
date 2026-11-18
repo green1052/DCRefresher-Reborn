@@ -1,7 +1,6 @@
 import {CircleAlert, ExternalLink} from "lucide-react";
 
-import {Alert, AlertDescription} from "@/components/ui/alert";
-import {Button} from "@/components/ui/button";
+import {cn} from "cn";
 
 import {type ErrorState, usePreviewStore} from "./previewStore";
 
@@ -30,30 +29,32 @@ export const ErrorBlock = ({error}: { error: ErrorState }) => {
     }
 
     return (
-        <Alert variant={original ? "default" : "destructive"} className={original ? "my-4 text-amber-700 dark:text-amber-400" : "my-4"}>
+        <div role="alert" className={cn(
+            "relative my-4 grid w-full gap-0.5 rounded-lg border bg-card px-4 py-3 text-left text-sm has-[>svg]:grid-cols-[auto_1fr] has-[>svg]:gap-x-2.5 *:[svg]:row-span-2 *:[svg]:translate-y-0.5 *:[svg]:text-current *:[svg:not([class*='size-'])]:size-4",
+            original ? "text-card-foreground text-amber-700 dark:text-amber-400" : "text-destructive *:[data-slot=alert-description]:text-destructive/90"
+        )}>
             <CircleAlert/>
-            <AlertDescription className="text-current">
+            <div data-slot="alert-description" className="text-current">
                 {text}
                 <div className="mt-2 flex gap-2">
                     {showOriginal && (
-                        <Button size="sm" variant="secondary" nativeButton={false}
-                                render={<a href={preData?.link ?? location.href} target="_blank" rel="noreferrer"/>}>
-                            <ExternalLink data-icon="inline-start"/>
+                        <a className="btn btn-sm btn-secondary" href={preData?.link ?? location.href} target="_blank" rel="noreferrer">
+                            <ExternalLink className="size-4"/>
                             원문 열기
-                        </Button>
+                        </a>
                     )}
                     {!deleted && (
-                        <Button
-                            size="sm"
-                            variant={original ? "secondary" : "destructive"}
+                        <button
+                            type="button"
+                            className={cn("btn btn-sm", original ? "btn-secondary" : "btn-error")}
                             // 같은 글을 다시 열면 컨트롤러가 제자리에서 다시 받는다.
                             onClick={() => preData && usePreviewStore.getState().requestOpen(preData, usePreviewStore.getState().commentsOnly)}
                         >
                             다시 시도
-                        </Button>
+                        </button>
                     )}
                 </div>
-            </AlertDescription>
-        </Alert>
+            </div>
+        </div>
     );
 };

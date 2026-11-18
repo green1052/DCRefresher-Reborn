@@ -1,12 +1,7 @@
 /* ===== 팝업 스타일 ===== */
 
 @import "./tailwind.css";
-/* daisyUI는 팝업에만 넣는다(다른 화면은 아직 shadcn이라 테마 변수 충돌을 섞지 않는다). 팝업 다크는 시스템 설정을 따르므로 prefersdark로 충분하다. */
-@plugin "daisyui" {
-    themes: light --default, dark --prefersdark;
-}
 /* 팝업이 안 쓰는 소스는 스캔에서 뺀다(features, core, stores는 화면을 그리지 않는다). 빼 놓고 불러오면 스타일이 빠진다(popup.test.ts가 지킨다). */
 @source not "../../entrypoints/{options,content,background}";
 @source not "../../{features,core,stores,components/overlay}";
 @source not "../../components/{dialogs.tsx,ColorInput.tsx,WithTooltip.tsx,useReturnFocus.ts}";
-@source not "../../components/ui";

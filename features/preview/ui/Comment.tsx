@@ -1,11 +1,7 @@
 import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-react";
 import {memo, useEffect, useLayoutEffect, useRef, useState} from "react";
 
-import {ConfirmDialog, DialogActions, ModalDialog, SubmitForm} from "@/components/dialogs";
-import {Button, buttonVariants} from "@/components/ui/button";
-import {Checkbox} from "@/components/ui/checkbox";
-import {DialogHeader, DialogTitle} from "@/components/ui/dialog";
-import {Input} from "@/components/ui/input";
+import {ConfirmDialog, DialogActions, DialogHeader, DialogTitle, ModalDialog, SubmitForm} from "@/components/dialogs";
 import type {ProcessedComment} from "@/core/preview/comments";
 import type {CommentForm, GalleryPreData, User} from "@/core/preview/types";
 import {adminDeleteComments, type ManageResult} from "@/core/preview/request";
@@ -21,6 +17,9 @@ import {watchGifVideos} from "./gifVideos";
 import {NO_REPLY, parseDate, refreshCommentsOf, toggled, usePreviewStore} from "./previewStore";
 import {TimeStamp} from "./TimeStamp";
 import {UserCard} from "./UserCard";
+
+// 댓글마다 되풀이되는 조그만 ghost 버튼 모양.
+const ICON_BUTTON = "btn btn-ghost btn-square btn-xs [&_svg:not([class*='size-'])]:size-3";
 
 // 닉콘의 src - 댓글마다 DOMParser를 돌리지 않게 정규식으로 읽는다.
 export const extractIcon = (html: string | undefined): string | undefined => html?.match(/writer_nikcon[^>]*>\s*<img\b[^>]*?\ssrc=["']?([^"'\s>]+)/)?.[1];
@@ -99,13 +98,13 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
             <div className="flex items-center justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-1">
                     {/* 디시 댓글 목록처럼 관리자는 댓글을 골라 한 번에 지우거나 차단한다 (CommentList의 도구 줄). 지운 댓글은 고를 수 없다. */}
-                    {isAdmin && !isDeleted && <Checkbox className="mr-1" aria-label={`${who} 댓글 선택`} checked={selected} onCheckedChange={() => toggleSelected(comment.no)}/>}
+                    {isAdmin && !isDeleted && <input type="checkbox" className="checkbox mr-1" aria-label={`${who} 댓글 선택`} checked={selected} onChange={() => toggleSelected(comment.no)}/>}
                     <UserCard user={user} op={isOp}/>
                     {comment.duplicates ? <span className="text-xs whitespace-nowrap text-muted-foreground">같은 댓글 ×{comment.duplicates}</span> : null}
                     {/* 툴팁은 브라우저 기본(title)을 쓴다. 스레드마다 툴팁 부품을 달면 댓글이 많은 글을 열 때 느려진다. */}
-                    {/* 되풀이되는 버튼은 Base UI가 리스너를 여럿 달아 느려서 buttonVariants 모양의 기본 button을 쓴다. */}
+                    {/* 되풀이되는 버튼은 리스너 여럿 달기 아까워 모양만 갖춘 기본 button을 쓴다. */}
                     {depth === 0 && replyCount > 1 && (
-                        <button type="button" className={cn(buttonVariants({size: "icon-xs", variant: "ghost", className: "aria-expanded:not-hover:bg-transparent"}))}
+                        <button type="button" className={cn(ICON_BUTTON, "aria-expanded:not-hover:bg-transparent")}
                                 aria-label={`${who} 댓글의 답글 ${replyCount}개`} aria-expanded={!collapsed}
                                 title={collapsed ? "답글 펼치기" : "답글 접기"} onClick={() => toggleCollapse(comment.no)}>
                             <ChevronDown className={cn("transition-transform motion-reduce:transition-none", collapsed && "-rotate-90")}/>
@@ -117,7 +116,7 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
                     {canReply && (
                         <button
                             type="button"
-                            className={cn(buttonVariants({size: "icon-xs", variant: "ghost", className: replying && "text-link"}))}
+                            className={cn(ICON_BUTTON, replying && "text-link")}
                             aria-label={`${who} 댓글에 답글`}
                             aria-pressed={replying}
                             onClick={() =>
@@ -131,7 +130,7 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
                         </button>
                     )}
                     {canDelete && (
-                        <button type="button" className={cn(buttonVariants({size: "icon-xs", variant: "ghost"}))} aria-label={`${who} 댓글 삭제`} disabled={deleting}
+                        <button type="button" className={ICON_BUTTON} aria-label={`${who} 댓글 삭제`} disabled={deleting}
                                 onClick={() => usePreviewStore.setState({deletePrompt: {no: comment.no, kind: isAdmin || comment.user_id ? "confirm" : "password"}})}>
                             <X/>
                         </button>
@@ -245,8 +244,9 @@ const PasswordDialog = ({warning, onSubmit, onClose}: { warning?: string; onSubm
                 {warning && <p className="text-sm text-destructive">{warning}</p>}
             </DialogHeader>
             <SubmitForm onSubmit={() => value && onSubmit(value)}>
-                <Input
+                <input
                     ref={input}
+                    className="input w-full"
                     type="password"
                     value={password}
                     aria-label="댓글 비밀번호"
@@ -254,7 +254,7 @@ const PasswordDialog = ({warning, onSubmit, onClose}: { warning?: string; onSubm
                     onChange={(ev) => setPassword(ev.target.value)}
                 />
                 <DialogActions>
-                    <Button type="submit" variant="destructive" disabled={!value}>삭제</Button>
+                    <button type="submit" className="btn btn-error" disabled={!value}>삭제</button>
                 </DialogActions>
             </SubmitForm>
         </ModalDialog>

@@ -1,8 +1,6 @@
 import {BookOpen, Bug, ClipboardCopy, Code, Heart, type LucideIcon, MessageCircle, Star, Tag, Users} from "lucide-react";
 import {useEffect, useState} from "react";
 
-import {Badge} from "@/components/ui/badge";
-import {Button} from "@/components/ui/button";
 import {CLOUD_QUOTA} from "@/core/backup";
 import {dbMetaStorage} from "@/core/storage/items";
 import features from "@/features/meta";
@@ -76,23 +74,22 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
                     <div className="grow">
                         <div className="flex items-center gap-2">
                             <h2 className="text-xl font-bold">DCRefresher Reborn</h2>
-                            <Badge variant="secondary">v{version}</Badge>
+                            <span className="badge badge-secondary">v{version}</span>
                         </div>
                         <p className="text-muted-foreground">디시인사이드 개선 확장 프로그램</p>
                     </div>
-                    <Button variant="secondary" onClick={() => void copyDiagnostics()}>
-                        <ClipboardCopy data-icon="inline-start"/> 진단 정보 복사
-                    </Button>
+                    <button type="button" className="btn btn-secondary" onClick={() => void copyDiagnostics()}>
+                        <ClipboardCopy className="size-4"/> 진단 정보 복사
+                    </button>
                 </div>
             </Section>
 
             <Section title="바로가기">
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {LINKS.map(([label, url, Icon]) => (
-                        <Button key={label} variant="secondary" className="justify-start" nativeButton={false}
-                                render={<a href={url} target="_blank" rel="noreferrer"/>}>
-                            <Icon data-icon="inline-start"/> {label}
-                        </Button>
+                        <a key={label} className="btn btn-secondary justify-start" href={url} target="_blank" rel="noreferrer">
+                            <Icon className="size-4"/> {label}
+                        </a>
                     ))}
                 </div>
             </Section>

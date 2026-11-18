@@ -2,12 +2,7 @@ import {useId, useState} from "react";
 import {Info} from "lucide-react";
 
 import {TooltipButton} from "@/components/WithTooltip";
-import {DialogActions, ModalDialog, SubmitForm} from "@/components/dialogs";
-import {Button} from "@/components/ui/button";
-import {Checkbox} from "@/components/ui/checkbox";
-import {DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dialog";
-import {Field, FieldError, FieldGroup, FieldLabel} from "@/components/ui/field";
-import {Input} from "@/components/ui/input";
+import {DialogActions, DialogDescription, DialogHeader, DialogTitle, ModalDialog, SubmitForm} from "@/components/dialogs";
 import {DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {blockKey, type BlockInputFields} from "@/core/block-list";
@@ -89,32 +84,34 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
             </DialogHeader>
 
             <SubmitForm onSubmit={submit}>
-                <FieldGroup>
-                    <Field>
-                        <FieldLabel htmlFor={`${id}-content`}>값</FieldLabel>
-                        <Input id={`${id}-content`} placeholder={`${TYPE_NAMES[type]} 값을 입력해 주세요`} value={content}
-                               onChange={(ev) => setContent(ev.target.value)}/>
-                    </Field>
+                <div className="flex w-full flex-col gap-7">
+                    <div className="flex w-full flex-col gap-3">
+                        <label htmlFor={`${id}-content`} className="text-sm font-medium leading-snug">값</label>
+                        <input id={`${id}-content`} className="input w-full" placeholder={`${TYPE_NAMES[type]} 값을 입력해 주세요`}
+                               value={content} onChange={(ev) => setContent(ev.target.value)}/>
+                    </div>
 
-                    <Field orientation="horizontal">
-                        <Checkbox id={`${id}-regex`} checked={isRegex} onCheckedChange={setIsRegex}/>
-                        <FieldLabel htmlFor={`${id}-regex`}>정규식</FieldLabel>
-                    </Field>
+                    <div className="flex items-center gap-3">
+                        <input type="checkbox" id={`${id}-regex`} className="checkbox checkbox-sm" checked={isRegex}
+                               onChange={(ev) => setIsRegex(ev.target.checked)}/>
+                        <label htmlFor={`${id}-regex`} className="text-sm font-medium leading-snug">정규식</label>
+                    </div>
 
-                    <Field>
-                        <FieldLabel htmlFor={`${id}-name`}>정보 (선택)</FieldLabel>
-                        <Input id={`${id}-name`} placeholder="목록에 보일 정보. 비우면 값으로 보입니다." value={name}
-                               onChange={(ev) => setName(ev.target.value)}/>
-                    </Field>
+                    <div className="flex w-full flex-col gap-3">
+                        <label htmlFor={`${id}-name`} className="text-sm font-medium leading-snug">정보 (선택)</label>
+                        <input id={`${id}-name`} className="input w-full" placeholder="목록에 보일 정보. 비우면 값으로 보입니다."
+                               value={name} onChange={(ev) => setName(ev.target.value)}/>
+                    </div>
 
-                    <Field>
-                        <FieldLabel htmlFor={`${id}-gallery`}>특정 갤러리 차단 (선택)</FieldLabel>
-                        <Input id={`${id}-gallery`} placeholder="갤러리 ID" value={gallery} onChange={(ev) => setGallery(ev.target.value)}/>
-                    </Field>
+                    <div className="flex w-full flex-col gap-3">
+                        <label htmlFor={`${id}-gallery`} className="text-sm font-medium leading-snug">특정 갤러리 차단 (선택)</label>
+                        <input id={`${id}-gallery`} className="input w-full" placeholder="갤러리 ID" value={gallery}
+                               onChange={(ev) => setGallery(ev.target.value)}/>
+                    </div>
 
-                    <Field>
+                    <div className="flex w-full flex-col gap-3">
                         <div className="flex items-center gap-1.5">
-                            <FieldLabel>차단 모드</FieldLabel>
+                            <span className="text-sm font-medium leading-snug">차단 모드</span>
                             <TooltipButton tip={mode ? DETECT_MODE_DESCRIPTIONS[mode] : "기본 차단 모드를 따릅니다."}
                                            variant="ghost" size="icon-xs">
                                 <Info className="size-3.5"/>
@@ -122,13 +119,13 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                         </div>
                         <RefresherSelect value={mode} aria-label="차단 모드" onChange={setMode}
                                          options={{"": "기본값", ...DETECT_MODE_NAMES}}/>
-                    </Field>
+                    </div>
 
-                    {error && <FieldError role="alert">{error}</FieldError>}
-                </FieldGroup>
+                    {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+                </div>
 
                 <DialogActions>
-                    <Button type="submit">{initial ? "수정" : "추가"}</Button>
+                    <button type="submit" className="btn btn-primary">{initial ? "수정" : "추가"}</button>
                 </DialogActions>
             </SubmitForm>
         </ModalDialog>

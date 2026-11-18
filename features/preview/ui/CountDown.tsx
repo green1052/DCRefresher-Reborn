@@ -1,6 +1,5 @@
 import {Clock} from "lucide-react";
 
-import {Badge} from "@/components/ui/badge";
 import {WithTooltip} from "@/components/WithTooltip";
 
 import {useTick} from "./TimeStamp";
@@ -16,7 +15,7 @@ const Remaining = ({expire}: { expire: Date }) => {
     const s = Math.floor((diff % 60000) / 1000);
 
     return (
-        <WithTooltip tip="자동 삭제까지 남은 시간" trigger={<Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400"/>}>
+        <WithTooltip tip="자동 삭제까지 남은 시간" trigger={<span className="badge bg-amber-500/15 text-amber-700 dark:text-amber-400"/>}>
             <Clock/>
             {/* 툴팁은 포커스로 열리지 않고 스크린 리더에도 읽히지 않으므로 의미를 숨긴 글로 붙인다. 1초마다 바뀌니 aria-live는 달지 않는다. */}
             <span className="sr-only">{diff <= 0 ? "자동 삭제 시간 " : "자동 삭제까지 "}</span>

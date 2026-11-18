@@ -1,9 +1,6 @@
 import {Fragment, type RefObject, useEffect, useRef, useState} from "react";
 
-import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {Collapsible, CollapsibleContent} from "@/components/ui/collapsible";
-import {Separator} from "@/components/ui/separator";
-import {Switch} from "@/components/ui/switch";
+import {useCollapse} from "@/components/useCollapse";
 import {defaultValue} from "@/core/module/settings";
 import type {LabeledSetting, ModuleInfo} from "@/core/module/types";
 import features from "@/features/meta";
@@ -53,7 +50,7 @@ const ModuleSettings = ({feature, settings, shown}: { feature: ModuleInfo; setti
                 const group = first![1].group;
                 return (
                     <Fragment key={first![0]}>
-                        <Separator/>
+                        <div role="none" className="h-px w-full bg-border"/>
                         {group ? (
                             <div className="py-3" role="group" aria-label={group.name}>
                                 <p className="font-medium">{group.name}</p>
@@ -78,37 +75,48 @@ const ModuleCard = ({feature, shown, searching}: { feature: ModuleInfo; shown: S
     const toggle = useModulesStore((state) => state.toggle);
     const settings = Object.entries(feature.settings ?? {});
 
+    const collapse = useCollapse(enabled || searching);
+
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle><h2>{feature.name}</h2></CardTitle>
-                <CardDescription>{feature.description}</CardDescription>
-                <CardAction className="self-center">
-                    <Switch
-                        checked={enabled}
-                        aria-label={`${feature.name} 사용`}
-                        onCheckedChange={(value) => void toggle(feature.id, value).catch(() => notify(SAVE_FAILED))}
-                    />
-                </CardAction>
-            </CardHeader>
+        <section data-slot="card" className="card card-border flex flex-col gap-6 py-6">
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-6">
+                <div className="min-w-0">
+                    <h2 className="text-base font-medium">{feature.name}</h2>
+                    <p className="text-sm text-muted-foreground">{feature.description}</p>
+                </div>
+                <input
+                    type="checkbox"
+                    role="switch"
+                    className="toggle"
+                    checked={enabled}
+                    aria-label={`${feature.name} 사용`}
+                    onChange={(ev) => void toggle(feature.id, ev.target.checked).catch(() => notify(SAVE_FAILED))}
+                />
+            </div>
 
             {shown.length > 0 && (
                 // 접혀서 패널이 빠져도 이 칸은 카드의 자식으로 남아 카드 간격만큼 아래 여백이 벌어진다. 그 간격을 여기서 지운다.
-                <Collapsible open={enabled || searching} className="-mt-(--card-spacing)">
+                <div className="-mt-6">
                     {/* overflow-clip에 여백을 둔다. 없으면 가장자리 스위치, 입력칸의 포커스 테두리가 잘린다. */}
-                    <CollapsibleContent
-                        className="h-(--collapsible-panel-height) overflow-clip transition-[height,opacity] duration-200 ease-out [overflow-clip-margin:6px] data-ending-style:h-0 data-ending-style:opacity-0 data-starting-style:h-0 data-starting-style:opacity-0 motion-reduce:transition-none">
-                        <CardContent className="mt-2">
-                            {/* 검색으로 펼친 꺼진 모듈. 값은 바꿀 수 있지만 켜야 적용되므로 흐리게 그린다. */}
-                            {!enabled && <p className="pt-4 text-xs text-muted-foreground">모듈을 켜야 적용됩니다.</p>}
-                            <div className={enabled ? undefined : "opacity-60"}>
-                                <ModuleSettings feature={feature} settings={settings} shown={shown}/>
+                    {collapse.render && (
+                        <div
+                            ref={collapse.ref}
+                            style={collapse.style}
+                            onTransitionEnd={collapse.onTransitionEnd}
+                            className="overflow-clip transition-[height,opacity] duration-200 ease-out [overflow-clip-margin:6px] motion-reduce:transition-none"
+                        >
+                            <div className="mt-2 flex flex-col gap-3 px-6">
+                                {/* 검색으로 펼친 꺼진 모듈. 값은 바꿀 수 있지만 켜야 적용되므로 흐리게 그린다. */}
+                                {!enabled && <p className="pt-4 text-xs text-muted-foreground">모듈을 켜야 적용됩니다.</p>}
+                                <div className={enabled ? undefined : "opacity-60"}>
+                                    <ModuleSettings feature={feature} settings={settings} shown={shown}/>
+                                </div>
                             </div>
-                        </CardContent>
-                    </CollapsibleContent>
-                </Collapsible>
+                        </div>
+                    )}
+                </div>
             )}
-        </Card>
+        </section>
     );
 };
 

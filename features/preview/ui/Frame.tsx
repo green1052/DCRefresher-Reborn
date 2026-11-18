@@ -1,11 +1,6 @@
-import {Dialog} from "@base-ui/react/dialog";
 import {Archive, ArrowUp, CircleAlert, Eye, MessageSquare, RotateCw} from "lucide-react";
 import {Fragment, useEffect, useLayoutEffect, useRef, useState} from "react";
 
-import {Alert, AlertDescription} from "@/components/ui/alert";
-import {Button} from "@/components/ui/button";
-import {Separator} from "@/components/ui/separator";
-import {Spinner} from "@/components/ui/spinner";
 import {TooltipButton} from "@/components/WithTooltip";
 import {focusedElement} from "@/components/useReturnFocus";
 import {BLOCKED_TEXT} from "@/core/block";
@@ -54,10 +49,15 @@ const RefreshButton = ({label, run}: { label: string; run: () => Promise<void> }
             setBusy(true);
             void run().finally(() => setBusy(false));
         }}>
-            {busy ? <Spinner aria-hidden/> : <RotateCw/>}
+            {busy ? <span aria-hidden className="loading loading-spinner"/> : <RotateCw/>}
         </TooltipButton>
     );
 };
+
+const Separator = () => <div role="none" className="h-px w-full shrink-0 bg-border"/>;
+
+/* ui/alert의 모양을 그대로 옮긴 것(ErrorBlock과 같음). */
+const ALERT = "relative grid w-full gap-0.5 rounded-lg border bg-card px-4 py-3 text-left text-sm has-[>svg]:grid-cols-[auto_1fr] has-[>svg]:gap-x-2.5 *:[svg]:row-span-2 *:[svg]:translate-y-0.5 *:[svg]:text-current *:[svg:not([class*='size-'])]:size-4";
 
 /** 스크롤 끝에서 한 번 더 굴리면 넘어간다는 안내(v5 모양) - 누르거나 굴리는 것은 막지 않는다. */
 const SkipHint = ({dir}: { dir: number }) => (
@@ -192,7 +192,7 @@ export const Frame = () => {
                     <Fragment key={postKey}>
                     <div className="px-8 pt-6 pb-3">
                         {/* 본문을 못 받았으면(삭제된 글 등) 목록의 제목이라도 보인다. */}
-                        <Dialog.Title render={<h2 className="text-2xl font-bold"/>}>{post ? postTitle(post) : listTitle ?? ""}</Dialog.Title>
+                        <h2 className="text-2xl font-bold">{post ? postTitle(post) : listTitle ?? ""}</h2>
 
                         {post && (
                             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
@@ -216,18 +216,18 @@ export const Frame = () => {
                     <div className="flex grow flex-col px-8 pt-6">
                         {/* 보존본은 삭제되었거나 바뀐 글일 수 있으니 지금 글이 아니라고 알린다. */}
                         {archived && (
-                            <Alert className="mb-4 text-amber-700 dark:text-amber-400">
+                            <div role="alert" className={cn(ALERT, "mb-4 text-amber-700 dark:text-amber-400")}>
                                 <Archive/>
-                                <AlertDescription className="text-current">불러오지 못해 저장해 둔 내용을 보여 줍니다.</AlertDescription>
-                            </Alert>
+                                <p data-slot="alert-description" className="text-current">불러오지 못해 저장해 둔 내용을 보여 줍니다.</p>
+                            </div>
                         )}
                         {/* 오류를 먼저 본다. 댓글만 보기여도 본문을 못 받았으면 알린다. */}
                         {error ? (
                             <ErrorBlock error={error}/>
                         ) : commentsOnly ? (
-                            <Button variant="secondary" className="mb-6 w-full" onClick={() => usePreviewStore.setState({commentsOnly: false})}>
+                            <button type="button" className="btn btn-secondary mb-6 w-full" onClick={() => usePreviewStore.setState({commentsOnly: false})}>
                                 댓글만 표시 중입니다. 눌러서 본문 보기
-                            </Button>
+                            </button>
                         ) : (
                             <>
                                 <PostContents/>
@@ -237,7 +237,7 @@ export const Frame = () => {
 
                         {busy && (
                             <div className="flex justify-center py-8">
-                                <Spinner className="size-6"/>
+                                <span aria-hidden className="loading loading-spinner size-6"/>
                             </div>
                         )}
                     </div>
@@ -253,21 +253,21 @@ export const Frame = () => {
                                 </div>
                             </div>
                             {comments === undefined ? (commentsFailed ? (
-                                <Alert variant="destructive" className="mx-8 my-4 w-auto">
+                                <div role="alert" className={cn(ALERT, "mx-8 my-4 w-auto text-destructive *:[data-slot=alert-description]:text-destructive/90")}>
                                     <CircleAlert/>
-                                    <AlertDescription className="text-current">
+                                    <div data-slot="alert-description" className="text-current">
                                         댓글을 불러오지 못했습니다.
                                         <div className="mt-2">
                                             {/* 안내가 곧 알림이라 실패를 토스트로 다시 알리지 않는다. */}
-                                            <Button size="sm" variant="destructive" onClick={() => void usePreviewStore.getState().requestRefresh()}>
+                                            <button type="button" className="btn btn-sm btn-error" onClick={() => void usePreviewStore.getState().requestRefresh()}>
                                                 다시 시도
-                                            </Button>
+                                            </button>
                                         </div>
-                                    </AlertDescription>
-                                </Alert>
+                                    </div>
+                                </div>
                             ) : (
                                 <div className="flex justify-center py-8">
-                                    <Spinner className="size-6" aria-label="댓글을 불러오는 중"/>
+                                    <span role="status" aria-label="댓글을 불러오는 중" className="loading loading-spinner size-6"/>
                                 </div>
                             )) : comments.length === 0 ? (
                                 <p className="py-8 text-center text-muted-foreground">댓글이 없습니다.</p>

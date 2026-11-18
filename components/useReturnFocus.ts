@@ -17,7 +17,9 @@ export const useReturnFocus = (popup: RefObject<HTMLElement | null>) => {
     const [opener] = useState(focusedElement);
     // 키보드로 열었는지(연 요소에 포커스 링이 보였는지). 창이 포커스를 가져간 뒤에는 알 수 없으므로 열 때 잰다.
     const [keyboard] = useState(() => Boolean(opener?.matches(":focus-visible")));
-    const target = (): HTMLElement | null | undefined => (opener?.matches(":disabled") ? panelOf(opener) : opener);
+    // 연 요소가 줄 삭제로 사라졌거나 막혔으면 그 조상 패널로 돌아간다.
+    const target = (): HTMLElement | null | undefined =>
+        opener && (!opener.isConnected || opener.matches(":disabled")) ? panelOf(opener) : opener;
 
     const restoreFocus = (): void => {
         const current = focusedElement();

@@ -1,8 +1,6 @@
 import {ChevronDown, ChevronUp, ExternalLink, Link2} from "lucide-react";
 import {useState} from "react";
 
-import {Button} from "@/components/ui/button";
-import {Spinner} from "@/components/ui/spinner";
 import {TooltipButton} from "@/components/WithTooltip";
 import {getEntry, setEntry} from "@/core/preview/cache";
 import {captchaImage, viewUrl, vote} from "@/core/preview/request";
@@ -58,26 +56,27 @@ export const Votes = ({post}: { post: PostInfo }) => {
     // 숫자까지 읽히게 라벨에 넣는다. aria-label은 버튼 안의 글을 대신한다.
     return (
         <div className="flex items-center justify-center gap-3 py-6">
-            <Button size="lg" variant="secondary" className="h-10 px-4" aria-label={`추천 ${upvotes || "X"}${fixedUpvotes ? ` (고정닉 ${fixedUpvotes})` : ""}`}
+            <button type="button" className="btn btn-lg btn-secondary h-10 px-4" aria-label={`추천 ${upvotes || "X"}${fixedUpvotes ? ` (고정닉 ${fixedUpvotes})` : ""}`}
                     disabled={voting !== null} onClick={() => onVote("U")}>
-                {voting === "U" ? <Spinner aria-hidden data-icon="inline-start"/> : <ChevronUp data-icon="inline-start"/>}
+                {voting === "U" ? <span aria-hidden className="loading loading-spinner size-4"/> : <ChevronUp/>}
                 {upvotes || "X"}
                 {fixedUpvotes && <span className="text-muted-foreground">({fixedUpvotes})</span>}
-            </Button>
+            </button>
             {downvotes !== undefined && (
-                <Button size="lg" variant="secondary" className="h-10 px-4" aria-label={`비추천 ${downvotes}`} disabled={voting !== null}
+                <button type="button" className="btn btn-lg btn-secondary h-10 px-4" aria-label={`비추천 ${downvotes}`} disabled={voting !== null}
                         onClick={() => onVote("D")}>
-                    {voting === "D" ? <Spinner aria-hidden data-icon="inline-start"/> : <ChevronDown data-icon="inline-start"/>}
+                    {voting === "D" ? <span aria-hidden className="loading loading-spinner size-4"/> : <ChevronDown/>}
                     {downvotes}
-                </Button>
+                </button>
             )}
             <TooltipButton tip="링크 복사" size="icon-lg" variant="ghost" onClick={onShare}>
                 <Link2/>
             </TooltipButton>
-            <TooltipButton tip="새 탭으로 열기" size="icon-lg" variant="ghost" nativeButton={false}
-                           render={<a href={preData?.link ?? location.href} target="_blank" rel="noreferrer"/>}>
+            {/* 링크 버튼은 <a>여야 새 탭/링크 동작이 보존된다. */}
+            <a className="btn btn-lg btn-square btn-ghost" href={preData?.link ?? location.href} target="_blank" rel="noreferrer"
+               aria-label="새 탭으로 열기" data-tip="새 탭으로 열기">
                 <ExternalLink/>
-            </TooltipButton>
+            </a>
         </div>
     );
 };

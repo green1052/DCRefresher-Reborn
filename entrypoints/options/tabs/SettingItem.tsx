@@ -4,11 +4,6 @@ import {shallow} from "zustand/shallow";
 
 import {ColorInput} from "@/components/ColorInput";
 import {WithTooltip} from "@/components/WithTooltip";
-import {Slider as SliderPrimitive} from "@base-ui/react/slider";
-import {Button} from "@/components/ui/button";
-import {Input} from "@/components/ui/input";
-import {Kbd} from "@/components/ui/kbd";
-import {Switch} from "@/components/ui/switch";
 import {defaultValue} from "@/core/module/settings";
 import type {LabeledSetting, SettingSchema} from "@/core/module/types";
 import type {SettingValue} from "@/core/storage/types";
@@ -40,25 +35,7 @@ type NarrowProps<T extends SettingSchema["type"]> = Omit<SettingItemProps, "sche
 /** 범위 값 표시. 저장은 ms 그대로 하고, 보여 줄 때만 초로 바꾼다(5000ms → 5초). */
 const formatRange = (value: number, unit: string): string => (unit === "ms" ? `${value / 1000}초` : `${value}${unit}`);
 
-// components/ui는 순정 유지 - Base UI 프리미티브로 조립, 모양 문자열은 ui와 수동 맞춤
-const Slider = ({className, thumbProps, value, defaultValue, min = 0, max = 100, ...props}: SliderPrimitive.Root.Props & {
-    /** 손잡이(role=slider)에 심을 속성 - 이름, 설명, 읽는 값은 여기로 넘겨야 읽힌다. */
-    thumbProps?: SliderPrimitive.Thumb.Props;
-}) => (
-    <SliderPrimitive.Root className={cn("data-horizontal:w-full data-vertical:h-full", className)} data-slot="slider"
-                          defaultValue={defaultValue} value={value} min={min} max={max} thumbAlignment="edge" {...props}>
-        <SliderPrimitive.Control className="relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:min-h-40 data-vertical:w-auto data-vertical:flex-col">
-            <SliderPrimitive.Track data-slot="slider-track"
-                                   className="relative grow overflow-hidden rounded-full bg-muted select-none data-horizontal:h-1.5 data-horizontal:w-full data-vertical:h-full data-vertical:w-1.5">
-                <SliderPrimitive.Indicator data-slot="slider-range" className="bg-primary select-none data-horizontal:h-full data-vertical:w-full"/>
-            </SliderPrimitive.Track>
-            {Array.from({length: Array.isArray(value) ? value.length : Array.isArray(defaultValue) ? defaultValue.length : 1}, (_, index) => (
-                <SliderPrimitive.Thumb key={index} data-slot="slider-thumb" {...(index === 0 ? thumbProps : {})}
-                                        className="block size-4 shrink-0 rounded-full border border-primary bg-white shadow-sm ring-ring/50 transition-[color,box-shadow] select-none hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"/>
-            ))}
-        </SliderPrimitive.Control>
-    </SliderPrimitive.Root>
-);
+
 
 const formatDefault = (schema: SettingSchema): string => {
     switch (schema.type) {
@@ -117,7 +94,8 @@ const TextControl = ({schema, value, descId, onChange}: NarrowProps<"text">) => 
     const [draft, setDraft] = useDraft(value);
 
     return (
-        <Input
+        <input
+            className="input w-full"
             aria-label={schema.name}
             aria-describedby={descId}
             placeholder={schema.placeholder ?? String(schema.default)}
@@ -144,7 +122,7 @@ const KeyControl = ({schema, value, takenKeys = [], descId, onChange}: NarrowPro
     };
 
     return (
-        <Button variant={taken ? "destructive" : listening ? "default" : "secondary"} className="min-w-18"
+        <button type="button" className={cn("btn min-w-18", taken ? "btn-error" : listening ? "btn-primary" : "btn-secondary")}
                 aria-label={`${schema.name}: ${shown}`}
                 aria-describedby={descId}
                 onClick={() => setListening(true)}
@@ -163,8 +141,8 @@ const KeyControl = ({schema, value, takenKeys = [], descId, onChange}: NarrowPro
                     if (valid) onChange(key);
                     stop();
                 }}>
-            {taken || listening ? shown : <Kbd>{shown}</Kbd>}
-        </Button>
+            {taken || listening ? shown : <kbd className="kbd kbd-sm">{shown}</kbd>}
+        </button>
     );
 };
 
@@ -175,22 +153,26 @@ const RangeControl = ({schema, value, descId, onChange}: NarrowProps<"range">) =
 
     return (
         <div className="flex w-60 items-center gap-3">
-            <Slider
-                className="flex-1"
+            {/* 드래그 중(input)에는 미리보기만 바꾸고, 놓을 때(네이티브 change) 저장한다. */}
+            <input
+                type="range"
+                className="range range-primary flex-1"
                 min={schema.min}
                 max={schema.max}
                 step={schema.step}
-                // 배열로 준다. 숫자를 주면 Slider 부품이 손잡이를 둘(최솟값, 최댓값) 그린다.
-                value={[draft]}
-                // 이름, 설명, 읽는 값은 손잡이(role=slider)에 달아야 읽힌다. 그대로 두면 이름 없이 저장값(ms)만 읽힌다.
-                thumbProps={{"aria-label": schema.name, "aria-describedby": descId, getAriaValueText: () => text}}
-                onValueChange={(next) => {
-                    const [first] = [next].flat();
-                    if (first !== undefined) setDraft(first);
-                }}
-                onValueCommitted={(next) => {
-                    const [first] = [next].flat();
-                    if (first !== undefined && first !== value) onChange(first);
+                value={draft}
+                // 이름, 설명, 읽는 값은 input에 달아야 읽힌다. 그대로 두면 이름 없이 백분율만 읽힌다.
+                aria-label={schema.name}
+                aria-describedby={descId}
+                aria-valuetext={text}
+                onChange={(ev) => setDraft(Number(ev.target.value))}
+                ref={(element) => {
+                    if (!element) return;
+                    const commit = (): void => {
+                        if (element.valueAsNumber !== value) onChange(element.valueAsNumber);
+                    };
+                    element.addEventListener("change", commit);
+                    return () => element.removeEventListener("change", commit);
                 }}
             />
             <span className="min-w-14 text-right font-bold tabular-nums">{text}</span>
@@ -270,20 +252,20 @@ const OrderControl = ({schema, value: order, descId, onChange}: NarrowProps<"ord
                     <GripVertical className="size-3.5 text-muted-foreground"/>
                     <span className="flex-1">{label(key)}</span>
                     {/* 버튼마다 항목 이름을 붙인다. '위로'만 있으면 어느 항목을 옮기는지 들리지 않는다. */}
-                    <Button variant="ghost" size="icon-xs" aria-label={`${label(key)} 위로`}
+                    <button type="button" className="btn btn-ghost btn-square btn-xs" aria-label={`${label(key)} 위로`}
                             disabled={index === 0} onClick={() => {
                                 moved.current = key;
                                 move(index, index - 1);
                             }}>
-                        <ChevronUp/>
-                    </Button>
-                    <Button variant="ghost" size="icon-xs" aria-label={`${label(key)} 아래로`}
+                        <ChevronUp className="size-3"/>
+                    </button>
+                    <button type="button" className="btn btn-ghost btn-square btn-xs" aria-label={`${label(key)} 아래로`}
                             disabled={index === order.length - 1} onClick={() => {
                                 moved.current = key;
                                 move(index, index + 1);
                             }}>
-                        <ChevronDown/>
-                    </Button>
+                        <ChevronDown className="size-3"/>
+                    </button>
                 </div>
             ))}
         </div>
@@ -302,11 +284,11 @@ export const SettingItem = ({schema, value, compact, takenKeys, onChange}: Setti
             {/* 다른 단축키가 기본값 키를 쓰고 있으면 되돌리지 못하게 한다. 되돌리면 두 단축키가 같은 키가 된다. */}
             {!shallow(value, defaultValue(schema)) && !(schema.type === "key" && takenKeys?.includes(schema.default)) && (
                 <WithTooltip tip={`기본값으로 되돌리기 (${formatDefault(schema)})`}
-                             trigger={<Button variant="ghost" size="icon-xs" aria-label={`${schema.name} 기본값으로 되돌리기`} onClick={() => {
+                             trigger={<button type="button" className="btn btn-ghost btn-square btn-xs" aria-label={`${schema.name} 기본값으로 되돌리기`} onClick={() => {
                                  onChange(defaultValue(schema));
                                  requestAnimationFrame(() => refocus(control.current));
                              }}/>}>
-                    <Undo2/>
+                    <Undo2 className="size-3"/>
                 </WithTooltip>
             )}
         </div>
@@ -326,8 +308,9 @@ export const SettingItem = ({schema, value, compact, takenKeys, onChange}: Setti
 
             <div ref={control} className="shrink-0">
                 {schema.type === "check" && (
-                    <Switch aria-label={schema.name} aria-describedby={descId} checked={value === true}
-                            onCheckedChange={(checked) => onChange(checked)}/>
+                    <input type="checkbox" role="switch" className="toggle"
+                           aria-label={schema.name} aria-describedby={descId} checked={value === true}
+                           onChange={(ev) => onChange(ev.target.checked)}/>
                 )}
                 {schema.type === "option" && (
                     <RefresherSelect value={text} aria-label={schema.name} aria-describedby={descId} options={schema.items}

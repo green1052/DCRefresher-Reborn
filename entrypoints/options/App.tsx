@@ -3,8 +3,6 @@ import {lazy, Suspense, useEffect, useState, useSyncExternalStore} from "react";
 
 import {Notice} from "@/components/dialogs";
 import {ToastHost} from "@/components/overlay/Toasts";
-import {Button} from "@/components/ui/button";
-import {Separator} from "@/components/ui/separator";
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
 import {ExtensionPageVars, initModulesStore} from "@/stores/modules";
@@ -65,21 +63,20 @@ const Sidebar = ({tab, onSelect}: {
 
         <nav className="flex flex-wrap gap-1 md:flex-col md:flex-nowrap">
             {TABS.map(({id, label, icon: Icon}) => (
-                <Button
+                <button
                     key={id}
-                    size="lg"
-                    variant="ghost"
+                    type="button"
                     aria-current={tab === id ? "page" : undefined}
-                    className={cn("justify-start", tab === id && "bg-muted")}
+                    className={cn("btn btn-ghost btn-lg justify-start", tab === id && "bg-muted")}
                     onClick={() => onSelect(id)}
                 >
-                    <Icon data-icon="inline-start"/> {label}
-                </Button>
+                    <Icon className="size-4"/> {label}
+                </button>
             ))}
         </nav>
 
         <div className="mt-auto hidden md:block">
-            <Separator className="mb-3"/>
+            <div role="none" className="mb-3 h-px w-full bg-border"/>
             <p className="px-2 text-xs text-muted-foreground">v{VERSION}</p>
         </div>
     </div>

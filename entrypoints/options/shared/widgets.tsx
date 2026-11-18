@@ -1,9 +1,7 @@
 import {Search} from "lucide-react";
 import type {ComponentProps, ReactNode} from "react";
 
-import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {Empty, EmptyDescription} from "@/components/ui/empty";
-import {InputGroup, InputGroupAddon, InputGroupInput} from "@/components/ui/input-group";
+import {cn} from "cn";
 
 export const Section = ({title, desc, actions, children}: {
     title?: ReactNode;
@@ -11,30 +9,31 @@ export const Section = ({title, desc, actions, children}: {
     actions?: ReactNode;
     children?: ReactNode
 }) => (
-    <Card className="mb-4">
-        {(title || desc || actions) && (
-            <CardHeader>
-                {title && <CardTitle><h2>{title}</h2></CardTitle>}
-                {desc && <CardDescription>{desc}</CardDescription>}
-                {actions && <CardAction className="flex items-center gap-2">{actions}</CardAction>}
-            </CardHeader>
-        )}
-        {children && <CardContent>{children}</CardContent>}
-    </Card>
+    // data-slot=card는 e2e 계약(설정 카드 수/찾기)이다.
+    <div data-slot="card" className="card card-border mb-4">
+        <div className="card-body gap-6 p-6">
+            {(title || desc || actions) && (
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-col items-start gap-1.5">
+                        {title && <h2 className="leading-none font-semibold">{title}</h2>}
+                        {desc && <p className="text-sm text-muted-foreground">{desc}</p>}
+                    </div>
+                    {actions && <div className="flex items-center gap-2">{actions}</div>}
+                </div>
+            )}
+            {children}
+        </div>
+    </div>
 );
 
-/** 돋보기가 붙은 검색 입력. className은 감싸는 InputGroup에 붙는다. */
-export const SearchInput = ({className, ...props}: ComponentProps<typeof InputGroupInput>) => (
-    <InputGroup className={className}>
-        <InputGroupAddon>
-            <Search/>
-        </InputGroupAddon>
-        <InputGroupInput type="search" {...props}/>
-    </InputGroup>
+/** 돋보기가 붙은 검색 입력. className은 감싸는 label에 붙는다. */
+export const SearchInput = ({className, ...props}: ComponentProps<"input">) => (
+    <label className={cn("input", className)}>
+        <Search className="size-4 shrink-0 opacity-50"/>
+        <input type="search" className="grow" {...props}/>
+    </label>
 );
 
 export const EmptyList = ({children}: { children: ReactNode }) => (
-    <Empty>
-        <EmptyDescription>{children}</EmptyDescription>
-    </Empty>
+    <p className="w-full p-8 text-center text-sm text-muted-foreground">{children}</p>
 );
