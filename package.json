@@ -28,13 +28,13 @@
         "ky": "^2.2.0",
         "lucide-react": "^1.75.0",
         "p-limit": "^7.3.3",
+        "preact": "^11.2.0",
         "quick-lru": "^8.0.0",
-        "react": "^19.3.1",
-        "react-dom": "^19.3.1",
         "zustand": "^5.1.0"
     },
     "devDependencies": {
         "@playwright/test": "^1.65.1",
+        "@preact/preset-vite": "^2.10.6",
         "@tailwindcss/vite": "^4.3.5",
         "@types/bun": "^1.4.4",
         "@types/react": "^19.3.0",
