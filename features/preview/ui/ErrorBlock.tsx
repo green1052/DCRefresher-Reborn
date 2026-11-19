@@ -30,11 +30,11 @@ export const ErrorBlock = ({error}: { error: ErrorState }) => {
 
     return (
         <div role="alert" className={cn(
-            "relative my-4 grid w-full gap-0.5 rounded-lg border bg-card px-4 py-3 text-left text-sm has-[>svg]:grid-cols-[auto_1fr] has-[>svg]:gap-x-2.5 *:[svg]:row-span-2 *:[svg]:translate-y-0.5 *:[svg]:text-current *:[svg:not([class*='size-'])]:size-4",
-            original ? "text-card-foreground text-amber-700 dark:text-amber-400" : "text-destructive *:[data-slot=alert-description]:text-destructive/90"
+            "alert my-4 w-full",
+            original ? "alert-warning alert-soft" : "alert-error alert-soft"
         )}>
             <CircleAlert/>
-            <div data-slot="alert-description" className="text-current">
+            <div data-slot="alert-description">
                 {text}
                 <div className="mt-2 flex gap-2">
                     {showOriginal && (

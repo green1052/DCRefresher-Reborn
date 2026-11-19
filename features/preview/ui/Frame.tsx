@@ -54,10 +54,10 @@ const RefreshButton = ({label, run}: { label: string; run: () => Promise<void> }
     );
 };
 
-const Separator = () => <div role="none" className="h-px w-full shrink-0 bg-border"/>;
+const Separator = () => <div role="none" className="divider m-0"/>;
 
 /* ui/alert의 모양을 그대로 옮긴 것(ErrorBlock과 같음). */
-const ALERT = "relative grid w-full gap-0.5 rounded-lg border bg-card px-4 py-3 text-left text-sm has-[>svg]:grid-cols-[auto_1fr] has-[>svg]:gap-x-2.5 *:[svg]:row-span-2 *:[svg]:translate-y-0.5 *:[svg]:text-current *:[svg:not([class*='size-'])]:size-4";
+const ALERT = "alert w-full";
 
 /** 스크롤 끝에서 한 번 더 굴리면 넘어간다는 안내(v5 모양) - 누르거나 굴리는 것은 막지 않는다. */
 const SkipHint = ({dir}: { dir: number }) => (
@@ -216,9 +216,9 @@ export const Frame = () => {
                     <div className="flex grow flex-col px-8 pt-6">
                         {/* 보존본은 삭제되었거나 바뀐 글일 수 있으니 지금 글이 아니라고 알린다. */}
                         {archived && (
-                            <div role="alert" className={cn(ALERT, "mb-4 text-amber-700 dark:text-amber-400")}>
+                            <div role="alert" className={cn(ALERT, "alert-warning alert-soft mb-4")}>
                                 <Archive/>
-                                <p data-slot="alert-description" className="text-current">불러오지 못해 저장해 둔 내용을 보여 줍니다.</p>
+                                <p data-slot="alert-description">불러오지 못해 저장해 둔 내용을 보여 줍니다.</p>
                             </div>
                         )}
                         {/* 오류를 먼저 본다. 댓글만 보기여도 본문을 못 받았으면 알린다. */}
@@ -253,9 +253,9 @@ export const Frame = () => {
                                 </div>
                             </div>
                             {comments === undefined ? (commentsFailed ? (
-                                <div role="alert" className={cn(ALERT, "mx-8 my-4 w-auto text-destructive *:[data-slot=alert-description]:text-destructive/90")}>
+                                <div role="alert" className={cn(ALERT, "alert-error alert-soft mx-8 my-4 w-auto")}>
                                     <CircleAlert/>
-                                    <div data-slot="alert-description" className="text-current">
+                                    <div data-slot="alert-description">
                                         댓글을 불러오지 못했습니다.
                                         <div className="mt-2">
                                             {/* 안내가 곧 알림이라 실패를 토스트로 다시 알리지 않는다. */}

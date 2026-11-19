@@ -45,10 +45,10 @@ export const ImageViewer = ({images, index}: { images: ViewerImage[]; index: num
     return (
         <dialog
             ref={dialog}
+            // .modal(가운데 그리드)을 유틸리티로 덮어 세로 스크롤 창으로 쓴다. items-start: 긴 이미지가 세로 가운데에 걸려 윗부분으로 못 스크롤하는 일이 없게 한다(이미지의 m-auto가 가운데를 맞춘다).
+            className="modal refresher-viewer fixed inset-0 flex items-start overflow-y-auto px-18 py-14 outline-none"
             data-slot="dialog-overlay"
             data-viewer
-            // items-start: 긴 이미지가 세로 가운데에 걸려 윗부분으로 못 스크롤하는 일이 없게 한다(이미지의 m-auto가 가운데를 맞춘다).
-            className="refresher-viewer fixed inset-0 flex items-start overflow-y-auto px-18 py-14 outline-none duration-150 animate-in fade-in"
             onCancel={(ev) => {
                 // 기본 닫기는 브라우저가 창만 닫으므로 막고 스토어를 비워 언마운트한다.
                 ev.preventDefault();

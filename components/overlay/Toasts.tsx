@@ -61,12 +61,12 @@ const ToastList = () => {
     }, []);
 
     return (
-        // 뷰포트는 클릭을 통과시키고 토스트만 받는다 - 다이얼로그(z-50) 위에 둬 창이 떠 있어도 눌리게.
+        // daisyUI .toast(우하단 고정, 자식 입장 애니메이션). 뷰포트는 클릭을 통과시키고 토스트만 받는다 - 다이얼로그 위에 둬 창이 떠 있어도 눌리게.
         <div role="region" aria-label="알림" aria-live="polite"
-             className="pointer-events-none fixed right-4 bottom-4 z-60 flex max-w-[360px] flex-col-reverse items-end gap-2">
+             className="toast pointer-events-none z-60 max-w-[360px] flex-col-reverse items-end">
             {toasts.map((toast) => (
                 <div key={toast.id} data-slot="toast" role={toast.level === "error" ? "alert" : "status"}
-                     className="pointer-events-auto flex max-w-[360px] items-center gap-3 rounded-xl bg-popover p-3 text-sm text-popover-foreground shadow-lg ring-1 ring-foreground/10 duration-200 animate-in fade-in slide-in-from-bottom-2 motion-reduce:animate-none">
+                     className="pointer-events-auto flex max-w-[360px] items-center gap-3 rounded-xl bg-popover p-3 text-sm text-popover-foreground shadow-lg ring-1 ring-foreground/10">
                     {TOAST_ICONS[toast.level]}
                     <p className="flex-1">{toast.title}</p>
                     {toast.action && (

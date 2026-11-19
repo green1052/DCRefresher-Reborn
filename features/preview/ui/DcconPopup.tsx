@@ -112,7 +112,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
             <div ref={strip} role="group" aria-label="디시콘 패키지" className="flex gap-1 overflow-x-auto scrollbar-none aria-busy:overflow-hidden" aria-busy={loading}
                  onScrollEnd={() => (wheelTarget.current = null)} onKeyDown={rovingKeyDown}>
                 {loading
-                    ? Array.from({length: 12}, (_, index) => <span key={index} className="size-12 flex-none animate-pulse rounded-md bg-muted"/>)
+                    ? Array.from({length: 12}, (_, index) => <span key={index} className="size-12 flex-none skeleton"/>)
                     : packages.map((pack) => (
                         // 하나만 고르는 묶음(라디오처럼)이라 Tab 정지점은 하나이고 패키지 사이는 화살표로 옮긴다.
                         <button
@@ -134,7 +134,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
 
             <div className="grid h-80 grid-cols-[repeat(auto-fill,minmax(72px,1fr))] content-start gap-1 overflow-y-auto scrollbar-none aria-busy:overflow-hidden" aria-busy={loading}>
                 {loading
-                    ? Array.from({length: 36}, (_, index) => <span key={index} className="aspect-square w-full animate-pulse rounded-md bg-muted"/>)
+                    ? Array.from({length: 36}, (_, index) => <span key={index} className="aspect-square w-full skeleton"/>)
                     : (active?.detail ?? []).map((dccon) => (
                         <button type="button" key={dccon.detail_idx} title={dccon.title} className={cn(FOCUS_RING, "aspect-square rounded-lg p-0.5 hover:bg-muted [&>img]:size-full [&>img]:rounded-md [&>img]:object-contain")} onClick={() => clickDccon(dccon)}>
                             <img src={dccon.list_img} alt={dccon.title} loading="lazy" decoding="async"/>

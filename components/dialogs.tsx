@@ -1,7 +1,6 @@
 import {X} from "lucide-react";
 import {
     createContext,
-    type AnimationEvent,
     type ComponentProps,
     type KeyboardEvent,
     type ReactNode,
@@ -10,7 +9,6 @@ import {
     useId,
     useLayoutEffect,
     useRef,
-    useState,
 } from "react";
 
 import {useReturnFocus} from "@/components/useReturnFocus";
@@ -29,7 +27,7 @@ const firstFocusable = (root: ParentNode): HTMLElement | null => {
 
 export {firstFocusable};
 
-// Base UI 포커스 가두기는 shadow DOM 안의 끝을 못 알아 포커스가 디시 페이지로 나가므로 Tab을 직접 가둔다.
+// native <dialog>의 Tab 가두기는 Chromium에서 창 요소를 거치는 빈 돌점에 포커스가 shadow 밖(body)으로 샌다 - 가장자리에서 직접 돈다.
 export const keepTabInside = (ev: KeyboardEvent<HTMLElement>): void => {
     if (ev.key !== "Tab" || ev.defaultPrevented) return;
     const items = [...ev.currentTarget.querySelectorAll<HTMLElement>(FOCUSABLE)]
@@ -60,8 +58,7 @@ export const DialogClose = ({onClick, ...props}: Omit<ComponentProps<"button">, 
     }}/>;
 };
 
-// native <dialog>+showModal - top-layer, ::backdrop, Tab 가두기, Esc(cancel)를 브라우저가 맡는다.
-// 닫힘은 애니메이션 후 dialog.close()가 부르고, 그 뒤 close 이벤트에서 포커스를 돌려주고 onClose가 불린다 - 부모가 언마운트해 닫아도 된다.
+// native <dialog class="modal">+showModal - top-layer, ::backdrop, Tab 가두기, Esc(cancel), 열림/닫힘 전환을 daisyUI .modal이 맡는다.
 export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true, disablePointerDismissal, actionsRef, contentSlot = "dialog-content", role, className, children}: {
     onClose: () => void;
     focusOnOpen?: AutoFocus;
@@ -76,7 +73,6 @@ export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true,
     children: ReactNode;
 }) => {
     const dialog = useRef<HTMLDialogElement>(null);
-    const [closing, setClosing] = useState(false);
     const focus = useReturnFocus(dialog);
     const titleId = useId();
     // 옵션 페이지에는 모듈 설정이 없어 기본(흐림)이다.
@@ -86,9 +82,11 @@ export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true,
     const close = () => {
         const el = dialog.current;
         if (!el?.open) return;
-        // 애니메이션을 기다리지 않는 설정이면 바로 닫는다(close 이벤트가 나머지를 한다).
-        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) el.close();
-        else setClosing(true);
+        // onClose가 알림 창을 띄우면 body를 연 요소로 기억하므로 먼저 돌려준다.
+        el.close();
+        focus.restoreFocus();
+        // 닫힘 전환을 기다렸다 닫으면 그 사이에 다시 연 창을 옛 타이머가 지우므로 즉시 닫는다(열림 전환만 daisyUI가 맡는다).
+        onClose();
     };
     useLayoutEffect(() => {
         if (actionsRef) actionsRef.current = {close};
@@ -107,13 +105,13 @@ export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true,
             <DialogCloseContext.Provider value={close}>
                 <dialog
                     ref={dialog}
+                    className="modal"
                     data-slot="dialog-overlay"
                     data-blur={blur ? "" : undefined}
-                    data-closing={closing ? "" : undefined}
                     aria-labelledby={titleId}
                     role={role}
                     onCancel={(ev) => {
-                        // Esc의 기본 닫기는 애니메이션 없이 닫으므로 막고 직접 닫는다.
+                        // Esc의 기본 닫기는 전환을 기다리지 않으므로 막고 직접 닫는다.
                         ev.preventDefault();
                         if (dismissible) close();
                     }}
@@ -121,23 +119,12 @@ export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true,
                         // ::backdrop 누름은 dialog 요소로 전달된다.
                         if (ev.target === ev.currentTarget && dismissible && !disablePointerDismissal) close();
                     }}
-                    onClose={() => {
-                        // onClose가 알림 창을 띄우면 body를 연 요소로 기억하므로 먼저 돌려준다.
-                        focus.restoreFocus();
-                        onClose();
-                    }}
                 >
                     <div
                         data-slot={contentSlot}
-                        className={cn(
-                            "relative z-50 grid w-full max-w-[calc(100%-2rem)] gap-6 rounded-xl bg-popover p-6 text-sm text-popover-foreground ring-1 ring-foreground/10 outline-none sm:max-w-md",
-                            className
-                        )}
+                        className={cn("modal-box relative grid gap-6 bg-card text-sm ring-1 ring-foreground/10 outline-none", className)}
                         // Chromium의 모달 Tab 순환은 창 요소를 거치는 빈 돌점에서 포커스가 shadow 밖(body)으로 샌다 - 가장자리에서 직접 돈다.
                         onKeyDown={keepTabInside}
-                        onAnimationEnd={(ev: AnimationEvent<HTMLDivElement>) => {
-                            if (closing && ev.target === ev.currentTarget && ev.animationName === "dialog-pop-out") dialog.current?.close();
-                        }}
                     >
                         {children}
                     </div>
@@ -159,7 +146,7 @@ export const DialogHeader = ({className, ...props}: ComponentProps<"div">) => (
 );
 
 export const DialogFooter = ({className, ...props}: ComponentProps<"div">) => (
-    <div data-slot="dialog-footer" className={cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)} {...props}/>
+    <div data-slot="dialog-footer" className={cn("modal-action", className)} {...props}/>
 );
 
 export const DialogTitle = ({className, ...props}: ComponentProps<"h2">) => {

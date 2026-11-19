@@ -193,78 +193,21 @@
         font-family: var(--font-sans, sans-serif), sans-serif !important;
     }
 
-    /* native <dialog>(dialogs.tsx) - dialog 요소가 오버레이(data-slot=dialog-overlay)를 겸한다. UA 스타일을 지우고 화면을 채워 창을 가운데 놓는다. */
-    dialog[data-slot="dialog-overlay"] {
-        background: transparent;
-        border: none;
-        padding: 0;
-        width: 100vw;
-        height: 100dvh;
-        max-width: 100vw;
-        max-height: 100dvh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        outline: none;
-        /* 오버레이 shadow host는 pointer-events:none이라 상속하면 창 안 버튼이 죽는다(Base UI 포털 시절엔 light DOM이라 문제없었다). top-layer라 겹침은 브라우저가 보장. */
-        pointer-events: auto;
-    }
-
-    /* 이전 dialog-overlay 클래스(bg-black/10 + backdrop-blur-xs + fade 100ms)를 옮긴 것. blur는 data-blur 속성으로 켠다(dialogs.tsx가 preview.popupBlur 설정을 넣는다). */
-    dialog[data-slot="dialog-overlay"]::backdrop {
-        background: rgb(0 0 0 / 10%);
-        animation: dialog-fade 100ms ease-out;
-    }
-
-    /* 이미지 크게 보기(ImageViewer)는 더 어운 배경을 쓴다(이전 Backdrop bg-black/85). */
-    dialog[data-slot="dialog-overlay"][data-viewer]::backdrop {
-        background: rgb(0 0 0 / 85%);
-    }
-
-    dialog[data-slot="dialog-overlay"][data-closing]::backdrop {
-        animation: dialog-fade 100ms ease-in reverse forwards;
-    }
-
-    @supports (backdrop-filter: blur(1px)) {
-        dialog[data-slot="dialog-overlay"][data-blur]::backdrop {
-            backdrop-filter: blur(2px);
-        }
-    }
-
-    /* dialog의 유일한 자식이 창 내용(data-slot은 dialog-content / alert-dialog-content). */
-    dialog[data-slot="dialog-overlay"] > * {
-        animation: dialog-pop 100ms ease-out;
-    }
-
-    /* 같은 이름의 속성 뒤집기는 끝난 애니메이션을 재시작하지 않으므로 닫힘은 따른 이름으로 새로 돌린다. */
-    dialog[data-slot="dialog-overlay"][data-closing] > * {
-        animation: dialog-pop-out 100ms ease-in forwards;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        dialog[data-slot="dialog-overlay"]::backdrop,
-        dialog[data-slot="dialog-overlay"] > * {
-            animation: none;
-        }
-    }
 }
 
-@keyframes dialog-fade {
-    from {
-        opacity: 0;
-    }
+/* 창(dialogs.tsx)은 daisyUI .modal(가운데 그리드, 열림/닫힘 전환, ::backdrop)에 얹는다. daisyUI 규칙은 @layer utilities 안이라 이 배경 덮어쓰기는 이기려면 레이어 밖에 있어야 한다. */
+dialog.modal::backdrop {
+    /* 이전 dialog-overlay: bg-black/10. blur는 data-blur 속성으로 켠다(dialogs.tsx가 preview.popupBlur 설정을 넣는다). */
+    background: rgb(0 0 0 / 10%);
 }
 
-@keyframes dialog-pop {
-    from {
-        opacity: 0;
-        scale: 0.95;
-    }
+/* 이미지 크게 보기(ImageViewer)는 더 어두운 배경을 쓴다(이전 Backdrop bg-black/85). */
+dialog.modal[data-viewer]::backdrop {
+    background: rgb(0 0 0 / 85%);
 }
 
-@keyframes dialog-pop-out {
-    to {
-        opacity: 0;
-        scale: 0.95;
+@supports (backdrop-filter: blur(1px)) {
+    dialog.modal[data-blur]::backdrop {
+        backdrop-filter: blur(2px);
     }
 }

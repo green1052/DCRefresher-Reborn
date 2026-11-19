@@ -50,7 +50,7 @@ const ModuleSettings = ({feature, settings, shown}: { feature: ModuleInfo; setti
                 const group = first![1].group;
                 return (
                     <Fragment key={first![0]}>
-                        <div role="none" className="h-px w-full bg-border"/>
+                        <div role="none" className="divider m-0"/>
                         {group ? (
                             <div className="py-3" role="group" aria-label={group.name}>
                                 <p className="font-medium">{group.name}</p>

@@ -99,7 +99,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
             </div>
 
             <div className="flex gap-4 rounded-lg bg-muted/50 p-4">
-                {info ? <img src={urls.dccon.image + info.main_img_path} alt={info.title} className="size-30 flex-none object-contain"/> : <span className="size-30 flex-none animate-pulse rounded-md bg-muted"/>}
+                {info ? <img src={urls.dccon.image + info.main_img_path} alt={info.title} className="size-30 flex-none object-contain"/> : <span className="size-30 flex-none skeleton"/>}
 
                 <div className="flex min-w-0 grow flex-col gap-2">
                     {info ? (
@@ -128,9 +128,9 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
                         </>
                     ) : (
                         <>
-                            <span className="h-6 w-40 animate-pulse rounded-md bg-muted"/>
-                            <span className="h-[18px] w-70 animate-pulse rounded-md bg-muted"/>
-                            <span className="h-[18px] w-50 animate-pulse rounded-md bg-muted"/>
+                            <span className="h-6 w-40 skeleton"/>
+                            <span className="h-[18px] w-70 skeleton"/>
+                            <span className="h-[18px] w-50 skeleton"/>
                         </>
                     )}
                 </div>
@@ -142,7 +142,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
                 {dccon
                     ? dccon.detail.map((item) => <img key={item.idx} src={urls.dccon.image + item.path} alt={item.title} title={item.title} loading="lazy" decoding="async"
                                                       className="aspect-square w-full cursor-context-menu object-contain"/>)
-                    : Array.from({length: 30}, (_, index) => <span key={index} className="aspect-square w-full animate-pulse rounded-md bg-muted"/>)}
+                    : Array.from({length: 30}, (_, index) => <span key={index} className="aspect-square w-full skeleton"/>)}
             </div>
 
             {/* 이 창 안에 그려야 확인 창을 누를 때 이 창이 바깥 클릭으로 닫히지 않는다. */}

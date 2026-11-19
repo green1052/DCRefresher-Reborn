@@ -76,7 +76,7 @@ const Sidebar = ({tab, onSelect}: {
         </nav>
 
         <div className="mt-auto hidden md:block">
-            <div role="none" className="mb-3 h-px w-full bg-border"/>
+            <div role="none" className="divider m-0 mb-3"/>
             <p className="px-2 text-xs text-muted-foreground">v{VERSION}</p>
         </div>
     </div>

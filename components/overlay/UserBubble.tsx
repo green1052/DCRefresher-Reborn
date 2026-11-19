@@ -30,7 +30,7 @@ const MenuItem = ({danger, className, ...props}: ComponentProps<"button"> & { da
             {...props}/>
 );
 
-const Separator = () => <div role="none" className="h-px w-full shrink-0 bg-border"/>;
+const Separator = () => <div role="none" className="divider m-0"/>;
 
 // 디시콘 하나의 이름은 뜻이 없는 경우가 많아 패키지 정보를 쓴다 - 정보 창과 같은 캐시(dcconPackages)를 공유해 다시 받지 않는다.
 const DcconSummary = ({code, onOpen}: { code: string; onOpen: () => void }) => {
@@ -61,10 +61,10 @@ const DcconSummary = ({code, onOpen}: { code: string; onOpen: () => void }) => {
                 <span>디시콘 정보</span>
             ) : (
                 <>
-                    <span className="size-10 flex-none animate-pulse rounded-md bg-muted"/>
+                    <span className="size-10 flex-none skeleton"/>
                     <span className="flex flex-col gap-1">
-                        <span className="h-4 w-24 animate-pulse rounded-md bg-muted"/>
-                        <span className="h-3 w-40 animate-pulse rounded-md bg-muted"/>
+                        <span className="h-4 w-24 skeleton"/>
+                        <span className="h-3 w-40 skeleton"/>
                     </span>
                 </>
             )}
