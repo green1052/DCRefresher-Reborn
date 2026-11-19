@@ -1,15 +1,83 @@
 /* Tailwind + daisyUI 5. 부품 색은 내장 테마 light(기본)/black(다크 모드) 둘로 간다.
-   :root는 오버레이에서 overlay.tsx가 :host로 바꿔 넣는다(:root → :host 치환). 테마 전환은 appearance.ts가 data-theme 속성으로, dark: 변형과 콘텐츠 반전 규칙은 같은 함수가 단 .dark 클래스를 본다. */
+   테마 전환은 appearance.ts가 data-theme 속성으로, dark: 변형과 콘텐츠 반전 규칙은 같은 함수가 단 .dark 클래스를 본다. */
 @import "tailwindcss" source(none);
 @import "tw-animate-css";
 @plugin "daisyui" {
-    themes: light --default, black;
+    themes: false;
     logs: false;
 }
 /* 스캔 폴더 직접 지정 - 파이어폭스 심사 zip엔 .gitignore가 없어 자동 탐색을 못 쓴다. */
 @source "../../{components,core,entrypoints,features,stores,utils}";
-/* cn 플러그인이 만드는 클래스 그룹 표(wxt.config.ts). 표의 낱말이 클래스로 읽혀 쓰지 않는 유틸리티가 생긴다. */
-@source not "../../utils/cn-tables.ts";
+
+/* 커스텀 테마 - 옛 shadcn(base-vega) 팔레트를 그대로 옮겼다(내장 테마 안 씀). 강조색은 라이트/다크 같은 인디고로 통일.
+   base-100=배경, base-200=muted, base-300=accent, neutral=secondary. 모서리는 옛 룩 - 입력/버튼 8px, 카드 12px, 체크박스·슬라이더 엄지 둥글게. */
+@plugin "daisyui/theme" {
+    name: "light";
+    default: true;
+    color-scheme: light;
+    --color-base-100: oklch(1 0 0);
+    --color-base-200: oklch(96.7% 0.001 286.375);
+    --color-base-300: oklch(96.7% 0.001 286.375);
+    --color-base-content: oklch(14.1% 0.005 285.823);
+    --color-primary: oklch(45.7% 0.24 277.023);
+    --color-primary-content: oklch(96.2% 0.018 272.314);
+    --color-secondary: oklch(96.7% 0.001 286.375);
+    --color-secondary-content: oklch(21% 0.006 285.885);
+    --color-accent: oklch(96.7% 0.001 286.375);
+    --color-accent-content: oklch(21% 0.006 285.885);
+    --color-neutral: oklch(96.7% 0.001 286.375);
+    --color-neutral-content: oklch(21% 0.006 285.885);
+    --color-info: oklch(68.5% 0.169 237.323);
+    --color-info-content: oklch(98.5% 0 0);
+    --color-success: oklch(72.3% 0.219 149.579);
+    --color-success-content: oklch(98.5% 0 0);
+    --color-warning: oklch(76.9% 0.188 70.08);
+    --color-warning-content: oklch(27.9% 0.077 45.635);
+    --color-error: oklch(57.7% 0.245 27.325);
+    --color-error-content: oklch(98.5% 0 0);
+    --radius-selector: 0.5rem;
+    --radius-field: 0.5rem;
+    --radius-box: 0.75rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 0;
+    --noise: 0;
+    --card-fs: 1rem;
+}
+@plugin "daisyui/theme" {
+    name: "black";
+    color-scheme: dark;
+    --color-base-100: oklch(14.1% 0.005 285.823);
+    --color-base-200: oklch(27.4% 0.006 286.033);
+    --color-base-300: oklch(27.4% 0.006 286.033);
+    --color-base-content: oklch(98.5% 0 0);
+    --color-primary: oklch(45.7% 0.24 277.023);
+    --color-primary-content: oklch(96.2% 0.018 272.314);
+    --color-secondary: oklch(27.4% 0.006 286.033);
+    --color-secondary-content: oklch(98.5% 0 0);
+    --color-accent: oklch(27.4% 0.006 286.033);
+    --color-accent-content: oklch(98.5% 0 0);
+    --color-neutral: oklch(27.4% 0.006 286.033);
+    --color-neutral-content: oklch(98.5% 0 0);
+    --color-info: oklch(68.5% 0.169 237.323);
+    --color-info-content: oklch(98.5% 0 0);
+    --color-success: oklch(72.3% 0.219 149.579);
+    --color-success-content: oklch(98.5% 0 0);
+    --color-warning: oklch(76.9% 0.188 70.08);
+    --color-warning-content: oklch(27.9% 0.077 45.635);
+    --color-error: oklch(70.4% 0.191 22.216);
+    --color-error-content: oklch(98.5% 0 0);
+    --radius-selector: 0.5rem;
+    --radius-field: 0.5rem;
+    --radius-box: 0.75rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 0;
+    --noise: 0;
+    --card-fs: 1rem;
+}
 
 @custom-variant dark (&:is(.dark *));
 
@@ -94,8 +162,9 @@
 
     body {
         @apply bg-base-100 text-base-content;
-        /* 크롬은 확장 페이지(옵션, 팝업)의 body에 자체 폰트 규칙을 레이어 밖에 넣어, 레이어 안의 규칙은 진다. 폰트 교체 설정이 먹도록 important로 건다. */
+        /* 크롬은 확장 페이지(옵션, 팝업)의 body에 자체 폰트 규칙(크기 75% 포함)을 레이어 밖에 넣어, 레이어 안의 규칙은 진다. 폰트 교체 설정과 옛 글씨 크기(1rem)가 먹도록 important로 건다. */
         font-family: var(--font-sans, sans-serif), sans-serif !important;
+        font-size: 1rem !important;
     }
 
 }
