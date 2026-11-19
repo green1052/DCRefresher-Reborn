@@ -24,7 +24,7 @@
 옵션, 팝업 정보는 `meta.ts`의 `defineModuleMeta`, 페이지에서 하는 일은 `index.ts`의 `defineModule(meta, {setup, ...})`로 default 내보냅니다. 설정만 있으면 `index.ts`를 두지 않습니다(`features/fonts`).
 
 ```ts
-// meta.ts - 모든 번들이 불러오므로 가벼운 것만. UI(lucide, React)는 불러오지 않는다 (단위 테스트가 확인)
+// meta.ts - 모든 번들이 불러오므로 가벼운 것만. UI(lucide, preact)는 불러오지 않는다 (단위 테스트가 확인)
 export default defineModuleMeta({
     id: "fonts",               // 저장소 키. 바꾸면 사용자 설정이 끊긴다
     // urls: [BOARD_PAGE],     // 이 주소에서만 실행. 없으면 모든 디시 페이지
@@ -96,4 +96,4 @@ export default defineModule(meta, {
 - `listen()`: 배경이 뜰 때마다 동기 실행. 깨울 이벤트 리스너를 여기서 겁니다. 메시지 이름은 배경 전체에서 한 번만(겹치면 단위 테스트가 잡음). 설치, 업데이트 때 할 일은 `browser.runtime.onInstalled`에 겹니다(`features/preview/background.ts`).
 - `apply({enabled, settings})`: 모듈 on/off, 설정 변경, 설치, 브라우저 시작 때 실행(Firefox는 배경이 뜰 때마다). 리스너만 거는 모듈은 두지 않습니다(`features/write/background.ts`). 탭이 요청한 일을 페이지(MAIN world)에서 할 때는 `runInPage`로 실행하고, import가 필요하면 `entrypoints/<이름>.ts`에 `defineUnlistedScript`로 번들해 `runFileInPage(sender, "/<이름>.js")`로 넣습니다(`entrypoints/upload-hook.ts`).
 
-- 배경 번들에 React가 들어가면 안 됩니다. `background.ts`는 `index.ts`, `icons.ts`, `labels.ts`를 불러오지 않고, 같이 쓰는 값(`features/imagesearch`의 엔진 목록 등)은 `meta.ts`에 둡니다. 배경, 옵션, 팝업, 콘텐츠가 같이 불러오는 파일(`core/`, `stores/`)은 모듈 최상위에서 던지면 안 됩니다([Firefox](firefox.md)).
+- 배경 번들에 preact가 들어가면 안 됩니다. `background.ts`는 `index.ts`, `icons.ts`, `labels.ts`를 불러오지 않고, 같이 쓰는 값(`features/imagesearch`의 엔진 목록 등)은 `meta.ts`에 둡니다. 배경, 옵션, 팝업, 콘텐츠가 같이 불러오는 파일(`core/`, `stores/`)은 모듈 최상위에서 던지면 안 됩니다([Firefox](firefox.md)).

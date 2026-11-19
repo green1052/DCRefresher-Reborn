@@ -6,7 +6,7 @@ import {useUiStore} from "@/stores/ui";
 
 import {blockEntry, setBlockLists} from "../../../helpers";
 
-// Base UI, lucide는 변환되지 않아 진짜 React를 불러 그려지지 않으므로 버블, 버튼, 아이콘을 평범한 요소로 바꾼다.
+// lucide 아이콘은 테스트에서 그리지 않게 한다.
 
 vi.mock("lucide-preact", () => ({Ban: () => null, ExternalLink: () => null, NotebookPen: () => null, Search: () => null}));
 

@@ -61,7 +61,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
     useEffect(() => {
         const el = strip.current;
         if (!el) return;
-        // React의 onWheel은 수동(passive) 리스너라 preventDefault가 안 먹는다. 페이지가 함께 굴러가지 않게 네이티브로 단다.
+        // JSX 이벤트 위임과 무관하게 페이지 굴림을 확실히 막으려고 네이티브로 단다.
         const onWheel = (ev: WheelEvent): void => {
             if (ev.shiftKey || ev.ctrlKey || Math.abs(ev.deltaY) <= Math.abs(ev.deltaX) || el.scrollWidth <= el.clientWidth) return;
             ev.preventDefault();

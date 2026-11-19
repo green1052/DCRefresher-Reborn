@@ -51,7 +51,7 @@ export const useWheelGesture = (key: string, goToAdjacent: (dir: number) => void
 
         const box = ev.currentTarget;
         const target = ev.target;
-        // 스크롤 칸 DOM 안에서 난 휠만 본다. React는 포털로 뜬 창(디시콘 등)의 이벤트도 컴포넌트 트리로 올리므로 이 검사로 걸러 낸다.
+        // 스크롤 칸 DOM 안에서 난 휠만 본다. preact는 포털로 뜬 창(디시콘 등)의 이벤트도 컴포넌트 트리로 올리므로 이 검사로 걸러 낸다.
         if (!(target instanceof Element) || !box.contains(target)) return;
 
         const dir = ev.deltaY > 0 ? 1 : -1;

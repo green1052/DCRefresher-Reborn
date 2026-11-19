@@ -1,4 +1,4 @@
-/** 차단 목록 값의 검사, 정규화. core에서 stores를 불러오면 React가 배경 번들에 딸려 간다. */
+/** 차단 목록 값의 검사, 정규화. core에서 stores를 불러오면 preact가 배경 번들에 딸려 간다. */
 import {BLOCK_TYPES, DEFAULT_DETECT_MODE, DETECT_MODE_NAMES, DETECT_MODES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {isRecord} from "@/utils/record";

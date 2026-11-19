@@ -67,7 +67,7 @@ export type ToggleKeyOf<M extends AnyModuleMeta> = NonNullable<M["toggles"]>[num
 
 export type CommandKeyOf<M extends AnyModuleMeta> = keyof NonNullable<M["commands"]> & string;
 
-/** 아이콘 모음. meta.ts는 배경 번들에도 들어가 React 아이콘을 두지 않는다. */
+/** 아이콘 모음. meta.ts는 배경 번들에도 들어가 preact 아이콘을 두지 않는다. */
 export type IconsOf<M extends AnyModuleMeta> = { module: LucideIcon } &
     ([ToggleKeyOf<M>] extends [never] ? { toggles?: never } : { toggles: Record<ToggleKeyOf<M>, LucideIcon> });
 
