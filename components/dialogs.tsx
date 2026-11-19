@@ -122,7 +122,7 @@ export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true,
                 >
                     <div
                         data-slot={contentSlot}
-                        className={cn("modal-box relative grid gap-6 bg-card text-sm ring-1 ring-foreground/10 outline-none", className)}
+                        className={cn("modal-box relative grid gap-6 bg-base-100 text-sm ring-1 ring-base-content/10 outline-none", className)}
                         // Chromium의 모달 Tab 순환은 창 요소를 거치는 빈 돌점에서 포커스가 shadow 밖(body)으로 샌다 - 가장자리에서 직접 돈다.
                         onKeyDown={keepTabInside}
                     >
@@ -155,7 +155,7 @@ export const DialogTitle = ({className, ...props}: ComponentProps<"h2">) => {
 };
 
 export const DialogDescription = ({className, ...props}: ComponentProps<"p">) => (
-    <p data-slot="dialog-description" className={cn("text-sm text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground", className)} {...props}/>
+    <p data-slot="dialog-description" className={cn("text-sm text-base-content/60 *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-base-content", className)} {...props}/>
 );
 
 export const DialogCloseButton = () => (

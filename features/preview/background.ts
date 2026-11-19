@@ -95,8 +95,8 @@ const executeTurnstile = async ({sitekey, wait, appearance}: TurnstileConfig, ho
                 action: "comment",
                 appearance: host ? "always" : appearance || "interaction-only",
                 language: "ko",
-                // 확인 창은 디시 다크모드를 따르는 오버레이의 색을 맞춘다.
-                ...(host && {theme: host.closest(".dark") ? "dark" : "light"}),
+                // 확인 창은 항상 어두운 테마(forest)다.
+                ...(host && {theme: "dark"}),
                 callback: (token) => {
                     state = "ok";
                     tokenMs = Math.max(1, Math.round(performance.now() - started));

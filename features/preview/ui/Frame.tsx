@@ -183,7 +183,7 @@ export const Frame = () => {
         >
                 {/* 너비는 설정을 쓰되 90%까지, 관리 패널 폭을 비운다 - sticky 버튼을 위해 clip이다. */}
                 <div
-                    className="refresher-frame m-auto flex min-h-[min(800px,90vh)] flex-col overflow-clip rounded-2xl bg-background text-sm shadow-2xl ring-1 ring-foreground/10"
+                    className="refresher-frame m-auto flex min-h-[min(800px,90vh)] flex-col overflow-clip rounded-2xl bg-base-100 text-sm shadow-2xl ring-1 ring-base-content/10"
                     data-blur-reveal={block?.blurReveal || undefined}
                     data-block-revealed={revealed || undefined}
                     style={{width: adminVisible ? `min(${frameWidth}px, 90vw, max(480px, calc(100vw - 2 * (150px + 12px))))` : `min(${frameWidth}px, 90vw)`}}
@@ -200,7 +200,7 @@ export const Frame = () => {
                                 <div className="flex items-center gap-3">
                                     <CountDown/>
                                     {post.date && <TimeStamp date={post.date} size="2"/>}
-                                    <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                                    <span className="flex items-center gap-1 text-sm text-base-content/60">
                                         <Eye className="size-3.5"/>
                                         {post.views}
                                     </span>
@@ -225,7 +225,7 @@ export const Frame = () => {
                         {error ? (
                             <ErrorBlock error={error}/>
                         ) : commentsOnly ? (
-                            <button type="button" className="btn btn-secondary mb-6 w-full" onClick={() => usePreviewStore.setState({commentsOnly: false})}>
+                            <button type="button" className="btn mb-6 w-full" onClick={() => usePreviewStore.setState({commentsOnly: false})}>
                                 댓글만 표시 중입니다. 눌러서 본문 보기
                             </button>
                         ) : (
@@ -270,7 +270,7 @@ export const Frame = () => {
                                     <span role="status" aria-label="댓글을 불러오는 중" className="loading loading-spinner size-6"/>
                                 </div>
                             )) : comments.length === 0 ? (
-                                <p className="py-8 text-center text-muted-foreground">댓글이 없습니다.</p>
+                                <p className="py-8 text-center text-base-content/60">댓글이 없습니다.</p>
                             ) : (
                                 <CommentList comments={comments}/>
                             )}
@@ -279,7 +279,7 @@ export const Frame = () => {
 
                     {/* 아카이브 글은 서버가 이미 없는 글이므로 댓글을 받지 않는다. */}
                     {post && !archived && (allowReply ? <WriteComment/> : (
-                        <p className="px-8 pt-3 pb-6 text-muted-foreground">멤버만 댓글을 쓸 수 있습니다.</p>
+                        <p className="px-8 pt-3 pb-6 text-base-content/60">멤버만 댓글을 쓸 수 있습니다.</p>
                     ))}
                     </Fragment>
 

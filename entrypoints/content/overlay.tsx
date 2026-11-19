@@ -4,13 +4,12 @@ import {http} from "@/core/http/client";
 import {overlayNeeded, watchOverlayDemands} from "@/components/overlay/demands";
 import {ContentRoot} from "@/components/overlay/ContentRoot";
 import {overlay} from "@/components/overlay/shadow";
-import {followDcAppearance} from "@/utils/appearance";
+import {setDarkAppearance} from "@/utils/appearance";
 import {whenDomReady} from "@/utils/dom";
 import {createRoot} from "react-dom/client";
 
 // 디시 CSS와 섞이지 않게 shadow DOM에 그리며, 파이어폭스의 늦은 동적 import 버그 때문에 정적으로 불러온다.
 export const mountOverlayWhenNeeded = (ctx: ContentScriptContext): void => {
-    let stopAppearance: (() => void) | undefined;
     const mountOverlay = async (): Promise<void> => {
         if (ctx.isInvalid) return;
 
@@ -27,9 +26,8 @@ export const mountOverlayWhenNeeded = (ctx: ContentScriptContext): void => {
             // index.tsx가 불러온 CSS는 WXT가 content-scripts/content.css로 묶어 두었다가 여기서 shadow에 넣는다 (:root → :host 포함).
             onMount(container) {
                 // 호스트는 :host { all: initial }로 디시 페이지 글꼴을 받지 않는다. app, portal이 같이 쓰는 글꼴, 글자색을 여기서 준다.
-                container.classList.add("font-sans", "text-sm", "text-foreground", "antialiased");
-                // 디시 다크모드를 따라간다. Tailwind(dark:)는 조상의 dark 클래스로 색을 바꾸므로 오버레이 최상위 요소(app, portal의 부모)에 붙인다.
-                stopAppearance = followDcAppearance(container);
+                container.classList.add("font-sans", "text-sm", "text-base-content", "antialiased");
+                setDarkAppearance(container);
                 const app = document.createElement("div");
                 const portal = document.createElement("div");
                 portal.id = "portal";
@@ -42,7 +40,6 @@ export const mountOverlayWhenNeeded = (ctx: ContentScriptContext): void => {
                 return root;
             },
             onRemove: (root) => {
-                stopAppearance?.();
                 root?.unmount();
             }
         });

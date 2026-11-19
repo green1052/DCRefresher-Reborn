@@ -21,7 +21,7 @@ export function ShortcutTab() {
             actions={
                 <button
                     type="button"
-                    className="btn btn-secondary"
+                    className="btn"
                     onClick={() =>
                         // Firefox는 tabs.create로 about:addons를 열 수 없어 전용 API(137+)를 쓴다.
                         void (import.meta.env.BROWSER === "firefox"
@@ -40,7 +40,7 @@ export function ShortcutTab() {
                     .map((shortcut) => (
                         <div key={shortcut.name} className="flex items-center justify-between gap-3 py-3">
                             <span>{shortcut.description}</span>
-                            {shortcut.shortcut ? <kbd className="kbd kbd-sm">{shortcut.shortcut}</kbd> : <span className="text-muted-foreground">없음</span>}
+                            {shortcut.shortcut ? <kbd className="kbd kbd-sm">{shortcut.shortcut}</kbd> : <span className="text-base-content/60">없음</span>}
                         </div>
                     ))}
             </div>

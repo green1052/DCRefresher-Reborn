@@ -87,7 +87,7 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
 
     return (
         // 화면 밖 댓글은 레이아웃 계산을 건너뛴다 - 그리지 않은 댓글은 한 줄 댓글 높이(48px)로 어림한다.
-        <div className={cn("refresher-comment relative px-8 py-2 [contain-intrinsic-size:auto_48px] [content-visibility:auto] hover:bg-muted/50",
+        <div className={cn("refresher-comment relative px-8 py-2 [contain-intrinsic-size:auto_48px] [content-visibility:auto] hover:bg-base-200/50",
                            // 자동 새로고침으로 새로 들어온 댓글 (previewStore의 freshComments). 강조색으로 깔았다가 걷는다.
                            fresh && "animate-fresh-comment",
                            // 지운 댓글은 행 전체를 흐리게 해 눈에 띈다. 배경 색은 마우스를 올릴 때와 겹쳐 헷갈린다.
@@ -100,7 +100,7 @@ export const Comment = memo(({comment, depth, replyCount, threadOpen, lastReply,
                     {/* 디시 댓글 목록처럼 관리자는 댓글을 골라 한 번에 지우거나 차단한다 (CommentList의 도구 줄). 지운 댓글은 고를 수 없다. */}
                     {isAdmin && !isDeleted && <input type="checkbox" className="checkbox mr-1" aria-label={`${who} 댓글 선택`} checked={selected} onChange={() => toggleSelected(comment.no)}/>}
                     <UserCard user={user} op={isOp}/>
-                    {comment.duplicates ? <span className="text-xs whitespace-nowrap text-muted-foreground">같은 댓글 ×{comment.duplicates}</span> : null}
+                    {comment.duplicates ? <span className="text-xs whitespace-nowrap text-base-content/60">같은 댓글 ×{comment.duplicates}</span> : null}
                     {/* 툴팁은 브라우저 기본(title)을 쓴다. 스레드마다 툴팁 부품을 달면 댓글이 많은 글을 열 때 느려진다. */}
                     {/* 되풀이되는 버튼은 리스너 여럿 달기 아까워 모양만 갖춘 기본 button을 쓴다. */}
                     {depth === 0 && replyCount > 1 && (
@@ -171,7 +171,7 @@ const CommentBody = ({html, isDccon, isDeleted}: { html: string; isDccon: boolea
         if (isDccon && body.current) markPressable(body.current, false);
     }, [html, isDccon]);
     // 지운 댓글은 읽을 수 있게 본문용 회색을 쓴다.
-    return <div ref={body} className={cn("refresher-html refresher-comment-html mt-1", !isDccon && "whitespace-pre-line", isDeleted && "text-muted-foreground")} data-dccon={isDccon || undefined}
+    return <div ref={body} className={cn("refresher-html refresher-comment-html mt-1", !isDccon && "whitespace-pre-line", isDeleted && "text-base-content/60")} data-dccon={isDccon || undefined}
                 onClick={isDccon ? openDcconInfo : undefined}
                 onKeyDown={isDccon ? pressContents : undefined}
                 dangerouslySetInnerHTML={{__html: html}}/>;
@@ -241,7 +241,7 @@ const PasswordDialog = ({warning, onSubmit, onClose}: { warning?: string; onSubm
         <ModalDialog onClose={onClose} className="sm:max-w-[320px]" focusOnOpen={input}>
             <DialogHeader>
                 <DialogTitle>댓글 비밀번호</DialogTitle>
-                {warning && <p className="text-sm text-destructive">{warning}</p>}
+                {warning && <p className="text-sm text-error">{warning}</p>}
             </DialogHeader>
             <SubmitForm onSubmit={() => value && onSubmit(value)}>
                 <input

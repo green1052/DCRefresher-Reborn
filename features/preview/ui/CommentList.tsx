@@ -49,7 +49,7 @@ export const CommentSummary = ({comments}: { comments: ProcessedComment[] }) => 
     const {counts, hidden} = summaryOf(comments);
 
     return (
-        <span className="text-muted-foreground">
+        <span className="text-base-content/60">
             {hidden ? `${counts} (${hidden})` : counts}
             {hidden && !pageRevealed && (
                 <button type="button" className="ml-1.5 align-baseline text-sm text-link underline-offset-4 hover:underline"
@@ -145,7 +145,7 @@ const SelectionTools = ({shownSelectable, foldable}: { shownSelectable: Processe
                        onChange={() => usePreviewStore.setState({selectedComments: all ? NO_FRESH : new Set(selectable.map((comment) => comment.no))})}/>
                 <label htmlFor={id} className="text-sm font-normal leading-snug">전체 선택</label>
             </div>
-            {picked.length > 0 && <span className="text-xs text-muted-foreground">{picked.length}개 선택</span>}
+            {picked.length > 0 && <span className="text-xs text-base-content/60">{picked.length}개 선택</span>}
             <div className="ml-auto flex gap-1">
                 <button type="button" className="btn btn-error btn-xs" disabled={picked.length === 0 || deleting} onClick={() => setConfirming(true)}>
                     <Trash2 className="size-3"/>삭제

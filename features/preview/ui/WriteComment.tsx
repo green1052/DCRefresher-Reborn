@@ -27,7 +27,7 @@ const Swatch = ({color, label, pressed, onClick}: { color: string; label: string
         aria-label={label}
         aria-pressed={pressed}
         tabIndex={pressed ? 0 : -1}
-        className="size-4.5 min-w-0 cursor-pointer rounded-full border border-foreground/25 p-0 aria-pressed:outline-2 aria-pressed:outline-offset-2 aria-pressed:outline-solid aria-pressed:outline-primary"
+        className="size-4.5 min-w-0 cursor-pointer rounded-full border border-base-content/25 p-0 aria-pressed:outline-2 aria-pressed:outline-offset-2 aria-pressed:outline-solid aria-pressed:outline-primary"
         style={{background: `#${color}`}}
         onClick={onClick}
     />
@@ -249,7 +249,7 @@ export const WriteComment = () => {
             )}
 
             {reply.replyNo && (
-                <div className="mb-1 flex items-center gap-1 text-xs text-muted-foreground">
+                <div className="mb-1 flex items-center gap-1 text-xs text-base-content/60">
                     <span className="truncate">{replyName}에게 답글</span>
                     <TooltipButton tip="답글 취소" variant="ghost" size="icon-xs" onClick={() => {
                         usePreviewStore.setState({reply: NO_REPLY});
@@ -292,7 +292,7 @@ export const WriteComment = () => {
                             <Smile/>
                         </TooltipButton>
                         <WithTooltip tip={txtcon ? "글자콘 취소" : "글자콘"}
-                                     trigger={<button type="button" className={cn("btn btn-square size-9", txtcon ? "btn-primary" : "btn-secondary")} aria-label="글자콘" aria-pressed={txtcon}
+                                     trigger={<button type="button" className={cn("btn btn-square size-9", txtcon ? "btn-primary" : "")} aria-label="글자콘" aria-pressed={txtcon}
                                                       onClick={() => {
                                                           // 글자콘과 디시콘은 같이 쓸 수 없다.
                                                           setDccon(NO_DCCON);
@@ -318,13 +318,13 @@ export const WriteComment = () => {
 
             {txtcon && (
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span className="text-xs text-muted-foreground" aria-hidden>배경</span>
+                    <span className="text-xs text-base-content/60" aria-hidden>배경</span>
                     {/* 고른 색을 다시 눌러도 그대로 둔다. */}
                     <div role="group" aria-label="배경색" className="flex gap-1" onKeyDown={rovingKeyDown}>
                         {TXTCON_BACKGROUNDS.map((bg) => <Swatch key={bg} color={bg} label={`배경색 #${bg}`} pressed={txtconColors.bg === bg}
                                                                 onClick={() => setTxtconColors((prev) => ({...prev, bg}))}/>)}
                     </div>
-                    <span className="ml-2 text-xs text-muted-foreground" aria-hidden>글자</span>
+                    <span className="ml-2 text-xs text-base-content/60" aria-hidden>글자</span>
                     <div role="group" aria-label="글자색" className="flex gap-1" onKeyDown={rovingKeyDown}>
                         {TXTCON_COLORS.map((txt) => <Swatch key={txt} color={txt} label={`글자색 #${txt}`} pressed={txtconColors.txt === txt}
                                                             onClick={() => setTxtconColors((prev) => ({...prev, txt}))}/>)}
@@ -332,7 +332,7 @@ export const WriteComment = () => {
                 </div>
             )}
 
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="mt-2 text-xs text-base-content/60">
                 {login ? (accountId ?? "회원 계정") : (
                     // 닉네임을 지워도 버튼이 남아 다시 펼칠 수 있게 빈 닉네임은 할 일로 보인다.
                     <button type="button" className="text-link underline-offset-4 hover:underline" aria-expanded={showInputs} onClick={toggleInputs}>

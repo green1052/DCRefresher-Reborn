@@ -74,11 +74,11 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
                     <div className="grow">
                         <div className="flex items-center gap-2">
                             <h2 className="text-xl font-bold">DCRefresher Reborn</h2>
-                            <span className="badge badge-secondary">v{version}</span>
+                            <span className="badge">v{version}</span>
                         </div>
-                        <p className="text-muted-foreground">디시인사이드 개선 확장 프로그램</p>
+                        <p className="text-base-content/60">디시인사이드 개선 확장 프로그램</p>
                     </div>
-                    <button type="button" className="btn btn-secondary" onClick={() => void copyDiagnostics()}>
+                    <button type="button" className="btn" onClick={() => void copyDiagnostics()}>
                         <ClipboardCopy className="size-4"/> 진단 정보 복사
                     </button>
                 </div>
@@ -87,7 +87,7 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
             <Section title="바로가기">
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {LINKS.map(([label, url, Icon]) => (
-                        <a key={label} className="btn btn-secondary justify-start" href={url} target="_blank" rel="noreferrer">
+                        <a key={label} className="btn justify-start" href={url} target="_blank" rel="noreferrer">
                             <Icon className="size-4"/> {label}
                         </a>
                     ))}
@@ -96,11 +96,11 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
 
             <Section title="데이터 현황">
                 <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-3">
-                    <dt className="text-muted-foreground">차단, 메모</dt>
+                    <dt className="text-base-content/60">차단, 메모</dt>
                     <dd>차단 {blockCount}개, 메모 {memoCount}개</dd>
-                    <dt className="text-muted-foreground">로컬 저장소</dt>
+                    <dt className="text-base-content/60">로컬 저장소</dt>
                     <dd>{usage === "error" ? "알 수 없음" : usage ? formatBytes(usage.local) : "..."}</dd>
-                    <dt className="text-muted-foreground">클라우드 저장소</dt>
+                    <dt className="text-base-content/60">클라우드 저장소</dt>
                     <dd>
                         {usage === "error" ? "알 수 없음" : usage ? `${formatBytes(usage.sync)} / ${formatBytes(CLOUD_QUOTA)} (${Math.round((usage.sync / CLOUD_QUOTA) * 100)}%)` : "..."}
                     </dd>

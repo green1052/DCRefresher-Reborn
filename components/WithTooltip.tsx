@@ -20,7 +20,7 @@ const VARIANT = {
     default: "btn-primary",
     destructive: "btn-error",
     outline: "btn-outline",
-    secondary: "btn-secondary",
+    secondary: "",
     ghost: "btn-ghost",
     link: "btn-link",
 } as const;
@@ -29,11 +29,11 @@ const SIZE = {
     default: "",
     xs: "btn-xs",
     sm: "btn-sm",
-    lg: "h-10 min-h-10 px-6 text-sm font-medium",
+    lg: "btn-lg",
     icon: "btn-square",
     "icon-xs": "btn-square btn-xs",
     "icon-sm": "btn-square btn-sm",
-    "icon-lg": "btn-square size-10",
+    "icon-lg": "btn-square btn-lg",
 } as const;
 
 export const TooltipButton = ({tip, side, variant = "default", size = "default", className, children, ...props}: Omit<ComponentProps<"button">, "children"> & {

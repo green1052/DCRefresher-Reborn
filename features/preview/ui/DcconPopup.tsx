@@ -103,8 +103,8 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
             {doubleDccon && selected.length > 0 && (
                 <div className="flex items-center gap-2">
                     <img src={selected[0]!.list_img} alt={selected[0]!.title} width={32} height={32}/>
-                    <span className="flex-1 text-muted-foreground">더블콘 {selected.length}/2 - 하나만 더 선택</span>
-                    <button type="button" className="btn btn-xs btn-secondary" onClick={() => setSelected([])}>초기화</button>
+                    <span className="flex-1 text-base-content/60">더블콘 {selected.length}/2 - 하나만 더 선택</span>
+                    <button type="button" className="btn btn-xs" onClick={() => setSelected([])}>초기화</button>
                 </div>
             )}
 
@@ -136,7 +136,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                 {loading
                     ? Array.from({length: 36}, (_, index) => <span key={index} className="aspect-square w-full skeleton"/>)
                     : (active?.detail ?? []).map((dccon) => (
-                        <button type="button" key={dccon.detail_idx} title={dccon.title} className={cn(FOCUS_RING, "aspect-square rounded-lg p-0.5 hover:bg-muted [&>img]:size-full [&>img]:rounded-md [&>img]:object-contain")} onClick={() => clickDccon(dccon)}>
+                        <button type="button" key={dccon.detail_idx} title={dccon.title} className={cn(FOCUS_RING, "aspect-square rounded-lg p-0.5 hover:bg-base-200 [&>img]:size-full [&>img]:rounded-md [&>img]:object-contain")} onClick={() => clickDccon(dccon)}>
                             <img src={dccon.list_img} alt={dccon.title} loading="lazy" decoding="async"/>
                         </button>
                     ))}

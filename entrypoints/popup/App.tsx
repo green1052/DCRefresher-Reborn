@@ -206,12 +206,12 @@ export function App() {
 
             <div className="flex flex-col gap-4 p-3">
                 {loaded.backupError && (
-                    <p className="text-center text-xs text-destructive">클라우드에 백업하지 못했습니다. 설정의 데이터 탭에서 확인해 주세요.</p>
+                    <p className="text-center text-xs text-error">클라우드에 백업하지 못했습니다. 설정의 데이터 탭에서 확인해 주세요.</p>
                 )}
                 {loaded.page ? (
                     <PageSection {...loaded.page} toggled={toggled}/>
                 ) : (
-                    <p className="text-center text-xs text-muted-foreground">디시인사이드 갤러리에서 열면 이 페이지 설정이 나옵니다.</p>
+                    <p className="text-center text-xs text-base-content/60">디시인사이드 갤러리에서 열면 이 페이지 설정이 나옵니다.</p>
                 )}
                 <ModulesSection onToggled={() => setToggled((count) => count + 1)}/>
             </div>

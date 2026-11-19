@@ -240,14 +240,14 @@ export const AdminPanel = () => {
     };
 
     return (
-        <div className="pointer-events-auto fixed top-[20%] left-0 w-[150px] rounded-r-xl bg-card p-2 text-card-foreground shadow-md ring-1 ring-foreground/10 duration-150 animate-in fade-in">
-            <p className="mb-2 ml-1 text-xs font-medium text-muted-foreground">관리</p>
+        <div className="pointer-events-auto fixed top-[20%] left-0 w-[150px] rounded-r-xl bg-base-100 p-2 text-base-content shadow-md ring-1 ring-base-content/10 duration-150 animate-in fade-in">
+            <p className="mb-2 ml-1 text-xs font-medium text-base-content/60">관리</p>
             <div className="flex flex-col gap-1">
                 {actions.map((action) => (
                     <button
                         type="button"
                         key={action.id}
-                        className={cn("btn justify-start", action.danger ? "btn-error" : action.active ? "btn-primary" : "btn-secondary")}
+                        className={cn("btn justify-start", action.danger ? "btn-error" : action.active ? "btn-primary" : "")}
                         // 눌러도 포커스를 가져가지 않는다. 첫 클릭 뒤 스페이스로 스크롤하면 포커스된 버튼이 눌려 두 번째 확인이 된다.
                         onMouseDown={(ev) => ev.preventDefault()}
                         onClick={() => press(action)}

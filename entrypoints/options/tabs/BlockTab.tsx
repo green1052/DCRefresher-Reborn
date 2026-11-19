@@ -84,7 +84,7 @@ export function BlockTab() {
                 onAdd={(type) => setDialog({type, initial: null})}
                 toolbar={(type) => (
                     <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">기본 차단 모드</span>
+                        <span className="text-base-content/60">기본 차단 모드</span>
                         <RefresherSelect
                             value={defaults[type]}
                             aria-label="기본 차단 모드"
@@ -118,7 +118,7 @@ export function BlockTab() {
                             <span className="font-medium">{entry.content}</span>
                         )}
                         label={blockLabel(entry)}
-                        info={<span className="text-muted-foreground">{entryInfo(entry)}</span>}
+                        info={<span className="text-base-content/60">{entryInfo(entry)}</span>}
                         onEdit={() => setDialog({type, initial: entry})}
                         onRemove={remove}
                     />

@@ -32,7 +32,7 @@ const openBlockBubble = (ev: MouseEvent<HTMLElement>): void => {
 
 /** 제작, 태그 줄 앞의 작은 딱지 (디시 정보창의 tbox). */
 const Label = ({children}: { children: string }) => (
-    <span className="badge badge-outline rounded-sm text-muted-foreground">{children}</span>
+    <span className="badge badge-outline rounded-sm text-base-content/60">{children}</span>
 );
 
 const ShopLink = ({href, children}: { href: string; children: string }) => (
@@ -98,7 +98,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
                 <DialogCloseButton/>
             </div>
 
-            <div className="flex gap-4 rounded-lg bg-muted/50 p-4">
+            <div className="flex gap-4 rounded-lg bg-base-200/50 p-4">
                 {info ? <img src={urls.dccon.image + info.main_img_path} alt={info.title} className="size-30 flex-none object-contain"/> : <span className="size-30 flex-none skeleton"/>}
 
                 <div className="flex min-w-0 grow flex-col gap-2">
@@ -115,7 +115,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
                             <div className="flex flex-wrap items-center gap-2">
                                 <Label>제작</Label>
                                 <ShopLink href={`${urls.dccon.shop}/nick_name/${encodeURIComponent(info.seller_name)}`}>{info.seller_name}</ShopLink>
-                                <span className="text-muted-foreground">{info.reg_date_short}</span>
+                                <span className="text-base-content/60">{info.reg_date_short}</span>
                             </div>
                             {dccon.tags.length > 0 && (
                                 <div className="flex flex-wrap items-center gap-2">

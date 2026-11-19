@@ -1,46 +1,10 @@
-/* Tailwind + shadcn 토큰(base-vega, zinc/indigo) - 테마 값 그대로, --link 말고는 손대지 않는다.
-   :root와 :host에 같이 건다(오버레이 shadow). 다크는 조상의 .dark 클래스가 정한다. */
+/* Tailwind + daisyUI 5. 부품 색은 내장 forest 테마(항상 어두움) 하나로 간다.
+   :root는 오버레이에서 overlay.tsx가 :host로 바꿔 넣는다(:root → :host 치환). dark: 변형과 콘텐츠 반전 규칙은 appearance.ts가 단 .dark 클래스를 본다. */
 @import "tailwindcss" source(none);
 @import "tw-animate-css";
-/* daisyUI 5 부품 클래스. 내장 테마는 쓰지 않고 아래 커스텀 테마 하나로만 간다. */
 @plugin "daisyui" {
-    themes: false;
+    themes: forest --default;
     logs: false;
-}
-/* daisyUI 테마 색을 전부 기존 토큰으로 간접 참조한다. 그래서 .dark 클래스가 토큰을 바꾸면 daisyUI 색도 함께 바뀐다(data-theme 전환 불필요, shadow DOM에서도 캐스케이드됨). */
-@plugin "daisyui/theme" {
-    name: "refresher";
-    default: true;
-    prefersdark: false;
-    color-scheme: light;
-    --color-primary: var(--primary);
-    --color-primary-content: var(--primary-foreground);
-    --color-secondary: var(--secondary);
-    --color-secondary-content: var(--secondary-foreground);
-    --color-accent: var(--accent);
-    --color-accent-content: var(--accent-foreground);
-    --color-neutral: var(--secondary);
-    --color-neutral-content: var(--secondary-foreground);
-    --color-base-100: var(--background);
-    --color-base-200: var(--muted);
-    --color-base-300: var(--accent);
-    --color-base-content: var(--foreground);
-    --color-info: oklch(68.5% 0.169 237.323);
-    --color-info-content: oklch(98.5% 0 0);
-    --color-success: oklch(72.3% 0.219 149.579);
-    --color-success-content: oklch(98.5% 0 0);
-    --color-warning: oklch(76.9% 0.188 70.08);
-    --color-warning-content: oklch(27.9% 0.077 45.635);
-    --color-error: var(--destructive);
-    --color-error-content: oklch(98.5% 0 0);
-    --radius-selector: 0.25rem;
-    --radius-field: 0.5rem;
-    --radius-box: var(--radius);
-    --size-selector: 0.25rem;
-    --size-field: 0.25rem;
-    --border: 1px;
-    --depth: 0;
-    --noise: 0;
 }
 /* 스캔 폴더 직접 지정 - 파이어폭스 심사 zip엔 .gitignore가 없어 자동 탐색을 못 쓴다. */
 @source "../../{components,core,entrypoints,features,stores,utils}";
@@ -49,86 +13,22 @@
 
 @custom-variant dark (&:is(.dark *));
 
-:root, :host {
-    --radius: 0.625rem;
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.141 0.005 285.823);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.141 0.005 285.823);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.141 0.005 285.823);
-    --primary: oklch(0.457 0.24 277.023);
-    --primary-foreground: oklch(0.962 0.018 272.314);
-    /* 강조색 글자 (링크, 글쓴이 표시 등). 다크 모드의 --primary는 흰 글자를 얹는 버튼 배경이라 글자로 쓰면 묻힌다. */
-    --link: oklch(0.457 0.24 277.023);
-    --secondary: oklch(0.967 0.001 286.375);
-    --secondary-foreground: oklch(0.21 0.006 285.885);
-    --muted: oklch(0.967 0.001 286.375);
-    --muted-foreground: oklch(0.552 0.016 285.938);
-    --accent: oklch(0.967 0.001 286.375);
-    --accent-foreground: oklch(0.21 0.006 285.885);
-    --destructive: oklch(0.577 0.245 27.325);
-    /* 이름 주의: --border는 daisyUI가 테두리 굵기(1px)로 쓴다. 색 토큰은 --border-color여야 충돌이 안난다. */
-    --border-color: oklch(0.92 0.004 286.32);
-    --input: oklch(0.92 0.004 286.32);
-    --ring: oklch(0.705 0.015 286.067);
-}
-
-.dark {
-    --background: oklch(0.141 0.005 285.823);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.21 0.006 285.885);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.21 0.006 285.885);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.398 0.195 277.366);
-    --primary-foreground: oklch(0.962 0.018 272.314);
+/* 디시 링크색(본문 a, text-link). 테마 색이 아니라 콘텐츠 색이라 직접 정의한다(항상 어두운 배경 위의 밝은 보라). */
+:root {
     --link: oklch(0.673 0.182 276.935);
-    --secondary: oklch(0.274 0.006 286.033);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.274 0.006 286.033);
-    --muted-foreground: oklch(0.705 0.015 286.067);
-    --accent: oklch(0.274 0.006 286.033);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border-color: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.552 0.016 285.938);
 }
 
 @theme inline {
     /* 폰트 교체 모듈이 켜져 있으면 html에 --refresher-font가 들어온다. */
     --font-sans: var(--refresher-font, -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif);
-    --radius-sm: calc(var(--radius) - 4px);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) + 4px);
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
-    --color-card: var(--card);
-    --color-card-foreground: var(--card-foreground);
-    --color-popover: var(--popover);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-primary: var(--primary);
-    --color-primary-foreground: var(--primary-foreground);
     --color-link: var(--link);
-    --color-secondary: var(--secondary);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-muted: var(--muted);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-accent: var(--accent);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-destructive: var(--destructive);
-    --color-border: var(--border-color);
-    --color-input: var(--input);
-    --color-ring: var(--ring);
 
     /* 자동 새로고침으로 새로 들어온 미리보기 댓글. 길이는 features/preview/index.ts의 FRESH_DURATION과 같다. */
     --animate-fresh-comment: fresh-comment 3s ease-out;
 
     @keyframes fresh-comment {
         from, 30% {
-            background: color-mix(in oklch, var(--primary) 15%, transparent);
+            background: color-mix(in oklch, var(--color-primary) 15%, transparent);
         }
     }
 
@@ -164,7 +64,7 @@
 }
 
 @layer components {
-    /* daisyUI .btn은 아이콘(svg) 크기를 정하지 않는다 - lucide 기본 24px 대신 shadcn 룩(16px, xs는 12px)을 기본으로 준다. 명시적 size-* 유틸리티가 이 규칙을 이긴다. */
+    /* daisyUI .btn은 아이콘(svg) 크기를 정하지 않는다 - lucide 기본 24px 대신 16px(xs는 12px)을 기본으로 준다. 명시적 size-* 유틸리티가 이 규칙을 이긴다. */
     .btn :where(svg:not([class*="size-"])) {
         width: 1rem;
         height: 1rem;
@@ -178,7 +78,7 @@
 
 @layer base {
     * {
-        @apply border-border outline-ring/50;
+        @apply border-base-content/10 outline-primary/50;
     }
 
     /* Tailwind v4는 버튼 커서를 기본(화살표)으로 되돌린다. v3처럼 누를 수 있는 버튼엔 손가락을 보인다 (Tailwind v4 업그레이드 안내의 규칙). */
@@ -188,7 +88,7 @@
     }
 
     body {
-        @apply bg-background text-foreground;
+        @apply bg-base-100 text-base-content;
         /* 크롬은 확장 페이지(옵션, 팝업)의 body에 자체 폰트 규칙을 레이어 밖에 넣어, 레이어 안의 규칙은 진다. 폰트 교체 설정이 먹도록 important로 건다. */
         font-family: var(--font-sans, sans-serif), sans-serif !important;
     }

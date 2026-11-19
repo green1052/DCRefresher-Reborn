@@ -18,7 +18,7 @@ interface ManagedToast {
 const TOAST_ICONS: Record<ToastData["type"], ReactNode> = {
     info: <Info className="size-4 shrink-0 text-link"/>,
     warning: <TriangleAlert className="size-4 shrink-0 text-amber-600 dark:text-amber-400"/>,
-    error: <CircleAlert className="size-4 shrink-0 text-destructive"/>
+    error: <CircleAlert className="size-4 shrink-0 text-error"/>
 };
 
 const ToastList = () => {
@@ -66,7 +66,7 @@ const ToastList = () => {
              className="toast pointer-events-none z-60 max-w-[360px] flex-col-reverse items-end">
             {toasts.map((toast) => (
                 <div key={toast.id} data-slot="toast" role={toast.level === "error" ? "alert" : "status"}
-                     className="pointer-events-auto flex max-w-[360px] items-center gap-3 rounded-xl bg-popover p-3 text-sm text-popover-foreground shadow-lg ring-1 ring-foreground/10">
+                     className="pointer-events-auto flex max-w-[360px] items-center gap-3 rounded-xl bg-base-100 p-3 text-sm text-base-content shadow-lg ring-1 ring-base-content/10">
                     {TOAST_ICONS[toast.level]}
                     <p className="flex-1">{toast.title}</p>
                     {toast.action && (

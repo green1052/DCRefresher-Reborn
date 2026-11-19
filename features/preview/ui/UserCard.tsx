@@ -58,7 +58,7 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
     };
 
     // 설정한 색이 없으면 아이디, IP는 회색, IP 정보는 파랑이다.
-    const identityClass = cn("truncate text-xs", !uidColor && "text-muted-foreground");
+    const identityClass = cn("truncate text-xs", !uidColor && "text-base-content/60");
 
     const badges: Record<BadgeKey, ReactNode> = {
         UID: user.id

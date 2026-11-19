@@ -53,7 +53,7 @@ export const ListRow = ({head, label, info, onEdit, onRemove}: {
 
     return (
         <>
-            <tr className="cursor-pointer border-b [content-visibility:auto] [contain-intrinsic-size:auto_45px] hover:bg-muted/50" onClick={onEdit}>
+            <tr className="cursor-pointer border-b [content-visibility:auto] [contain-intrinsic-size:auto_45px] hover:bg-base-200/50" onClick={onEdit}>
                 <th scope="row" className="text-left font-normal">
                     {/* 줄(tr)은 버튼이 될 수 없어 첫 칸을 편집 버튼으로 알린다 - click이 줄로 올라가 편집이 열린다. */}
                     <button type="button" title="수정" className={cn(FOCUS_RING, "block w-full text-left")}>
@@ -64,7 +64,7 @@ export const ListRow = ({head, label, info, onEdit, onRemove}: {
                 <td className="text-right">
                     {/* 줄마다 툴팁 부품이나 Base UI Button을 달면 수천 줄에서 느려지므로 title과 맨 button 포커스 링을 쓴다. */}
                     <button type="button" aria-label={`${label} 삭제`} title="삭제"
-                            className={cn(FOCUS_RING, "grid size-8 place-items-center rounded-[min(var(--radius-md),10px)] text-destructive hover:bg-accent")}
+                            className={cn(FOCUS_RING, "grid size-8 place-items-center rounded-[10px] text-error hover:bg-base-200")}
                             onClick={(ev) => {
                                 ev.stopPropagation();
                                 panel.current = panelOf(ev.currentTarget);
@@ -231,7 +231,7 @@ export const ListTabs = <T extends string, I>({
                                             onClick={() => setCurrent(type)}>
                                         {names[type]}
                                         {total > 0 && (
-                                            <span className={cn("badge badge-sm", filtering ? "badge-primary" : "badge-secondary")}>
+                                            <span className={cn("badge badge-sm", filtering ? "badge-primary" : "")}>
                                                 {filtering ? `${list.length}/${total}` : total}
                                             </span>
                                         )}
@@ -296,7 +296,7 @@ export const ListTabs = <T extends string, I>({
                                     <>
                                     <div className="overflow-hidden rounded-lg border">
                                         <table className="table table-sm">
-                                            <thead className="bg-muted/50">
+                                            <thead className="bg-base-200/50">
                                                 <tr>
                                                     <th>{columns[0]}</th>
                                                     <th>{columns[1]}</th>

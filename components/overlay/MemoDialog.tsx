@@ -69,7 +69,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
             <DialogHeader>
                 <DialogTitle>메모</DialogTitle>
                 <DialogDescription>
-                    {MEMO_TYPE_NAMES[type]}: <strong className="text-foreground">{value}</strong>
+                    {MEMO_TYPE_NAMES[type]}: <strong className="text-base-content">{value}</strong>
                 </DialogDescription>
             </DialogHeader>
 
@@ -113,7 +113,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
                         </div>
                     )}
                     {scope && scope !== gallery && (
-                        <p className="text-muted-foreground">지금은 {scope} 갤러리 전용 메모입니다.</p>
+                        <p className="text-base-content/60">지금은 {scope} 갤러리 전용 메모입니다.</p>
                     )}
                 </div>
 

@@ -16,7 +16,7 @@ export const Section = ({title, desc, actions, children}: {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex flex-col items-start gap-1.5">
                         {title && <h2 className="leading-none font-semibold">{title}</h2>}
-                        {desc && <p className="text-sm text-muted-foreground">{desc}</p>}
+                        {desc && <p className="text-sm text-base-content/60">{desc}</p>}
                     </div>
                     {actions && <div className="flex items-center gap-2">{actions}</div>}
                 </div>
@@ -35,5 +35,5 @@ export const SearchInput = ({className, ...props}: ComponentProps<"input">) => (
 );
 
 export const EmptyList = ({children}: { children: ReactNode }) => (
-    <p className="w-full p-8 text-center text-sm text-muted-foreground">{children}</p>
+    <p className="w-full p-8 text-center text-sm text-base-content/60">{children}</p>
 );

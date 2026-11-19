@@ -511,7 +511,7 @@ test.describe("미리보기 댓글", () => {
     test("본문이 확장 UI의 클래스를 써도 본문 상자 밖을 덮지 못한다", async ({listPage}) => {
         const frame = await listPage.openPreview();
         const contents = frame.locator(".refresher-preview-contents");
-        await contents.evaluate((box) => box.insertAdjacentHTML("beforeend", "<div class=\"fixed inset-0 z-50 bg-background\" id=\"cover\"></div>"));
+        await contents.evaluate((box) => box.insertAdjacentHTML("beforeend", "<div class=\"fixed inset-0 z-50 bg-base-100\" id=\"cover\"></div>"));
         const [outer, cover] = await Promise.all([contents.boundingBox(), frame.locator("#cover").boundingBox()]);
         expect(cover).toEqual(outer);
     });

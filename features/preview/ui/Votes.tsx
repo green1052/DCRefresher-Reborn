@@ -56,14 +56,14 @@ export const Votes = ({post}: { post: PostInfo }) => {
     // 숫자까지 읽히게 라벨에 넣는다. aria-label은 버튼 안의 글을 대신한다.
     return (
         <div className="flex items-center justify-center gap-3 py-6">
-            <button type="button" className="btn btn-secondary h-10 px-4 text-sm font-medium" aria-label={`추천 ${upvotes || "X"}${fixedUpvotes ? ` (고정닉 ${fixedUpvotes})` : ""}`}
+            <button type="button" className="btn" aria-label={`추천 ${upvotes || "X"}${fixedUpvotes ? ` (고정닉 ${fixedUpvotes})` : ""}`}
                     disabled={voting !== null} onClick={() => onVote("U")}>
                 {voting === "U" ? <span aria-hidden className="loading loading-spinner size-4"/> : <ChevronUp/>}
                 {upvotes || "X"}
-                {fixedUpvotes && <span className="text-muted-foreground">({fixedUpvotes})</span>}
+                {fixedUpvotes && <span className="text-base-content/60">({fixedUpvotes})</span>}
             </button>
             {downvotes !== undefined && (
-                <button type="button" className="btn btn-secondary h-10 px-4 text-sm font-medium" aria-label={`비추천 ${downvotes}`} disabled={voting !== null}
+                <button type="button" className="btn" aria-label={`비추천 ${downvotes}`} disabled={voting !== null}
                         onClick={() => onVote("D")}>
                     {voting === "D" ? <span aria-hidden className="loading loading-spinner size-4"/> : <ChevronDown/>}
                     {downvotes}
@@ -73,7 +73,7 @@ export const Votes = ({post}: { post: PostInfo }) => {
                 <Link2/>
             </TooltipButton>
             {/* 링크 버튼은 <a>여야 새 탭/링크 동작이 보존된다. */}
-            <a className="btn btn-square btn-ghost size-10" href={preData?.link ?? location.href} target="_blank" rel="noreferrer"
+            <a className="btn btn-square btn-ghost" href={preData?.link ?? location.href} target="_blank" rel="noreferrer"
                aria-label="새 탭으로 열기" data-tip="새 탭으로 열기">
                 <ExternalLink/>
             </a>

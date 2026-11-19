@@ -121,7 +121,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                                          options={{"": "기본값", ...DETECT_MODE_NAMES}}/>
                     </div>
 
-                    {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+                    {error && <p role="alert" className="text-sm text-error">{error}</p>}
                 </div>
 
                 <DialogActions>

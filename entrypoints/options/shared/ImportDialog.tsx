@@ -61,7 +61,7 @@ export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 
                     <>
                         <input ref={file} type="file" accept=".json,application/json" hidden aria-label="JSON 파일"
                                onChange={(ev) => void submitFile(ev.currentTarget.files?.[0])}/>
-                        <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => file.current?.click()}>
+                        <button type="button" className="btn" disabled={busy} onClick={() => file.current?.click()}>
                             <FileUp className="size-4"/> 파일에서 불러오기
                         </button>
                     </>

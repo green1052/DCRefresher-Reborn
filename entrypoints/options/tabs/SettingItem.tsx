@@ -71,7 +71,7 @@ const ColorControl = ({schema, value, compact, descId, onChange}: NarrowProps<"c
 
     return (
         <div className="flex items-center gap-2">
-            {!compact && <span className="text-muted-foreground tabular-nums">{draft}</span>}
+            {!compact && <span className="text-base-content/60 tabular-nums">{draft}</span>}
             <ColorInput
                 aria-label={schema.name}
                 aria-describedby={descId}
@@ -122,7 +122,7 @@ const KeyControl = ({schema, value, takenKeys = [], descId, onChange}: NarrowPro
     };
 
     return (
-        <button type="button" className={cn("btn min-w-18", taken ? "btn-error" : listening ? "btn-primary" : "btn-secondary")}
+        <button type="button" className={cn("btn min-w-18", taken ? "btn-error" : listening ? "btn-primary" : "")}
                 aria-label={`${schema.name}: ${shown}`}
                 aria-describedby={descId}
                 onClick={() => setListening(true)}
@@ -224,7 +224,7 @@ const OrderControl = ({schema, value: order, descId, onChange}: NarrowProps<"ord
                     key={key}
                     data-key={key}
                     className={cn(
-                        "flex cursor-grab items-center gap-2 rounded-md border bg-background py-1 pr-1 pl-2",
+                        "flex cursor-grab items-center gap-2 rounded-md border bg-base-100 py-1 pr-1 pl-2",
                         dragging === index && "opacity-40",
                         over === index && dragging !== null && "bg-primary/10"
                     )}
@@ -249,7 +249,7 @@ const OrderControl = ({schema, value: order, descId, onChange}: NarrowProps<"ord
                         drop(index);
                     }}
                 >
-                    <GripVertical className="size-3.5 text-muted-foreground"/>
+                    <GripVertical className="size-3.5 text-base-content/60"/>
                     <span className="flex-1">{label(key)}</span>
                     {/* 버튼마다 항목 이름을 붙인다. '위로'만 있으면 어느 항목을 옮기는지 들리지 않는다. */}
                     <button type="button" className="btn btn-ghost btn-square btn-xs" aria-label={`${label(key)} 위로`}
@@ -302,7 +302,7 @@ export const SettingItem = ({schema, value, compact, takenKeys, onChange}: Setti
                 {compact ? (
                     <span id={descId} hidden>{schema.desc}</span>
                 ) : (
-                    <p id={descId} className="text-xs text-muted-foreground">{schema.desc}</p>
+                    <p id={descId} className="text-xs text-base-content/60">{schema.desc}</p>
                 )}
             </div>
 

@@ -38,7 +38,7 @@ export const ErrorBlock = ({error}: { error: ErrorState }) => {
                 {text}
                 <div className="mt-2 flex gap-2">
                     {showOriginal && (
-                        <a className="btn btn-sm btn-secondary" href={preData?.link ?? location.href} target="_blank" rel="noreferrer">
+                        <a className="btn btn-sm" href={preData?.link ?? location.href} target="_blank" rel="noreferrer">
                             <ExternalLink className="size-4"/>
                             원문 열기
                         </a>
@@ -46,7 +46,7 @@ export const ErrorBlock = ({error}: { error: ErrorState }) => {
                     {!deleted && (
                         <button
                             type="button"
-                            className={cn("btn btn-sm", original ? "btn-secondary" : "btn-error")}
+                            className={cn("btn btn-sm", original ? "" : "btn-error")}
                             // 같은 글을 다시 열면 컨트롤러가 제자리에서 다시 받는다.
                             onClick={() => preData && usePreviewStore.getState().requestOpen(preData, usePreviewStore.getState().commentsOnly)}
                         >

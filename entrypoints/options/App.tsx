@@ -67,7 +67,7 @@ const Sidebar = ({tab, onSelect}: {
                     key={id}
                     type="button"
                     aria-current={tab === id ? "page" : undefined}
-                    className={cn("btn btn-ghost h-10 min-h-10 px-4 text-sm font-medium justify-start", tab === id && "bg-muted")}
+                    className={cn("btn btn-ghost justify-start", tab === id && "bg-base-200")}
                     onClick={() => onSelect(id)}
                 >
                     <Icon className="size-4"/> {label}
@@ -77,7 +77,7 @@ const Sidebar = ({tab, onSelect}: {
 
         <div className="mt-auto hidden md:block">
             <div role="none" className="divider m-0 mb-3"/>
-            <p className="px-2 text-xs text-muted-foreground">v{VERSION}</p>
+            <p className="px-2 text-xs text-base-content/60">v{VERSION}</p>
         </div>
     </div>
 );
@@ -119,7 +119,7 @@ export function App() {
                 <div key={current.id} className="tab-enter mx-auto max-w-[880px] outline-none" tabIndex={-1}>
                     <h1 className="mb-6 text-2xl font-bold">{current.label}</h1>
                     {status === "failed"
-                        ? <p className="text-destructive">저장된 데이터를 읽지 못했습니다. 페이지를 새로고침해 주세요.</p>
+                        ? <p className="text-error">저장된 데이터를 읽지 못했습니다. 페이지를 새로고침해 주세요.</p>
                         : status === "ready" && current.content()}
                 </div>
             </div>

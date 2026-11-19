@@ -136,13 +136,13 @@ const MemoFormDialog = ({
                                 value={state.color}
                                 onChange={(ev) => set({color: ev.target.value})}
                             />
-                            <button type="button" className="btn btn-secondary" onClick={() => set({color: randomColor()})}>
+                            <button type="button" className="btn" onClick={() => set({color: randomColor()})}>
                                 랜덤
                             </button>
                         </div>
                     </div>
 
-                    {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+                    {error && <p role="alert" className="text-sm text-error">{error}</p>}
                 </div>
 
                 <DialogActions>
@@ -236,10 +236,10 @@ export function MemoTab() {
                 onAdd={(type) => setForm({type, user: "", text: "", color: randomColor(), gallery: ""})}
                 toolbar={() => (
                     <div className="flex flex-wrap gap-2">
-                        <button type="button" className="btn btn-secondary" onClick={() => setAppImport(true)}>
+                        <button type="button" className="btn" onClick={() => setAppImport(true)}>
                             <Smartphone className="size-4"/> 공앱 메모 가져오기
                         </button>
-                        <button type="button" className="btn btn-secondary" onClick={() => void copyAppMemos()}>
+                        <button type="button" className="btn" onClick={() => void copyAppMemos()}>
                             <ClipboardCopy className="size-4"/> 공앱 형식으로 복사
                         </button>
                     </div>
@@ -262,11 +262,11 @@ export function MemoTab() {
                                 {/* background 축약은 가져온 메모의 url(...)을 배경 이미지로 불러온다. 색 속성만 쓴다. */}
                                 <span className="size-2.5 shrink-0 rounded-full" style={{backgroundColor: entry.color}}/>
                                 <span className="font-medium">{user}</span>
-                                {entry.gallery && <span className="badge badge-secondary">{entry.gallery}</span>}
+                                {entry.gallery && <span className="badge">{entry.gallery}</span>}
                             </span>
                         }
                         label={user}
-                        info={<span className="text-muted-foreground">{entry.text}</span>}
+                        info={<span className="text-base-content/60">{entry.text}</span>}
                         onEdit={() => setForm({type, user, text: entry.text, color: entry.color, gallery: entry.gallery ?? ""})}
                         onRemove={remove}
                     />

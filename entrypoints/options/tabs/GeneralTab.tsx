@@ -54,7 +54,7 @@ const ModuleSettings = ({feature, settings, shown}: { feature: ModuleInfo; setti
                         {group ? (
                             <div className="py-3" role="group" aria-label={group.name}>
                                 <p className="font-medium">{group.name}</p>
-                                <p className="mb-2 text-xs text-muted-foreground">{group.desc}</p>
+                                <p className="mb-2 text-xs text-base-content/60">{group.desc}</p>
                                 {/* 글 입력칸, 슬라이더는 칸 하나에 넣기엔 좁다. 섞여 있으면 묶음 전체를 한 줄에 하나씩 그려 조작부를 오른쪽 끝에 맞춘다. */}
                                 <div className={entries.some(([, schema]) => schema.type === "text" || schema.type === "range") ? "grid grid-cols-1 gap-x-6" : "grid grid-cols-2 gap-x-6 sm:grid-cols-3"}>
                                     {entries.map((entry) => item(entry, true))}
@@ -82,7 +82,7 @@ const ModuleCard = ({feature, shown, searching}: { feature: ModuleInfo; shown: S
             <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-6">
                 <div className="min-w-0">
                     <h2 className="text-base font-medium">{feature.name}</h2>
-                    <p className="text-sm text-muted-foreground">{feature.description}</p>
+                    <p className="text-sm text-base-content/60">{feature.description}</p>
                 </div>
                 <input
                     type="checkbox"
@@ -107,7 +107,7 @@ const ModuleCard = ({feature, shown, searching}: { feature: ModuleInfo; shown: S
                         >
                             <div className="mt-2 flex flex-col gap-3 px-6">
                                 {/* 검색으로 펼친 꺼진 모듈. 값은 바꿀 수 있지만 켜야 적용되므로 흐리게 그린다. */}
-                                {!enabled && <p className="pt-4 text-xs text-muted-foreground">모듈을 켜야 적용됩니다.</p>}
+                                {!enabled && <p className="pt-4 text-xs text-base-content/60">모듈을 켜야 적용됩니다.</p>}
                                 <div className={enabled ? undefined : "opacity-60"}>
                                     <ModuleSettings feature={feature} settings={settings} shown={shown}/>
                                 </div>

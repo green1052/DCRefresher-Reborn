@@ -26,7 +26,7 @@ const MENU_ITEM = "btn btn-ghost btn-sm w-full cursor-pointer justify-start font
 
 const MenuItem = ({danger, className, ...props}: ComponentProps<"button"> & { danger?: boolean }) => (
     <button type="button"
-            className={cn(MENU_ITEM, danger && "text-destructive hover:bg-destructive/10 hover:text-destructive", className)}
+            className={cn(MENU_ITEM, danger && "text-error hover:bg-error/10 hover:text-error", className)}
             {...props}/>
 );
 
@@ -54,7 +54,7 @@ const DcconSummary = ({code, onOpen}: { code: string; onOpen: () => void }) => {
                     <img src={urls.dccon.image + dccon.info.main_img_path} alt="" className="size-10 flex-none rounded-sm object-contain"/>
                     <span className="flex min-w-0 flex-col items-start gap-0.5">
                         <strong>{dccon.info.title}</strong>
-                        {dccon.info.description && <span className="line-clamp-2 text-left text-xs text-muted-foreground">{dccon.info.description}</span>}
+                        {dccon.info.description && <span className="line-clamp-2 text-left text-xs text-base-content/60">{dccon.info.description}</span>}
                     </span>
                 </>
             ) : failed ? (
@@ -82,11 +82,11 @@ const CopyRow = ({label, value, onCopy, onSearch, color, valueClassName}: {
 }) => (
     <div className="flex items-center">
         <MenuItem className="h-auto min-h-8 min-w-0 flex-1 py-1.5 whitespace-normal" title="클릭하면 복사됩니다." onClick={() => onCopy(value)}>
-            <span className="w-18 shrink-0 text-left text-muted-foreground">{label}</span>{" "}
+            <span className="w-18 shrink-0 text-left text-base-content/60">{label}</span>{" "}
             <strong className={cn("min-w-0 text-left break-keep wrap-anywhere", valueClassName)} style={{color}}>{value}</strong>
         </MenuItem>
         {onSearch && (
-            <button type="button" className="btn btn-ghost btn-square btn-sm shrink-0 cursor-pointer text-muted-foreground"
+            <button type="button" className="btn btn-ghost btn-square btn-sm shrink-0 cursor-pointer text-base-content/60"
                     aria-label={`${label}(으)로 글 검색`} title={`${label}(으)로 글 검색`}
                     onClick={onSearch}>
                 <Search className="size-4"/>
@@ -132,18 +132,18 @@ const BlockRules = ({rules, defaults}: { rules: BlockRule[]; defaults: Record<Bl
     return (
         <>
             <Separator/>
-            <p className="text-xs text-muted-foreground">걸린 차단 규칙</p>
+            <p className="text-xs text-base-content/60">걸린 차단 규칙</p>
             <div className="flex flex-col gap-1">
                 {hits.map(({type, entry}) => {
                     const name = blockLabel(entry);
                     return (
                         <div key={entry.id} className="flex items-center justify-between gap-2">
                             <span className="truncate text-xs" title={entry.isRegex ? "정규식 - 풀면 이 규칙에 걸린 다른 대상도 함께 풀립니다." : undefined}>
-                                <span className="text-muted-foreground">{TYPE_NAMES[type]}</span> {name}
-                                {entry.isRegex && <span className="text-muted-foreground"> (정규식)</span>}
-                                {entry.gallery && <span className="text-muted-foreground"> (이 갤러리만)</span>}
+                                <span className="text-base-content/60">{TYPE_NAMES[type]}</span> {name}
+                                {entry.isRegex && <span className="text-base-content/60"> (정규식)</span>}
+                                {entry.gallery && <span className="text-base-content/60"> (이 갤러리만)</span>}
                             </span>
-                            <button type="button" className="btn btn-ghost btn-xs shrink-0 cursor-pointer text-destructive"
+                            <button type="button" className="btn btn-ghost btn-xs shrink-0 cursor-pointer text-error"
                                     aria-label={`${TYPE_NAMES[type]} ${name} 차단 해제`}
                                     onClick={() => void unblock(type, entry)}>해제</button>
                         </div>
@@ -151,7 +151,7 @@ const BlockRules = ({rules, defaults}: { rules: BlockRule[]; defaults: Record<Bl
                 })}
                 {Array.from(allowLists, ([type, entries]) => (
                     <span key={type} className="text-xs">
-                        <span className="text-muted-foreground">{TYPE_NAMES[type]}</span> 허용 목록({entries.length}개)에 없음
+                        <span className="text-base-content/60">{TYPE_NAMES[type]}</span> 허용 목록({entries.length}개)에 없음
                     </span>
                 ))}
             </div>
@@ -174,7 +174,7 @@ export const DcconPackageDialog = ({target, onClose}: { target: SelectedUser; on
                 </DialogDescription>
             </DialogHeader>
             <DialogActions>
-                <button type="button" className="btn btn-secondary" onClick={() => choose("each")}>하나씩 차단</button>
+                <button type="button" className="btn" onClick={() => choose("each")}>하나씩 차단</button>
                 <button type="button" className="btn btn-primary" onClick={() => choose("bundle")}>묶어서 차단</button>
             </DialogActions>
         </ModalDialog>
@@ -285,7 +285,7 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
         <div ref={popup} data-slot="popover-content" role="dialog"
              aria-label={selected.dccon ? "디시콘 메뉴" : `${selected.nick || identity || "사용자"} 메뉴`}
              style={{left: bubble.x, top: bubble.y + 4}}
-             className="fixed isolate z-50 flex min-w-[200px] max-w-[320px] flex-col gap-2 rounded-md bg-popover p-2 text-sm text-popover-foreground shadow-md ring-1 ring-foreground/10 outline-none duration-100 animate-in fade-in-0 zoom-in-95">
+             className="fixed isolate z-50 flex min-w-[200px] max-w-[320px] flex-col gap-2 rounded-md bg-base-100 p-2 text-sm text-base-content shadow-md ring-1 ring-base-content/10 outline-none duration-100 animate-in fade-in-0 zoom-in-95">
             {/* 창이 닫힐 때 사라진 버블 대신 연 요소로 돌아오게 먼저 포커스를 옮겨 둔다. */}
             {selected.dccon ? (
                 <>
