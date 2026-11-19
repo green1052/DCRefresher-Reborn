@@ -245,9 +245,13 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
         const stillCurrent = (): boolean => useUiStore.getState().bubble === bubble;
         const onKeyDown = (ev: KeyboardEvent): void => {
             if (ev.key !== "Escape") return;
-            // 모달 창이 열려 있으면 그 창이 Esc를 받는다(native dialog의 cancel).
-            if (overlay.portal?.querySelector("dialog[open]")) return;
+            const tree = overlay.portal?.getRootNode();
+            const dialog = tree instanceof ShadowRoot ? tree.querySelector("dialog[open]") : null;
+            // 모달 창이 열려 있으면 그 창이 Esc를 받는다(native dialog의 cancel). 버블이 그 창 안에 있을 때는 버블이 먼저 닫힌다.
+            if (dialog && !dialog.contains(popup.current!)) return;
             if (!stillCurrent()) return;
+            // keydown의 기본 동작(모달 창의 cancel)까지 막는다.
+            ev.preventDefault();
             ev.stopPropagation();
             useUiStore.getState().closeBubble();
         };
@@ -348,7 +352,11 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
             {rules.length > 0 && <BlockRules rules={rules} defaults={defaults}/>}
         </div>
     );
-    return overlay.portal ? createPortal(content, overlay.portal) : content;
+    // 모달 창(native dialog, top layer)이 열려 있으면 그 안에 그린다 - 밖에 그리면 아무리 z-index를 올려도 창 뒤로 숨는다.
+    // dialog.modal은 fixed 풀스크린이라 그 안의 fixed 좌표도 그대로 화면에 붙는다. 정보 창은 app 트리의 기능 오버레이 호스트가 그리므로 shadow 루트 전체에서 찾는다.
+    const shadowRoot = overlay.portal?.getRootNode();
+    const host = (shadowRoot instanceof ShadowRoot ? shadowRoot.querySelector("dialog[open]") : null) ?? overlay.portal;
+    return host ? createPortal(content, host) : content;
 };
 
 export const BubbleHost = (actions: BubbleActions) => {

@@ -1,5 +1,3 @@
-/* ===== 미리보기 (preview 모듈): 목록에 거는 표시 ===== */
-
 /* 목록 키보드 이동으로 고른 글 (keyboard.ts). */
 .gall_list .refresherSelected > td {
     background: rgb(59 72 144 / 10%) !important;

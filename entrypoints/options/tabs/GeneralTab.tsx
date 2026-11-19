@@ -4,6 +4,7 @@ import { Fragment, type RefObject } from "preact";
 import {useCollapse} from "@/components/useCollapse";
 import {defaultValue} from "@/core/module/settings";
 import type {LabeledSetting, ModuleInfo} from "@/core/module/types";
+import {useDebounced} from "@/utils/useDebounced";
 import features from "@/features/meta";
 import {useModulesStore} from "@/stores/modules";
 import {SAVE_FAILED} from "@/utils/error";
@@ -144,7 +145,8 @@ const useSearchHighlight = (root: RefObject<HTMLElement | null>, needle: string)
 
 export function GeneralTab() {
     const [query, setQuery] = useState("");
-    const needle = query.trim().toLowerCase();
+    // 필터와 하이라이트는 치는 내내 돌면 무겁다 - 입력이 조용해진 뒤에야 계산한다.
+    const needle = useDebounced(query).trim().toLowerCase();
     const matched = features.flatMap((feature) => {
         const shown = matchSettings(feature, needle);
         return shown ? [{feature, shown}] : [];

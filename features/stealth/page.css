@@ -1,7 +1,5 @@
 @reference "../../assets/styles/shared.css";
 
-/* ===== 스텔스 모드 (stealth 모듈) - html.refresherStealth, 버튼으로 잠시 보이기: html.stlth ===== */
-
 .refresherStealth {
     &:not(.stlth) {
         /* 미리보기(shadow DOM)엔 선택자가 닿지 않으므로 상속되는 변수로 알린다 (features/preview/overlay.css). */

@@ -60,9 +60,12 @@ const Separator = () => <div role="none" className="divider m-0"/>;
 /* ui/alert의 모양을 그대로 옮긴 것(ErrorBlock과 같음). */
 const ALERT = "alert w-full";
 
-/** 스크롤 끝에서 한 번 더 굴리면 넘어간다는 안내(v5 모양) - 누르거나 굴리는 것은 막지 않는다. */
+/** 스크롤 끝에서 한 번 더 굴리면 넘어간다는 안내(v5 모양) - 누르거나 굴리는 것은 막지 않는다.
+ *  pointer-events는 인라인으로 끈다: 이 칸은 #portal의 직계 자식이라 overlay.css의 `#portal > *`(레이어 밖)가
+ *  pointer-events-none 유틸리티(@layer 안)를 이겨, 안내가 화면을 덮은 채 아래 클릭을 삼킨다. */
 const SkipHint = ({dir}: { dir: number }) => (
-    <div className={cn("refresher-skip-hint pointer-events-none fixed inset-x-0 flex h-[40%] items-center justify-center text-white motion-reduce:animate-none",
+    <div style={{pointerEvents: "none"}}
+         className={cn("refresher-skip-hint fixed inset-x-0 flex h-[40%] items-center justify-center text-white motion-reduce:animate-none",
                        dir < 0
                            ? "top-0 animate-skip-hint-top bg-linear-to-b from-[rgb(12_23_53/0.7)] via-[rgb(32_42_72/0.3)] to-transparent"
                            : "bottom-0 animate-skip-hint-bottom bg-linear-to-t from-[rgb(12_23_53/0.7)] via-[rgb(32_42_72/0.3)] to-transparent")}>
@@ -284,21 +287,19 @@ export const Frame = () => {
                     ))}
                     </Fragment>
 
-                    {/* 맨 위로 / 댓글로 - 창 오른쪽 아래. 높이 0인 칸을 화면 아래 끝에 sticky로 붙여 긴 글을 읽는 동안에도 보이게 한다. */}
-                    <div className="sticky bottom-0 h-0">
-                        <div className="absolute right-4 bottom-4 flex flex-col gap-2">
-                            <TooltipButton tip="맨 위로" side="left" variant="secondary" size="icon" className="rounded-full"
-                                           onClick={() => scroller.current?.scrollTo({top: 0, behavior: smoothScroll()})}>
-                                <ArrowUp/>
-                            </TooltipButton>
-                            {hasComments && (
-                                <TooltipButton tip="댓글로" side="left" variant="secondary" size="icon" className="rounded-full"
-                                               onClick={() => commentsSection.current?.scrollIntoView({behavior: smoothScroll(), block: "start"})}>
-                                    <MessageSquare/>
-                                </TooltipButton>
-                            )}
-                        </div>
-                    </div>
+                </div>
+                {/* 맨 위로 / 댓글로 - 화면 오른쪽 아래(창 밖). 창 안에 두면 본문을 가린다. 스크롤 칸(fade) 안에 두면 닫힘 페이드도 함께 탄다. */}
+                <div className="fixed right-4 bottom-4 z-10 flex flex-col gap-2">
+                    <TooltipButton tip="맨 위로" side="left" variant="secondary" size="icon" className="rounded-full"
+                                   onClick={() => scroller.current?.scrollTo({top: 0, behavior: smoothScroll()})}>
+                        <ArrowUp/>
+                    </TooltipButton>
+                    {hasComments && (
+                        <TooltipButton tip="댓글로" side="left" variant="secondary" size="icon" className="rounded-full"
+                                       onClick={() => commentsSection.current?.scrollIntoView({behavior: smoothScroll(), block: "start"})}>
+                            <MessageSquare/>
+                        </TooltipButton>
+                    )}
                 </div>
                 {/* aria-modal 창 안에 두어 스크린 리더가 건너뛰지 않게 한다. */}
                 {visible && adminVisible && <AdminPanel/>}

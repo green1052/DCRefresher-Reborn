@@ -80,7 +80,12 @@ export const PreviewDialogRoot = ({fading, busy, blur, onWheel, scroller, childr
                 // 뒤 페이지를 inert로 막으므로 보조 기술에는 모달로 알린다.
                 role="dialog"
                 aria-modal="true"
-                onWheel={onWheel}
+                onWheel={(ev) => {
+                    // 스킵 제스처는 이 칸의 스크롤 위치로 판단하는데, 위에 뜬 native 모달(디시콘 팝업 등)이 이 칸의 DOM 자손이라
+                    // 휠이 버블링으로 올라온다(top-layer는 겹치는 순서일 뿐). 모달 안의 휠은 제스처에 안 넘긴다.
+                    if (ev.composedPath().some((node) => node instanceof HTMLDialogElement && node.open)) return;
+                    onWheel(ev);
+                }}
                 // click/contextmenu에서 닫는다 - pointerdown에서 닫으면 이어지는 click이 아래 목록에 떨어진다.
                 onPointerDown={(ev) => (pressedOutside.current = ev.target === ev.currentTarget)}
                 onPointerUp={(ev) => (pressedOutside.current = pressedOutside.current && ev.target === ev.currentTarget)}
@@ -88,6 +93,7 @@ export const PreviewDialogRoot = ({fading, busy, blur, onWheel, scroller, childr
                     if (pressedOutside.current && ev.target === ev.currentTarget) usePreviewStore.getState().requestClose();
                 }}
                 onContextMenu={(ev) => {
+                    // 프레임 밖(빈 스크롤 칸) 우클릭은 닫는다 - 닫힌 목록 위에 메뉴가 떠 어색해지므로 막는다. 안쪽은 브라우저 메뉴(복사 등)를 쓴다.
                     if (ev.target !== ev.currentTarget) return;
                     ev.preventDefault();
                     usePreviewStore.getState().requestClose();

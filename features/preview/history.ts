@@ -62,9 +62,9 @@ export const createPreviewHistory = (ctx: Ctx) => {
         /** 글 페이지에서 시작했다면 창을 다시 띄운다(preData를 넘겨 준다). */
         reopenFromEntry: (open: (preData: GalleryPreData) => void): void => {
             const entry = previewEntry(history.state);
+            const navigation = performance.getEntriesByType("navigation")[0];
             if (!entry || entry.doc === historyDoc || !entry.preData || !entry.back) return;
             const {preData, back} = entry;
-            const navigation = performance.getEntriesByType("navigation")[0];
             if (entry.reopen) {
                 replaceEntry({...entry, doc: historyDoc, reopen: false}, preData.link);
                 savedHistory = back;

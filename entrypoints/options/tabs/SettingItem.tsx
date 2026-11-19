@@ -156,7 +156,7 @@ const RangeControl = ({schema, value, descId, onChange}: NarrowProps<"range">) =
             {/* 드래그 중(input)에는 미리보기만 바꾸고, 놓을 때(네이티브 change) 저장한다. */}
             <input
                 type="range"
-                className="range range-primary flex-1"
+                className="range range-xs range-primary flex-1"
                 min={schema.min}
                 max={schema.max}
                 step={schema.step}

@@ -2,6 +2,7 @@ import {cn} from "cn";
 import {ClipboardCopy, FileDown, Plus, Trash2, Upload} from "lucide-preact";
 import { useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 import { type ComponentChild as ReactNode } from "preact";
+import {useDebounced} from "@/utils/useDebounced";
 
 import {ConfirmDialog} from "@/components/dialogs";
 import {FOCUS_RING} from "@/components/focusRing";
@@ -140,7 +141,8 @@ export const ListTabs = <T extends string, I>({
     const [query, setQuery] = useState("");
     // 열려 있는 종류 탭.
     const [current, setCurrent] = useState(types[0]);
-    const needle = query.trim().toLowerCase();
+    // 줄 거르기는 치는 내내 돌면 무겁다 - 입력이 조용해진 뒤에야 계산한다.
+    const needle = useDebounced(query).trim().toLowerCase();
     // 갤러리 거르기: all(전체), common(모든 갤러리 항목), g:<ID>(그 갤러리 한정 항목). 검색어처럼 모든 탭이 같이 쓴다.
     const [gallery, setGallery] = useState("all");
     // 표에 그리는 줄 수 - 종류마다 따로 세고 거르기가 바뀌면 처음 PAGE줄로 돌린다.

@@ -11,7 +11,8 @@ export const WithTooltip = ({tip, side = "top", trigger, children}: {
     trigger: ReactElement;
     children: ReactNode;
 }) => (
-    <span className={cn("tooltip", SIDE[side])} data-tip={tip}>
+    // inline-flex: inline-block이면 안의 단추 아래로 줄 간격(strut)이 붙어 제목 줄 높이가 커진다.
+    <span className={cn("tooltip inline-flex", SIDE[side])} data-tip={tip}>
         {cloneElement(trigger, undefined, children)}
     </span>
 );
