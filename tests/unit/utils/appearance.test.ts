@@ -1,12 +1,29 @@
-import {describe, expect, it} from "vitest";
+import {afterEach, describe, expect, it} from "vitest";
 
-import {setDarkAppearance} from "@/utils/appearance";
+import {followDcAppearance} from "@/utils/appearance";
 
-describe("setDarkAppearance", () => {
-    it("테마(forest)는 항상 어두워서 루트에 dark와 color-scheme을 항상 준다", () => {
+describe("followDcAppearance", () => {
+    let stop = (): void => undefined;
+    afterEach(() => {
+        stop();
+        document.getElementById("css-darkmode")?.remove();
+    });
+
+    it("글쓰기 페이지처럼 body에 붙였다 뗀 다크모드 링크도 따라간다", async () => {
         const root = document.createElement("div");
-        setDarkAppearance(root);
+        stop = followDcAppearance(root);
+        expect(root.classList.contains("dark")).toBe(false);
+        expect(root.dataset.theme).toBe("light");
+
+        const link = Object.assign(document.createElement("link"), {id: "css-darkmode", rel: "stylesheet"});
+        document.body.append(link);
+        await Promise.resolve();
         expect(root.classList.contains("dark")).toBe(true);
-        expect(root.style.colorScheme).toBe("dark");
+        expect(root.dataset.theme).toBe("black");
+
+        link.remove();
+        await Promise.resolve();
+        expect(root.classList.contains("dark")).toBe(false);
+        expect(root.dataset.theme).toBe("light");
     });
 });

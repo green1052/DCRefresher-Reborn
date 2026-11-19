@@ -1,9 +1,9 @@
-/* Tailwind + daisyUI 5. 부품 색은 내장 forest 테마(항상 어두움) 하나로 간다.
-   :root는 오버레이에서 overlay.tsx가 :host로 바꿔 넣는다(:root → :host 치환). dark: 변형과 콘텐츠 반전 규칙은 appearance.ts가 단 .dark 클래스를 본다. */
+/* Tailwind + daisyUI 5. 부품 색은 내장 테마 light(기본)/black(다크 모드) 둘로 간다.
+   :root는 오버레이에서 overlay.tsx가 :host로 바꿔 넣는다(:root → :host 치환). 테마 전환은 appearance.ts가 data-theme 속성으로, dark: 변형과 콘텐츠 반전 규칙은 같은 함수가 단 .dark 클래스를 본다. */
 @import "tailwindcss" source(none);
 @import "tw-animate-css";
 @plugin "daisyui" {
-    themes: forest --default;
+    themes: light --default, black;
     logs: false;
 }
 /* 스캔 폴더 직접 지정 - 파이어폭스 심사 zip엔 .gitignore가 없어 자동 탐색을 못 쓴다. */
@@ -13,8 +13,13 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* 디시 링크색(본문 a, text-link). 테마 색이 아니라 콘텐츠 색이라 직접 정의한다(항상 어두운 배경 위의 밝은 보라). */
-:root {
+/* 디시 링크색(본문 a, text-link). 테마 색이 아니라 콘텐츠 색이라 직접 정의한다 (라이트=진한 보라, 다크=밝은 보라). */
+:root,
+:host {
+    --link: oklch(0.457 0.24 277.023);
+}
+
+.dark {
     --link: oklch(0.673 0.182 276.935);
 }
 

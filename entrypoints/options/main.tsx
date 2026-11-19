@@ -2,11 +2,11 @@ import "@/assets/styles/pages.css";
 import {StrictMode} from "react";
 import {createRoot} from "react-dom/client";
 
-import {setDarkAppearance} from "@/utils/appearance";
+import {followSystemAppearance} from "@/utils/appearance";
 
 import {App} from "./App";
 
-setDarkAppearance(document.documentElement);
+followSystemAppearance();
 
 createRoot(document.getElementById("root")!).render(
     <StrictMode>

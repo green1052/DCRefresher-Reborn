@@ -5,11 +5,11 @@
 - 콘텐츠 스크립트는 디시 CSS와 섞이지 않게 `refresher-root` shadow DOM 안에 Preact 루트(`components/overlay/ContentRoot.tsx`)를 띄웁니다. 포털은 `overlay.portal`입니다.
 - 오버레이는 그릴 것이 처음 생길 때 띄우고 조건은 `needOverlayWhen(store, (state) => ...)`로 등록합니다(`components/overlay/demands.ts`). 새 UI는 자기 스토어의 조건에 상태를 더하면 됩니다.
 - 디시 페이지 자체를 바꾸는 CSS는 기능 폴더의 `page.css`입니다(`modules/feature-styles.ts`가 모아 `entrypoints/page.content.css`가 주입). 여러 모듈이 같이 쓰는 가림 규칙만 `assets/styles/content.css`에 있고, dev 중 `page.css`를 새로 만들면 dev를 다시 띄웁니다.
-- 콘텐츠 스크립트에서 import한 CSS는 오버레이를 처음 띄울 때 shadow에 들어갑니다(`cssInjectionMode: "manual"`, `entrypoints/content/overlay.tsx`가 `:root`를 `:host`로 바꿈). 오버레이 안 CSS는 `assets/styles/overlay.css`와 기능 폴더의 `overlay.css`입니다.
+- 콘텐츠 스크립트에서 import한 CSS는 오버레이를 처음 띄울 때 shadow에 들어갑니다(`cssInjectionMode: "manual"`, `entrypoints/content/overlay.tsx`). 치환 없이 그대로 쓴다 - Tailwind v4는 테마 변수를 `:root,:host`에 함께 두고, daisyUI 테마는 `[data-theme]` 셀렉터로도 붙는다(appearance.ts가 container에 건다). 오버레이 안 CSS는 `assets/styles/overlay.css`와 기능 폴더의 `overlay.css`입니다.
 - 오버레이의 Tailwind는 `overlay.css`가 `tailwind.css`를 불러 만드는데 옵션, 팝업 전용 부품(`@source not` 목록)은 스캔하지 않습니다. 오버레이에서 쓰게 되면 목록에서 빼지 않으면 `tests/unit/assets/styles/overlay.test.ts`가 실패합니다.
 - 페이지, 오버레이는 다른 문서라 같은 규칙은 `assets/styles/shared.css`의 `@utility`로 맞춥니다(`@reference` + `@apply`). `:is()`로 감싸져 명시도가 달라지므로 명시도가 중요한 곳은 규칙을 나눠 씁니다.
 - UI는 Tailwind 클래스로 꾸미고 CSS 파일에는 디시 HTML(미리보기 본문, `.refresher-html`)처럼 클래스를 못 다는 곳만 남깁니다. Tailwind는 적힌 클래스만 만들므로 이어 붙여 만들지 않습니다. Tailwind 리셋이 들어가고 `.refresher-html`만 `all: revert-layer`로 되돌립니다.
-- 테마는 daisyUI 내장 `forest` 하나입니다(항상 어두움). 테마를 새로 정의하지 않고 부품은 스톡 모양을 쓰되 치수·배치 유틸리티만 얹습니다. `utils/appearance.ts`의 `setDarkAppearance`가 루트에 `.dark` 클래스와 `color-scheme: dark`를 항상 단다(`dark:` 변형, 미리보기 본문 반전 규칙이 따름). 강조색 글자는 `text-link`(`--link`, 디시 링크색)로 칠합니다. 설정값은 `<html>`의 CSS 변수로 넘깁니다(커스텀 속성은 shadow를 넘어 상속, `--refresher-preview-font-size`).
+- 테마는 daisyUI 내장 `light`(기본)과 `black`(다크 모드) 둘입니다. 테마를 새로 정의하지 않고 부품은 스톡 모양을 쓰되 치수·배치 유틸리티만 얹습니다. `utils/appearance.ts`가 루트에 `data-theme`, `.dark` 클래스, `color-scheme`을 함께 단다 - 옵션·팝업은 `followSystemAppearance`(시스템), 오버레이는 `followDcAppearance`(디시 다크모드 `#css-darkmode` 링크 감시). `dark:` 변형과 미리보기 본문 반전 규칙이 따른다. 강조색 글자는 `text-link`(`--link`, 디시 링크색. 라이트=진한 보라, 다크=밝은 보라)로 칠합니다. 설정값은 `<html>`의 CSS 변수로 넘깁니다(커스텀 속성은 shadow를 넘어 상속, `--refresher-preview-font-size`).
 
 ## 부품
 

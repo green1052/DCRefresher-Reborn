@@ -95,8 +95,8 @@ const executeTurnstile = async ({sitekey, wait, appearance}: TurnstileConfig, ho
                 action: "comment",
                 appearance: host ? "always" : appearance || "interaction-only",
                 language: "ko",
-                // 확인 창은 항상 어두운 테마(forest)다.
-                ...(host && {theme: "dark"}),
+                // 확인 창 테마는 오버레이의 밝기(.dark)를 따라간다.
+                ...(host && {theme: host.closest(".dark") ? "dark" : "light"}),
                 callback: (token) => {
                     state = "ok";
                     tokenMs = Math.max(1, Math.round(performance.now() - started));
