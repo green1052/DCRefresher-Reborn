@@ -43,8 +43,7 @@ test.describe("옵션 - 설정 탭", () => {
         await expect(page.getByText("\"없는 설정\" 검색 결과 없음")).toBeVisible();
 
         await search.fill("");
-        // 검색 초기화는 디바운스 뒤에 반영된다 - 폴링으로 기다린다.
-        await expect.poll(() => options.cards.count()).toBeGreaterThanOrEqual(10);
+        expect(await options.cards.count()).toBeGreaterThanOrEqual(10);
         await expect(slider).toHaveCount(0);
     });
 

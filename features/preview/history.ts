@@ -1,4 +1,4 @@
-import {historyDoc, ownPreviewDepth, previewEntry, type SavedHistory} from "@/core/preview/history";
+import {historyDoc, previewEntry, type SavedHistory} from "@/core/preview/history";
 import type {GalleryPreData} from "@/core/preview/types";
 import {whenDomReady} from "@/utils/dom";
 
@@ -10,23 +10,11 @@ export const createPreviewHistory = (ctx: Ctx) => {
 
     const restore = (fromHistory: boolean) => {
         if (savedHistory) {
-            // 미리보기가 쌓은 만큼 뒤로 간다 - 기록 조작이 던지면 close가 끊기므로 삼킨다.
             const {title} = savedHistory;
-            const depth = ownPreviewDepth();
             try {
-                if (!fromHistory && depth > 0) {
-                    history.go(-depth);
-                    // go는 비동기라 이동이 끝난 popstate 뒤에 제목을 되돌린다(지금 바꾸면 방문 기록에 글 제목이 남는다).
-                    window.addEventListener("popstate", () => { document.title = title; }, {once: true, signal: ctx.signal});
-                } else {
-                    try {
-                        if (!fromHistory && location.href !== savedHistory.url) history.pushState(savedHistory.state, title, savedHistory.url);
-                    } catch (e) {
-                        console.error("미리보기 기록 되돌리기 실패:", e);
-                    }
-                    // popstate는 제목을 되돌리지 않는다.
-                    document.title = title;
-                }
+                // 목록 주소를 새 항목으로 쌓아 닫는다 - 미리보기 항목을 뒤 갈래에 남겨 뒤로 가기로 다시 열리게 한다. popstate로 닫은 때는 이미 목록에 있으니 쌓지 않는다.
+                if (!fromHistory && location.href !== savedHistory.url) history.pushState(savedHistory.state, title, savedHistory.url);
+                document.title = title;
             } catch (e) {
                 console.error("미리보기 기록 되돌리기 실패:", e);
             }
