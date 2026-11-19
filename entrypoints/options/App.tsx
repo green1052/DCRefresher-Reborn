@@ -1,10 +1,10 @@
-import {Ban, Database, Info, Keyboard, type LucideIcon, NotebookPen, Settings} from "lucide-react";
-import {lazy, Suspense, useEffect, useState, useSyncExternalStore} from "react";
+import {Ban, Database, Info, Keyboard, type LucideIcon, NotebookPen, Settings} from "lucide-preact";
+import {type ComponentChild, type ComponentType} from "preact";
+import { useEffect, useState } from "preact/hooks";
+import { useSyncExternalStore } from "@/utils/useSyncExternalStore";
 
 import {Notice} from "@/components/dialogs";
 import {ToastHost} from "@/components/overlay/Toasts";
-import {Button} from "@/components/ui/button";
-import {Separator} from "@/components/ui/separator";
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
 import {ExtensionPageVars, initModulesStore} from "@/stores/modules";
@@ -19,13 +19,26 @@ import {useOptionsStore} from "./optionsStore";
 import {ShortcutTab} from "./tabs/ShortcutTab";
 
 // 디시콘 비는 드물게 열리므로 옵션 페이지를 열 때 같이 불러오지 않는다.
-const DcconRain = lazy(() => import("./DcconRain").then(({DcconRain}) => ({default: DcconRain})));
+// preact에는 lazy/Suspense가 없어 불러오는 동안 null을 그리는 얇은 대체물을 쓴다(기존 fallback도 없었다).
+let DcconRainComponent: ComponentType | undefined;
+const DcconRain = () => {
+    const [Component, setComponent] = useState<ComponentType | undefined>(DcconRainComponent);
+    useEffect(() => {
+        if (!DcconRainComponent) {
+            void import("./DcconRain").then(({DcconRain}) => {
+                DcconRainComponent = DcconRain;
+                setComponent(DcconRain);
+            });
+        }
+    }, []);
+    return Component ? <Component/> : null;
+};
 
 interface TabDef {
     id: string;
     label: string;
     icon: LucideIcon;
-    content: () => React.ReactNode;
+    content: () => ComponentChild;
 }
 
 const TABS: TabDef[] = [
@@ -65,22 +78,21 @@ const Sidebar = ({tab, onSelect}: {
 
         <nav className="flex flex-wrap gap-1 md:flex-col md:flex-nowrap">
             {TABS.map(({id, label, icon: Icon}) => (
-                <Button
+                <button
                     key={id}
-                    size="lg"
-                    variant="ghost"
+                    type="button"
                     aria-current={tab === id ? "page" : undefined}
-                    className={cn("justify-start", tab === id && "bg-muted")}
+                    className={cn("btn btn-ghost justify-start", tab === id && "bg-base-200")}
                     onClick={() => onSelect(id)}
                 >
-                    <Icon data-icon="inline-start"/> {label}
-                </Button>
+                    <Icon className="size-4"/> {label}
+                </button>
             ))}
         </nav>
 
         <div className="mt-auto hidden md:block">
-            <Separator className="mb-3"/>
-            <p className="px-2 text-xs text-muted-foreground">v{VERSION}</p>
+            <div role="none" className="divider m-0 mb-3"/>
+            <p className="px-2 text-xs text-base-content/60">v{VERSION}</p>
         </div>
     </div>
 );
@@ -113,7 +125,7 @@ export function App() {
             <ExtensionPageVars/>
             <Sidebar tab={current.id} onSelect={(id) => (location.hash = id)}/>
             {/* 누를 때마다 새로 마운트해 무작위 배치와 끝내는 타이머를 처음부터 다시 건다. */}
-            {rain > 0 && <Suspense><DcconRain key={rain}/></Suspense>}
+            {rain > 0 && <DcconRain key={rain}/>}
             <Notice message={notice} onClose={() => useOptionsStore.setState({notice: null})}/>
             <ToastHost/>
 
@@ -122,7 +134,7 @@ export function App() {
                 <div key={current.id} className="tab-enter mx-auto max-w-[880px] outline-none" tabIndex={-1}>
                     <h1 className="mb-6 text-2xl font-bold">{current.label}</h1>
                     {status === "failed"
-                        ? <p className="text-destructive">저장된 데이터를 읽지 못했습니다. 페이지를 새로고침해 주세요.</p>
+                        ? <p className="text-error">저장된 데이터를 읽지 못했습니다. 페이지를 새로고침해 주세요.</p>
                         : status === "ready" && current.content()}
                 </div>
             </div>

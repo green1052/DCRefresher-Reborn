@@ -1,11 +1,11 @@
-/** Tailwind dark: 변형은 조상의 dark 클래스를 본다. color-scheme도 여기서 정한다. */
+/** Tailwind dark: 변형은 조상의 dark 클래스를 본다. daisyUI 테마(data-theme=light/black)와 color-scheme도 여기서 정한다. */
 const setAppearance = (root: HTMLElement, dark: boolean): void => {
     root.classList.toggle("dark", dark);
-    root.classList.toggle("light", !dark);
+    root.dataset.theme = dark ? "black" : "light";
     root.style.colorScheme = dark ? "dark" : "light";
 };
 
-/** 시스템 다크 모드를 따라간다. 첫 렌더 전에 불러 밝은 화면이 비치지 않게 한다. */
+/** 시스템 다크 모드를 따라간다 (옵션, 팝업). 첫 렌더 전에 불러 밝은 화면이 비치지 않게 한다. */
 export const followSystemAppearance = (): void => {
     const root = document.documentElement;
     const query = window.matchMedia("(prefers-color-scheme: dark)");

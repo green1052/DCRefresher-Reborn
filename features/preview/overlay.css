@@ -1,7 +1,5 @@
 @reference "../../assets/styles/shared.css";
 
-/* ===== 미리보기 (preview 모듈) - 오버레이 shadow 안. 공용 호스트 스타일(:host, 포털)은 assets/styles/overlay.css, 토스트, 버블 등 컴포넌트는 Tailwind ===== */
-
 /* 누르면 크게 보기나 원본 보기가 열리는 본문 이미지 (contentsClick.ts의 markPressable). */
 .refresher-preview-contents img[role="button"] {
     cursor: pointer;
@@ -47,14 +45,14 @@
     }
 
     /* 지운 댓글의 회색 글자(Comment.tsx) - 미리 뒤집어 반전 후에도 본문용 회색으로 보인다. */
-    .dark &.text-muted-foreground {
-        color: rgb(from var(--muted-foreground) calc(255 - r) calc(255 - g) calc(255 - b));
+    .dark &.text-base-content\/60 {
+        color: color-mix(in oklab, var(--color-base-content) 40%, black);
     }
 
     /* 최대 폭은 아래 * 규칙이 준다. */
     :is(img, video, iframe, embed) {
         border: 0;
-        border-radius: var(--radius);
+        border-radius: var(--radius-box);
     }
 
     a {
@@ -192,12 +190,12 @@
 
     &[data-dccon] {
         /* 스텔스 모드: 가려 두고 마우스를 올리면 보인다 (변수는 features/stealth/page.css가 페이지에서 넘긴다). */
-        --refresher-dccon-cover-border: var(--border);
+        --refresher-dccon-cover-border: color-mix(in oklab, var(--color-base-content) 15%, transparent);
         @apply refresher-dccon-cover;
 
-        /* 다크 모드에서는 이 상자가 통째로 뒤집히므로(.refresher-html) 테두리 색도 미리 뒤집는다. 아니면 거의 안 보인다. */
+        /* 다크 모드에서는 이 상자가 통째로 뒤집히므로(.refresher-html) 테두리 색도 미리 뒤집는다. 아니면 거의 안 보인다. 뒤집으면 흰색이 되게 검은 테두리를 준다. */
         .dark & {
-            --refresher-dccon-cover-border: rgb(from var(--border) calc(255 - r) calc(255 - g) calc(255 - b));
+            --refresher-dccon-cover-border: rgb(0 0 0 / 15%);
         }
 
         :is(img, video) {
@@ -329,7 +327,7 @@
 
 /* 미니 미리보기의 스크롤바(Mini.tsx) - 다크 모드에서는 상자가 뒤집히므로(.refresher-html) 미리 뒤집는다. 내용이 더 있다는 유일한 표시다. */
 .dark .refresher-mini-contents {
-    scrollbar-color: rgb(from var(--border) calc(255 - r) calc(255 - g) calc(255 - b)) transparent;
+    scrollbar-color: rgb(0 0 0 / 25%) transparent;
 }
 
 /* 본문에 든 차단 디시콘 (blockedDccons.ts). */

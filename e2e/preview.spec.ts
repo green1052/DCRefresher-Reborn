@@ -60,7 +60,7 @@ test.describe("미리보기", () => {
         });
     });
 
-    test("PageDown, PageUp으로 옆 글로 넘기고, 뒤로 가기는 앞서 본 글을 다시 열며, 닫으면 쌓은 주소를 모두 걷는다", async ({listPage}) => {
+    test("PageDown, PageUp으로 옆 글로 넘기고, 뒤로 가기는 앞서 본 글을 다시 열며, 닫으면 목록 주소로 돌아간다", async ({listPage}) => {
         const {page} = listPage;
         const shows = async (no: number): Promise<void> => {
             await expect(listPage.frameTitle).toHaveText(`[말머리] 글 ${no} 제목`);
@@ -134,6 +134,19 @@ test.describe("미리보기", () => {
         await listPage.page.goBack();
         await expect(listPage.frame).toHaveCount(0);
         await expect(listPage.page).toHaveURL(LIST_URL);
+    });
+
+    test("닫은 뒤 뒤로 가기로 미리보기를 다시 연다", async ({listPage}) => {
+        const {page} = listPage;
+        await listPage.openPreview();
+        await expect(listPage.frameTitle).toHaveText("[말머리] 글 3 제목");
+
+        await listPage.closePreview();
+        await expect(page).toHaveURL(LIST_URL);
+
+        await page.goBack();
+        await expect(listPage.frameTitle).toHaveText("[말머리] 글 3 제목");
+        await expect(page).toHaveURL(viewUrl(3));
     });
 
     test("방금 연 글을 닫았다 다시 열면 본문, 댓글을 다시 받지 않고, 댓글 새로고침은 받는다 (#273)", async ({listPage}) => {
@@ -511,7 +524,7 @@ test.describe("미리보기 댓글", () => {
     test("본문이 확장 UI의 클래스를 써도 본문 상자 밖을 덮지 못한다", async ({listPage}) => {
         const frame = await listPage.openPreview();
         const contents = frame.locator(".refresher-preview-contents");
-        await contents.evaluate((box) => box.insertAdjacentHTML("beforeend", "<div class=\"fixed inset-0 z-50 bg-background\" id=\"cover\"></div>"));
+        await contents.evaluate((box) => box.insertAdjacentHTML("beforeend", "<div class=\"fixed inset-0 z-50 bg-base-100\" id=\"cover\"></div>"));
         const [outer, cover] = await Promise.all([contents.boundingBox(), frame.locator("#cover").boundingBox()]);
         expect(cover).toEqual(outer);
     });

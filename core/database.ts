@@ -69,7 +69,7 @@ let loadedStamp = "";
 const stampOf = (meta: DatabaseMeta | null): string => `${meta?.version ?? ""}
 ${meta?.format ?? ""}`;
 
-// DB를 읽을 때마다 올리는 번호. vanilla 스토어에 둬 React가 배경 번들에 딸려 가지 않게 한다.
+// DB를 읽을 때마다 올리는 번호. vanilla 스토어에 둬 preact가 배경 번들에 딸려 가지 않게 한다.
 const versionStore = createStore(() => 0);
 
 export const databaseVersion = versionStore.getState;

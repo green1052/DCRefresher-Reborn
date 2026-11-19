@@ -1,8 +1,7 @@
 /** 단위 테스트 공용 도우미. 영역에만 필요한 도우미는 그 테스트 파일에 둔다. */
-import {act as reactAct} from "react";
-import {createRoot, type Root} from "react-dom/client";
-import {flushSync} from "react-dom";
-import type {ReactNode} from "react";
+import { render as preactRender } from "preact";
+import {act} from "preact/test-utils";
+import type { ComponentChild } from "preact";
 import {fakeBrowser} from "wxt/testing/fake-browser";
 
 import type {AnyModule, ModuleDefinition, SettingSchema} from "@/core/module/types";
@@ -15,27 +14,13 @@ import {emptyEntries, useBlocksStore} from "@/stores/blocks";
 /** 걸린 타이머 0과 저장소 변경 알림이 한 차례 돌 때까지 기다린다. */
 export const tick = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
 
-// 컨테이너마다 루트를 하나만 들고 다시 그린다 (같은 칸에 createRoot를 두 번 부르면 경고가 난다).
-const roots = new WeakMap<HTMLElement, Root>();
-
-/** (엘리먼트, 컨테이너) 모양으로 그린 직후 DOM을 읽을 수 있게 동기에 그린다. null이면 뗀다. */
-export const render = (element: ReactNode, container: HTMLElement): void => {
-    if (element === null || element === undefined) {
-        roots.get(container)?.unmount();
-        roots.delete(container);
-        return;
-    }
-    let root = roots.get(container);
-    if (!root) {
-        root = createRoot(container);
-        roots.set(container, root);
-    }
-    // React의 root.render는 비동기로 커밋한다. 테스트는 그린 직후 DOM을 읽으므로 flushSync로 기다린다.
-    flushSync(() => root!.render(element));
+/** (엘리먼트, 컨테이너) 모양으로 그린 직후 DOM을 읽을 수 있게 동기에 그린다. null이면 뗀다. preact의 render는 동기다. */
+export const render = (element: ComponentChild | null | undefined, container: HTMLElement): void => {
+    preactRender(element ?? null, container);
 };
 
-/** React의 act. 짝수는 await하고 쓴다. */
-export const act = reactAct as (callback: () => void | Promise<void>) => Promise<void>;
+/** act. 짝수는 await하고 쓴다. */
+export {act};
 
 /** storage.local의 값 하나 (키는 local: 없이). */
 export const stored = async (key: string): Promise<unknown> => (await fakeBrowser.storage.local.get(key))[key];

@@ -18,6 +18,8 @@ export const MODAL_OVERLAY_SELECTOR = "[data-slot=dialog-overlay], [data-slot=al
 export const isTyping = (ev: Event): boolean => {
     // 미리보기 창(비모달)과 이미지 크게 보기는 저마다 키를 받으므로 세지 않는다.
     if (overlay.portal?.querySelector(MODAL_OVERLAY_SELECTOR)) return true;
+    // native 모달(dialogs.tsx)은 overlay.portal 밖 shadow 트리에도 열리므로 이벤트 경로로도 찾는다.
+    if (ev.composedPath().some((node) => node instanceof HTMLDialogElement && node.open)) return true;
 
     const target = eventTarget(ev);
     return target instanceof HTMLElement && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);

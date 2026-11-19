@@ -5,7 +5,7 @@
 | 항목 | 사용 |
 |------|------|
 | 확장 프레임워크 | [WXT](https://wxt.dev). Chrome, Firefox 모두 MV3. 최소 버전(Chrome 140, Firefox 144)은 코드가 쓰는 가장 늦게 들어온 API에 맞추고, 더 새 API를 쓰면 `wxt.config.ts`에서 올립니다 |
-| UI | [Preact](https://preactjs.com) 11. 코드는 `react`로 짜고 `wxt.config.ts`가 `preact/compat`으로 연결. [shadcn/ui](https://ui.shadcn.com)(Base UI) + [Tailwind CSS](https://tailwindcss.com) v4 |
+| UI | [Preact](https://preactjs.com) 11(순수 preact — compat alias 없음). [daisyUI](https://daisyui.com) 5 + [Tailwind CSS](https://tailwindcss.com) v4 |
 | 상태 | zustand |
 | 저장소 | WXT storage (`wxt/utils/storage`) |
 | HTTP | ky |

@@ -7,7 +7,7 @@
 - 테스트는 `tests/unit/`에 소스 경로를 따라 둡니다. `modules/`에 두면 WXT가 모듈로 불러오므로 소스 옆에 두지 않습니다. 목, 스파이, fake 저장소, 타이머는 테스트마다 되돌아가므로(`tests/setup.ts`) 따로 되돌리지 않습니다.
 - `tests/setup.ts`는 Node, jsdom에 없는 API(`cookieStore`, `navigator.locks` 등)를 채웁니다. 기본 환경은 jsdom이고 방해하면 파일 머리에 `// @vitest-environment node`를 둡니다.
 - `vmThreads` 풀이라 Node 내장 모듈 오류는 `instanceof Error`이 어긋날 수 있습니다(그러면 `vitest.config.ts`의 `pool` 삭제).
-- 공통 도우미는 `tests/helpers.ts`. 시간 대기는 `tick()`, `expect.poll`을 쓰고 컴포넌트는 그 안의 `render`, `act`로 그립니다. Base UI(`components/ui`), `lucide-react`는 `vi.mock`으로 평범한 요소로 바꿉니다(`tests/unit/features/preview/ui/Votes.test.tsx`).
+- 공통 도우미는 `tests/helpers.ts`. 시간 대기는 `tick()`, `expect.poll`을 쓰고 컴포넌트는 그 안의 `render`, `act`로 그립니다. `lucide-preact`는 `vi.mock`으로 평범한 요소로 바꿉니다(`tests/unit/features/preview/ui/Votes.test.tsx`), 다이얼로그(`components/dialogs.tsx`)도 필요한 export만 갈아끼웁니다.
 - WXT API만 자동 import됩니다(`components`, `utils`는 직접). `#imports`를 mock할 때는 실제 경로(`wxt/utils/storage`)로 합니다. 모듈 단위 싱글턴은 테스트마다 다른 모듈 id를 쓰거나 한 테스트 안에서 이어 봅니다.
 
 ## E2E (Playwright)

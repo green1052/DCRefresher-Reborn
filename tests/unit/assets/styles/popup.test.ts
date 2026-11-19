@@ -38,8 +38,7 @@ describe("팝업 CSS 스캔 제외", () => {
     it("팝업이 그리는 화면(.tsx)은 스캔에서 뺀 소스가 아니다", () => {
         expect(excluded).toContain("{features,core,stores,components/overlay}");
         const reached = reachable("entrypoints/popup/main.tsx");
-        expect(reached).toContain("components/ui/button.tsx");
-        // 클래스는 화면(.tsx)에 있다. 팝업은 features, core, stores의 .ts(설정 메타, 상태)만 불러온다.
+        // 팝업은 daisyUI 클래스를 직접 쓰고 components/ui를 안 부른다. 클래스는 화면(.tsx)에 있다. 팝업은 features, core, stores의 .ts(설정 메타, 상태)만 불러온다.
         // 경로 패턴이 폴더면 그 안의 파일 전부가 빠진다.
         const hit = [...reached].filter((path) => path.endsWith(".tsx") &&
             excluded.some((pattern) => posix.matchesGlob(path, pattern) || posix.matchesGlob(path, `${pattern}/**`)));

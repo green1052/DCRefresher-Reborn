@@ -1,4 +1,5 @@
-import {type RefObject, useEffect} from "react";
+import { useEffect } from "preact/hooks";
+import { type RefObject } from "preact";
 
 import {useRunningModuleSettings} from "@/core/module/useModuleSettings";
 import {useBlocksStore} from "@/stores/blocks";

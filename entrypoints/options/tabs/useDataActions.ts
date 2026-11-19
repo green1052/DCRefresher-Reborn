@@ -1,4 +1,5 @@
-import {useState, type RefObject} from "react";
+import { useState } from "preact/hooks";
+import { type RefObject } from "preact";
 
 import {focusPanel} from "@/components/useReturnFocus";
 import {type BackupSlot, clearCloudBackups, collectLocalData, readBackupTargets, readCloudBackup, runBackup} from "@/core/backup";

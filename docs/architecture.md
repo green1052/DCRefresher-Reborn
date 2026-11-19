@@ -23,7 +23,7 @@ modules/                WXT 로컬 모듈 (모듈 api, 설정 타입, 단축키,
 core/                   모듈 시스템, 저장소 키, HTTP, 차단 판정, 파싱, 백업, DB
 stores/                 여러 화면이 같이 쓰는 zustand 스토어
 utils/                  라이브러리로 대신할 수 없는 도우미
-components/ui/          shadcn 부품 (CLI로 추가)
+components/              공용 컴포넌트(다이얼로그, 툴팁 등 — 부품 UI는 daisyUI 클래스로 인라인)
 scripts/                IP DB 빌드 스크립트
 ```
 

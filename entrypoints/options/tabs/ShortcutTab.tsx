@@ -1,8 +1,5 @@
-import {ExternalLink} from "lucide-react";
-import {useEffect, useState} from "react";
-
-import {Button} from "@/components/ui/button";
-import {Kbd} from "@/components/ui/kbd";
+import {ExternalLink} from "lucide-preact";
+import { useEffect, useState } from "preact/hooks";
 
 import {Section} from "../shared/widgets";
 
@@ -22,8 +19,9 @@ export function ShortcutTab() {
         <Section
             desc="단축키는 브라우저의 확장 프로그램 단축키 설정에서 변경할 수 있습니다."
             actions={
-                <Button
-                    variant="secondary"
+                <button
+                    type="button"
+                    className="btn"
                     onClick={() =>
                         // Firefox는 tabs.create로 about:addons를 열 수 없어 전용 API(137+)를 쓴다.
                         void (import.meta.env.BROWSER === "firefox"
@@ -32,8 +30,8 @@ export function ShortcutTab() {
                             : browser.tabs.create({url: "chrome://extensions/shortcuts"}))
                     }
                 >
-                    <ExternalLink data-icon="inline-start"/> 단축키 설정
-                </Button>
+                    <ExternalLink className="size-4"/> 단축키 설정
+                </button>
             }
         >
             <div className="flex flex-col divide-y">
@@ -42,7 +40,7 @@ export function ShortcutTab() {
                     .map((shortcut) => (
                         <div key={shortcut.name} className="flex items-center justify-between gap-3 py-3">
                             <span>{shortcut.description}</span>
-                            {shortcut.shortcut ? <Kbd>{shortcut.shortcut}</Kbd> : <span className="text-muted-foreground">없음</span>}
+                            {shortcut.shortcut ? <kbd className="kbd kbd-sm">{shortcut.shortcut}</kbd> : <span className="text-base-content/60">없음</span>}
                         </div>
                     ))}
             </div>

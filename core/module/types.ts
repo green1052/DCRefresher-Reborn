@@ -1,4 +1,4 @@
-import type {LucideIcon} from "lucide-react";
+import type {LucideIcon} from "lucide-preact";
 
 /** 설정 묶음. 같은 group의 설정을 옵션 화면에서 한 칸으로 모은다. */
 export interface SettingGroup {
@@ -67,7 +67,7 @@ export type ToggleKeyOf<M extends AnyModuleMeta> = NonNullable<M["toggles"]>[num
 
 export type CommandKeyOf<M extends AnyModuleMeta> = keyof NonNullable<M["commands"]> & string;
 
-/** 아이콘 모음. meta.ts는 배경 번들에도 들어가 React 아이콘을 두지 않는다. */
+/** 아이콘 모음. meta.ts는 배경 번들에도 들어가 preact 아이콘을 두지 않는다. */
 export type IconsOf<M extends AnyModuleMeta> = { module: LucideIcon } &
     ([ToggleKeyOf<M>] extends [never] ? { toggles?: never } : { toggles: Record<ToggleKeyOf<M>, LucideIcon> });
 

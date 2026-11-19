@@ -5,4 +5,3 @@
 @source not "../../entrypoints/{options,content,background}";
 @source not "../../{features,core,stores,components/overlay}";
 @source not "../../components/{dialogs.tsx,ColorInput.tsx,WithTooltip.tsx,useReturnFocus.ts}";
-@source not "../../components/ui/{alert-dialog,alert,checkbox,collapsible,dialog,empty,input-group,input,kbd,popover,radio-group,select,skeleton,slider,spinner,table,tabs,textarea,toggle-group,tooltip}.tsx";

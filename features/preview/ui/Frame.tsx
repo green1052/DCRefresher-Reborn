@@ -1,11 +1,7 @@
-import {Dialog} from "@base-ui/react/dialog";
-import {Archive, ArrowUp, CircleAlert, Eye, MessageSquare, RotateCw} from "lucide-react";
-import {Fragment, useEffect, useLayoutEffect, useRef, useState} from "react";
+import {Archive, ArrowUp, CircleAlert, Eye, MessageSquare, RotateCw} from "lucide-preact";
+import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
+import { Fragment } from "preact";
 
-import {Alert, AlertDescription} from "@/components/ui/alert";
-import {Button} from "@/components/ui/button";
-import {Separator} from "@/components/ui/separator";
-import {Spinner} from "@/components/ui/spinner";
 import {TooltipButton} from "@/components/WithTooltip";
 import {focusedElement} from "@/components/useReturnFocus";
 import {BLOCKED_TEXT} from "@/core/block";
@@ -54,14 +50,22 @@ const RefreshButton = ({label, run}: { label: string; run: () => Promise<void> }
             setBusy(true);
             void run().finally(() => setBusy(false));
         }}>
-            {busy ? <Spinner aria-hidden/> : <RotateCw/>}
+            {busy ? <span aria-hidden className="loading loading-spinner"/> : <RotateCw/>}
         </TooltipButton>
     );
 };
 
-/** 스크롤 끝에서 한 번 더 굴리면 넘어간다는 안내(v5 모양) - 누르거나 굴리는 것은 막지 않는다. */
+const Separator = () => <div role="none" className="divider m-0"/>;
+
+/* ui/alert의 모양을 그대로 옮긴 것(ErrorBlock과 같음). */
+const ALERT = "alert w-full";
+
+/** 스크롤 끝에서 한 번 더 굴리면 넘어간다는 안내(v5 모양) - 누르거나 굴리는 것은 막지 않는다.
+ *  pointer-events는 인라인으로 끈다: 이 칸은 #portal의 직계 자식이라 overlay.css의 `#portal > *`(레이어 밖)가
+ *  pointer-events-none 유틸리티(@layer 안)를 이겨, 안내가 화면을 덮은 채 아래 클릭을 삼킨다. */
 const SkipHint = ({dir}: { dir: number }) => (
-    <div className={cn("refresher-skip-hint pointer-events-none fixed inset-x-0 flex h-[40%] items-center justify-center text-white motion-reduce:animate-none",
+    <div style={{pointerEvents: "none"}}
+         className={cn("refresher-skip-hint fixed inset-x-0 flex h-[40%] items-center justify-center text-white motion-reduce:animate-none",
                        dir < 0
                            ? "top-0 animate-skip-hint-top bg-linear-to-b from-[rgb(12_23_53/0.7)] via-[rgb(32_42_72/0.3)] to-transparent"
                            : "bottom-0 animate-skip-hint-bottom bg-linear-to-t from-[rgb(12_23_53/0.7)] via-[rgb(32_42_72/0.3)] to-transparent")}>
@@ -183,7 +187,7 @@ export const Frame = () => {
         >
                 {/* 너비는 설정을 쓰되 90%까지, 관리 패널 폭을 비운다 - sticky 버튼을 위해 clip이다. */}
                 <div
-                    className="refresher-frame m-auto flex min-h-[min(800px,90vh)] flex-col overflow-clip rounded-2xl bg-background text-sm shadow-2xl ring-1 ring-foreground/10"
+                    className="refresher-frame m-auto flex min-h-[min(800px,90vh)] flex-col overflow-clip rounded-2xl bg-base-100 text-sm shadow-2xl ring-1 ring-base-content/10"
                     data-blur-reveal={block?.blurReveal || undefined}
                     data-block-revealed={revealed || undefined}
                     style={{width: adminVisible ? `min(${frameWidth}px, 90vw, max(480px, calc(100vw - 2 * (150px + 12px))))` : `min(${frameWidth}px, 90vw)`}}
@@ -192,7 +196,7 @@ export const Frame = () => {
                     <Fragment key={postKey}>
                     <div className="px-8 pt-6 pb-3">
                         {/* 본문을 못 받았으면(삭제된 글 등) 목록의 제목이라도 보인다. */}
-                        <Dialog.Title render={<h2 className="text-2xl font-bold"/>}>{post ? postTitle(post) : listTitle ?? ""}</Dialog.Title>
+                        <h2 className="text-2xl font-bold">{post ? postTitle(post) : listTitle ?? ""}</h2>
 
                         {post && (
                             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
@@ -200,7 +204,7 @@ export const Frame = () => {
                                 <div className="flex items-center gap-3">
                                     <CountDown/>
                                     {post.date && <TimeStamp date={post.date} size="2"/>}
-                                    <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                                    <span className="flex items-center gap-1 text-sm text-base-content/60">
                                         <Eye className="size-3.5"/>
                                         {post.views}
                                     </span>
@@ -216,18 +220,18 @@ export const Frame = () => {
                     <div className="flex grow flex-col px-8 pt-6">
                         {/* 보존본은 삭제되었거나 바뀐 글일 수 있으니 지금 글이 아니라고 알린다. */}
                         {archived && (
-                            <Alert className="mb-4 text-amber-700 dark:text-amber-400">
+                            <div role="alert" className={cn(ALERT, "alert-warning alert-soft mb-4")}>
                                 <Archive/>
-                                <AlertDescription className="text-current">불러오지 못해 저장해 둔 내용을 보여 줍니다.</AlertDescription>
-                            </Alert>
+                                <p data-slot="alert-description">불러오지 못해 저장해 둔 내용을 보여 줍니다.</p>
+                            </div>
                         )}
                         {/* 오류를 먼저 본다. 댓글만 보기여도 본문을 못 받았으면 알린다. */}
                         {error ? (
                             <ErrorBlock error={error}/>
                         ) : commentsOnly ? (
-                            <Button variant="secondary" className="mb-6 w-full" onClick={() => usePreviewStore.setState({commentsOnly: false})}>
+                            <button type="button" className="btn mb-6 w-full" onClick={() => usePreviewStore.setState({commentsOnly: false})}>
                                 댓글만 표시 중입니다. 눌러서 본문 보기
-                            </Button>
+                            </button>
                         ) : (
                             <>
                                 <PostContents/>
@@ -237,7 +241,7 @@ export const Frame = () => {
 
                         {busy && (
                             <div className="flex justify-center py-8">
-                                <Spinner className="size-6"/>
+                                <span aria-hidden className="loading loading-spinner size-6"/>
                             </div>
                         )}
                     </div>
@@ -253,24 +257,24 @@ export const Frame = () => {
                                 </div>
                             </div>
                             {comments === undefined ? (commentsFailed ? (
-                                <Alert variant="destructive" className="mx-8 my-4 w-auto">
+                                <div role="alert" className={cn(ALERT, "alert-error alert-soft mx-8 my-4 w-auto")}>
                                     <CircleAlert/>
-                                    <AlertDescription className="text-current">
+                                    <div data-slot="alert-description">
                                         댓글을 불러오지 못했습니다.
                                         <div className="mt-2">
                                             {/* 안내가 곧 알림이라 실패를 토스트로 다시 알리지 않는다. */}
-                                            <Button size="sm" variant="destructive" onClick={() => void usePreviewStore.getState().requestRefresh()}>
+                                            <button type="button" className="btn btn-sm btn-error" onClick={() => void usePreviewStore.getState().requestRefresh()}>
                                                 다시 시도
-                                            </Button>
+                                            </button>
                                         </div>
-                                    </AlertDescription>
-                                </Alert>
+                                    </div>
+                                </div>
                             ) : (
                                 <div className="flex justify-center py-8">
-                                    <Spinner className="size-6" aria-label="댓글을 불러오는 중"/>
+                                    <span role="status" aria-label="댓글을 불러오는 중" className="loading loading-spinner size-6"/>
                                 </div>
                             )) : comments.length === 0 ? (
-                                <p className="py-8 text-center text-muted-foreground">댓글이 없습니다.</p>
+                                <p className="py-8 text-center text-base-content/60">댓글이 없습니다.</p>
                             ) : (
                                 <CommentList comments={comments}/>
                             )}
@@ -279,25 +283,23 @@ export const Frame = () => {
 
                     {/* 아카이브 글은 서버가 이미 없는 글이므로 댓글을 받지 않는다. */}
                     {post && !archived && (allowReply ? <WriteComment/> : (
-                        <p className="px-8 pt-3 pb-6 text-muted-foreground">멤버만 댓글을 쓸 수 있습니다.</p>
+                        <p className="px-8 pt-3 pb-6 text-base-content/60">멤버만 댓글을 쓸 수 있습니다.</p>
                     ))}
                     </Fragment>
 
-                    {/* 맨 위로 / 댓글로 - 창 오른쪽 아래. 높이 0인 칸을 화면 아래 끝에 sticky로 붙여 긴 글을 읽는 동안에도 보이게 한다. */}
-                    <div className="sticky bottom-0 h-0">
-                        <div className="absolute right-4 bottom-4 flex flex-col gap-2">
-                            <TooltipButton tip="맨 위로" side="left" variant="secondary" size="icon" className="rounded-full"
-                                           onClick={() => scroller.current?.scrollTo({top: 0, behavior: smoothScroll()})}>
-                                <ArrowUp/>
-                            </TooltipButton>
-                            {hasComments && (
-                                <TooltipButton tip="댓글로" side="left" variant="secondary" size="icon" className="rounded-full"
-                                               onClick={() => commentsSection.current?.scrollIntoView({behavior: smoothScroll(), block: "start"})}>
-                                    <MessageSquare/>
-                                </TooltipButton>
-                            )}
-                        </div>
-                    </div>
+                </div>
+                {/* 맨 위로 / 댓글로 - 화면 오른쪽 아래(창 밖). 창 안에 두면 본문을 가린다. 스크롤 칸(fade) 안에 두면 닫힘 페이드도 함께 탄다. */}
+                <div className="fixed right-4 bottom-4 z-10 flex flex-col gap-2">
+                    <TooltipButton tip="맨 위로" side="left" variant="secondary" size="icon" className="rounded-full"
+                                   onClick={() => scroller.current?.scrollTo({top: 0, behavior: smoothScroll()})}>
+                        <ArrowUp/>
+                    </TooltipButton>
+                    {hasComments && (
+                        <TooltipButton tip="댓글로" side="left" variant="secondary" size="icon" className="rounded-full"
+                                       onClick={() => commentsSection.current?.scrollIntoView({behavior: smoothScroll(), block: "start"})}>
+                            <MessageSquare/>
+                        </TooltipButton>
+                    )}
                 </div>
                 {/* aria-modal 창 안에 두어 스크린 리더가 건너뛰지 않게 한다. */}
                 {visible && adminVisible && <AdminPanel/>}

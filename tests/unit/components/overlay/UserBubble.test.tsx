@@ -1,5 +1,4 @@
 import {render, act} from "@/tests/helpers";
-import type {ComponentProps, ReactNode} from "react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {BubbleHost} from "@/components/overlay/UserBubble";
@@ -7,25 +6,19 @@ import {useUiStore} from "@/stores/ui";
 
 import {blockEntry, setBlockLists} from "../../../helpers";
 
-// Base UI, lucide는 변환되지 않아 진짜 React를 불러 그려지지 않으므로 버블, 버튼, 아이콘을 평범한 요소로 바꾼다.
+// lucide 아이콘은 테스트에서 그리지 않게 한다.
 
-vi.mock("lucide-react", () => ({Ban: () => null, ExternalLink: () => null, NotebookPen: () => null, Search: () => null}));
+vi.mock("lucide-preact", () => ({Ban: () => null, ExternalLink: () => null, NotebookPen: () => null, Search: () => null}));
 
-// 버블 몸통(OverlayPopoverContent)은 Base UI 프리미티브로 직접 조립하므로 포털, 위치, 팝업을 여기서 바꾼다.
-vi.mock("@base-ui/react/popover", () => ({
-    Popover: {
-        Root: ({children}: { children?: ReactNode }) => <>{children}</>,
-        Portal: ({children}: { children?: ReactNode }) => <>{children}</>,
-        Positioner: ({children}: { children?: ReactNode }) => <>{children}</>,
-        Popup: ({children, ...props}: ComponentProps<"div">) => <div {...props}>{children}</div>
-    }
+// 다이얼로그는 native <dialog>를 쓰므로 여기서는 그리지 않게 한다.
+vi.mock("@/components/dialogs", () => ({
+    ModalDialog: () => null,
+    DialogActions: () => null,
+    DialogDescription: () => null,
+    DialogHeader: () => null,
+    DialogTitle: () => null,
+    firstFocusable: () => null
 }));
-vi.mock("@/components/ui/button", () => ({
-    Button: ({children, onClick}: { children?: ReactNode; onClick?: () => void }) => <button onClick={onClick}>{children}</button>
-}));
-vi.mock("@/components/ui/separator", () => ({Separator: () => <hr/>}));
-vi.mock("@/components/dialogs", () => ({ModalDialog: () => null, DialogActions: () => null}));
-vi.mock("@/components/ui/dialog", () => ({DialogDescription: () => null, DialogHeader: () => null, DialogTitle: () => null}));
 vi.mock("@/components/overlay/gallogActivity", () => ({useGallogActivity: () => undefined}));
 vi.mock("@/core/database", () => ({
     databaseVersion: () => 0,

@@ -1,19 +1,15 @@
-import type {Dialog as DialogPrimitive} from "@base-ui/react/dialog";
-import {FileUp} from "lucide-react";
-import {useRef, useState} from "react";
+import {FileUp} from "lucide-preact";
+import type { ComponentChild } from "preact";
+import { useRef, useState } from "preact/hooks";
 
-import {DialogActions, ModalDialog} from "@/components/dialogs";
-import {Button} from "@/components/ui/button";
-import {DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dialog";
-import {Spinner} from "@/components/ui/spinner";
-import {Textarea} from "@/components/ui/textarea";
+import {DialogActions, DialogDescription, DialogHeader, DialogTitle, ModalDialog} from "@/components/dialogs";
 
 import {type Done, notify, notifyDone} from "../optionsStore";
 
 // 열 때만 마운트해 닫으면 입력이 초기화된다.
 export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 넣거나 파일에서 불러와 주세요.", placeholder = "JSON 데이터", fromFile = true, onClose, onSubmit}: {
     title: string;
-    desc?: React.ReactNode;
+    desc?: ComponentChild;
     placeholder?: string;
     fromFile?: boolean;
     onClose: () => void;
@@ -22,7 +18,7 @@ export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 
 }) => {
     const [text, setText] = useState("");
     const [busy, setBusy] = useState(false);
-    const actions = useRef<DialogPrimitive.Root.Actions>(null);
+    const actions = useRef<{close: () => void} | null>(null);
     const input = useRef<HTMLTextAreaElement>(null);
     const file = useRef<HTMLInputElement>(null);
 
@@ -57,22 +53,23 @@ export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 
                 <DialogDescription>{desc}</DialogDescription>
             </DialogHeader>
 
-            <Textarea ref={input} placeholder={placeholder} aria-label={placeholder} value={text} rows={8} className="max-h-[50vh]"
-                      onChange={(ev) => setText(ev.target.value)}/>
+            <textarea ref={input} placeholder={placeholder} aria-label={placeholder} value={text} rows={8}
+                      className="textarea max-h-[50vh] w-full"
+                      onInput={(ev) => setText(ev.currentTarget.value)}/>
 
             <DialogActions cancelDisabled={busy}>
                 {fromFile && (
                     <>
                         <input ref={file} type="file" accept=".json,application/json" hidden aria-label="JSON 파일"
                                onChange={(ev) => void submitFile(ev.currentTarget.files?.[0])}/>
-                        <Button variant="secondary" disabled={busy} onClick={() => file.current?.click()}>
-                            <FileUp data-icon="inline-start"/> 파일에서 불러오기
-                        </Button>
+                        <button type="button" className="btn" disabled={busy} onClick={() => file.current?.click()}>
+                            <FileUp className="size-4"/> 파일에서 불러오기
+                        </button>
                     </>
                 )}
-                <Button disabled={busy || !text.trim()} onClick={() => void submit(text)}>
-                    {busy && <Spinner aria-hidden data-icon="inline-start"/>}가져오기
-                </Button>
+                <button type="button" className="btn btn-primary" disabled={busy || !text.trim()} onClick={() => void submit(text)}>
+                    {busy && <span aria-hidden className="loading loading-spinner"/>}가져오기
+                </button>
             </DialogActions>
         </ModalDialog>
     );

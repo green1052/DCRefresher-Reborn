@@ -1,19 +1,16 @@
-import {Send, Smile, Type, X} from "lucide-react";
+import {Send, Smile, Type, X} from "lucide-preact";
 import QuickLRU from "quick-lru";
-import {useEffect, useLayoutEffect, useRef, useState} from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
-import {Button} from "@/components/ui/button";
-import {Input} from "@/components/ui/input";
-import {Spinner} from "@/components/ui/spinner";
-import {Textarea} from "@/components/ui/textarea";
-import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
 import {TooltipButton, WithTooltip} from "@/components/WithTooltip";
+import {rovingKeyDown} from "@/components/roving";
 import {captchaImage, normalizeTxtcon, TXTCON_BACKGROUNDS, TXTCON_COLORS} from "@/core/preview/request";
 import {postKey} from "@/core/preview/cache";
 import type {DcinsideDccon} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 import {isTimeoutError} from "@/utils/error";
 import {loggedInUserId} from "@/utils/user";
+import {cn} from "cn";
 
 import {postComment, prefetchTurnstile, turnstileFields} from "../comment-submit";
 import {saveNonmember, savedNonmember} from "../nonmember";
@@ -23,13 +20,16 @@ import {NO_REPLY, refreshCommentsOf, usePreviewStore} from "./previewStore";
 /** 비회원 댓글 비밀번호 (영문 소문자, 숫자 8자). */
 const randomPassword = (): string => Array.from(crypto.getRandomValues(new Uint8Array(8)), (byte) => (byte % 36).toString(36)).join("");
 
-const Swatch = ({color, label}: { color: string; label: string }) => (
+const Swatch = ({color, label, pressed, onClick}: { color: string; label: string; pressed: boolean; onClick: () => void }) => (
     // 고른 색은 한 칸 띄운 테두리(outline)로 보인다. 키보드 포커스 링(box-shadow)은 그 틈을 채워 고른 색에 포커스가 있어도 구분된다.
-    <ToggleGroupItem
-        value={color}
+    <button
+        type="button"
         aria-label={label}
-        className="size-4.5 min-w-0 cursor-pointer rounded-full border border-foreground/25 p-0 aria-pressed:outline-2 aria-pressed:outline-offset-2 aria-pressed:outline-solid aria-pressed:outline-primary"
+        aria-pressed={pressed}
+        tabIndex={pressed ? 0 : -1}
+        className="size-4.5 min-w-0 cursor-pointer rounded-full border border-base-content/25 p-0 aria-pressed:outline-2 aria-pressed:outline-offset-2 aria-pressed:outline-solid aria-pressed:outline-primary"
         style={{background: `#${color}`}}
+        onClick={onClick}
     />
 );
 
@@ -226,30 +226,30 @@ export const WriteComment = () => {
         <div ref={box} className="pt-3 pr-14 pb-6 pl-8" onFocus={touchForm}>
             {!login && showInputs && (
                 <div className="mb-2 flex gap-2">
-                    <Input
+                    <input
+                        className="input flex-1"
                         value={nick}
                         aria-label="닉네임"
                         placeholder="닉네임"
                         maxLength={20}
-                        className="flex-1"
-                        onChange={(ev) => setNick(ev.target.value)}
+                        onInput={(ev) => setNick(ev.currentTarget.value)}
                     />
-                    <Input
+                    <input
                         type="password"
+                        className="input flex-1"
                         value={passwordEdited ? password : ""}
                         aria-label="비밀번호"
                         placeholder={passwordEdited ? "비밀번호" : pwSaved ? "비밀번호 (저장됨)" : "비밀번호 (자동 생성)"}
-                        className="flex-1"
-                        onChange={(ev) => {
+                        onInput={(ev) => {
                             setPasswordEdited(true);
-                            setPassword(ev.target.value);
+                            setPassword(ev.currentTarget.value);
                         }}
                     />
                 </div>
             )}
 
             {reply.replyNo && (
-                <div className="mb-1 flex items-center gap-1 text-xs text-muted-foreground">
+                <div className="mb-1 flex items-center gap-1 text-xs text-base-content/60">
                     <span className="truncate">{replyName}에게 답글</span>
                     <TooltipButton tip="답글 취소" variant="ghost" size="icon-xs" onClick={() => {
                         usePreviewStore.setState({reply: NO_REPLY});
@@ -261,7 +261,7 @@ export const WriteComment = () => {
             )}
 
             <div className="flex items-end gap-2">
-                <Textarea
+                <textarea
                     ref={textarea}
                     rows={2}
                     defaultValue={initialText}
@@ -270,17 +270,17 @@ export const WriteComment = () => {
                         txtcon ? "글자콘 입력... (최대 20자, 4줄, 줄당 5자로 나뉨, Shift+Enter 줄바꿈)"
                             : "댓글 입력... (Shift+Enter 줄바꿈)"
                     }
-                    className="min-h-16 flex-1 resize-y"
-                    onChange={(ev) => {
-                        if (txtcon && !(ev.nativeEvent instanceof InputEvent && ev.nativeEvent.isComposing)) applyTxtcon();
-                        saveDraft(ev.target.value);
+                    className="textarea field-sizing-content min-h-16 flex-1 resize-y"
+                    onInput={(ev) => {
+                        if (txtcon && !(ev instanceof InputEvent && ev.isComposing)) applyTxtcon();
+                        saveDraft(ev.currentTarget.value);
                     }}
                     onCompositionEnd={(ev) => {
                         if (txtcon) applyTxtcon();
                         saveDraft(ev.currentTarget.value);
                     }}
                     onKeyDown={(ev) => {
-                        if (ev.key === "Enter" && !ev.shiftKey && !ev.nativeEvent.isComposing) {
+                        if (ev.key === "Enter" && !ev.shiftKey && !ev.isComposing) {
                             ev.preventDefault();
                             void submit();
                         }
@@ -288,11 +288,11 @@ export const WriteComment = () => {
                 />
                 <div className="flex flex-col gap-2">
                     <div className="flex gap-2">
-                        <TooltipButton tip="디시콘" variant="secondary" size="icon" onClick={() => setDcconOpen(true)}>
+                        <TooltipButton tip="디시콘" variant="secondary" size="icon" className="size-9" onClick={() => setDcconOpen(true)}>
                             <Smile/>
                         </TooltipButton>
                         <WithTooltip tip={txtcon ? "글자콘 취소" : "글자콘"}
-                                     trigger={<Button variant={txtcon ? "default" : "secondary"} size="icon" aria-label="글자콘" aria-pressed={txtcon}
+                                     trigger={<button type="button" className={cn("btn btn-square size-9", txtcon ? "btn-primary" : "")} aria-label="글자콘" aria-pressed={txtcon}
                                                       onClick={() => {
                                                           // 글자콘과 디시콘은 같이 쓸 수 없다.
                                                           setDccon(NO_DCCON);
@@ -310,32 +310,34 @@ export const WriteComment = () => {
                             <Type/>
                         </WithTooltip>
                     </div>
-                    <Button aria-label="작성" className="w-full" disabled={sending} onClick={() => void submit()}>
-                        {sending ? <Spinner aria-hidden/> : <Send/>}
-                    </Button>
+                    <button type="button" aria-label="작성" className="btn btn-primary w-full" disabled={sending} onClick={() => void submit()}>
+                        {sending ? <span aria-hidden className="loading loading-spinner"/> : <Send/>}
+                    </button>
                 </div>
             </div>
 
             {txtcon && (
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span className="text-xs text-muted-foreground" aria-hidden>배경</span>
-                    {/* 다시 눌러 빈 값이 오면 고른 색을 그대로 둔다. */}
-                    <ToggleGroup aria-label="배경색" value={[txtconColors.bg]} onValueChange={([bg]) => bg && setTxtconColors((prev) => ({...prev, bg}))}>
-                        {TXTCON_BACKGROUNDS.map((bg) => <Swatch key={bg} color={bg} label={`배경색 #${bg}`}/>)}
-                    </ToggleGroup>
-                    <span className="ml-2 text-xs text-muted-foreground" aria-hidden>글자</span>
-                    <ToggleGroup aria-label="글자색" value={[txtconColors.txt]} onValueChange={([txt]) => txt && setTxtconColors((prev) => ({...prev, txt}))}>
-                        {TXTCON_COLORS.map((txt) => <Swatch key={txt} color={txt} label={`글자색 #${txt}`}/>)}
-                    </ToggleGroup>
+                    <span className="text-xs text-base-content/60" aria-hidden>배경</span>
+                    {/* 고른 색을 다시 눌러도 그대로 둔다. */}
+                    <div role="group" aria-label="배경색" className="flex gap-1" onKeyDown={rovingKeyDown}>
+                        {TXTCON_BACKGROUNDS.map((bg) => <Swatch key={bg} color={bg} label={`배경색 #${bg}`} pressed={txtconColors.bg === bg}
+                                                                onClick={() => setTxtconColors((prev) => ({...prev, bg}))}/>)}
+                    </div>
+                    <span className="ml-2 text-xs text-base-content/60" aria-hidden>글자</span>
+                    <div role="group" aria-label="글자색" className="flex gap-1" onKeyDown={rovingKeyDown}>
+                        {TXTCON_COLORS.map((txt) => <Swatch key={txt} color={txt} label={`글자색 #${txt}`} pressed={txtconColors.txt === txt}
+                                                            onClick={() => setTxtconColors((prev) => ({...prev, txt}))}/>)}
+                    </div>
                 </div>
             )}
 
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="mt-2 text-xs text-base-content/60">
                 {login ? (accountId ?? "회원 계정") : (
                     // 닉네임을 지워도 버튼이 남아 다시 펼칠 수 있게 빈 닉네임은 할 일로 보인다.
-                    <Button variant="link" size="xs" className="h-auto p-0 text-xs text-link" aria-expanded={showInputs} onClick={toggleInputs}>
+                    <button type="button" className="text-link underline-offset-4 hover:underline" aria-expanded={showInputs} onClick={toggleInputs}>
                         {nick || "닉네임 입력"}
-                    </Button>
+                    </button>
                 )}
                 (으)로 {mode} 작성 중
             </p>

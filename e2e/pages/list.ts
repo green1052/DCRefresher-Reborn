@@ -2,7 +2,7 @@ import {expect, type Locator, type Page} from "@playwright/test";
 
 const FAKE_LIST_URL = "https://gall.dcinside.com/board/lists/?id=test";
 
-/** 콘텐츠 스크립트가 돈 목록 페이지. 미리보기 창(React)은 비동기로 그려지므로 창 안의 것은 frame()에서 찾는다. */
+/** 콘텐츠 스크립트가 단 목록 페이지. 미리보기 창(preact)이 비동기로 그려지므로 창 안 것들은 frame()에서 찾는다. */
 export async function openListPage(page: Page, url = FAKE_LIST_URL) {
     await page.goto(url);
     await page.locator("button[data-refresher-refresh]").waitFor();

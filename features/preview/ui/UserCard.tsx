@@ -1,6 +1,6 @@
 import {cn} from "cn";
-import {Fragment, type MouseEvent, type ReactNode, useSyncExternalStore} from "react";
-import {useShallow} from "zustand/react/shallow";
+import { useSyncExternalStore } from "@/utils/useSyncExternalStore";
+import { Fragment, type TargetedMouseEvent as MouseEvent, type ComponentChild as ReactNode } from "preact";
 
 import {FOCUS_RING} from "@/components/focusRing";
 import {useGallogActivity} from "@/components/overlay/gallogActivity";
@@ -38,8 +38,8 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
     const showsRatio = useUiStore((state) => state.ratios !== null);
     const alarm = useUiStore((state) => state.ratios?.alarm ?? 0);
     const action = useUiStore((state) => state.ratios?.action);
-    const cached = useUiStore(useShallow((state) =>
-        user.id && state.ratios && Object.hasOwn(state.ratios.cache, user.id) ? state.ratios.cache[user.id] : undefined));
+    const cached = useUiStore((state) =>
+        user.id && state.ratios && Object.hasOwn(state.ratios.cache, user.id) ? state.ratios.cache[user.id] : undefined);
     const fetched = useGallogActivity(fetchRatio && showsRatio && !isFresh(cached) ? user.id : undefined);
     const ratio = (typeof fetched === "object" ? fetched : undefined) ?? cached;
     const lowActivity = ratio !== undefined && isLowActivity(ratio, alarm);
@@ -50,7 +50,7 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
         bubble !== null && selected?.nick === user.nick && selected?.uid === user.id && selected?.ip === user.ip);
     const openBubble = (x: number, y: number): void => useUiStore.getState().openBubble({nick: user.nick, uid: user.id, ip: user.ip, gallery: previewGallery()}, x, y);
 
-    const openMenu = (ev: MouseEvent): void => {
+    const openMenu = (ev: MouseEvent<HTMLElement>): void => {
         // 목록과 같이 Shift+우클릭은 브라우저 기본 메뉴로 남긴다.
         if (ev.shiftKey) return;
         ev.preventDefault();
@@ -58,7 +58,7 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
     };
 
     // 설정한 색이 없으면 아이디, IP는 회색, IP 정보는 파랑이다.
-    const identityClass = cn("truncate text-xs", !uidColor && "text-muted-foreground");
+    const identityClass = cn("truncate text-xs", !uidColor && "text-base-content/60");
 
     const badges: Record<BadgeKey, ReactNode> = {
         UID: user.id

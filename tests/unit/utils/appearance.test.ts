@@ -13,14 +13,17 @@ describe("followDcAppearance", () => {
         const root = document.createElement("div");
         stop = followDcAppearance(root);
         expect(root.classList.contains("dark")).toBe(false);
+        expect(root.dataset.theme).toBe("light");
 
         const link = Object.assign(document.createElement("link"), {id: "css-darkmode", rel: "stylesheet"});
         document.body.append(link);
         await Promise.resolve();
         expect(root.classList.contains("dark")).toBe(true);
+        expect(root.dataset.theme).toBe("black");
 
         link.remove();
         await Promise.resolve();
         expect(root.classList.contains("dark")).toBe(false);
+        expect(root.dataset.theme).toBe("light");
     });
 });

@@ -104,13 +104,11 @@ test.describe("옵션 - 차단 탭", () => {
         const input = dialog.getByPlaceholder("닉네임 값을 입력해 주세요");
         await expect(input).toBeFocused();
         await input.fill("차단닉");
-        await mode.click();
-        await page.getByRole("option", {name: "포함", exact: true}).click();
-        await expect(mode.getByText("포함", {exact: true})).toBeVisible();
-        await mode.click();
-        await page.getByRole("option", {name: "불일치", exact: true}).click();
-        await mode.click();
-        await page.getByRole("option", {name: "기본값", exact: true}).click();
+        // native select는 option이 닫혀 있어 hidden이므로 값으로 고른다.
+        await mode.selectOption("CONTAIN");
+        await expect(mode).toHaveValue("CONTAIN");
+        await mode.selectOption("NOT_SAME");
+        await mode.selectOption("");
         await dialog.getByRole("button", {name: "추가", exact: true}).click();
 
         await expect(options.table.getByText("차단닉", {exact: true})).toBeVisible();
@@ -145,8 +143,7 @@ test.describe("옵션 - 차단 탭", () => {
         await expect(dialog).toHaveCount(0);
 
         await table.getByText("있는닉", {exact: true}).click();
-        await dialog.getByRole("combobox", {name: "차단 모드", exact: true}).click();
-        await page.getByRole("option", {name: "포함", exact: true}).click();
+        await dialog.getByRole("combobox", {name: "차단 모드", exact: true}).selectOption("CONTAIN");
         await dialog.getByRole("button", {name: "수정", exact: true}).click();
         await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([{...nick, mode: "CONTAIN"}]);
     });
@@ -194,8 +191,7 @@ test.describe("옵션 - 차단 탭", () => {
             "refresher:block:NICK": [{id: "a", content: "갤닉", isRegex: false, gallery: "g1"}]
         });
         const {table, dialog} = await openOptions(page, extensionId, "block");
-        await page.getByRole("combobox", {name: "갤러리", exact: true}).click();
-        await page.getByRole("option", {name: "g1"}).click();
+        await page.getByRole("combobox", {name: "갤러리", exact: true}).selectOption("g1");
 
         await page.getByRole("button", {name: "추가", exact: true}).click();
         await dialog.getByPlaceholder("닉네임 값을 입력해 주세요").fill("새닉");

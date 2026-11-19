@@ -1,16 +1,12 @@
 import {cn} from "cn";
-import {ClipboardCopy, FileDown, Plus, Trash2, Upload} from "lucide-react";
-import {type ReactNode, useMemo, useRef, useState} from "react";
+import {ClipboardCopy, FileDown, Plus, Trash2, Upload} from "lucide-preact";
+import { useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
+import { type ComponentChild as ReactNode } from "preact";
 
 import {ConfirmDialog} from "@/components/dialogs";
 import {FOCUS_RING} from "@/components/focusRing";
 import {TooltipButton} from "@/components/WithTooltip";
-import {focusPanel} from "@/components/useReturnFocus";
-import {Badge} from "@/components/ui/badge";
-import {Button} from "@/components/ui/button";
-import {Card, CardContent} from "@/components/ui/card";
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
+import {focusPanel, panelOf} from "@/components/useReturnFocus";
 import {friendlyMessage, SAVE_FAILED} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 
@@ -45,31 +41,41 @@ export const ListRow = ({head, label, info, onEdit, onRemove}: {
     onEdit: () => void;
     onRemove: () => void;
 }) => {
-    // 확인 창을 연 휴지통 버튼. 지우면 버튼이 사라져 확인 창이 포커스를 돌려줄 곳이 없으므로 지우기 전에 탭 패널로 옮겨 둔다.
+    // 확인 창을 연 휴지통 버튼. 지우면 버튼이 사라지므로 확인 뒤 탭 패널로 포커스를 돌린다.
     const [opener, setOpener] = useState<HTMLElement | null>(null);
+    // native 모달이 살아 있는 동안엔 브라우저가 창 밖(탭 패널)으로 포커스를 옮기지 못하게 막는다 - 줄이 지워지는 이 시점에 돌려준다.
+    // 패널은 줄이 떨어지면 closest가 끊긴 트리를 못 벗어나므로 누를 때 미리 잡아 둔다.
+    const panel = useRef<HTMLElement | null | undefined>(null);
+    const removing = useRef(false);
+    useLayoutEffect(() => () => {
+        // 같은 commit에서 모달이 지워지면 아직 창 밖 포커스가 풀리지 않았다 - 다음 틱에 돌려준다.
+        if (removing.current) setTimeout(() => panel.current?.focus({preventScroll: true}));
+    }, []);
 
     return (
         <>
-            <TableRow className="cursor-pointer [content-visibility:auto] [contain-intrinsic-size:auto_45px]" onClick={onEdit}>
-                <TableHead scope="row" className="font-normal">
+            <tr className="cursor-pointer border-b [content-visibility:auto] [contain-intrinsic-size:auto_45px] hover:bg-base-200/50" onClick={onEdit}>
+                <th scope="row" className="text-left font-normal">
                     {/* 줄(tr)은 버튼이 될 수 없어 첫 칸을 편집 버튼으로 알린다 - click이 줄로 올라가 편집이 열린다. */}
                     <button type="button" title="수정" className={cn(FOCUS_RING, "block w-full text-left")}>
                         {head}
                     </button>
-                </TableHead>
-                <TableCell className="whitespace-normal">{info}</TableCell>
-                <TableCell className="text-right">
+                </th>
+                <td className="whitespace-normal">{info}</td>
+                <td className="text-right">
                     {/* 줄마다 툴팁 부품이나 Base UI Button을 달면 수천 줄에서 느려지므로 title과 맨 button 포커스 링을 쓴다. */}
                     <button type="button" aria-label={`${label} 삭제`} title="삭제"
-                            className={cn(FOCUS_RING, "grid size-8 place-items-center rounded-[min(var(--radius-md),10px)] text-destructive hover:bg-accent")}
+                            className={cn(FOCUS_RING, "grid size-8 place-items-center rounded-[10px] text-error hover:bg-base-200")}
                             onClick={(ev) => {
                                 ev.stopPropagation();
+                                panel.current = panelOf(ev.currentTarget);
+                                removing.current = false;
                                 setOpener(ev.currentTarget);
                             }}>
                         <Trash2/>
                     </button>
-                </TableCell>
-            </TableRow>
+                </td>
+            </tr>
             {/* 확인 창은 줄(tr) 밖에 둔다. 창 안의 클릭이 줄로 올라가 편집이 열리지 않게 한다. */}
             {opener && (
                 <ConfirmDialog
@@ -77,7 +83,7 @@ export const ListRow = ({head, label, info, onEdit, onRemove}: {
                     confirmLabel="삭제"
                     danger
                     onConfirm={() => {
-                        focusPanel(opener);
+                        removing.current = true;
                         onRemove();
                         setOpener(null);
                     }}
@@ -132,6 +138,8 @@ export const ListTabs = <T extends string, I>({
 }) => {
     // 모든 탭이 같은 검색어를 쓴다. 탭 배지에 탭마다 걸린 개수가 보여 다른 탭에 있는지도 알 수 있다.
     const [query, setQuery] = useState("");
+    // 열려 있는 종류 탭.
+    const [current, setCurrent] = useState(types[0]);
     const needle = query.trim().toLowerCase();
     // 갤러리 거르기: all(전체), common(모든 갤러리 항목), g:<ID>(그 갤러리 한정 항목). 검색어처럼 모든 탭이 같이 쓴다.
     const [gallery, setGallery] = useState("all");
@@ -210,25 +218,28 @@ export const ListTabs = <T extends string, I>({
     };
 
     return (
-        <Card>
-            <CardContent>
-                <Tabs defaultValue={types[0]}>
+        <section className="card card-border">
+            <div className="card-body gap-6 p-6">
+                <div>
                     <div className="flex items-end gap-3">
-                        <TabsList variant="line" className="h-auto flex-1 flex-wrap justify-start">
+                        {/* daisyUI 탭: aria-selected가 곧 활성 상태이고 tabs-border가 활성 밑줄을 그린다. */}
+                        <div role="tablist" className="tabs tabs-border h-auto min-h-9 flex-1 flex-wrap justify-start gap-1">
                             {types.map((type) => {
                                 const {total, list} = shown.get(type)!;
                                 return (
-                                    <TabsTrigger key={type} value={type} className="flex-none">
+                                    <button key={type} type="button" role="tab" aria-selected={type === current}
+                                            className="tab h-auto min-h-9 flex-none gap-1.5 py-1 text-sm"
+                                            onClick={() => setCurrent(type)}>
                                         {names[type]}
                                         {total > 0 && (
-                                            <Badge variant={filtering ? "default" : "secondary"}>
+                                            <span className={cn("badge badge-sm", filtering ? "badge-primary" : "")}>
                                                 {filtering ? `${list.length}/${total}` : total}
-                                            </Badge>
+                                            </span>
                                         )}
-                                    </TabsTrigger>
+                                    </button>
                                 );
                             })}
-                        </TabsList>
+                        </div>
                         <div className="flex gap-1 pb-1">
                             <TooltipButton tip="클립보드로 내보내기" variant="ghost" size="icon" onClick={() => void exportList("클립보드")}>
                                 <ClipboardCopy/>
@@ -245,8 +256,8 @@ export const ListTabs = <T extends string, I>({
                     {types.map((type) => {
                         const {total, list} = shown.get(type)!;
                         const limit = limits[type] ?? PAGE;
-                        return (
-                            <TabsContent key={type} value={type} className="tab-enter">
+                        return type !== current ? null : (
+                            <div key={type} role="tabpanel" tabIndex={-1} className="tab-enter">
                                 <div ref={filterRow} className="flex flex-wrap items-center justify-between gap-3 py-4">
                                     {toolbar(type)}
                                     <div className="ml-auto flex flex-wrap items-center gap-2">
@@ -259,7 +270,7 @@ export const ListTabs = <T extends string, I>({
                                         )}
                                         <SearchInput className="w-[180px]" placeholder="검색" aria-label={`${label} 검색`} value={query}
                                                      onChange={(ev) => {
-                                                         setQuery(ev.target.value);
+                                                         setQuery(ev.currentTarget.value);
                                                          resetLimits();
                                                      }}/>
                                         {/* 검색 중에도 걸러진 것만이 아니라 이 종류 전부를 지우므로 확인 문구에 전체 개수를 적는다. */}
@@ -284,36 +295,36 @@ export const ListTabs = <T extends string, I>({
                                     <EmptyList>{needle ? `"${query.trim()}" 검색 결과 없음` : "조건에 맞는 항목 없음"}</EmptyList>
                                 ) : (
                                     <>
-                                        <div className="overflow-hidden rounded-lg border">
-                                            <Table>
-                                                <TableHeader className="bg-muted/50">
-                                                    <TableRow>
-                                                        <TableHead>{columns[0]}</TableHead>
-                                                        <TableHead>{columns[1]}</TableHead>
-                                                        <TableHead className="w-12"/>
-                                                    </TableRow>
-                                                </TableHeader>
-                                                <TableBody>{list.slice(0, limit).map((item) => row(type, item, () => removeItems(type, [item], () => onRemoveMany(type, [item]))))}</TableBody>
-                                            </Table>
+                                    <div className="overflow-hidden rounded-lg border">
+                                        <table className="table table-sm">
+                                            <thead className="bg-base-200/50">
+                                                <tr>
+                                                    <th>{columns[0]}</th>
+                                                    <th>{columns[1]}</th>
+                                                    <th className="w-12"/>
+                                                </tr>
+                                            </thead>
+                                            <tbody>{list.slice(0, limit).map((item) => row(type, item, () => removeItems(type, [item], () => onRemoveMany(type, [item]))))}</tbody>
+                                        </table>
+                                    </div>
+                                    {list.length > limit && (
+                                        <div className="flex justify-center pt-4">
+                                            <button type="button" className="btn btn-outline" onClick={(ev) => {
+                                                // 마지막 묶음을 펼치면 버튼이 사라지므로 포커스를 탭 패널로 옮겨 둔다.
+                                                if (list.length <= limit + PAGE) focusPanel(ev.currentTarget);
+                                                setLimits({...limits, [type]: limit + PAGE});
+                                            }}>
+                                                더 보기 (+{Math.min(PAGE, list.length - limit)})
+                                            </button>
                                         </div>
-                                        {list.length > limit && (
-                                            <div className="flex justify-center pt-4">
-                                                <Button variant="outline" onClick={(ev) => {
-                                                    // 마지막 묶음을 펼치면 버튼이 사라지므로 포커스를 탭 패널로 옮겨 둔다.
-                                                    if (list.length <= limit + PAGE) focusPanel(ev.currentTarget);
-                                                    setLimits({...limits, [type]: limit + PAGE});
-                                                }}>
-                                                    더 보기 (+{Math.min(PAGE, list.length - limit)})
-                                                </Button>
-                                            </div>
-                                        )}
+                                    )}
                                     </>
                                 )}
-                            </TabsContent>
+                            </div>
                         );
                     })}
-                </Tabs>
-            </CardContent>
+                </div>
+            </div>
 
             {confirm && (
                 <ConfirmDialog
@@ -321,7 +332,6 @@ export const ListTabs = <T extends string, I>({
                     confirmLabel="삭제"
                     danger
                     onConfirm={() => {
-                        focusPanel(filterRow.current);
                         const {type} = confirm;
                         const targets = items(type);
                         removeItems(type, targets, () => onClear(type));
@@ -332,6 +342,6 @@ export const ListTabs = <T extends string, I>({
             )}
 
             {importOpen && <ImportDialog title={`${label} 가져오기`} onClose={() => setImportOpen(false)} onSubmit={submitImport}/>}
-        </Card>
+        </section>
     );
 };

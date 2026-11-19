@@ -1,6 +1,6 @@
-import {useLayoutEffect} from "react";
+import { useLayoutEffect } from "preact/hooks";
 import {storage} from "wxt/utils/storage";
-import {create} from "zustand";
+import {create} from "@/utils/store";
 
 import {enablesOf, isModuleEnabled, normalizeSetting, readModuleStorage, settingsOf} from "@/core/module/settings";
 import type {AnyModuleMeta} from "@/core/module/types";

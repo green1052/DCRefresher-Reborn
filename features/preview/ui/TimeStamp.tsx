@@ -1,5 +1,6 @@
 import {cn} from "cn";
-import {useEffect, useState, useSyncExternalStore} from "react";
+import { useEffect, useState } from "preact/hooks";
+import { useSyncExternalStore } from "@/utils/useSyncExternalStore";
 
 import {FOCUS_RING} from "@/components/focusRing";
 
@@ -74,7 +75,7 @@ export const TimeStamp = ({date, size = "1"}: { date: string; size?: "1" | "2" }
 
     return (
         <button type="button" title={full} onClick={() => setAbsolute((x) => !x)}
-                className={cn(FOCUS_RING, "whitespace-nowrap text-muted-foreground", size === "2" ? "text-sm" : "text-xs")}>
+                className={cn(FOCUS_RING, "whitespace-nowrap text-base-content/60", size === "2" ? "text-sm" : "text-xs")}>
             {Number.isNaN(parsed.getTime()) ? "이미 삭제됨" : absolute ? full : since}
         </button>
     );

@@ -4,6 +4,7 @@ import {WxtVitest} from "wxt/testing/vitest-plugin";
 /**
  * 단위 테스트 모음 (bun run test). WxtVitest가 wxt.config.ts의 vite 설정, @/ 별칭, import.meta.env.BROWSER 같은 환경을 맞춰 주고
  * 확장 API(browser.*)를 @webext-core/fake-browser(메모리 storage 등)로 바꾼다. E2E는 playwright.config.ts를 본다.
+ * JSX 변환은 tsconfig.json의 jsxImportSource(preact)를 esbuild가 그대로 따른다.
  */
 export default defineConfig({
     plugins: [WxtVitest()],

@@ -1,23 +1,15 @@
 import {render, act} from "@/tests/helpers";
-import type {ReactNode} from "react";
+import type { ComponentChild as ReactNode } from "preact";
 import {afterEach, expect, it, vi} from "vitest";
 
 import {fetchDcconList} from "@/core/preview/request";
 import {DcconPopup} from "@/features/preview/ui/DcconPopup";
 
-// Base UI는 변환되지 않아 진짜 React를 불러 그려지지 않으므로 창, 토글을 평범한 요소로 바꾼다.
+// 창과 토글을 평범한 요소로 바꾼다(native <dialog> 등은 jsdom에서 안 그려진다).
 vi.mock("@/components/dialogs", () => ({
     ModalDialog: ({children}: { children?: ReactNode }) => <div>{children}</div>,
-    DialogCloseButton: () => null
-}));
-vi.mock("@/components/ui/button", () => ({Button: () => null}));
-vi.mock("@/components/ui/dialog", () => ({DialogTitle: () => null}));
-vi.mock("@/components/ui/field", () => ({Field: () => null, FieldLabel: () => null}));
-vi.mock("@/components/ui/skeleton", () => ({Skeleton: () => null}));
-vi.mock("@/components/ui/switch", () => ({Switch: () => null}));
-vi.mock("@/components/ui/toggle-group", () => ({
-    ToggleGroup: ({children}: { children?: ReactNode }) => <div>{children}</div>,
-    ToggleGroupItem: () => <button className="pack"/>
+    DialogCloseButton: () => null,
+    DialogTitle: () => null
 }));
 vi.mock("@/core/preview/request", () => ({fetchDcconList: vi.fn()}));
 
@@ -29,7 +21,7 @@ afterEach(() => render(null, root));
 const openStrip = async (): Promise<HTMLElement> => {
     vi.mocked(fetchDcconList).mockResolvedValue([{package_idx: "1", title: "콘", main_img_url: "", detail: []}]);
     await act(() => render(<DcconPopup onSelect={vi.fn()} onClose={vi.fn()}/>, root));
-    await vi.waitFor(() => expect(root.querySelector(".pack")).not.toBeNull());
+    await vi.waitFor(() => expect(root.querySelector(".overflow-x-auto button")).not.toBeNull());
     const strip = root.querySelector<HTMLElement>(".overflow-x-auto")!;
     // 굴린 곳은 scrollTo에 넘긴 left로 본다. jsdom은 굴리지 않는다.
     Object.defineProperties(strip, {scrollWidth: {value: 1000}, clientWidth: {value: 500}, scrollTo: {value: vi.fn()}});

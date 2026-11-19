@@ -1,4 +1,4 @@
-import {create} from "zustand";
+import {create} from "@/utils/store";
 
 import {needOverlayWhen} from "@/components/overlay/demands";
 import type {TurnstileResult} from "@/core/messaging/protocol";

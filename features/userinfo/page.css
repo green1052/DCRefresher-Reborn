@@ -1,5 +1,3 @@
-/* ===== 유저 정보 (userinfo 모듈) ===== */
-
 /* 배지 자리를 내려고 디시 작성자 칸을 바꾼다. 모듈이 켜져 있을 때만 (<html>의 refresherUserInfo, index.ts). */
 .refresherUserInfo {
     /* 유저 정보 배지:닉네임이 잘리지 않게, 배지 사이 간격. */

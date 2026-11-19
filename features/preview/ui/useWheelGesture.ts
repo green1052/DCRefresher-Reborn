@@ -1,4 +1,5 @@
-import {type WheelEvent, useRef, useState} from "react";
+import { useRef, useState } from "preact/hooks";
+import { type TargetedWheelEvent as WheelEvent } from "preact";
 
 /** 휠 이벤트 사이가 이보다 벌어지면 새 동작으로 본다(ms). 관성 스크롤은 이보다 촘촘하게 이어진다. */
 const WHEEL_GESTURE_GAP = 250;
@@ -50,7 +51,7 @@ export const useWheelGesture = (key: string, goToAdjacent: (dir: number) => void
 
         const box = ev.currentTarget;
         const target = ev.target;
-        // 스크롤 칸 DOM 안에서 난 휠만 본다. React는 포털로 뜬 창(디시콘 등)의 이벤트도 컴포넌트 트리로 올리므로 이 검사로 걸러 낸다.
+        // 스크롤 칸 DOM 안에서 난 휠만 본다. preact는 포털로 뜬 창(디시콘 등)의 이벤트도 컴포넌트 트리로 올리므로 이 검사로 걸러 낸다.
         if (!(target instanceof Element) || !box.contains(target)) return;
 
         const dir = ev.deltaY > 0 ? 1 : -1;

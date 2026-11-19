@@ -1,4 +1,4 @@
-import {create} from "zustand";
+import {create} from "@/utils/store";
 import {shallow} from "zustand/vanilla/shallow";
 
 import {BLOCK_DEFAULTS_KEY, BLOCK_TYPES, blockDefaultsStorage, blockListKey, LIST_LOCKS} from "@/core/storage/items";

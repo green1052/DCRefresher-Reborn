@@ -23,7 +23,7 @@
 /* 옵션 설정 검색어 (entrypoints/options/GeneralTab.tsx의 useSearchHighlight). */
 @layer base {
     ::highlight(refresher-search) {
-        background-color: var(--primary);
-        color: var(--primary-foreground);
+        background-color: var(--color-primary);
+        color: var(--color-primary-content);
     }
 }
