@@ -9,12 +9,14 @@ import {BLOCK_DAYS, BLOCK_REASONS, type BlockDay, type BlockReason} from "@/core
 import {useUiStore} from "@/stores/ui";
 import {cn} from "cn";
 import {createDoublePress} from "@/utils/doublePress";
-import {focusOnMount} from "@/utils/focus";
 import {objectEntries} from "@/utils/typed";
 
 import {DcconInfoPopup} from "./DcconInfoPopup";
 import {ImageViewer} from "./ImageViewer";
 import {MANAGE_LABELS, type ManageKind, type TurnstilePrompt, usePreviewStore} from "./previewStore";
+
+// 붙을 때 포커스한다 (ref 콜백). autoFocus는 처음 마운트에만 붙으므로 나중에 나타나는 입력칸에 쓴다.
+const focusOnMount = (element: HTMLElement | null): void => element?.focus();
 
 const RadioGrid = <T extends string, >({label, items, value, onChange}: {
     label: string;

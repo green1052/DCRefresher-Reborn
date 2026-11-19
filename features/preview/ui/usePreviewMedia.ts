@@ -1,12 +1,24 @@
 import { useEffect } from "preact/hooks";
 import { type RefObject } from "preact";
 
+import {blockMode, dcconCode, isBlocked} from "@/core/block";
+import type {ModuleSettings} from "@/core/module/types";
 import {useRunningModuleSettings} from "@/core/module/useModuleSettings";
 import {useBlocksStore} from "@/stores/blocks";
 
-import {markBlockedDccons} from "./blockedDccons";
 import {fitPolls} from "./fitPolls";
 import {watchGifVideos} from "./gifVideos";
+
+/** 차단 디시콘에 data-blocked를 단다. */
+const markBlockedDccons = (root: HTMLElement, gallery: string | undefined, block: ModuleSettings["block"] | undefined, hideOnly: boolean): void => {
+    const mode = block && (hideOnly ? "hide" : blockMode(block));
+
+    for (const dccon of root.querySelectorAll<HTMLElement>(".written_dccon")) {
+        const code = dcconCode(dccon);
+        if (mode && code && isBlocked("DCCON", code, gallery)) dccon.dataset.blocked = mode;
+        else delete dccon.dataset.blocked;
+    }
+};
 
 /**
  * 미리보기 본문(Frame.tsx의 PostContents, Mini.tsx)에 넣은 HTML을 손본다. html이 바뀌면 다시 본다.

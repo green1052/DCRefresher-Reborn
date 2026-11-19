@@ -296,7 +296,7 @@
         @apply refresher-blur-reveal;
     }
 
-    /* 본문에 든 차단 디시콘 (blockedDccons.ts). 가린 내용 보기 동안은 아래 규칙으로 흐리게 보인다. */
+    /* 본문에 든 차단 디시콘 (usePreviewMedia.ts). 가린 내용 보기 동안은 아래 규칙으로 흐리게 보인다. */
     &:not([data-block-revealed]) .refresher-preview-contents .written_dccon[data-blocked="hide"] {
         display: none;
     }
@@ -330,7 +330,7 @@
     scrollbar-color: rgb(0 0 0 / 25%) transparent;
 }
 
-/* 본문에 든 차단 디시콘 (blockedDccons.ts). */
+/* 본문에 든 차단 디시콘 (usePreviewMedia.ts). */
 .refresher-mini-contents .written_dccon[data-blocked] {
     display: none;
 }
