@@ -10,7 +10,7 @@ const baseFetch: Fetch = pageWindow
     })
     : globalThis.fetch.bind(globalThis);
 
-// 시간 제한은 걸지 않는다 - 모든 요청에 호출 쪽 AbortSignal이 붙어 있어 사용자가 끊는다.
+// 시간 제한은 기본으로 없다 - 필요한 호출만 신호나 제한을 단다 (docs/architecture.md).
 export const http: KyInstance = ky.create({
     timeout: false,
     totalTimeout: false,

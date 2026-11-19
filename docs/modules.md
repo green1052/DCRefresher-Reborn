@@ -62,7 +62,11 @@ export default defineModule(meta, {
 | `onSettingsChanged(fn)` | 위 참고 |
 | `onRevoke(fn)` | 위 참고 |
 
-오버레이 컴포넌트는 `useContentModuleSettings("모듈 id")`로 직접 읽고, 옵션, 팝업과 같이 쓰는 컴포넌트는 `useModuleSettings`로 읽으며 undefined 기본값을 정합니다(`components/dialogs.tsx`). 두 훅 모두 꺼진 모듈 설정도 주므로 이 페이지에서 돌 때만 따르는 UI는 `useRunningModuleSettings("모듈 id")`, 컴포넌트 밖에서는 `runningModuleSettings(id)`를 씁니다. `addFilter`의 `fn`은 같은 요소에 여러 번 불리므로 이미 있는지 보고 건너뛰게 만듭니다. 행마다 장식을 넣는 모듈은 `FILTER_SKIP_ATTR`을 답니다(안 그러면 행마다 모든 필터가 다시 돕니다). 도우미 함수가 ctx를 받을 때는 `meta.ts`에 스키마 상수를 빼 `export type Ctx = ModuleContext<typeof settings>`를 내보냅니다(`features/fonts`).
+오버레이 컴포넌트는 `useContentModuleSettings("모듈 id")`로 직접 읽고, 옵션, 팝업과 같이 쓰는 컴포넌트는 `useModuleSettings`로 읽으며 undefined 기본값을 정합니다(`components/dialogs.tsx`). 두 훅 모두 꺼진 모듈 설정도 주므로 이 페이지에서 돌 때만 따르는 UI는 `useRunningModuleSettings("모듈 id")`, 컴포넌트 밖에서는 `runningModuleSettings(id)`를 씁니다.
+
+`addFilter`의 `fn`은 같은 요소에 여러 번 불리므로 이미 있는지 보고 건너뛰게 만듭니다. 행마다 장식을 넣는 모듈은 `FILTER_SKIP_ATTR`을 답니다(안 그러면 행마다 모든 필터가 다시 돕니다).
+
+도우미 함수가 ctx를 받을 때는 `meta.ts`에 스키마 상수를 빼 `export type Ctx = ModuleContext<typeof settings>`를 내보냅니다(`features/fonts`).
 
 ## 설정 스키마
 
@@ -82,7 +86,8 @@ export default defineModule(meta, {
 
 ## 단축키와 팝업 토글
 
-- **commands** (meta.ts): `{명령 이름: {key?}}`, 설명은 labels.ts의 `commands`. `modules/commands.ts`가 모아 manifest에 넣습니다. 크롬은 기본 키 있는 명령을 4개까지만 받고 dev 빌드가 한 자리를 쓰므로 모듈 기본 키는 합쳐 3개까지(넘으면 단위 테스트, dev 빌드 실패). **shortcuts** (index.ts): `{명령 이름: (api) => ...}`. `commands`마다 하나씩(빠지면 타입 오류)이고 setup이 끝난 모듈에만 전달됩니다.
+- **commands** (meta.ts): `{명령 이름: {key?}}`, 설명은 labels.ts의 `commands`. `modules/commands.ts`가 모아 manifest에 넣습니다. 크롬은 기본 키 있는 명령을 4개까지만 받고 dev 빌드가 한 자리를 쓰므로 모듈 기본 키는 합쳐 3개까지(넘으면 단위 테스트, dev 빌드 실패).
+- **shortcuts** (index.ts): `{명령 이름: (api) => ...}`. `commands`마다 하나씩(빠지면 타입 오류)이고 setup이 끝난 모듈에만 전달됩니다.
 - **pageToggles**: 팝업 "현재 페이지" 토글. 토글 id는 `meta.ts`의 `toggles`, 이름, 아이콘은 `labels.ts`, `icons.ts`의 `toggles`, 동작은 `index.ts`의 `{토글 id: {desc, isOn, toggle}}`.
 
 ## 모듈 간 api

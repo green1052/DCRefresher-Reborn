@@ -16,7 +16,8 @@
 - **디시에 요청을 보내지 않습니다.** fixtures가 `dcinside.com` 주소를 `e2e/dcinside.ts`의 가짜 목록, 글, 댓글로 응답하고 그 밖의 쓰기 요청에는 500을 줍니다. IP DB는 `test.use({serveIpDb: true})` 테스트만 가짜로 응답하고(`e2e/ipdb.ts`) 파이어폭스는 건너뜁니다. 디시 마크업이 바뀌면 가짜 페이지도 고칩니다.
 - 선택자 대신 `e2e/pages/`의 페이지 객체(`openListPage`, `openPopup`, `openOptions`, `gallery.ts`의 `viewPage`, `managementPage`)를 쓰고 설정은 `storage.setModules({...})`, `storage.setModuleSettings(id, {...})`로 넣습니다. `errors` fixture가 페이지 오류, `console.error`를 봅니다.
 - **파이어폭스**: `e2e/firefox.ts`가 원격 디버깅 서버로 `.output/firefox-mv3`를 임시 부가 기능으로 설치합니다. `moz-extension://` 이동이 안 돼 팝업, 옵션 테스트는 Chromium에서만 돌고 파이어폭스는 콘텐츠 스크립트만 봅니다.
-- **실제 디시**(`bun run e2e:live`, `e2e/live/`): 읽기 외 POST는 끊어 아무것도 쓰지 않고, 조용히 멈추는 기능이 찾는 선택자(`features/write/markup.ts`, `features/refresh/markup.ts`), 디시 JS에서 옮겨 쓴 값과 Turnstile 칸(`core/preview/dcinside-js.ts`, `features/preview/comment-submit.ts`), `entrypoints/background/page.ts`가 읽는 `chk_user_block('...')` 호출이 실제 응답에 있는지 봅니다. CI(`.github/workflows/ci.yml`)의 `live` 잡으로 PR, 릴리즈마다 돌고 갤러리는 `bjwg64` 고정입니다. 미리 설치된 Chromium은 `PLAYWRIGHT_CHROMIUM=/경로/chrome`.
+- **실제 디시**(`bun run e2e:live`, `e2e/live/`): 읽기 외 POST는 끊어 아무것도 쓰지 않습니다. 조용히 멈추는 기능이 찾는 선택자(`features/write/markup.ts`, `features/refresh/markup.ts`), 디시 JS에서 옮겨 쓴 값과 Turnstile 칸(`core/preview/dcinside-js.ts`, `features/preview/comment-submit.ts`), `entrypoints/background/page.ts`가 읽는 `chk_user_block('...')` 호출이 실제 응답에 있는지 봅니다.
+- `live` 잡은 CI(`.github/workflows/ci.yml`)에서 PR, 릴리즈마다 돌고 갤러리는 `bjwg64` 고정입니다. 미리 설치된 Chromium은 `PLAYWRIGHT_CHROMIUM=/경로/chrome`.
 
 ## 손으로 확인할 것
 

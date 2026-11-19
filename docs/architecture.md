@@ -65,7 +65,8 @@ scripts/                IP DB 빌드 스크립트
 - 백업 대상은 `core/backup.ts`의 `BACKUP_KEYS`(모듈 on/off와 설정, 차단 목록과 기본 차단 모드, 메모)입니다. 모듈 id는 `.wxt/module-ids.ts`에서 읽고(배경 번들에 `meta.ts`를 넣지 않도록), 파이어폭스에는 한도 상수가 없어 같은 값(102,400 / 8,192바이트)을 씁니다(`CLOUD_QUOTA`).
 - 차단 항목의 `mode`가 비어 있으면 기기의 기본 차단 모드를 따릅니다(내보낼 때 기본 모드가 다르면 항목에 적음). 설정을 없애거나 바꿀 때 옛 값 이전 코드는 두지 않습니다(`pruneStaleSettings`가 지움).
 - 복원, 합치기, 가져오기, 초기화의 쓰기 규칙은 `core/settings-transfer.ts`에 있고 직전 값을 `backupStorage.undo`에 남깁니다. `storage.local`을 직접 다룰 때는 `rawKey(MODULES_KEY)`로 키를 만듭니다.
-- `stores/`의 zustand 스토어는 콘텐츠 스크립트와 옵션, 팝업이 같이 쓰고 차단(`blocks.ts`), 메모(`memos.ts`)는 `typedListSync`로 저장소와 묶여 있습니다. 그리기 전에 `initBlocksStore()`, `initMemosStore()`가 끝나야 합니다(안 그러면 빈 목록이 저장소를 덮음). **`update(type, change)`의 `change`는 순수해야 합니다**(스토어와 저장소에 두 번 불림). 목록 쓰기는 Web Locks으로 줄을 세우는데 **같은 출처끼리만 섭니다**(디시 탭과 옵션 페이지 사이는 안 섬 - 교차 출처 쓰기는 배경을 거치게 하세요). 파이어폭스 콘텐츠 스크립트는 `navigator.locks`가 실패해 탭 안에서만 p-limit으로 줄을 세웁니다([Firefox](firefox.md)).
+- `stores/`의 zustand 스토어는 콘텐츠 스크립트와 옵션, 팝업이 같이 씁니다. 차단(`blocks.ts`), 메모(`memos.ts`)는 `typedListSync`로 저장소와 묶여 있고, 그리기 전에 `initBlocksStore()`, `initMemosStore()`가 끝나야 합니다(안 그러면 빈 목록이 저장소를 덮음).
+- **`update(type, change)`의 `change`는 순수해야 합니다**(스토어와 저장소에 두 번 불림). 목록 쓰기는 Web Locks으로 줄을 세우는데 **같은 출처끼리만 섭니다**(디시 탭과 옵션 페이지 사이는 안 섬 - 교차 출처 쓰기는 배경을 거치게 하세요). 파이어폭스 콘텐츠 스크립트는 탭 안에서만 줄을 세웁니다([Firefox](firefox.md)).
 
 ## HTTP
 

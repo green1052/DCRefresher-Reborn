@@ -276,7 +276,7 @@ export default defineModule(meta, {
             if (stale.length === 0) return;
             for (const uid of stale) pending.add(uid);
 
-            // 실패(undefined)는 uid마다 흡수해 나머지는 저장한다. 다른 탭이 받는 중(null)이면 다음 주기에 공유 캐시로 받는다. 버블·미리보기가 받은 값도 같이 쓴다 (캐시).
+            // 실패(undefined)는 uid마다 흡수해 나머지는 저장한다. 다른 탭이 받는 중(null)이면 다음 주기에 공유 캐시로 받는다(버블·미리보기가 받은 값도 같이 쓴다).
             void Promise.all(stale.map(async (uid) => [uid, await getGallogActivityUnlessBusy(uid)] as const)).then(async (results) => {
                 for (const [uid, info] of results) {
                     if (info === undefined) failedRatios.set(uid, true);
