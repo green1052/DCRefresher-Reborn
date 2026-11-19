@@ -28,7 +28,7 @@ export const Mini = () => {
             {/* 포인터를 통과시키는 기본값에선 직접 굴릴 수 없어 스크롤바는 내용이 더 있다는 표시다.
                 넓은 내용은 옆을 자른다 (overflow-y만 auto면 가로 스크롤바가 생긴다). */}
             <div ref={contents}
-                 className={cn("refresher-html refresher-mini-contents min-h-0 flex-1 overflow-x-hidden overflow-y-auto [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin]",
+                 className={cn("refresher-html refresher-mini-contents min-h-0 flex-1 overflow-x-hidden overflow-y-auto [scrollbar-color:var(--border-color)_transparent] [scrollbar-width:thin]",
                                mini.blockMedia && "refresher-preview-block-media")}
                  dangerouslySetInnerHTML={{__html: mini.contents}}/>
         </div>

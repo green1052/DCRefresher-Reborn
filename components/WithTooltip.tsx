@@ -29,11 +29,11 @@ const SIZE = {
     default: "",
     xs: "btn-xs",
     sm: "btn-sm",
-    lg: "btn-lg",
+    lg: "h-10 min-h-10 px-6 text-sm font-medium",
     icon: "btn-square",
     "icon-xs": "btn-square btn-xs",
     "icon-sm": "btn-square btn-sm",
-    "icon-lg": "btn-square btn-lg",
+    "icon-lg": "btn-square size-10",
 } as const;
 
 export const TooltipButton = ({tip, side, variant = "default", size = "default", className, children, ...props}: Omit<ComponentProps<"button">, "children"> & {

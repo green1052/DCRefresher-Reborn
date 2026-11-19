@@ -67,7 +67,7 @@ const Sidebar = ({tab, onSelect}: {
                     key={id}
                     type="button"
                     aria-current={tab === id ? "page" : undefined}
-                    className={cn("btn btn-ghost btn-lg justify-start", tab === id && "bg-muted")}
+                    className={cn("btn btn-ghost h-10 min-h-10 px-4 text-sm font-medium justify-start", tab === id && "bg-muted")}
                     onClick={() => onSelect(id)}
                 >
                     <Icon className="size-4"/> {label}

@@ -130,7 +130,7 @@ export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true,
                     <div
                         data-slot={contentSlot}
                         className={cn(
-                            "z-50 grid w-full max-w-[calc(100%-2rem)] gap-6 rounded-xl bg-popover p-6 text-sm text-popover-foreground ring-1 ring-foreground/10 outline-none sm:max-w-md",
+                            "relative z-50 grid w-full max-w-[calc(100%-2rem)] gap-6 rounded-xl bg-popover p-6 text-sm text-popover-foreground ring-1 ring-foreground/10 outline-none sm:max-w-md",
                             className
                         )}
                         // Chromium의 모달 Tab 순환은 창 요소를 거치는 빈 돌점에서 포커스가 shadow 밖(body)으로 샌다 - 가장자리에서 직접 돈다.

@@ -52,7 +52,7 @@ export const CommentSummary = ({comments}: { comments: ProcessedComment[] }) => 
         <span className="text-muted-foreground">
             {hidden ? `${counts} (${hidden})` : counts}
             {hidden && !pageRevealed && (
-                <button type="button" className="btn btn-link btn-xs ml-1.5 h-auto p-0 align-baseline text-sm"
+                <button type="button" className="ml-1.5 align-baseline text-sm text-link underline-offset-4 hover:underline"
                         onClick={() => usePreviewStore.setState({commentsRevealed: !revealed})}>
                     {revealed ? "다시 숨기기" : "가린 댓글 보기"}
                 </button>

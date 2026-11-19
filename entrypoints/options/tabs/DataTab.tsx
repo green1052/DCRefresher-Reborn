@@ -151,7 +151,7 @@ export function DataTab() {
                                 ["manual", "수동 백업", cloud?.manual ? formatTime(cloud.manual.createdAt) : undefined],
                                 ["auto", "자동 백업", cloud?.auto ? formatTime(cloud.auto.createdAt) : undefined]
                             ] as const).map(([slot, label, time]) => (
-                                <button key={slot} type="button" className="btn btn-secondary btn-lg justify-between"
+                                <button key={slot} type="button" className="btn btn-secondary h-10 min-h-10 px-4 text-sm font-medium justify-between"
                                         disabled={!time}
                                         onClick={() => void recoverCloud(slot, restoreMode)}>
                                     {label}

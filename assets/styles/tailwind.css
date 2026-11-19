@@ -68,7 +68,8 @@
     --accent: oklch(0.967 0.001 286.375);
     --accent-foreground: oklch(0.21 0.006 285.885);
     --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.92 0.004 286.32);
+    /* 이름 주의: --border는 daisyUI가 테두리 굵기(1px)로 쓴다. 색 토큰은 --border-color여야 충돌이 안난다. */
+    --border-color: oklch(0.92 0.004 286.32);
     --input: oklch(0.92 0.004 286.32);
     --ring: oklch(0.705 0.015 286.067);
 }
@@ -90,7 +91,7 @@
     --accent: oklch(0.274 0.006 286.033);
     --accent-foreground: oklch(0.985 0 0);
     --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
+    --border-color: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.552 0.016 285.938);
 }
@@ -118,7 +119,7 @@
     --color-accent: var(--accent);
     --color-accent-foreground: var(--accent-foreground);
     --color-destructive: var(--destructive);
-    --color-border: var(--border);
+    --color-border: var(--border-color);
     --color-input: var(--input);
     --color-ring: var(--ring);
 
@@ -159,6 +160,19 @@
         to {
             transform: translateY(110vh) rotate(var(--spin));
         }
+    }
+}
+
+@layer components {
+    /* daisyUI .btn은 아이콘(svg) 크기를 정하지 않는다 - lucide 기본 24px 대신 shadcn 룩(16px, xs는 12px)을 기본으로 준다. 명시적 size-* 유틸리티가 이 규칙을 이긴다. */
+    .btn :where(svg:not([class*="size-"])) {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .btn-xs :where(svg:not([class*="size-"])) {
+        width: 0.75rem;
+        height: 0.75rem;
     }
 }
 

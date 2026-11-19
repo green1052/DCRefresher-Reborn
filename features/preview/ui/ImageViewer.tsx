@@ -90,9 +90,9 @@ export const ImageViewer = ({images, index}: { images: ViewerImage[]; index: num
 
             {images.length > 1 && (
                 <>
-                    <button type="button" className="btn btn-secondary btn-square btn-lg fixed top-1/2 left-4 -translate-y-1/2 rounded-full" aria-label="이전 이미지"
+                    <button type="button" className="btn btn-secondary btn-square size-10 fixed top-1/2 left-4 -translate-y-1/2 rounded-full" aria-label="이전 이미지"
                             onClick={() => go(-1)}><ChevronLeft className="size-4"/></button>
-                    <button type="button" className="btn btn-secondary btn-square btn-lg fixed top-1/2 right-4 -translate-y-1/2 rounded-full" aria-label="다음 이미지"
+                    <button type="button" className="btn btn-secondary btn-square size-10 fixed top-1/2 right-4 -translate-y-1/2 rounded-full" aria-label="다음 이미지"
                             onClick={() => go(1)}><ChevronRight className="size-4"/></button>
                 </>
             )}

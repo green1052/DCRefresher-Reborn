@@ -68,7 +68,7 @@ export const PreviewDialogRoot = ({fading, busy, blur, onWheel, scroller, childr
                  data-fading={fading || undefined}/>
             {/* 화면 전체가 스크롤 칸 - 스크롤바 폭을 양쪽에 비워 글을 오갈 때 창이 흔들리지 않게 한다. */}
             <div
-                className="refresher-frame-scroll fixed inset-0 flex overflow-y-auto overscroll-contain py-[5vh] outline-none duration-150 animate-in fade-in [scrollbar-color:var(--border)_transparent] [scrollbar-gutter:stable_both-edges] [scrollbar-width:thin] data-fading:pointer-events-none data-fading:animate-out data-fading:fade-out data-fading:fill-mode-forwards"
+                className="refresher-frame-scroll fixed inset-0 flex overflow-y-auto overscroll-contain py-[5vh] outline-none duration-150 animate-in fade-in [scrollbar-color:var(--border-color)_transparent] [scrollbar-gutter:stable_both-edges] [scrollbar-width:thin] data-fading:pointer-events-none data-fading:animate-out data-fading:fade-out data-fading:fill-mode-forwards"
                 ref={(element) => {
                     scroller.current = element;
                     element?.focus({preventScroll: true});

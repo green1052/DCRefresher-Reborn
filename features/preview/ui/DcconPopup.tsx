@@ -83,7 +83,8 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
         <ModalDialog onClose={onClose} className="sm:max-w-140" focusOnOpen="keyboard">
             <div className="flex items-center justify-between">
                 <DialogTitle>디시콘</DialogTitle>
-                <div className="flex items-center gap-4">
+                {/* 오른쪽 위 닫기 단추(절대 위치) 자리를 비워 둔다. */}
+                <div className="flex items-center gap-4 pr-9">
                     <label className="flex items-center gap-3">
                         <span className="text-sm leading-snug font-normal">더블콘</span>
                         <input type="checkbox" role="switch" className="toggle toggle-sm" checked={doubleDccon} onChange={(ev) => {
