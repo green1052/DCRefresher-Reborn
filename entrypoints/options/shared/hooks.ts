@@ -1,5 +1,5 @@
 import {type WxtStorageItem} from "wxt/utils/storage";
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "preact/hooks";
 
 /** 저장소 항목 하나의 값. 배경, 다른 탭에서 바뀌어도 따라가고, 읽기 전에는 fallback이다. */
 export const useStorageItem = <T,>(item: WxtStorageItem<T, {}>): T => {

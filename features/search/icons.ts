@@ -1,4 +1,4 @@
-import {Search} from "lucide-react";
+import {Search} from "lucide-preact";
 
 import type {IconsOf} from "@/core/module/types";
 

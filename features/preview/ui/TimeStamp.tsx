@@ -1,5 +1,6 @@
 import {cn} from "cn";
-import {useEffect, useState, useSyncExternalStore} from "react";
+import { useEffect, useState } from "preact/hooks";
+import { useSyncExternalStore } from "@/utils/useSyncExternalStore";
 
 import {FOCUS_RING} from "@/components/focusRing";
 

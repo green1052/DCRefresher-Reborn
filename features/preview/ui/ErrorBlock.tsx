@@ -1,4 +1,4 @@
-import {CircleAlert, ExternalLink} from "lucide-react";
+import {CircleAlert, ExternalLink} from "lucide-preact";
 
 import {cn} from "cn";
 

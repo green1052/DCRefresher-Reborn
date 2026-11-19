@@ -1,5 +1,5 @@
-import {ClipboardCopy, CloudDownload, CloudUpload, FileDown, RefreshCw, Trash2, Undo2, Upload} from "lucide-react";
-import {useEffect, useId, useRef, useState} from "react";
+import {ClipboardCopy, CloudDownload, CloudUpload, FileDown, RefreshCw, Trash2, Undo2, Upload} from "lucide-preact";
+import { useEffect, useId, useRef, useState } from "preact/hooks";
 
 import {ConfirmDialog, DialogActions, DialogDescription, DialogHeader, DialogTitle, ModalDialog} from "@/components/dialogs";
 import {type CloudBackupStatus, readCloudBackupStatus} from "@/core/backup";
@@ -105,7 +105,7 @@ export function DataTab() {
                         {/* 자동 칸은 기기끼리 같이 쓰고 켜는 즉시 이 기기 설정으로 덮인다. 새 기기에서 켰다가 복원할 백업을 잃지 않게 먼저 묻는다. */}
                         <input id={`${id}-auto`} type="checkbox" role="switch" className="toggle"
                                checked={autoBackup} disabled={loading || !cloud}
-                               onChange={(ev) => (ev.target.checked && cloud?.auto ? setConfirm("auto") : void toggleAutoBackup(ev.target.checked))}/>
+                               onChange={(ev) => (ev.currentTarget.checked && cloud?.auto ? setConfirm("auto") : void toggleAutoBackup(ev.currentTarget.checked))}/>
                         <label htmlFor={`${id}-auto`} className="text-sm font-medium leading-snug">자동 백업</label>
                     </div>
                 }

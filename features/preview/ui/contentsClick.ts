@@ -1,4 +1,4 @@
-import type {KeyboardEvent, MouseEvent} from "react";
+import type { TargetedKeyboardEvent as KeyboardEvent, TargetedMouseEvent as MouseEvent } from "preact";
 
 import {isBlockedHidden} from "@/core/block";
 import {dcinsideHref} from "@/core/http/urls";

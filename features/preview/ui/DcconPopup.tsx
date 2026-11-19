@@ -1,5 +1,5 @@
 import {cn} from "cn";
-import {useEffect, useRef, useState} from "react";
+import { useEffect, useRef, useState } from "preact/hooks";
 
 import {DialogCloseButton, DialogTitle, ModalDialog} from "@/components/dialogs";
 import {FOCUS_RING} from "@/components/focusRing";
@@ -88,13 +88,13 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                     <label className="flex items-center gap-3">
                         <span className="text-sm leading-snug font-normal">더블콘</span>
                         <input type="checkbox" role="switch" className="toggle toggle-sm" checked={doubleDccon} onChange={(ev) => {
-                            setDoubleDccon(ev.target.checked);
+                            setDoubleDccon(ev.currentTarget.checked);
                             setSelected([]);
                         }}/>
                     </label>
                     <label className="flex items-center gap-3">
                         <span className="text-sm leading-snug font-normal">대왕콘</span>
-                        <input type="checkbox" role="switch" className="toggle toggle-sm" checked={bigDccon} onChange={(ev) => setBigDccon(ev.target.checked)}/>
+                        <input type="checkbox" role="switch" className="toggle toggle-sm" checked={bigDccon} onChange={(ev) => setBigDccon(ev.currentTarget.checked)}/>
                     </label>
                     <DialogCloseButton/>
                 </div>

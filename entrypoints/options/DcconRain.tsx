@@ -1,4 +1,5 @@
-import {type CSSProperties, useEffect, useState} from "react";
+import { useEffect, useState } from "preact/hooks";
+import { type CSSProperties } from "preact";
 
 import {useOptionsStore} from "./optionsStore";
 

@@ -1,4 +1,4 @@
-import {PenLine} from "lucide-react";
+import {PenLine} from "lucide-preact";
 
 import type {IconsOf} from "@/core/module/types";
 

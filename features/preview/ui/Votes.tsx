@@ -1,5 +1,5 @@
-import {ChevronDown, ChevronUp, ExternalLink, Link2} from "lucide-react";
-import {useState} from "react";
+import {ChevronDown, ChevronUp, ExternalLink, Link2} from "lucide-preact";
+import { useState } from "preact/hooks";
 
 import {TooltipButton} from "@/components/WithTooltip";
 import {getEntry, setEntry} from "@/core/preview/cache";

@@ -1,4 +1,4 @@
-import {Puzzle} from "lucide-react";
+import {Puzzle} from "lucide-preact";
 
 import type {AnyModuleIcons, AnyModuleLabels, AnyModuleMeta, ModuleInfo} from "@/core/module/types";
 

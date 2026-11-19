@@ -1,5 +1,5 @@
-import {ClipboardCopy, Smartphone} from "lucide-react";
-import {useCallback, useId, useMemo, useRef, useState} from "react";
+import {ClipboardCopy, Smartphone} from "lucide-preact";
+import { useCallback, useId, useMemo, useRef, useState } from "preact/hooks";
 
 import {ColorInput} from "@/components/ColorInput";
 import {DialogActions, DialogHeader, DialogTitle, ModalDialog, SubmitForm} from "@/components/dialogs";
@@ -100,7 +100,7 @@ const MemoFormDialog = ({
                             ref={userInput}
                             disabled={editing}
                             // 입력 중에 trim하면 닉네임 가운데 공백을 칠 수 없으므로 저장할 때 trim한다.
-                            onChange={(ev) => set({user: ev.target.value})}
+                            onInput={(ev) => set({user: ev.currentTarget.value})}
                         />
                     </div>
 
@@ -113,7 +113,7 @@ const MemoFormDialog = ({
                             placeholder="메모를 입력해 주세요 (160자 제한)"
                             value={state.text}
                             ref={textInput}
-                            onChange={(ev) => set({text: ev.target.value})}
+                            onInput={(ev) => set({text: ev.currentTarget.value})}
                         />
                     </div>
 
@@ -124,7 +124,7 @@ const MemoFormDialog = ({
                             className="input w-full"
                             placeholder="갤러리 ID (비우면 모든 갤러리)"
                             value={state.gallery}
-                            onChange={(ev) => set({gallery: ev.target.value.trim()})}
+                            onInput={(ev) => set({gallery: ev.currentTarget.value.trim()})}
                         />
                     </div>
 
@@ -134,7 +134,7 @@ const MemoFormDialog = ({
                             <ColorInput
                                 aria-label="메모 색상"
                                 value={state.color}
-                                onChange={(ev) => set({color: ev.target.value})}
+                                onInput={(ev) => set({color: ev.currentTarget.value})}
                             />
                             <button type="button" className="btn" onClick={() => set({color: randomColor()})}>
                                 랜덤

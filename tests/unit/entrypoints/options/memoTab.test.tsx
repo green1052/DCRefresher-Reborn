@@ -1,5 +1,5 @@
 import {render, act} from "@/tests/helpers";
-import type {ReactNode} from "react";
+import type { ComponentChild as ReactNode } from "preact";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
 import {MemoTab} from "@/entrypoints/options/tabs/MemoTab";

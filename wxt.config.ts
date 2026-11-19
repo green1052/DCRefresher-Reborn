@@ -1,5 +1,4 @@
 import tailwindcss from "@tailwindcss/vite";
-import preact from "@preact/preset-vite";
 import {rm} from "node:fs/promises";
 import {join} from "node:path";
 import {defineConfig} from "wxt";
@@ -11,8 +10,6 @@ export default defineConfig({
     modules: ["@wxt-dev/auto-icons"],
     vite: () => ({
         plugins: [
-            // react/react-dom을 preact/compat으로 연결한다(앨리어스는 프리셋이 기본으로 건다).
-            preact(),
             // Tailwind 최적화는 대상이 고정이라 끄고 Vite 압축(lightningcss)이 cssTarget에 맞추게 한다.
             tailwindcss({optimize: false})
         ],

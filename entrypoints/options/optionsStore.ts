@@ -1,4 +1,4 @@
-import {create} from "zustand";
+import {create} from "@/utils/store";
 
 import {useUiStore} from "@/stores/ui";
 
@@ -10,7 +10,7 @@ interface OptionsState {
 }
 
 /** 옵션 페이지 화면 상태. 사이드바와 탭들이 props를 거치지 않고 같이 쓴다. */
-export const useOptionsStore = create<OptionsState>()((set) => ({
+export const useOptionsStore = create<OptionsState>((set) => ({
     rain: 0,
     notice: null,
 

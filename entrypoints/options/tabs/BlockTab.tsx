@@ -1,6 +1,6 @@
-import {useCallback, useState} from "react";
+import { useCallback, useState } from "preact/hooks";
 
-import {Info} from "lucide-react";
+import {Info} from "lucide-preact";
 
 import {TooltipButton} from "@/components/WithTooltip";
 import {pinDefaultMode} from "@/core/settings-transfer";

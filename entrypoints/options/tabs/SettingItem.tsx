@@ -1,6 +1,6 @@
-import {ChevronDown, ChevronUp, GripVertical, Undo2} from "lucide-react";
-import {useId, useLayoutEffect, useRef, useState} from "react";
-import {shallow} from "zustand/shallow";
+import {ChevronDown, ChevronUp, GripVertical, Undo2} from "lucide-preact";
+import { useId, useLayoutEffect, useRef, useState } from "preact/hooks";
+import {shallow} from "zustand/vanilla/shallow";
 
 import {ColorInput} from "@/components/ColorInput";
 import {WithTooltip} from "@/components/WithTooltip";
@@ -77,7 +77,7 @@ const ColorControl = ({schema, value, compact, descId, onChange}: NarrowProps<"c
                 aria-describedby={descId}
                 title={draft}
                 value={draft}
-                onChange={(ev) => setDraft(ev.target.value)}
+                onInput={(ev) => setDraft(ev.currentTarget.value)}
                 // React의 onChange는 input 이벤트라 드래그마다 불린다. 창을 닫을 때만 오는 네이티브 change는 직접 듣는다.
                 ref={(element) => {
                     if (!element) return;
@@ -101,11 +101,11 @@ const TextControl = ({schema, value, descId, onChange}: NarrowProps<"text">) => 
             placeholder={schema.placeholder ?? String(schema.default)}
             maxLength={schema.maxLength}
             value={draft}
-            onChange={(ev) => setDraft(ev.target.value)}
+            onInput={(ev) => setDraft(ev.currentTarget.value)}
             onBlur={() => {
                 if (draft !== value) onChange(draft);
             }}
-            onKeyDown={(ev) => ev.key === "Enter" && !ev.nativeEvent.isComposing && ev.currentTarget.blur()}
+            onKeyDown={(ev) => ev.key === "Enter" && !ev.isComposing && ev.currentTarget.blur()}
         />
     );
 };
@@ -165,7 +165,7 @@ const RangeControl = ({schema, value, descId, onChange}: NarrowProps<"range">) =
                 aria-label={schema.name}
                 aria-describedby={descId}
                 aria-valuetext={text}
-                onChange={(ev) => setDraft(Number(ev.target.value))}
+                onInput={(ev) => setDraft(Number(ev.currentTarget.value))}
                 ref={(element) => {
                     if (!element) return;
                     const commit = (): void => {
@@ -231,8 +231,11 @@ const OrderControl = ({schema, value: order, descId, onChange}: NarrowProps<"ord
                     draggable
                     onDragStart={(ev) => {
                         // Firefox는 dataTransfer가 비면 드래그를 시작하지 않는다 - 입력칸에 떨어뜨려도 안 들어가는 종류로 둔다.
-                        ev.dataTransfer.setData("application/x-refresher-order", String(index));
-                        ev.dataTransfer.effectAllowed = "move";
+                        const data = ev.dataTransfer;
+                        if (data) {
+                            data.setData("application/x-refresher-order", String(index));
+                            data.effectAllowed = "move";
+                        }
                         setDragging(index);
                     }}
                     onDragEnd={() => {
@@ -310,7 +313,7 @@ export const SettingItem = ({schema, value, compact, takenKeys, onChange}: Setti
                 {schema.type === "check" && (
                     <input type="checkbox" role="switch" className="toggle"
                            aria-label={schema.name} aria-describedby={descId} checked={value === true}
-                           onChange={(ev) => onChange(ev.target.checked)}/>
+                           onChange={(ev) => onChange(ev.currentTarget.checked)}/>
                 )}
                 {schema.type === "option" && (
                     <RefresherSelect value={text} aria-label={schema.name} aria-describedby={descId} options={schema.items}

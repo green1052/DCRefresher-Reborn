@@ -1,5 +1,6 @@
-import {Ban, type LucideIcon, NotebookPen, Puzzle, Settings} from "lucide-react";
-import {type ReactNode, useEffect, useLayoutEffect, useRef, useState} from "react";
+import {Ban, type LucideIcon, NotebookPen, Puzzle, Settings} from "lucide-preact";
+import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
+import { type ComponentChild as ReactNode } from "preact";
 
 import {type PageAction, type PageState, sendMessage} from "@/core/messaging/protocol";
 import {backupStorage} from "@/core/storage/items";

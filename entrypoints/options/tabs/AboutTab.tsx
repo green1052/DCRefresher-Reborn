@@ -1,5 +1,5 @@
-import {BookOpen, Bug, ClipboardCopy, Code, Heart, type LucideIcon, MessageCircle, Star, Tag, Users} from "lucide-react";
-import {useEffect, useState} from "react";
+import {BookOpen, Bug, ClipboardCopy, Code, Heart, type LucideIcon, MessageCircle, Star, Tag, Users} from "lucide-preact";
+import { useEffect, useState } from "preact/hooks";
 
 import {CLOUD_QUOTA} from "@/core/backup";
 import {dbMetaStorage} from "@/core/storage/items";

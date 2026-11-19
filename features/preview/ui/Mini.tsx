@@ -1,4 +1,4 @@
-import {useRef} from "react";
+import { useRef } from "preact/hooks";
 
 import {cn} from "cn";
 
@@ -23,7 +23,7 @@ export const Mini = () => {
         <div className={cn("refresher-mini-preview fixed flex max-w-[calc(100vw-20px)] flex-col overflow-hidden rounded-xl bg-base-100 p-3 text-base-content shadow-lg ring-1 ring-base-content/10",
                            mini.interactive && "pointer-events-auto")}
              onPointerEnter={mini.interactive ? () => hoverMini(true) : undefined} onPointerLeave={mini.interactive ? () => hoverMini(false) : undefined}
-             style={{left: mini.x, top: mini.y, width: MINI_WIDTH, maxHeight: `min(${MINI_HEIGHT}px, calc(100vh - 20px))`}}>
+             style={{left: `${mini.x}px`, top: `${mini.y}px`, width: `${MINI_WIDTH}px`, maxHeight: `min(${MINI_HEIGHT}px, calc(100vh - 20px))`}}>
             <h3 className="mb-2 shrink-0 truncate text-base font-bold">{mini.title}</h3>
             {/* 포인터를 통과시키는 기본값에선 직접 굴릴 수 없어 스크롤바는 내용이 더 있다는 표시다.
                 넓은 내용은 옆을 자른다 (overflow-y만 auto면 가로 스크롤바가 생긴다). */}

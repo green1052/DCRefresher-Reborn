@@ -8,7 +8,7 @@ import {blockEntry, setBlockLists} from "../../../helpers";
 
 // Base UI, lucide는 변환되지 않아 진짜 React를 불러 그려지지 않으므로 버블, 버튼, 아이콘을 평범한 요소로 바꾼다.
 
-vi.mock("lucide-react", () => ({Ban: () => null, ExternalLink: () => null, NotebookPen: () => null, Search: () => null}));
+vi.mock("lucide-preact", () => ({Ban: () => null, ExternalLink: () => null, NotebookPen: () => null, Search: () => null}));
 
 // 다이얼로그는 native <dialog>를 쓰므로 여기서는 그리지 않게 한다.
 vi.mock("@/components/dialogs", () => ({

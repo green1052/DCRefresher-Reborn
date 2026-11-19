@@ -1,5 +1,6 @@
-import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-react";
-import {memo, useEffect, useLayoutEffect, useRef, useState} from "react";
+import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-preact";
+import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
+import { memo } from "@/utils/memo";
 
 import {ConfirmDialog, DialogActions, DialogHeader, DialogTitle, ModalDialog, SubmitForm} from "@/components/dialogs";
 import type {ProcessedComment} from "@/core/preview/comments";
@@ -251,7 +252,7 @@ const PasswordDialog = ({warning, onSubmit, onClose}: { warning?: string; onSubm
                     value={password}
                     aria-label="댓글 비밀번호"
                     placeholder={saved ? "비밀번호 (저장됨)" : "비밀번호"}
-                    onChange={(ev) => setPassword(ev.target.value)}
+                    onInput={(ev) => setPassword(ev.currentTarget.value)}
                 />
                 <DialogActions>
                     <button type="submit" className="btn btn-error" disabled={!value}>삭제</button>

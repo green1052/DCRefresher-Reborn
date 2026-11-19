@@ -1,4 +1,4 @@
-import type {KeyboardEvent} from "react";
+import type { TargetedKeyboardEvent as KeyboardEvent } from "preact";
 
 /** 단추 묶음에서 Tab 정지점을 하나로 묶는다(roving tabindex). 단추마다 tabIndex={선택됨 ? 0 : -1}을 붙이고, 묶음에 이 함수를 onKeyDown으로 건다. */
 export const rovingKeyDown = (ev: KeyboardEvent<HTMLElement>): void => {

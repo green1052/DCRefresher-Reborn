@@ -1,4 +1,4 @@
-import {EyeOff, Image} from "lucide-react";
+import {EyeOff, Image} from "lucide-preact";
 
 import type {IconsOf} from "@/core/module/types";
 

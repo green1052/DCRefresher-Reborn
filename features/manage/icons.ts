@@ -1,4 +1,4 @@
-import {ShieldCheck} from "lucide-react";
+import {ShieldCheck} from "lucide-preact";
 
 import type {IconsOf} from "@/core/module/types";
 

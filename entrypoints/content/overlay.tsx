@@ -6,7 +6,7 @@ import {ContentRoot} from "@/components/overlay/ContentRoot";
 import {overlay} from "@/components/overlay/shadow";
 import {followDcAppearance} from "@/utils/appearance";
 import {whenDomReady} from "@/utils/dom";
-import {createRoot} from "react-dom/client";
+import { render } from "preact";
 
 // 디시 CSS와 섞이지 않게 shadow DOM에 그리며, 파이어폭스의 늦은 동적 import 버그 때문에 정적으로 불러온다.
 export const mountOverlayWhenNeeded = (ctx: ContentScriptContext): void => {
@@ -39,13 +39,12 @@ export const mountOverlayWhenNeeded = (ctx: ContentScriptContext): void => {
 
                 overlay.portal = portal;
 
-                const root = createRoot(app);
-                root.render(<ContentRoot/>);
-                return root;
+                render(<ContentRoot/>, app);
+                return app;
             },
-            onRemove: (root) => {
+            onRemove: (app) => {
                 stopAppearance?.();
-                root?.unmount();
+                if (app) render(null, app);
             }
         });
         // 무효화가 CSS를 받는 동안 일어났다면 WXT의 onInvalidated(remove)는 이미 끝난 signal에 걸려 불리지 않는다.

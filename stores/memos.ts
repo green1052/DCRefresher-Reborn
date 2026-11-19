@@ -1,4 +1,4 @@
-import {create} from "zustand";
+import {create} from "@/utils/store";
 
 import {LIST_LOCKS, MEMO_TYPES, memoMapKey} from "@/core/storage/items";
 import {typedListSync} from "@/core/storage/sync";

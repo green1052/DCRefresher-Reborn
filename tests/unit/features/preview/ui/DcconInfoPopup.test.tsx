@@ -1,5 +1,5 @@
 import {render, act} from "@/tests/helpers";
-import type {ReactNode} from "react";
+import type { ComponentChild as ReactNode } from "preact";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {addDcconPackage, fetchDcconPackage} from "@/core/preview/request";

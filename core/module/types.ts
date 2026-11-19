@@ -1,4 +1,4 @@
-import type {LucideIcon} from "lucide-react";
+import type {LucideIcon} from "lucide-preact";
 
 /** 설정 묶음. 같은 group의 설정을 옵션 화면에서 한 칸으로 모은다. */
 export interface SettingGroup {

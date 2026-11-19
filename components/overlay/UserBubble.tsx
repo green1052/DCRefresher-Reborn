@@ -1,6 +1,8 @@
-import {Ban, ExternalLink, NotebookPen, Search} from "lucide-react";
-import {type ComponentProps, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore} from "react";
-import {createPortal} from "react-dom";
+import {Ban, ExternalLink, NotebookPen, Search} from "lucide-preact";
+import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
+import { useSyncExternalStore } from "@/utils/useSyncExternalStore";
+import { type ComponentProps } from "preact";
+import { createPortal } from "preact";
 
 import {DialogActions, DialogDescription, DialogHeader, DialogTitle, ModalDialog, firstFocusable} from "@/components/dialogs";
 import {useReturnFocus} from "@/components/useReturnFocus";
@@ -284,7 +286,7 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
         // fixed 창을 overlay.portal(섀도 루트)에 그린다 - transform이나 clip을 쓰는 문서 흐름과 상관없이 화면에 붙는다.
         <div ref={popup} data-slot="popover-content" role="dialog"
              aria-label={selected.dccon ? "디시콘 메뉴" : `${selected.nick || identity || "사용자"} 메뉴`}
-             style={{left: bubble.x, top: bubble.y + 4}}
+             style={{left: `${bubble.x}px`, top: `${bubble.y + 4}px`}}
              className="fixed isolate z-50 flex min-w-[200px] max-w-[320px] flex-col gap-2 rounded-md bg-base-100 p-2 text-sm text-base-content shadow-md ring-1 ring-base-content/10 outline-none duration-100 animate-in fade-in-0 zoom-in-95">
             {/* 창이 닫힐 때 사라진 버블 대신 연 요소로 돌아오게 먼저 포커스를 옮겨 둔다. */}
             {selected.dccon ? (

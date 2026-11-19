@@ -1,6 +1,7 @@
-import {type CSSProperties, type RefObject, type TransitionEvent, useEffect, useRef, useState} from "react";
+import { useEffect, useRef, useState } from "preact/hooks";
+import { type CSSProperties, type RefObject, type TargetedTransitionEvent as TransitionEvent } from "preact";
 
-const CLOSED = {height: 0, opacity: 0} as const;
+const CLOSED = {height: "0px", opacity: 0} as const;
 
 /**
  * 접기/펼치기 패널 상태. 펼칠 때는 닫힌 모습으로 그린 뒤 잰 높이만큼 넓히고,
@@ -25,13 +26,13 @@ export const useCollapse = (open: boolean): {
         if (!el) return;
         if (open) {
             setStyle(CLOSED);
-            // 두 번째 프레임에 바꿔야 닫힌 시작 프레임이 그려져 전환이 일어난다.
+            // preact는 숫자 스타일에 px를 붙이지 않는다 - 단위까지 문자열로 준다.
             const first = requestAnimationFrame(() =>
-                requestAnimationFrame(() => setStyle({height: el.scrollHeight, opacity: 1})));
+                requestAnimationFrame(() => setStyle({height: `${el.scrollHeight}px`, opacity: 1})));
             return () => cancelAnimationFrame(first);
         }
         // 접히는 동안에는 그대로 둔다.
-        setStyle({height: el.offsetHeight, opacity: 1});
+        setStyle({height: `${el.offsetHeight}px`, opacity: 1});
         const first = requestAnimationFrame(() => requestAnimationFrame(() => setStyle(CLOSED)));
         // transition-reduce 환경에서는 transitionend가 오지 않는다.
         const timer = setTimeout(() => setMounted(false), 250);

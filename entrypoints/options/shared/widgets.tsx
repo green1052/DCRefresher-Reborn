@@ -1,5 +1,5 @@
-import {Search} from "lucide-react";
-import type {ComponentProps, ReactNode} from "react";
+import {Search} from "lucide-preact";
+import type { ComponentProps, ComponentChild as ReactNode } from "preact";
 
 import {cn} from "cn";
 
@@ -26,11 +26,11 @@ export const Section = ({title, desc, actions, children}: {
     </div>
 );
 
-/** 돋보기가 붙은 검색 입력. className은 감싸는 label에 붙는다. */
-export const SearchInput = ({className, ...props}: ComponentProps<"input">) => (
+/** 돋보기가 붙은 검색 입력. className은 감싸는 label에 붙는다. onChange은 react처럼 칠 때마다 움직이게 onInput으로 건다. */
+export const SearchInput = ({className, onChange, ...props}: ComponentProps<"input">) => (
     <label className={cn("input", className)}>
         <Search className="size-4 shrink-0 opacity-50"/>
-        <input type="search" className="grow" {...props}/>
+        <input {...{type: "search", ...props, onInput: onChange} as ComponentProps<"input">} className="grow"/>
     </label>
 );
 

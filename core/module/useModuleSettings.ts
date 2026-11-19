@@ -1,4 +1,4 @@
-import {useStore} from "zustand";
+import {useStore} from "@/utils/store";
 
 import {moduleSettings, moduleSettingsStore, runningModulesStore} from "./registry";
 import type {ModuleSettings} from "./types";

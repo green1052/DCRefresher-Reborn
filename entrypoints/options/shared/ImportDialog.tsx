@@ -1,5 +1,6 @@
-import {FileUp} from "lucide-react";
-import {useRef, useState} from "react";
+import {FileUp} from "lucide-preact";
+import type { ComponentChild } from "preact";
+import { useRef, useState } from "preact/hooks";
 
 import {DialogActions, DialogDescription, DialogHeader, DialogTitle, ModalDialog} from "@/components/dialogs";
 
@@ -8,7 +9,7 @@ import {type Done, notify, notifyDone} from "../optionsStore";
 // 열 때만 마운트해 닫으면 입력이 초기화된다.
 export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 넣거나 파일에서 불러와 주세요.", placeholder = "JSON 데이터", fromFile = true, onClose, onSubmit}: {
     title: string;
-    desc?: React.ReactNode;
+    desc?: ComponentChild;
     placeholder?: string;
     fromFile?: boolean;
     onClose: () => void;
@@ -54,7 +55,7 @@ export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 
 
             <textarea ref={input} placeholder={placeholder} aria-label={placeholder} value={text} rows={8}
                       className="textarea max-h-[50vh] w-full"
-                      onChange={(ev) => setText(ev.target.value)}/>
+                      onInput={(ev) => setText(ev.currentTarget.value)}/>
 
             <DialogActions cancelDisabled={busy}>
                 {fromFile && (

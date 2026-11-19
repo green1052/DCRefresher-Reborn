@@ -1,5 +1,5 @@
-import {useId, useState} from "react";
-import {Info} from "lucide-react";
+import { useId, useState } from "preact/hooks";
+import {Info} from "lucide-preact";
 
 import {TooltipButton} from "@/components/WithTooltip";
 import {DialogActions, DialogDescription, DialogHeader, DialogTitle, ModalDialog, SubmitForm} from "@/components/dialogs";
@@ -88,25 +88,25 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                     <div className="flex w-full flex-col gap-3">
                         <label htmlFor={`${id}-content`} className="text-sm font-medium leading-snug">값</label>
                         <input id={`${id}-content`} className="input w-full" placeholder={`${TYPE_NAMES[type]} 값을 입력해 주세요`}
-                               value={content} onChange={(ev) => setContent(ev.target.value)}/>
+                               value={content} onInput={(ev) => setContent(ev.currentTarget.value)}/>
                     </div>
 
                     <div className="flex items-center gap-3">
                         <input type="checkbox" id={`${id}-regex`} className="checkbox checkbox-sm" checked={isRegex}
-                               onChange={(ev) => setIsRegex(ev.target.checked)}/>
+                               onChange={(ev) => setIsRegex(ev.currentTarget.checked)}/>
                         <label htmlFor={`${id}-regex`} className="text-sm font-medium leading-snug">정규식</label>
                     </div>
 
                     <div className="flex w-full flex-col gap-3">
                         <label htmlFor={`${id}-name`} className="text-sm font-medium leading-snug">정보 (선택)</label>
                         <input id={`${id}-name`} className="input w-full" placeholder="목록에 보일 정보. 비우면 값으로 보입니다."
-                               value={name} onChange={(ev) => setName(ev.target.value)}/>
+                               value={name} onInput={(ev) => setName(ev.currentTarget.value)}/>
                     </div>
 
                     <div className="flex w-full flex-col gap-3">
                         <label htmlFor={`${id}-gallery`} className="text-sm font-medium leading-snug">특정 갤러리 차단 (선택)</label>
                         <input id={`${id}-gallery`} className="input w-full" placeholder="갤러리 ID" value={gallery}
-                               onChange={(ev) => setGallery(ev.target.value)}/>
+                               onInput={(ev) => setGallery(ev.currentTarget.value)}/>
                     </div>
 
                     <div className="flex w-full flex-col gap-3">

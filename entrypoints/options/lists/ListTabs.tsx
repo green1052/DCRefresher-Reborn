@@ -1,6 +1,7 @@
 import {cn} from "cn";
-import {ClipboardCopy, FileDown, Plus, Trash2, Upload} from "lucide-react";
-import {type ReactNode, useLayoutEffect, useMemo, useRef, useState} from "react";
+import {ClipboardCopy, FileDown, Plus, Trash2, Upload} from "lucide-preact";
+import { useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
+import { type ComponentChild as ReactNode } from "preact";
 
 import {ConfirmDialog} from "@/components/dialogs";
 import {FOCUS_RING} from "@/components/focusRing";
@@ -269,7 +270,7 @@ export const ListTabs = <T extends string, I>({
                                         )}
                                         <SearchInput className="w-[180px]" placeholder="검색" aria-label={`${label} 검색`} value={query}
                                                      onChange={(ev) => {
-                                                         setQuery(ev.target.value);
+                                                         setQuery(ev.currentTarget.value);
                                                          resetLimits();
                                                      }}/>
                                         {/* 검색 중에도 걸러진 것만이 아니라 이 종류 전부를 지우므로 확인 문구에 전체 개수를 적는다. */}

@@ -1,4 +1,5 @@
-import {type MouseEvent, useEffect, useState} from "react";
+import { useEffect, useState } from "preact/hooks";
+import { type TargetedMouseEvent as MouseEvent } from "preact";
 
 import {ConfirmDialog, DialogCloseButton, DialogTitle, ModalDialog} from "@/components/dialogs";
 import {dcconCode, isBlockedHidden} from "@/core/block";

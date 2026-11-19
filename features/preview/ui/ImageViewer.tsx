@@ -1,5 +1,5 @@
-import {ChevronLeft, ChevronRight, ExternalLink, X} from "lucide-react";
-import {useLayoutEffect, useRef, useState} from "react";
+import {ChevronLeft, ChevronRight, ExternalLink, X} from "lucide-preact";
+import { useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import {keepTabInside} from "@/components/dialogs";
 import {useReturnFocus} from "@/components/useReturnFocus";

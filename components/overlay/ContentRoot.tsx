@@ -1,4 +1,5 @@
-import {type ComponentType, useState} from "react";
+import { useState } from "preact/hooks";
+import { type ComponentType } from "preact";
 
 import {usePreviewStore} from "@/features/preview/ui/previewStore";
 import type {SelectedUser} from "@/stores/ui";

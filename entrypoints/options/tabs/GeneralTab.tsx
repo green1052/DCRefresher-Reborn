@@ -1,4 +1,5 @@
-import {Fragment, type RefObject, useEffect, useRef, useState} from "react";
+import { useEffect, useRef, useState } from "preact/hooks";
+import { Fragment, type RefObject } from "preact";
 
 import {useCollapse} from "@/components/useCollapse";
 import {defaultValue} from "@/core/module/settings";
@@ -90,7 +91,7 @@ const ModuleCard = ({feature, shown, searching}: { feature: ModuleInfo; shown: S
                     className="toggle"
                     checked={enabled}
                     aria-label={`${feature.name} 사용`}
-                    onChange={(ev) => void toggle(feature.id, ev.target.checked).catch(() => notify(SAVE_FAILED))}
+                    onChange={(ev) => void toggle(feature.id, ev.currentTarget.checked).catch(() => notify(SAVE_FAILED))}
                 />
             </div>
 
@@ -153,7 +154,7 @@ export function GeneralTab() {
 
     return (
         <div ref={root} className="flex flex-col gap-4">
-            <SearchInput placeholder="설정 검색" aria-label="설정 검색" value={query} onChange={(ev) => setQuery(ev.target.value)}/>
+            <SearchInput placeholder="설정 검색" aria-label="설정 검색" value={query} onChange={(ev) => setQuery(ev.currentTarget.value)}/>
             {matched.map(({feature, shown}) => <ModuleCard key={feature.id} feature={feature} shown={shown} searching={Boolean(needle)}/>)}
             {matched.length === 0 && <EmptyList>"{query.trim()}" 검색 결과 없음</EmptyList>}
         </div>

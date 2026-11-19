@@ -1,5 +1,5 @@
-import {ExternalLink} from "lucide-react";
-import {useEffect, useState} from "react";
+import {ExternalLink} from "lucide-preact";
+import { useEffect, useState } from "preact/hooks";
 
 import {Section} from "../shared/widgets";
 

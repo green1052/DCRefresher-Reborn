@@ -1,15 +1,6 @@
-import {X} from "lucide-react";
-import {
-    createContext,
-    type ComponentProps,
-    type KeyboardEvent,
-    type ReactNode,
-    type RefObject,
-    useContext,
-    useId,
-    useLayoutEffect,
-    useRef,
-} from "react";
+import {X} from "lucide-preact";
+import { useContext, useId, useLayoutEffect, useRef } from "preact/hooks";
+import { createContext, type ComponentProps, type TargetedKeyboardEvent as KeyboardEvent, type ComponentChild as ReactNode, type RefObject } from "preact";
 
 import {useReturnFocus} from "@/components/useReturnFocus";
 import {useModuleSettings} from "@/core/module/useModuleSettings";

@@ -1,6 +1,6 @@
-import {Send, Smile, Type, X} from "lucide-react";
+import {Send, Smile, Type, X} from "lucide-preact";
 import QuickLRU from "quick-lru";
-import {useEffect, useLayoutEffect, useRef, useState} from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import {TooltipButton, WithTooltip} from "@/components/WithTooltip";
 import {rovingKeyDown} from "@/components/roving";
@@ -232,7 +232,7 @@ export const WriteComment = () => {
                         aria-label="닉네임"
                         placeholder="닉네임"
                         maxLength={20}
-                        onChange={(ev) => setNick(ev.target.value)}
+                        onInput={(ev) => setNick(ev.currentTarget.value)}
                     />
                     <input
                         type="password"
@@ -240,9 +240,9 @@ export const WriteComment = () => {
                         value={passwordEdited ? password : ""}
                         aria-label="비밀번호"
                         placeholder={passwordEdited ? "비밀번호" : pwSaved ? "비밀번호 (저장됨)" : "비밀번호 (자동 생성)"}
-                        onChange={(ev) => {
+                        onInput={(ev) => {
                             setPasswordEdited(true);
-                            setPassword(ev.target.value);
+                            setPassword(ev.currentTarget.value);
                         }}
                     />
                 </div>
@@ -271,16 +271,16 @@ export const WriteComment = () => {
                             : "댓글 입력... (Shift+Enter 줄바꿈)"
                     }
                     className="textarea field-sizing-content min-h-16 flex-1 resize-y"
-                    onChange={(ev) => {
-                        if (txtcon && !(ev.nativeEvent instanceof InputEvent && ev.nativeEvent.isComposing)) applyTxtcon();
-                        saveDraft(ev.target.value);
+                    onInput={(ev) => {
+                        if (txtcon && !(ev instanceof InputEvent && ev.isComposing)) applyTxtcon();
+                        saveDraft(ev.currentTarget.value);
                     }}
                     onCompositionEnd={(ev) => {
                         if (txtcon) applyTxtcon();
                         saveDraft(ev.currentTarget.value);
                     }}
                     onKeyDown={(ev) => {
-                        if (ev.key === "Enter" && !ev.shiftKey && !ev.nativeEvent.isComposing) {
+                        if (ev.key === "Enter" && !ev.shiftKey && !ev.isComposing) {
                             ev.preventDefault();
                             void submit();
                         }

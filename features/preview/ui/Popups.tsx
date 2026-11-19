@@ -1,5 +1,6 @@
-import {ArrowBigUpDash, Ban, Megaphone, Star, Trash2} from "lucide-react";
-import {type ReactNode, useEffect, useId, useRef, useState} from "react";
+import {ArrowBigUpDash, Ban, Megaphone, Star, Trash2} from "lucide-preact";
+import { useEffect, useId, useRef, useState } from "preact/hooks";
+import { type ComponentChild as ReactNode } from "preact";
 
 import {DialogActions, DialogDescription, DialogHeader, DialogTitle, ModalDialog, SubmitForm} from "@/components/dialogs";
 import {sendMessage, TURNSTILE_CANCEL_EVENT, TURNSTILE_HOST} from "@/core/messaging/protocol";
@@ -81,18 +82,18 @@ const BlockPopup = ({comments}: { comments?: string[] }) => {
                         placeholder="차단 사유 직접 입력 (한글 20자 이내)"
                         maxLength={20}
                         ref={focusOnMount}
-                        onChange={(ev) => setCustom(ev.target.value)}
+                        onInput={(ev) => setCustom(ev.currentTarget.value)}
                     />
                 )}
             </div>
 
             <div className="flex flex-col gap-2">
                 <label className="flex items-center gap-3">
-                    <input type="checkbox" className="checkbox" checked={delChk} onChange={(ev) => setDelChk(ev.target.checked)}/>
+                    <input type="checkbox" className="checkbox" checked={delChk} onChange={(ev) => setDelChk(ev.currentTarget.checked)}/>
                     <span className="text-sm leading-snug font-normal">{comments ? "선택한 댓글 삭제" : "선택한 글 삭제"}</span>
                 </label>
                 <label className="flex items-center gap-3">
-                    <input type="checkbox" className="checkbox" checked={userTypeChk} onChange={(ev) => setUserTypeChk(ev.target.checked)}/>
+                    <input type="checkbox" className="checkbox" checked={userTypeChk} onChange={(ev) => setUserTypeChk(ev.currentTarget.checked)}/>
                     <span className="text-sm leading-snug font-normal">식별 코드 차단 시 IP 동시 차단</span>
                 </label>
             </div>
@@ -135,7 +136,7 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
                     value={code}
                     aria-label="자동입력 방지 코드"
                     placeholder="자동입력 방지 코드"
-                    onChange={(ev) => setCode(ev.target.value)}
+                    onInput={(ev) => setCode(ev.currentTarget.value)}
                 />
                 <DialogActions>
                     <button type="submit" className="btn btn-primary" disabled={!code.trim()}>전송</button>

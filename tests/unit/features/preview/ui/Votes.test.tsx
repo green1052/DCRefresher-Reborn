@@ -9,7 +9,7 @@ import {Votes} from "@/features/preview/ui/Votes";
 import {preData, tick} from "@/tests/helpers";
 
 // lucide, TooltipButton는 평범한 요소로 바꾼다(그리기, 계산에 필요한 것만 남긴다).
-vi.mock("lucide-react", () => ({ChevronDown: () => null, ChevronUp: () => null, ExternalLink: () => null, Link2: () => null}));
+vi.mock("lucide-preact", () => ({ChevronDown: () => null, ChevronUp: () => null, ExternalLink: () => null, Link2: () => null}));
 vi.mock("@/components/WithTooltip", () => ({TooltipButton: () => null}));
 vi.mock("@/core/preview/request", async (importOriginal) => ({...await importOriginal<typeof import("@/core/preview/request")>(), vote: vi.fn()}));
 

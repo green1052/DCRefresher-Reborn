@@ -14,7 +14,7 @@ export const RefresherSelect = <T extends string>({value, options, disabled, onC
         disabled={disabled}
         value={value}
         // 목록이 바뀌어 지금 값이 빠지면 브라우저가 첫 항목을 보여 주기만 하고 onChange는 오지 않는다.
-        onChange={(ev) => onChange(ev.target.value as T)}
+        onChange={(ev) => onChange(ev.currentTarget.value as T)}
         {...aria}
     >
         {Object.entries<string>(options).map(([key, label]) => (

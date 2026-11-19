@@ -1,5 +1,6 @@
-import {createPortal} from "react-dom";
-import {type ReactNode, type RefObject, type WheelEventHandler, useEffect, useRef} from "react";
+import { createPortal } from "preact";
+import { useEffect, useRef } from "preact/hooks";
+import { type ComponentChild as ReactNode, type RefObject, type WheelEventHandler } from "preact";
 
 import {overlay} from "@/components/overlay/shadow";
 import {useUiStore} from "@/stores/ui";
@@ -12,7 +13,7 @@ export const PreviewDialogRoot = ({fading, busy, blur, onWheel, scroller, childr
     fading: boolean;
     busy: boolean;
     blur: boolean;
-    onWheel: WheelEventHandler;
+    onWheel: WheelEventHandler<HTMLElement>;
     scroller: RefObject<HTMLDivElement | null>;
     children: ReactNode;
     after?: ReactNode;

@@ -1,5 +1,5 @@
-import {Shuffle} from "lucide-react";
-import {useId, useRef, useState} from "react";
+import {Shuffle} from "lucide-preact";
+import { useId, useRef, useState } from "preact/hooks";
 
 import {ColorInput} from "@/components/ColorInput";
 import {DialogClose, DialogDescription, DialogFooter, DialogHeader, DialogTitle, ModalDialog, SubmitForm} from "@/components/dialogs";
@@ -89,7 +89,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
                     </div>
 
                     <div className="input h-auto flex-row items-center gap-2 py-1">
-                        <ColorInput width={20} height={20} aria-label="색상" value={color} onChange={(ev) => edit({color: ev.target.value})}/>
+                        <ColorInput width={20} height={20} aria-label="색상" value={color} onChange={(ev) => edit({color: ev.currentTarget.value})}/>
                         <input
                             ref={input}
                             className="grow bg-transparent outline-none"
@@ -97,7 +97,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
                             aria-label="메모"
                             placeholder="메모를 입력해 주세요 (160자 제한)"
                             value={text}
-                            onChange={(ev) => edit({text: ev.target.value})}
+                            onInput={(ev) => edit({text: ev.currentTarget.value})}
                         />
                         <button type="button" className="btn btn-ghost btn-square btn-xs" aria-label="랜덤 색상" onClick={() => edit({color: randomColor()})}>
                             <Shuffle className="size-3"/>
@@ -108,7 +108,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
                         <div className="flex items-center gap-3">
                             <input type="checkbox" id={`${id}-scope`} className="checkbox"
                                    checked={scope === gallery}
-                                   onChange={(ev) => edit({scope: ev.target.checked ? gallery : undefined})}/>
+                                   onChange={(ev) => edit({scope: ev.currentTarget.checked ? gallery : undefined})}/>
                             <label htmlFor={`${id}-scope`} className="text-sm font-medium leading-snug">이 갤러리에서만 ({gallery})</label>
                         </div>
                     )}

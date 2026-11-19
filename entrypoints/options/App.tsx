@@ -1,5 +1,7 @@
-import {Ban, Database, Info, Keyboard, type LucideIcon, NotebookPen, Settings} from "lucide-react";
-import {lazy, Suspense, useEffect, useState, useSyncExternalStore} from "react";
+import {Ban, Database, Info, Keyboard, type LucideIcon, NotebookPen, Settings} from "lucide-preact";
+import {type ComponentChild, type ComponentType} from "preact";
+import { useEffect, useState } from "preact/hooks";
+import { useSyncExternalStore } from "@/utils/useSyncExternalStore";
 
 import {Notice} from "@/components/dialogs";
 import {ToastHost} from "@/components/overlay/Toasts";
@@ -17,13 +19,26 @@ import {useOptionsStore} from "./optionsStore";
 import {ShortcutTab} from "./tabs/ShortcutTab";
 
 // 디시콘 비는 드물게 열리므로 옵션 페이지를 열 때 같이 불러오지 않는다.
-const DcconRain = lazy(() => import("./DcconRain").then(({DcconRain}) => ({default: DcconRain})));
+// preact에는 lazy/Suspense가 없어 불러오는 동안 null을 그리는 얇은 대체물을 쓴다(기존 fallback도 없었다).
+let DcconRainComponent: ComponentType | undefined;
+const DcconRain = () => {
+    const [Component, setComponent] = useState<ComponentType | undefined>(DcconRainComponent);
+    useEffect(() => {
+        if (!DcconRainComponent) {
+            void import("./DcconRain").then(({DcconRain}) => {
+                DcconRainComponent = DcconRain;
+                setComponent(DcconRain);
+            });
+        }
+    }, []);
+    return Component ? <Component/> : null;
+};
 
 interface TabDef {
     id: string;
     label: string;
     icon: LucideIcon;
-    content: () => React.ReactNode;
+    content: () => ComponentChild;
 }
 
 const TABS: TabDef[] = [
@@ -110,7 +125,7 @@ export function App() {
             <ExtensionPageVars/>
             <Sidebar tab={current.id} onSelect={(id) => (location.hash = id)}/>
             {/* 누를 때마다 새로 마운트해 무작위 배치와 끝내는 타이머를 처음부터 다시 건다. */}
-            {rain > 0 && <Suspense><DcconRain key={rain}/></Suspense>}
+            {rain > 0 && <DcconRain key={rain}/>}
             <Notice message={notice} onClose={() => useOptionsStore.setState({notice: null})}/>
             <ToastHost/>
 

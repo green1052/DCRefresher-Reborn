@@ -1,5 +1,6 @@
-import {CircleAlert, Info, TriangleAlert, X} from "lucide-react";
-import {useEffect, useRef, useState, type ReactNode} from "react";
+import {CircleAlert, Info, TriangleAlert, X} from "lucide-preact";
+import { useEffect, useRef, useState } from "preact/hooks";
+import { type ComponentChild as ReactNode } from "preact";
 
 import {type ToastData, useUiStore} from "@/stores/ui";
 

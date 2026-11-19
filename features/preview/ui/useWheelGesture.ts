@@ -1,4 +1,5 @@
-import {type WheelEvent, useRef, useState} from "react";
+import { useRef, useState } from "preact/hooks";
+import { type TargetedWheelEvent as WheelEvent } from "preact";
 
 /** 휠 이벤트 사이가 이보다 벌어지면 새 동작으로 본다(ms). 관성 스크롤은 이보다 촘촘하게 이어진다. */
 const WHEEL_GESTURE_GAP = 250;

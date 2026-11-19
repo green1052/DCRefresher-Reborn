@@ -1,4 +1,4 @@
-import {Ban, Eye} from "lucide-react";
+import {Ban, Eye} from "lucide-preact";
 
 import type {IconsOf} from "@/core/module/types";
 

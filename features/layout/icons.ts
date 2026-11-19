@@ -1,4 +1,4 @@
-import {LayoutPanelTop} from "lucide-react";
+import {LayoutPanelTop} from "lucide-preact";
 
 import type {IconsOf} from "@/core/module/types";
 

@@ -1,4 +1,4 @@
-import {Clock} from "lucide-react";
+import {Clock} from "lucide-preact";
 
 import {WithTooltip} from "@/components/WithTooltip";
 

@@ -1,4 +1,4 @@
-import {Type} from "lucide-react";
+import {Type} from "lucide-preact";
 
 import type {IconsOf} from "@/core/module/types";
 

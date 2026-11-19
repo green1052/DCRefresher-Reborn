@@ -1,4 +1,4 @@
-import {shallow} from "zustand/shallow";
+import {shallow} from "zustand/vanilla/shallow";
 
 import {duplicateOf} from "@/core/block";
 import {runningModuleSettings, moduleSettingsStore, runningModulesStore} from "@/core/module/registry";

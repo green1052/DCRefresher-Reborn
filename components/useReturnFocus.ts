@@ -1,4 +1,5 @@
-import {type RefObject, useLayoutEffect, useState} from "react";
+import { useLayoutEffect, useState } from "preact/hooks";
+import { type RefObject } from "preact";
 
 /** 포커스된 요소. 오버레이처럼 shadow DOM 안이면 그 안까지 따라 들어간다. */
 export const focusedElement = (): HTMLElement | null => {

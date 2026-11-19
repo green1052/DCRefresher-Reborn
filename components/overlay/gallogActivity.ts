@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "preact/hooks";
 
 import {type GallogActivity, getGallogActivity} from "@/core/gallog";
 import {isFresh, useUiStore} from "@/stores/ui";

@@ -1,5 +1,6 @@
-import {Archive, ArrowUp, CircleAlert, Eye, MessageSquare, RotateCw} from "lucide-react";
-import {Fragment, useEffect, useLayoutEffect, useRef, useState} from "react";
+import {Archive, ArrowUp, CircleAlert, Eye, MessageSquare, RotateCw} from "lucide-preact";
+import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
+import { Fragment } from "preact";
 
 import {TooltipButton} from "@/components/WithTooltip";
 import {focusedElement} from "@/components/useReturnFocus";

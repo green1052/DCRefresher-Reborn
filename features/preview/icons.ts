@@ -1,4 +1,4 @@
-import {SquareMousePointer} from "lucide-react";
+import {SquareMousePointer} from "lucide-preact";
 
 import type {IconsOf} from "@/core/module/types";
 

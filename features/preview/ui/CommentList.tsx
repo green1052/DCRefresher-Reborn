@@ -1,5 +1,7 @@
-import {Ban, Trash2} from "lucide-react";
-import {Fragment, memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type MouseEvent} from "react";
+import {Ban, Trash2} from "lucide-preact";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
+import { memo } from "@/utils/memo";
+import { Fragment, type TargetedMouseEvent as MouseEvent } from "preact";
 
 import {ConfirmDialog} from "@/components/dialogs";
 import {useCollapse} from "@/components/useCollapse";

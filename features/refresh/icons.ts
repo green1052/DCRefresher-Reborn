@@ -1,4 +1,4 @@
-import {Pause, RefreshCw} from "lucide-react";
+import {Pause, RefreshCw} from "lucide-preact";
 
 import type {IconsOf} from "@/core/module/types";
 

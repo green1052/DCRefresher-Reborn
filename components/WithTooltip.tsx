@@ -1,4 +1,4 @@
-import {cloneElement, type ComponentProps, type ReactElement, type ReactNode} from "react";
+import { cloneElement, type ComponentProps, type VNode as ReactElement, type ComponentChild as ReactNode } from "preact";
 
 import {cn} from "cn";
 
