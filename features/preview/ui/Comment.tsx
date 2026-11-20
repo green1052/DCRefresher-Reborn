@@ -231,12 +231,13 @@ export const CommentDeletePrompt = ({comments, isAdmin}: { comments: ProcessedCo
     );
 };
 
-/** 유동 댓글 삭제 비밀번호 - 비워 두면 저장해 둔 비밀번호를 쓴다. */
+/** 유동 댓글 삭제 비밀번호 - 저장해 둔 비밀번호를 항상 보이게 채워 둔다. */
 const PasswordDialog = ({warning, onSubmit, onClose}: { warning?: string; onSubmit: (password: string) => void; onClose: () => void }) => {
     const [saved] = useState(() => savedNonmember().pw);
     const [password, setPassword] = useState("");
+    const [edited, setEdited] = useState(false);
     const input = useRef<HTMLInputElement>(null);
-    const value = password || saved;
+    const value = edited ? password : (saved ?? "");
 
     return (
         <ModalDialog onClose={onClose} className="sm:max-w-[320px]" focusOnOpen={input}>
@@ -245,15 +246,23 @@ const PasswordDialog = ({warning, onSubmit, onClose}: { warning?: string; onSubm
                 {warning && <p className="text-sm text-error">{warning}</p>}
             </DialogHeader>
             <SubmitForm onSubmit={() => value && onSubmit(value)}>
-                <input
-                    ref={input}
-                    className="input w-full"
-                    type="password"
-                    value={password}
-                    aria-label="댓글 비밀번호"
-                    placeholder={saved ? "비밀번호 (저장됨)" : "비밀번호"}
-                    onInput={(ev) => setPassword(ev.currentTarget.value)}
-                />
+                <div className="relative">
+                    <input
+                        ref={input}
+                        className="input w-full pr-20"
+                        type="text"
+                        value={value}
+                        aria-label="댓글 비밀번호"
+                        placeholder="비밀번호"
+                        onInput={(ev) => {
+                            setEdited(true);
+                            setPassword(ev.currentTarget.value);
+                        }}
+                    />
+                    {!edited && saved && (
+                        <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-base-content/40">(저장됨)</span>
+                    )}
+                </div>
                 <DialogActions>
                     <button type="submit" className="btn btn-error" disabled={!value}>삭제</button>
                 </DialogActions>
