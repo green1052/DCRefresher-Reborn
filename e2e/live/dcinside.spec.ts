@@ -120,7 +120,9 @@ test.describe("실제 디시", () => {
         await member.click({button: "right"});
 
         await expect(list.bubble).toContainText(uid ?? "");
-        await expect(list.bubble).toContainText(/[\d,]+ \/ [\d,]+/);
+        // 버블 머리는 "게시물 1,234댓글 5,678" 꼴로 늘어 놓는다 (UserBubble).
+        await expect(list.bubble).toContainText(/게시물 [\d,]+/);
+        await expect(list.bubble).toContainText(/댓글 [\d,]+/);
     });
 
     test("글 페이지에서도 콘텐츠 스크립트가 돈다", async ({page}) => {
