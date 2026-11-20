@@ -64,12 +64,13 @@ export const PreviewDialogRoot = ({fading, busy, blur, onWheel, scroller, childr
 
     const content = (
         <>
-            <div className={cn("fixed inset-0 bg-black/40 duration-150 animate-in fade-in data-fading:pointer-events-none data-fading:animate-out data-fading:fade-out data-fading:fill-mode-forwards",
+            {/* fixed의 화면(inset-0)은 useScrollLock가 페이지에 남긴 스크롤바 칸을 덮지 못해 흰 띠로 비치므로 100vw로 넓혀 덮는다. */}
+            <div className={cn("fixed inset-y-0 left-0 w-screen bg-black/40 duration-150 animate-in fade-in data-fading:pointer-events-none data-fading:animate-out data-fading:fade-out data-fading:fill-mode-forwards",
                                blur && "backdrop-blur-[5px]")}
                  data-fading={fading || undefined}/>
             {/* 화면 전체가 스크롤 칸 - 스크롤바 폭을 양쪽에 비워 글을 오갈 때 창이 흔들리지 않게 한다. */}
             <div
-                className="refresher-frame-scroll fixed inset-0 flex overflow-y-auto overscroll-contain py-[5vh] outline-none duration-150 animate-in fade-in [scrollbar-color:color-mix(in_oklab,var(--color-base-content)_25%,transparent)_transparent] [scrollbar-gutter:stable_both-edges] [scrollbar-width:thin] data-fading:pointer-events-none data-fading:animate-out data-fading:fade-out data-fading:fill-mode-forwards"
+                className="refresher-frame-scroll fixed inset-y-0 left-0 w-screen flex overflow-y-auto overscroll-contain py-[5vh] outline-none duration-150 animate-in fade-in [scrollbar-color:color-mix(in_oklab,var(--color-base-content)_25%,transparent)_transparent] [scrollbar-gutter:stable_both-edges] [scrollbar-width:thin] data-fading:pointer-events-none data-fading:animate-out data-fading:fade-out data-fading:fill-mode-forwards"
                 ref={(element) => {
                     scroller.current = element;
                     element?.focus({preventScroll: true});
