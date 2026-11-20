@@ -79,4 +79,7 @@ export const addWriterTypes = (filter: WriterFilter | null, search: (filter: Wri
 /** 검색창에 더한 종류를 뺀다 (모듈을 끌 때). */
 export const removeWriterTypes = (): void => {
     for (const item of document.querySelectorAll(`.${ADDED_TYPE}`)) item.remove();
+    // 고른 종류가 빠지면 검색창 라벨을 디시 기본값으로 돌린다.
+    const label = document.querySelector("#search_type_txt");
+    if (label && (label.textContent === TYPE_NAMES.uid || label.textContent === TYPE_NAMES.ip)) label.textContent = "제목";
 };
