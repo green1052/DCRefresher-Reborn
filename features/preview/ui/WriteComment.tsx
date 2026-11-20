@@ -57,6 +57,7 @@ export const WriteComment = () => {
     };
     const [login] = useState(() => Boolean(document.querySelector("#login_box .user_info .nickname > em")));
     const [accountId] = useState(loggedInUserId);
+    const nonmember = !login;
     const [saved] = useState(savedNonmember);
     const [nick, setNick] = useState(saved.nick || "ㅇㅇ");
     // 기억한 비밀번호가 없으면 하나 만든다. 쓸 때 저장되므로 이후 같은 비밀번호로 자기 댓글을 지울 수 있다.
@@ -123,7 +124,7 @@ export const WriteComment = () => {
             return;
         }
 
-        if (!login && (!nick || !password)) {
+        if (nonmember && (!nick || !password)) {
             useUiStore.getState().showToast("닉네임과 비밀번호를 입력해 주세요.", "error");
             return;
         }
@@ -142,7 +143,7 @@ export const WriteComment = () => {
                 if (usePreviewStore.getState().signalId !== st.signalId) return;
             }
 
-            const user = {name: login ? "" : nick, pw: login ? undefined : password};
+            const user = {name: nonmember ? nick : "", pw: nonmember ? password : undefined};
             // Turnstile은 캡차처럼 먼저 받는다 - 넘어갔으면 확인 창을 띄우지 않는다.
             let turnstile: Record<string, string> | undefined;
             if (post.commentForm.turnstile) {
@@ -157,7 +158,17 @@ export const WriteComment = () => {
                 // 토큰이 묻지 않고 바로 와도 넘어간 글에는 보내지 않는다.
                 if (usePreviewStore.getState().signalId !== st.signalId) return;
             }
-            const outcome = await postComment(preData, post, user, {text, dccons: pick.list, bigDccon: pick.big, txtcon: sendTxtcon ? txtconColors : undefined}, sentReply, code, turnstile);
+            const content = {text, dccons: pick.list, bigDccon: pick.big, txtcon: sendTxtcon ? txtconColors : undefined};
+            const sendOnce = (c?: string) => postComment(preData, post, user, content, sentReply, c, turnstile);
+            let outcome = await sendOnce(code);
+            // 비회원 댓글은 서버가 그림 캡차(kcap)를 요구하기도 한다. 미리보기에서 풀고 다시 보낸다.
+            while (!outcome.ok && outcome.captcha === "image") {
+                const entered = await st.openCaptcha(captchaImage(preData, "comment"));
+                if (!entered) return;
+                // 캡차를 푸는 사이 다른 글로 넘어갔으면 이 글에 보내지 않는다.
+                if (usePreviewStore.getState().signalId !== st.signalId) return;
+                outcome = await sendOnce(entered);
+            }
 
             if (outcome.ok) {
                 // 보내는 사이 더 쓴 글은 남긴다. 디시콘만 보냈으면 입력칸의 글은 보내지 않았으니 둔다.
@@ -168,11 +179,11 @@ export const WriteComment = () => {
                 // 보내는 사이 켠 글자콘, 답글 대상은 다음 댓글 것이라 보낸 것만 비운다. 디시콘은 finally에서 비운다.
                 if (txtcon) setTxtcon(false);
                 // 디시처럼 쓴 닉네임, 비밀번호를 기억한다. 만든 비밀번호도 저장해야 나중에 자기 댓글을 지울 수 있다.
-                if (!login) saveNonmember(nick, password);
+                if (nonmember) saveNonmember(nick, password);
                 // 답글 버튼은 누를 때마다 새 대상을 넣으므로, 그새 다른 글로 넘어갔거나 다른 댓글을 골랐으면 같지 않다.
                 usePreviewStore.setState((current) => (current.reply === sentReply ? {reply: NO_REPLY} : current));
                 refreshCommentsOf(preData);
-            } else if (outcome.captcha) {
+            } else if (outcome.captcha === "page") {
                 useUiStore.getState().showToast(
                     "자동입력 방지 확인이 필요합니다. 원문에서 작성해 주세요.",
                     "warning",
@@ -224,7 +235,7 @@ export const WriteComment = () => {
 
     return (
         <div ref={box} className="pt-3 pr-14 pb-6 pl-8" onFocus={touchForm}>
-            {!login && showInputs && (
+            {nonmember && showInputs && (
                 <div className="mb-2 flex gap-2">
                     <input
                         className="input flex-1"
@@ -332,14 +343,16 @@ export const WriteComment = () => {
                 </div>
             )}
 
-            <p className="mt-2 text-xs text-base-content/60">
-                {login ? (accountId ?? "회원 계정") : (
-                    // 닉네임을 지워도 버튼이 남아 다시 펼칠 수 있게 빈 닉네임은 할 일로 보인다.
-                    <button type="button" className="text-link underline-offset-4 hover:underline" aria-expanded={showInputs} onClick={toggleInputs}>
-                        {nick || "닉네임 입력"}
-                    </button>
-                )}
-                (으)로 {mode} 작성 중
+            <p className="mt-2 flex flex-wrap items-center gap-x-2 text-xs text-base-content/60">
+                <span>
+                    {login ? (accountId ?? "회원 계정") : (
+                        // 닉네임을 지워도 버튼이 남아 다시 펼칠 수 있게 빈 닉네임은 할 일로 보인다.
+                        <button type="button" className="text-link underline-offset-4 hover:underline" aria-expanded={showInputs} onClick={toggleInputs}>
+                            {nick || "닉네임 입력"}
+                        </button>
+                    )}
+                    (으)로 {mode} 작성 중
+                </span>
             </p>
 
             {dcconOpen && (

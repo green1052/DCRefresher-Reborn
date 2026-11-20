@@ -100,11 +100,15 @@ describe("postComment", () => {
 
     it("토큰을 받지 못했거나 다시 보내도 캡차면 원문에서 풀게 한다", async () => {
         net.token = undefined;
-        expect(await send(["false||captcha||v3"])).toEqual({ok: false, captcha: true});
+        expect(await send(["false||captcha||v3"])).toEqual({ok: false, captcha: "page"});
         expect(field("g-recaptcha-token")).toEqual([null]);
 
         net.token = "token";
-        expect(await send(["false||captcha||v3", "false||captcha"])).toEqual({ok: false, captcha: true});
+        expect(await send(["false||captcha||v3", "false||captcha"])).toEqual({ok: false, captcha: "page"});
+    });
+
+    it("kcap을 요구하면 미리보기에서 풀 그림 캡차로 알린다", async () => {
+        expect(await send(["false||kcap||자동입력 방지코드를 입력해 주세요."])).toEqual({ok: false, captcha: "image"});
     });
 
     it("디시콘, 글자콘은 ok만 성공이다", async () => {

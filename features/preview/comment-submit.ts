@@ -83,8 +83,8 @@ export const turnstileFields = async (
     };
 };
 
-/** captcha: 원문 페이지에서만 풀 수 있는 자동입력 방지 확인을 요구받았다. */
-type CommentOutcome = { ok: true } | { ok: false; captcha: true } | { ok: false; captcha: false; message: string };
+/** captcha: 'image'는 미리보기에서 풀 수 있는 그림 캡차를, 'page'는 원문 페이지에서만 풀 수 있는 확인을 요구받았다. */
+type CommentOutcome = { ok: true } | { ok: false; captcha: "image" } | { ok: false; captcha: "page" } | { ok: false; captcha: false; message: string };
 
 /** 댓글, 디시콘, 글자콘을 보낸다 - 'false||captcha||v3'가 오면 v3 토큰을 붙여 한 번 더 보낸다. 끊기면 던진다(서버가 올렸을 수 있다). */
 export const postComment = async (
@@ -109,8 +109,9 @@ export const postComment = async (
 
     // 성공 응답: 댓글은 새 댓글 번호, 디시콘, 글자콘은 'ok'.
     if (content.txtcon || useDccon ? response.result === "ok" : isCommentPosted(response)) return {ok: true};
-    // v2 체크박스를 요구하거나 v3 재전송도 막히면 원문 페이지에서만 풀 수 있다.
-    if (response.message === "captcha") return {ok: false, captcha: true};
+    // kcap은 미리보기에서 풀 수 있는 그림 캡차, captcha(v2 체크박스, v3 재전송 실패)는 원문 페이지에서만 풀 수 있다.
+    if (response.message === "kcap") return {ok: false, captcha: "image"};
+    if (response.message === "captcha") return {ok: false, captcha: "page"};
     const failMessage = Object.hasOwn(FAIL_MESSAGES, response.result) ? FAIL_MESSAGES[response.result]
         : useDccon && Object.hasOwn(DCCON_FAIL_MESSAGES, response.result) ? DCCON_FAIL_MESSAGES[response.result] : undefined;
     return {ok: false, captcha: false, message: (response.result === "false" ? resultMessage(response) : failMessage) || "댓글을 작성하지 못했습니다."};
