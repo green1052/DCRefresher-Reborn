@@ -31,7 +31,11 @@ const flush = (): void => {
         const current = await ratioStorage.getValue();
         const received = Object.fromEntries([...batch].map(([uid, activity]) => [uid, {...activity, date}]));
         await ratioStorage.setValue({ratio: trimRatios({...current.ratio, ...received})});
-    })();
+    })().catch((e) => {
+        // 저장에 실패해도 모은 배치를 버리지 않고 다음 저장에 합친다.
+        pending = new Map([...batch, ...pending]);
+        console.error(e);
+    });
 };
 
 /** 글댓비(userinfo): 같은 사람을 여러 탭이 동시에 받지 않게 조회권을 나눠 주고 결과를 1시간 공유한다. */
