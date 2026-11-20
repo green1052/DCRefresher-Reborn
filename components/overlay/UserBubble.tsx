@@ -19,7 +19,7 @@ import {blockLabel, useBlocksStore} from "@/stores/blocks";
 import {useUserMemo} from "@/stores/memos";
 import {copyText, type SelectedUser, selectedGallery, useUiStore} from "@/stores/ui";
 import {SAVE_FAILED} from "@/utils/error";
-import {type ActivityState, useGallogActivity} from "@/components/overlay/gallogActivity";
+import {useGallogActivity} from "@/components/overlay/gallogActivity";
 import {cn} from "cn";
 
 import {overlay} from "./shadow";
@@ -95,13 +95,6 @@ const CopyRow = ({label, value, onCopy, onSearch, color, valueClassName}: {
         )}
     </div>
 );
-
-const formatActivity = (activity: ActivityState): string | undefined => {
-    if (activity === "loading") return "불러오는 중...";
-    if (activity === "error") return "불러오지 못함";
-    if (!activity) return undefined;
-    return `${activity.article.toLocaleString()} / ${activity.comment.toLocaleString()}`;
-};
 
 const identityValue = ({uid, ip}: { uid?: string; ip?: string }): string | undefined => (uid && ip ? `${uid} (${ip})` : uid || ip);
 
@@ -209,7 +202,7 @@ const useBubbleData = (selected: SelectedUser) => {
     const userinfo = useRunningModuleSettings("userinfo");
     const ipColor = ipInfo ? userinfo?.[`${ipInfo.category}Color`] : undefined;
     const bans = dbVersion > 0 && selected.uid ? banReasonsOf(selected.uid) : undefined;
-    return {gallery, defaults, rules, memo, ipInfo, ipColor, bans, activity: formatActivity(activityState)};
+    return {gallery, defaults, rules, memo, ipInfo, ipColor, bans, activity: activityState};
 };
 
 const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) => {
@@ -278,12 +271,16 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
     };
 
     const identity = identityValue(selected);
+    // 머리 표시에는 식별 하나만 괄호에 넣는다 - 아이디와 IP가 다 있으면 괄호가 겹친다.
+    const idOrIp = selected.uid || selected.ip;
     // 검색 모듈이 이 페이지에서 돌 때만 (아이디, IP 거르기를 그 모듈이 한다).
     const searchApi = getModuleApi("search");
     const searchBy = (by: "nick" | "identity"): (() => void) | undefined => searchApi && (() => {
         close();
         searchApi.searchUserPosts(selected, by);
     });
+    // 예전처럼 반고닉은 아이디로, 유동은 IP로 찾는다. 식별값이 없을 때만 닉네임으로 찾는다.
+    const searchPosts = searchBy(selected.uid || selected.ip ? "identity" : "nick");
 
     const content = (
         // fixed 창을 overlay.portal(섀도 루트)에 그린다 - transform이나 clip을 쓰는 문서 흐름과 상관없이 화면에 붙는다.
@@ -316,13 +313,60 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
             ) : (
                 <>
                     <div className="flex flex-col">
-                        {selected.nick && <CopyRow label="닉네임" value={selected.nick} onCopy={copy} onSearch={searchBy("nick")}/>}
-                        {identity && <CopyRow label="아이디/IP" value={identity} onCopy={copy} onSearch={searchBy("identity")}/>}
-                        {ipInfo && <CopyRow label="IP 정보" value={ipInfo.label} onCopy={copy} color={ipColor} valueClassName={cn(!ipColor && "text-blue-600 dark:text-blue-400")}/>}
-                        {activity && <CopyRow label="글/댓글" value={activity} onCopy={copy}/>}
-                        {bans && <CopyRow label="갱차 갤러리" value={bans} onCopy={copy}/>}
-                        {memo && <CopyRow label="메모" value={memo.text} onCopy={copy} color={memo.color || undefined}/>}
-                    </div>
+                    {/* 디시 사용자 창(user_data_list)처럼 이름(아이디/IP)을 머리에 놓고, 각각 누르면 그 값이 복사된다. 오른쪽에 갤로그 아이콘을 둔다. */}
+                    {(selected.nick || identity) && (
+                        <div className="flex flex-col gap-1 px-3 pt-1 pb-0.5">
+                            <div className="flex items-center justify-between gap-2">
+                                <div className="flex min-w-0 items-baseline gap-1.5">
+                                    {selected.nick ? (
+                                        <>
+                                            <button type="button" className="min-w-0 cursor-pointer text-left" title="클릭하면 닉네임이 복사됩니다."
+                                                    onClick={() => copy(selected.nick!)}>
+                                                <strong className="truncate">{selected.nick}</strong>
+                                            </button>
+                                            {idOrIp && (
+                                                <button type="button" className="min-w-0 cursor-pointer truncate text-left text-xs text-base-content/60"
+                                                        title="클릭하면 아이디/IP가 복사됩니다." onClick={() => copy(idOrIp)}>
+                                                    ({idOrIp})
+                                                </button>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <button type="button" className="min-w-0 cursor-pointer text-left" title="클릭하면 복사됩니다."
+                                                onClick={() => copy(identity!)}>
+                                            <strong className="truncate">{identity}</strong>
+                                        </button>
+                                    )}
+                                </div>
+                                {selected.uid && (
+                                    <a className="shrink-0 rounded text-base-content/50 hover:text-base-content"
+                                       href={`https://gallog.dcinside.com/${selected.uid}`} target="_blank" rel="noreferrer" onClick={close}
+                                       title="갤로그" aria-label="갤로그 열기">
+                                        <ExternalLink className="size-3.5"/>
+                                    </a>
+                                )}
+                            </div>
+                            {/* 글/댓글 수는 굵은 숫자로만 보여 준다. */}
+                            {activity !== undefined && (
+                                <p className="flex gap-3 text-xs text-base-content/60">
+                                    {activity === "loading" ? (
+                                        <span className="skeleton h-3 w-20"/>
+                                    ) : activity === "error" ? (
+                                        "글/댓글 수를 불러오지 못함"
+                                    ) : (
+                                        <>
+                                            <span>게시물 <strong className="font-semibold">{activity.article.toLocaleString()}</strong></span>
+                                            <span>댓글 <strong className="font-semibold">{activity.comment.toLocaleString()}</strong></span>
+                                        </>
+                                    )}
+                                </p>
+                            )}
+                        </div>
+                    )}
+                    {ipInfo && <CopyRow label="IP 정보" value={ipInfo.label} onCopy={copy} color={ipColor} valueClassName={cn(!ipColor && "text-blue-600 dark:text-blue-400")}/>}
+                    {bans && <CopyRow label="갱차 갤러리" value={bans} onCopy={copy}/>}
+                    {memo && <CopyRow label="메모" value={memo.text} onCopy={copy} color={memo.color || undefined}/>}
+                </div>
                     <Separator/>
                     <div className="flex flex-col">
                         <MenuItem danger onClick={() => requestBlock({target: "user"})}><Ban/> 유저 차단</MenuItem>
@@ -340,10 +384,10 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
                         }}>
                             <NotebookPen/> 메모
                         </MenuItem>
-                        {selected.uid && (
-                            <a className={MENU_ITEM} href={`https://gallog.dcinside.com/${selected.uid}`} target="_blank" rel="noreferrer" onClick={close}>
-                                <ExternalLink/> 갤로그
-                            </a>
+                        {searchPosts && (
+                            <MenuItem onClick={searchPosts}>
+                                <Search/> 작성글 검색
+                            </MenuItem>
                         )}
                     </div>
                 </>
