@@ -14,7 +14,8 @@ type DcconPackageMode = "bundle" | "each";
 const esc = (path: string) => (/^[0-9a-f]+$/.test(path) ? path : RegExp.escape(path));
 const bundledPattern = (paths: string[]): string => {
     const unique = [...new Set(paths)];
-    if (unique.length === 1) return `^(${esc(unique[0]!)})$`;
+    // 빈 목록(패키지에 detail이 없을 때)은 비지 않는 정규식이 된다.
+    if (unique.length < 2) return `^(${esc(unique[0] ?? "")})$`;
     let end = unique[0]!.length;
     for (const path of unique) {
         let i = 0;

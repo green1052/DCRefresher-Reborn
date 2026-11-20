@@ -47,6 +47,8 @@ const extractVoice = (memo: string): { memo: string; voice?: ProcessedComment["v
 
     // 구분자 앞은 음성 경로(또는 iframe 태그), 뒤는 글이다 (디시와 같은 해석).
     const [raw = "", display = ""] = memo.split("@^dc^@");
+    // 경로 없이 구분자만 남은 글은 소리로 치지 않는다 (빈 주소 플레이어가 뜬다).
+    if (!raw) return {memo: display};
     const iframe = raw.includes("<iframe");
     const src = iframe ? (raw.match(/src="([^"]+)"/)?.[1] ?? "") : `https://vr.dcinside.com/${raw}`;
 

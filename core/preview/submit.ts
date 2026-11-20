@@ -41,7 +41,8 @@ export const submitComment = async (
             if (Number.isNaN(fi) || values.some(Number.isNaN)) return null;
             const computed = values.map((value, index) => String.fromCharCode((2 * (value - index - 1)) / (13 - index - 1))).join("");
 
-            return form.serviceCode.replace(/(.{10})$/, computed);
+            // computed에 $ 문자가 섞이면 교체 문자열 문법으로 읽히므로 함수로 넘긴다.
+            return form.serviceCode.replace(/(.{10})$/, () => computed);
         } catch {
             return null;
         }
