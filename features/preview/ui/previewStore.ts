@@ -270,7 +270,8 @@ export const previewGallery = (): string | undefined => {
 export const refreshCommentsOf = (preData: GalleryPreData): void => {
     setEntry(preData, {commentsAt: 0});
     const current = usePreviewStore.getState();
-    if (current.preData && postKey(current.preData) === postKey(preData)) void current.requestRefresh();
+    // 전체 목록을 받는다. 증분 갱신은 최신 댓글 번호가 그대로면 건너뛰는데, 지우기는 번호를 못 올리므로 표시가 갱신되지 않는다.
+    if (current.preData && postKey(current.preData) === postKey(preData)) void current.requestRefresh(true);
 };
 
 // 미리보기 UI 중 하나라도 떠 있으면 오버레이를 띄운다 (components/overlay/demands). 새 미리보기 UI를 추가하면 여기에 넣는다.
