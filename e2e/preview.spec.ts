@@ -39,13 +39,13 @@ test.describe("미리보기", () => {
     test.describe(() => {
         test.skip(({browserName}) => browserName === "firefox", "headless 파이어폭스는 자리를 차지하는 스크롤바를 그리지 않는다.");
 
-        test("창을 열어 페이지 스크롤을 잠가도 스크롤바 자리를 남겨 뒤 페이지가 옆으로 밀리지 않고, 스크롤바가 없던 페이지에는 자리를 만들지 않는다", async ({listPage}) => {
+        test("창을 열어 페이지 스크롤바 칸을 회수해 미리보기가 창 끝까지 차지하고, 스크롤바가 없던 페이지는 그대로 둔다", async ({listPage}) => {
             const {page, frame} = listPage;
             const layout = () => page.evaluate(() => ({width: document.body.getBoundingClientRect().width, gutter: document.documentElement.style.scrollbarGutter}));
             const short = await layout();
             await listPage.openPreview();
             await expect(frame).toBeVisible();
-            expect(await layout()).toEqual(short);
+            expect(await layout()).toEqual({...short, gutter: "auto"});
             await listPage.closePreview();
 
             // 페이지를 늘려 스크롤바를 세운다 (fixtures에서 Chromium의 스크롤바 숨김을 끈다).
@@ -54,7 +54,8 @@ test.describe("미리보기", () => {
             expect(long.width).toBeLessThan(short.width);
             await listPage.openPreview();
             await expect(frame).toBeVisible();
-            expect(await layout()).toEqual({width: long.width, gutter: "stable"});
+            // 스크롤바 칸이 사라지며 뒤 페이지가 다시 창 폭만큼 넓어진다.
+            expect(await layout()).toEqual({width: short.width, gutter: "auto"});
             await listPage.closePreview();
             expect(await layout()).toEqual(long);
         });

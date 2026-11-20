@@ -329,3 +329,11 @@
         width: unset;
     }
 }
+
+/* 페이지 스크롤바도 미리보기(PreviewDialogRoot)처럼 연하게. 폭은 브라우저 기본(auto, thin보다 살짝 넓다).
+   루트 스크롤바는 커스텀 색을 쓰면 클래식으로 강제되고 투명 트랙 아래엔 페이지가 없어 창 배경(검정)이 비치므로, 트랙은 페이지 배경색으로 칠한다.
+   shortcut: 디시 야간모드(어두운 페이지)에선 흰 트랙이 티가 난다, 밝은 트랙 규칙이 필요해지면 color-scheme 기반으로 분기할 것 */
+html {
+    scrollbar-color: rgb(0 0 0 / 25%) #fff;
+    scrollbar-width: auto;
+}
