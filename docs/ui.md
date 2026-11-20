@@ -29,9 +29,9 @@
 
 ## 옵션 페이지
 
-- `Layout.tsx`: `SearchInput`, `EmptyList`, `ImportDialog`, 읽기만 하는 `useStorageItem`.
+- `shared/widgets.tsx`: `SearchInput`, `EmptyList`. `shared/ImportDialog.tsx`: 목록 가져오기 창. 읽기만 하는 `useStorageItem`은 `shared/hooks.ts`.
 - `ListTabs.tsx`: 차단 목록, 메모가 같이 쓰는 목록 탭(검색, 거르기, 더 보기, 되돌리기). 목록 화면은 이것을 씁니다.
-- `optionsStore.ts`: 알림은 `notify`, `notifyDone`, `copyText`로. `SettingItem.tsx`: 설정 한 줄을 스키마 타입별로 그림. `RefresherSelect.tsx`: 값→문구 선택 상자(`aria-label` 필수).
+- `optionsStore.ts`: 알림은 `notify`, `notifyDone`으로. `copyText`는 `stores/ui.ts`에 있다. `SettingItem.tsx`: 설정 한 줄을 스키마 타입별로 그림. `RefresherSelect.tsx`: 값→문구 선택 상자(`aria-label` 필수).
 
 ## 접근성
 

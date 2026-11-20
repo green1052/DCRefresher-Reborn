@@ -6,6 +6,8 @@
 entrypoints/
   background/           배경 스크립트. page.ts는 탭의 페이지(MAIN world)에서 실행
   content.tsx           콘텐츠 스크립트 (IIFE 단일 파일)
+  options/              옵션 페이지
+  popup/                팝업
   page.content.css      디시 페이지 CSS (manifest로 따로 주입)
 features/<id>/          기능 모듈 하나
   meta.ts               id, 설정 스키마, 단축키, 토글 id (모든 번들이 읽는다)
