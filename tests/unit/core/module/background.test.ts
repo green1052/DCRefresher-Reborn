@@ -68,7 +68,7 @@ describe("startBackgroundModules", () => {
         expect(log).toHaveBeenCalledWith(error);
     });
 
-    it("한 모듈의 listen이 던지면 남기고 그 모듈만 맞추지 않으며, 다음 모듈의 listen·apply는 돈다", async () => {
+    it("한 모듈의 listen이 던지면 남기고 그 모듈만 맞추지 않으며, 다음 모듈의 listen, apply는 돈다", async () => {
         const error = new Error("listen");
         const log = vi.spyOn(console, "error").mockImplementation(() => {});
         const badApply = vi.fn<Apply>();

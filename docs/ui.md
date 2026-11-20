@@ -1,31 +1,40 @@
-# UI
-
-오버레이(shadow DOM)와 CSS, Preact·shadcn(Base UI) 부품을 쓸 때 알아 둘 점입니다.
+﻿# UI
 
 ## 오버레이와 CSS
 
-- 콘텐츠 스크립트는 디시 CSS와 오버레이 CSS(Tailwind)가 서로 섞이지 않게 `refresher-root` shadow DOM 안에 Preact 루트(`components/overlay/ContentRoot.tsx`)를 띄웁니다. 포털은 `overlay.portal`입니다.
-- 오버레이는 그릴 것이 처음 생길 때 띄웁니다. UI를 그리는 스토어가 그 조건을 `needOverlayWhen(store, (state) => …)`로 등록합니다(`components/overlay/demands.ts`). 새 오버레이 UI는 자기 스토어의 조건에 상태를 더하면 됩니다(미리보기 UI는 `previewStore.ts`, 토스트·버블·메모는 `stores/ui.ts` 끝).
-- 디시 페이지 자체를 바꾸는 CSS는 기능 폴더의 `page.css`에 둡니다. `modules/feature-styles.ts`가 모아 `.wxt/page-styles.css`를 만들고 `entrypoints/page.content.css`(manifest로 따로 주입)가 불러옵니다. 여러 모듈이 같이 쓰는 가림 규칙(차단·깡계)만 `assets/styles/content.css`에 있습니다. dev 중에 `page.css`를 새로 만들었으면 dev를 다시 띄웁니다.
-- 콘텐츠 스크립트에서 import한 CSS는 페이지가 아니라 오버레이(shadow)에 들어갑니다(`cssInjectionMode: "ui"`). 오버레이 안의 CSS는 `assets/styles/overlay.css`와 기능 폴더의 `overlay.css`입니다.
-- 오버레이의 Tailwind는 `overlay.css`가 `tailwind.css`를 불러와 만듭니다. 이때 옵션·팝업 폴더와 옵션·팝업만 쓰는 부품(`@source not` 목록)은 스캔하지 않아 오버레이 CSS가 작아집니다. 오버레이에서 그 부품을 쓰게 되면 목록에서 뺍니다. 빼지 않으면 `tests/unit/assets/styles/overlay.test.ts`가 실패합니다.
-- 페이지·오버레이는 서로 다른 문서라 같은 규칙(차단 흐림, 스텔스 디시콘 가림)을 `assets/styles/shared.css`의 Tailwind 유틸리티(`@utility`)로 맞춥니다. 쓰는 CSS가 `@reference`로 가져와 `@apply`합니다. 부모 선택자 목록에 중첩하면 `:is()`로 감싸져 명시도가 달라집니다. 명시도가 중요한 곳은 규칙을 나눠 씁니다.
-- 우리가 그리는 UI는 Tailwind 클래스로 꾸밉니다. CSS 파일에 남는 것은 디시 HTML(미리보기 본문·댓글의 `.refresher-html`, 디시 페이지)처럼 클래스를 달 수 없는 곳의 규칙뿐입니다. Tailwind는 소스에 적힌 클래스 이름만 만들므로 클래스 이름을 이어 붙여 만들지 않습니다.
-- 오버레이에는 Tailwind 리셋(preflight)이 들어갑니다. 디시 본문·댓글 HTML(`.refresher-html`)만은 `overlay.css`가 `all: revert-layer`로 리셋을 되돌립니다.
-- 다크모드는 조상의 `dark` 클래스로 바꿉니다(`utils/appearance.ts`). 옵션·팝업은 시스템 설정을, 오버레이는 디시 다크모드를 오버레이 최상위 요소(shadow 안의 컨테이너)에 옮기고 `color-scheme`도 같이 정합니다.
-- 강조색 글자(링크 등)는 `text-link`(`--link`)로 칠합니다. 다크모드의 `--primary`는 흰 글자를 얹는 버튼 배경색이라 글자에 쓰면 어두운 배경에 묻힙니다.
-- 설정값을 오버레이 CSS에 넘길 때는 `<html>`에 CSS 변수를 둡니다. 커스텀 속성은 shadow 경계를 넘어 상속됩니다. 폰트 교체의 `--refresher-preview-font-size`가 예입니다.
+- 콘텐츠 스크립트는 디시 CSS와 섞이지 않게 `refresher-root` shadow DOM 안에 Preact 루트(`components/overlay/ContentRoot.tsx`)를 띄웁니다. 포털은 `overlay.portal`입니다.
+- 오버레이는 그릴 것이 처음 생길 때 띄우고 조건은 `needOverlayWhen(store, (state) => ...)`로 등록합니다(`components/overlay/demands.ts`). 새 UI는 자기 스토어의 조건에 상태를 더하면 됩니다.
+- 디시 페이지 자체를 바꾸는 CSS는 기능 폴더의 `page.css`입니다(`modules/feature-styles.ts`가 모아 `entrypoints/page.content.css`가 주입). 여러 모듈이 같이 쓰는 가림 규칙만 `assets/styles/content.css`에 있고, dev 중 `page.css`를 새로 만들면 dev를 다시 띄웁니다.
+- 콘텐츠 스크립트가 import한 CSS는 오버레이를 처음 띄울 때 shadow에 들어갑니다(`cssInjectionMode: "ui"`가 `content-scripts/content.css`를 넣고 `entrypoints/content.tsx`의 `inheritStyles` 주석이 리셋을 막는 이유를 적는다). 오버레이 안 CSS는 `assets/styles/overlay.css`와 기능 폴더의 `overlay.css`입니다.
+- 오버레이의 Tailwind는 `overlay.css`가 `tailwind.css`를 불러 만드는데 옵션, 팝업 전용 부품(`@source not` 목록)은 스캔하지 않습니다. 오버레이에서 쓰게 되면 목록에서 빼지 않으면 `tests/unit/assets/styles/overlay.test.ts`가 실패합니다.
+- 페이지, 오버레이는 다른 문서라 같은 규칙은 `assets/styles/shared.css`의 `@utility`로 맞춥니다(`@reference` + `@apply`). `:is()`로 감싸져 명시도가 달라지므로 명시도가 중요한 곳은 규칙을 나눠 씁니다.
+- UI는 Tailwind 클래스로 꾸미고 CSS 파일에는 디시 HTML(미리보기 본문, `.refresher-html`)처럼 클래스를 못 다는 곳만 남깁니다. Tailwind는 적힌 클래스만 만들므로 이어 붙여 만들지 않습니다. Tailwind 리셋이 들어가고 `.refresher-html`만 `all: revert-layer`로 되돌립니다.
+- 테마는 daisyUI 내장 `light`(기본)과 `black`(다크 모드) 둘입니다. 테마를 새로 정의하지 않고 부품은 스톡 모양을 쓰되 치수·배치 유틸리티만 얹습니다.
+- `utils/appearance.ts`가 루트에 `data-theme`, `.dark` 클래스, `color-scheme`을 함께 단다 - 옵션·팝업은 `followSystemAppearance`(시스템), 오버레이는 `followDcAppearance`(디시 다크모드 `#css-darkmode` 링크 감시). `dark:` 변형과 미리보기 본문 반전 규칙이 따른다.
+- 강조색 글자는 `text-link`(`--link`, 디시 링크색. 라이트=진한 보라, 다크=밝은 보라)로 칠합니다. 설정값은 `<html>`의 CSS 변수로 넘깁니다(커스텀 속성은 shadow를 넘어 상속, `--refresher-preview-font-size`).
 
 ## 부품
 
-- 화면은 Preact로 그리지만 코드는 `react`에서 import합니다(`@preact/preset-vite`가 `preact/compat`으로 바꿉니다). 타입은 `@types/react`를 그대로 씁니다. tsconfig에서 `react` 타입을 `preact/compat`으로 바꾸면 Base UI와 ref·이벤트 타입이 맞지 않아 shadcn 부품마다 오류가 납니다.
-- Preact는 상태 변경을 다음 마이크로태스크에 그립니다. 누른 직후 새 창이 바로 DOM에 있다고 기대하지 않습니다(E2E는 `getByRole("dialog")` 안에서 찾습니다).
-- Preact는 `autoFocus`로 포커스를 옮기지 않으므로 다이얼로그는 `ModalDialog`의 `focusOnOpen`에 ref를, 나중에 나타나는 입력칸은 `utils/focus.ts`의 `focusOnMount`를 씁니다.
-- Preact 11은 언마운트된 컴포넌트의 `useEffect` 정리를 다음 프레임으로 미룹니다. 그사이 Base UI의 문서 리스너(Esc·바깥 클릭)가 살아 있습니다. 그래서 `open`을 고정해 두고 언마운트로 닫는 창은 방금 닫혔어도 다음 키·클릭을 받습니다. 그런 창의 `onOpenChange`는 이미 닫혔으면 `details.cancel()`·`details.allowPropagation()`으로 흘려보냅니다(유저 버블, 미리보기 창).
-- 부품은 shadcn(`components/ui`, Base UI)입니다. 손으로 만들지 않고 `bunx shadcn add <이름>`으로 추가합니다. shadcn CLI가 `.wxt/tsconfig.json`의 경로를 잘못 풀어 루트 `tsconfig.json`에 `@/*` 경로를 다시 적어 두었습니다. DB 워크플로(`db.yml`)도 `wxt prepare` 없이 이 경로로 `@/`를 풀므로 지우지 않습니다. `tailwind.css`는 `shadcn/tailwind.css`(Base UI 데이터 속성용 variant)를 불러와야 합니다.
-- `components/ui`에서 우리가 고친 곳: 포털을 쓰는 부품(dialog·alert-dialog·popover·select·tooltip)은 `container={overlay.portal}`로 오버레이 안에 그립니다. dialog·alert-dialog의 내용은 배경에 넘길 `overlayProps`를 받습니다(`useModal`이 `forceRender`와 흐림 끄기에 씁니다). popover의 내용은 `anchor`를 받아 Positioner에 넘깁니다(유저·디시콘 버블을 우클릭한 자리에 띄웁니다). slider는 손잡이에 이름을 달 `thumbProps`를 받습니다. spinner의 이름은 `aria-label="불러오는 중"`입니다. switch 트랙은 루트 글자 크기가 커져도 손잡이가 들어가게 px 대신 rem으로 잽니다. 부품을 다시 받을 때(`--overwrite`) 이 부분을 다시 넣습니다.
-- 다이얼로그는 `components/dialogs.tsx`의 `ModalDialog`(열 때만 마운트), `ConfirmDialog`, `Notice`, `DialogActions`, `SubmitForm`을 씁니다. `onClose`는 닫힘 애니메이션이 끝나 포커스가 돌아간 뒤에 불립니다. 일을 마친 창이 스스로 닫을 때는 `actionsRef.current.close()`를 씁니다.
-- 포커스: 트리거 없이 여는 창(다이얼로그·버블)은 `useReturnFocus`(`components/useReturnFocus.ts`)가 연 요소에 포커스를 돌려줍니다. 오버레이(shadow DOM) 안에서는 Base UI의 포커스 가두기가 끝을 알아보지 못해 모달 창(`ModalDialog`·`ConfirmDialog`·`Notice`, 이미지 크게 보기)이 `keepTabInside`로 Tab을 직접 돌립니다.
-- 툴팁은 `components/WithTooltip.tsx`를 씁니다. 수천 줄을 그리는 목록(차단 목록 줄·댓글)에는 브라우저 기본(`title`)을 씁니다.
-- 옵션의 설정 검색은 맞는 글자를 CSS Custom Highlight API(`CSS.highlights`, `pages.css`의 `::highlight(refresher-search)`)로 칠합니다(`entrypoints/options/GeneralTab.tsx`). 그린 글자 위에 범위만 얹으므로 이름·설명에 `<mark>`를 넣지 않습니다.
-- 단축키는 `utils/event.ts`의 `isTyping`이 모달 다이얼로그 배경(`[data-slot=dialog-overlay]`·`[data-slot=alert-dialog-overlay]`)이 떠 있으면 막습니다. 미리보기 창의 Esc 전달(`features/preview/ui/Frame.tsx`)은 같은 배경 선택자에 팝오버(`[data-slot=popover-content]`)를 더해 위에 뜬 창을 알아봅니다. 미리보기 안에서 연 창은 Base UI가 배경을 그리지 않으므로 `useModal`이 늘 `forceRender`로 그립니다. 배경을 바꾸면 이 선택자들도 맞춥니다.
+- UI는 pure Preact 11입니다(tsconfig의 `jsxImportSource`가 preact/jsx-runtime을 가리킵니다). 부품 라이브러리는 daisyUI 5(Tailwind 플러그인, 순수 CSS 클래스)이고 별도 `components/ui` 폴더 없이 쓰는 자리에서 클래스(`btn`, `input`, `toggle`, `checkbox`, `radio`, `select`, `tabs`, `badge`, `kbd`, `loading`, `card`, `table`, `join`, `tooltip`+`data-tip`, `modal`/`modal-box`, `toast`, `alert`, `skeleton`, `divider`)로 인라인합니다. 색은 daisyUI 시맨틱 토큰(`base-100/200/300`, `base-content`, `primary`, `error` 등)으로만 칠합니다.
+- 새 창은 연 직후 DOM에 있다고 기대하지 않습니다(E2E는 `getByRole("dialog")`/`getByRole("alertdialog")`, shadow 안 `[data-slot=dialog-content]`/`[data-slot=alert-dialog-content]`로 찾음). 다이얼로그 첫 포커스는 `ModalDialog`의 `focusOnOpen`, 나중에 나타나는 입력칸은 `Popups.tsx`의 `focusOnMount`로 옮깁니다.
+- 다이얼로그는 `components/dialogs.tsx`가 daisyUI `modal`/`modal-box`를 쓴 native `<dialog>`+`showModal`로 직접 관리합니다(top-layer, `::backdrop`, Esc(cancel), 포커스 가두기를 브라우저가 맡음, 열림 전환은 daisyUI가). 닫을 때는 `close()`가 `el.close()` → `useReturnFocus` 포커스 반환 → `onClose()`를 즉시 부릅니다. 닫힘 전환을 기다렸다 닫으면 그 사이에 다시 연 창을 옛 타이머가 지울 수 있어 애니메이션 종료 대기는 하지 않습니다. 확인 창은 `ConfirmDialog`(`role="alertdialog"`, `data-slot=alert-dialog-content`), 스스로 닫을 때는 `actionsRef.current.close()`를 씁니다.
+- native 모달의 shadow DOM 주의점: 오버레이 shadow host가 `pointer-events: none`이어서 daisyUI `.modal`의 `dialog[open]` 규칙(`pointer-events: auto`)이 없으면 창 안 버튼이 죽습니다.
+- Chromium의 모달 Tab 순환은 창 요소를 거치는 빈 돌점에서 포커스가 shadow 밖으로 새므로 `keepTabInside`로 가장자리를 직접 돌립니다.
+- 모달이 살아 있는 동안 브라우저는 창 밖 포커스 이동을 막으므로 삭제로 줄이 사라질 때는 줄 언마운트 시점에 포커스를 돌립니다(`ListTabs.tsx`의 `ListRow`).
+- 한 묶음에서 Tab 정지점을 하나로 묶는(roving tabindex) 단추 무리(디시콘 패키지 줄, 글자콘 색)는 `components/roving.ts`의 `rovingKeyDown`을 묶음에 걸고 단추마다 `tabIndex={선택됨 ? 0 : -1}`을 붙입니다. 접기/펼치기는 `components/useCollapse.ts`.
+- 버블(`components/overlay/UserBubble.tsx`)은 popover 부품 없이 `overlay.portal`에 fixed div(`data-slot=popover-content`)로 직접 그리고 바깥 누름/Esc을 스스로 처리합니다. 콘텐츠 스크립트의 window 리스너에서 shadow 안 요소는 호스트로 재지정되므로 `ev.composedPath()`로 판정합니다(`utils/event.ts`의 `eventTarget`). 슬라이더는 native `<input type="range">`(`SettingItem.tsx`).
+- 툴팁은 `components/WithTooltip.tsx`(daisyUI `tooltip`+`data-tip`). 수천 줄 목록에는 브라우저 기본 `title`을, 수천 번 그리는 자리(목록 줄, 댓글, 디시콘 칸)는 부품 대신 `<button>` + `FOCUS_RING`(`components/focusRing.ts`)을 씁니다.
+- 오버레이 없이 페이지에 직접 두는 단추는 페이지에 컴포넌트 트리를 올리지 않으려고 preact 없이 그립니다(`features/stealth/index.ts`). 옵션 설정 검색은 CSS Custom Highlight API(`::highlight(refresher-search)`)로 칠합니다(`<mark>` 넣지 않음).
+- 단축키는 `utils/event.ts`의 `isTyping`이 모달(`overlay.portal`의 오버레이 선택자 + 이벤트 경로의 열린 `<dialog>`)이 떠 있으면 막고, 미리보기 창의 Esc 전달은 `PreviewDialogRoot`가 열린 모달/버블을 보고 흘려보냅니다. 배경 요소를 바꾸면 선택자도 맞춥니다.
+
+## 옵션 페이지
+
+- `shared/widgets.tsx`: `SearchInput`, `EmptyList`. `shared/ImportDialog.tsx`: 목록 가져오기 창. 읽기만 하는 `useStorageItem`은 `shared/hooks.ts`.
+- `ListTabs.tsx`: 차단 목록, 메모가 같이 쓰는 목록 탭(검색, 거르기, 더 보기, 되돌리기). 목록 화면은 이것을 씁니다.
+- `optionsStore.ts`: 알림은 `notify`, `notifyDone`으로. `copyText`는 `stores/ui.ts`에 있다. `SettingItem.tsx`: 설정 한 줄을 스키마 타입별로 그림. `RefresherSelect.tsx`: 값→문구 선택 상자(`aria-label` 필수).
+
+## 접근성
+
+- 오류 문구는 `role="alert"`, 진행 상황은 `role="status"` 영역에 글로(검색 모듈의 "다음 검색 중..."). 토스트는 오류일 때만 하던 말을 끊고 `role="alert"`로 바꿉니다(`components/overlay/Toasts.tsx`, 뷰포트는 `aria-live="polite"` region).
+- `<h1>`은 페이지에 하나(옵션은 본문 탭 제목). 사이드바 현재 탭은 `aria-current="page"`입니다. 아이콘만 있는 버튼, 선택 상자, 검색칸에는 `aria-label`이나 `WithTooltip`의 `tip`으로 이름을 줍니다.
+- 움직임은 `prefers-reduced-motion: reduce`를 따릅니다(`assets/styles/pages.css` 등). 새 애니메이션도 같이 막습니다.

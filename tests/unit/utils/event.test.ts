@@ -40,9 +40,9 @@ describe("isTyping", () => {
     });
 
     // 확인 창의 버튼처럼 입력칸이 아닌 곳에 포커스가 있어도 막아야 뒤의 미리보기가 옆 글로 넘어가지 않는다.
-    it.each(["dialog-overlay", "alert-dialog-overlay"])("포털에 %s가 떠 있으면 막는다", (slot) => {
+    it("포털에 dialog-overlay가 떠 있으면 막는다", () => {
         const backdrop = document.createElement("div");
-        backdrop.dataset.slot = slot;
+        backdrop.dataset.slot = "dialog-overlay";
         const button = document.createElement("button");
         overlay.portal?.append(backdrop, button);
         expect(typingOn(button)).toBe(true);

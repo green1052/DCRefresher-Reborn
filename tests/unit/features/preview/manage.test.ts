@@ -9,7 +9,7 @@ import {usePreviewStore} from "@/features/preview/ui/previewStore";
 import {preData as makePreData} from "../../../helpers";
 import {type Running, runModule} from "../module";
 
-// 관리 요청은 테스트가 resolve로 끝낸다. 본문·댓글은 바로 준다.
+// 관리 요청은 테스트가 resolve로 끝낸다. 본문, 댓글은 바로 준다.
 const pending = vi.hoisted(() => ({resolves: [] as ((result: ManageResult) => void)[]}));
 const request = vi.hoisted(() => {
     const manage = () => new Promise<ManageResult>((resolve) => pending.resolves.push(resolve));
@@ -25,7 +25,11 @@ vi.mock("@/core/preview/request", async (importOriginal) => ({
     blockUser: request.blockUser
 }));
 
-const preData = (id: string) => makePreData({id, link: `/board/view/?id=test&no=${id}`});
+// 기록에 쌓은 글 정보는 디시 주소일 때만 다시 읽힌다 (core/preview/history.ts의 isGalleryPreData).
+const preData = (id: string) => makePreData({id, link: `https://gall.dcinside.com/board/view/?id=test&no=${id}`});
+
+// jsdom은 history.go를 예약 뒤 늦게 popstate로 터뜨려 다음 테스트가 어긋날 수 있어 이 파일에서는 popstate를 통째로 막는다.
+window.addEventListener("popstate", (ev) => ev.stopImmediatePropagation(), {capture: true});
 
 const press = (key: string, target: EventTarget = window): void =>
     void target.dispatchEvent(new KeyboardEvent("keydown", {key, code: `Key${key.toUpperCase()}`, bubbles: true, cancelable: true}));
@@ -110,7 +114,7 @@ it("차단 키 두 번은 한 번만 차단하고, 글도 지우는 프리셋이
     press("b");
     expect(request.blockUser).toHaveBeenCalledTimes(1);
     await settle(true);
-    expect(usePreviewStore.getState().visible).toBe(false);
+    await vi.waitFor(() => expect(usePreviewStore.getState().visible).toBe(false));
 
     usePreviewStore.getState().requestOpen(preData("2"));
     press("b");

@@ -1,8 +1,4 @@
-/**
- * 단위 테스트 공통 준비 (vitest.config.ts의 setupFiles). 테스트 파일마다 먼저 돈다.
- * 목·스파이는 vitest.config.ts의 mockReset·restoreMocks가 테스트마다 되돌린다.
- * 아래 polyfill은 jsdom·fake-browser에만 없는 것이다. 확장이 도는 브라우저에는 다 있다.
- */
+/** 단위 테스트 공통 준비 (setupFiles). 아래 polyfill은 브라우저에는 다 있고 jsdom, fake-browser에만 없는 것이다. */
 import {URLPattern} from "node:url";
 
 import {afterEach, beforeEach, vi} from "vitest";
@@ -14,6 +10,7 @@ afterEach(() => void vi.useRealTimers());
 
 // fake-browser의 getKeys는 구현되지 않았다고 던진다. reset이 바꾸지 않는 객체라 한 번만 채운다.
 fakeBrowser.storage.local.getKeys = async () => Object.keys(await fakeBrowser.storage.local.get(null));
+fakeBrowser.storage.sync.getKeys = async () => Object.keys(await fakeBrowser.storage.sync.get(null));
 
 // permissions.contains도 던진다 (옵션 차단 탭의 이미지 호스트 권한 확인). 받은 권한이 없는 것으로 둔다.
 fakeBrowser.permissions.contains = async () => false;
@@ -40,7 +37,7 @@ if (typeof window !== "undefined") {
         addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}
     });
     Element.prototype.scrollIntoView ??= () => undefined;
-    // Web Locks (stores/modules·core/storage/sync). 한 탭뿐이므로 차례대로 잇기만 한다.
+    // Web Locks (stores/modules, core/storage/sync). 한 탭뿐이므로 차례대로 잇기만 한다.
     if (!("locks" in navigator)) {
         let queue: Promise<unknown> = Promise.resolve();
         Object.defineProperty(navigator, "locks", {

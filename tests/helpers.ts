@@ -1,4 +1,7 @@
 /** 단위 테스트 공용 도우미. 영역에만 필요한 도우미는 그 테스트 파일에 둔다. */
+import { render as preactRender } from "preact";
+import {act} from "preact/test-utils";
+import type { ComponentChild } from "preact";
 import {fakeBrowser} from "wxt/testing/fake-browser";
 
 import type {AnyModule, ModuleDefinition, SettingSchema} from "@/core/module/types";
@@ -10,6 +13,14 @@ import {emptyEntries, useBlocksStore} from "@/stores/blocks";
 
 /** 걸린 타이머 0과 저장소 변경 알림이 한 차례 돌 때까지 기다린다. */
 export const tick = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
+
+/** (엘리먼트, 컨테이너) 모양으로 그린 직후 DOM을 읽을 수 있게 동기에 그린다. null이면 뗀다. preact의 render는 동기다. */
+export const render = (element: ComponentChild | null | undefined, container: HTMLElement): void => {
+    preactRender(element ?? null, container);
+};
+
+/** act. 짝수는 await하고 쓴다. */
+export {act};
 
 /** storage.local의 값 하나 (키는 local: 없이). */
 export const stored = async (key: string): Promise<unknown> => (await fakeBrowser.storage.local.get(key))[key];
@@ -40,6 +51,6 @@ export const dcComment = (no: number, fields: Partial<ProcessedComment> = {}): P
 /** 차단 목록 항목. 주지 않으면 id는 내용이고 정규식이 아니다. */
 export const blockEntry = (content: string, fields: Partial<BlockEntry> = {}): BlockEntry => ({id: content, content, isRegex: false, ...fields});
 
-/** 차단 스토어에 목록·기본 모드를 저장소를 거치지 않고 넣는다. 주지 않은 유형은 비고, 기본 모드는 기본값이다. */
+/** 차단 스토어에 목록, 기본 모드를 저장소를 거치지 않고 넣는다. 주지 않은 유형은 비고, 기본 모드는 기본값이다. */
 export const setBlockLists = (lists: Partial<Record<BlockType, BlockEntry[]>> = {}, defaults: Partial<Record<BlockType, DetectMode>> = {}): void =>
     useBlocksStore.setState({entries: {...emptyEntries(), ...lists}, defaults: {...DEFAULT_DETECT_MODE, ...defaults}});

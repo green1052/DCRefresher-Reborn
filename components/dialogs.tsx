@@ -1,31 +1,26 @@
-import type {Dialog as DialogPrimitive} from "@base-ui/react/dialog";
-import {X} from "lucide-react";
-import {type KeyboardEvent, type ReactNode, type RefObject, useRef, useState} from "react";
+import {X} from "lucide-preact";
+import { useContext, useId, useLayoutEffect, useRef } from "preact/hooks";
+import { createContext, type ComponentProps, type TargetedKeyboardEvent as KeyboardEvent, type ComponentChild as ReactNode, type RefObject } from "preact";
 
 import {useReturnFocus} from "@/components/useReturnFocus";
-import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogTitle} from "@/components/ui/alert-dialog";
-import {Button} from "@/components/ui/button";
-import {Dialog, DialogClose, DialogContent, DialogFooter} from "@/components/ui/dialog";
 import {useModuleSettings} from "@/core/module/useModuleSettings";
 import {cn} from "cn";
 
-/**
- * 연 창의 포커스.
- * - first: 창의 첫 요소로 옮긴다.
- * - keyboard: 키보드로 열었을 때만 창 안으로 옮긴다. 마우스로 열었으면 그 자리에 둔다.
- * - ref: 그 요소(입력칸 등)로 옮긴다. Preact는 autoFocus 속성으로 포커스를 옮기지 않으므로 입력칸부터 쓰는 창은 이것을 쓴다.
- */
 type AutoFocus = "first" | "keyboard" | RefObject<HTMLElement | null>;
 
 const FOCUSABLE = "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]";
 
-/**
- * Tab을 창 안에서 돌린다. Base UI의 포커스 가두기는 문서의 activeElement로 끝을 알아보는데, 오버레이(shadow DOM) 안에서는
- * 그것이 늘 호스트라 끝을 못 알아보고 포커스가 디시 페이지로 나간다. 문서에 그린 창에서는 Base UI가 먼저 막는다(defaultPrevented).
- */
-export const keepTabInside = (ev: KeyboardEvent<HTMLDivElement>): void => {
+const firstFocusable = (root: ParentNode): HTMLElement | null => {
+    const items = [...root.querySelectorAll<HTMLElement>(FOCUSABLE)]
+        .filter((element) => element.tabIndex >= 0 && element.checkVisibility());
+    return items[0] ?? null;
+};
+
+export {firstFocusable};
+
+// native <dialog>의 Tab 가두기는 Chromium에서 창 요소를 거치는 빈 돌점에 포커스가 shadow 밖(body)으로 샌다 - 가장자리에서 직접 돈다.
+export const keepTabInside = (ev: KeyboardEvent<HTMLElement>): void => {
     if (ev.key !== "Tab" || ev.defaultPrevented) return;
-    // 묶음(토글 묶음 등)의 고르지 않은 항목처럼 tabindex가 -1인 것은 Tab 순서에 없다.
     const items = [...ev.currentTarget.querySelectorAll<HTMLElement>(FOCUSABLE)]
         .filter((element) => element.tabIndex >= 0 && element.checkVisibility());
     const first = items[0];
@@ -40,79 +35,132 @@ export const keepTabInside = (ev: KeyboardEvent<HTMLDivElement>): void => {
     }
 };
 
-/** 열 때만 마운트하는 창(ModalDialog·ConfirmDialog)의 열림 상태와 Root·Popup에 넘길 포커스·배경 흐림. */
-const useModal = (onClose: () => void, focusOnOpen: AutoFocus) => {
-    const [open, setOpen] = useState(true);
-    const popup = useRef<HTMLDivElement>(null);
-    const focus = useReturnFocus(popup);
-    // 옵션 페이지에는 모듈 설정이 없어 기본(흐림)이다.
-    const blur = useModuleSettings("preview")?.popupBlur ?? true;
+const DialogCloseContext = createContext<() => void>(() => {});
 
-    return {
-        close: () => setOpen(false),
-        root: {
-            open,
-            // 애니메이션이 끝났을 때 Base UI는 아직 포커스를 돌려주지 않았다(body). onClose가 알림 창을 띄우면 body를 연 요소로 기억하므로 먼저 돌려준다.
-            onOpenChangeComplete: (next: boolean) => {
-                if (next) return;
-                focus.restoreFocus();
-                onClose();
-            }
-        },
-        popup: {
-            ref: popup,
-            onKeyDown: keepTabInside,
-            // 미리보기 안에서 연 창(디시콘·확인 창 등)은 Base UI가 겹친 창으로 보고 바깥 배경을 그리지 않으므로 늘 그린다.
-            // 단축키 막기(isTyping)와 미리보기의 Esc 전달이 이 배경으로 창이 떠 있는지 안다. 흐리지 않을 때는 흐림만 뺀다.
-            overlayProps: {forceRender: true, className: blur ? undefined : "supports-backdrop-filter:backdrop-blur-none"},
-            initialFocus: typeof focusOnOpen === "object" ? focusOnOpen : focusOnOpen === "first" || focus.keyboard,
-            finalFocus: focus.finalFocus
-        }
-    };
+// native <dialog>은 제목을 이름으로 붙이지 않으므로 ModalDialog가-labelledby로 직접 잇는다.
+const DialogTitleContext = createContext<string | null>(null);
+
+/** 모달 창 안에서 닫는 단추. 누르면 먼저 손님 onClick을 부르고 닫힘 애니메이션을 시작한다. */
+export const DialogClose = ({onClick, ...props}: Omit<ComponentProps<"button">, "onClick"> & {onClick?: () => void}) => {
+    const close = useContext(DialogCloseContext);
+    return <button type="button" {...props} onClick={() => {
+        onClick?.();
+        close();
+    }}/>;
 };
 
-/**
- * 열 때만 마운트하는 다이얼로그. Esc·바깥 클릭·닫기 버튼이 닫고, 닫으면 연 요소로 포커스를 돌려준다.
- * onClose는 닫힘 애니메이션이 끝나 포커스가 돌아간 뒤에 불린다. 그 안에서 알림 창을 띄워도 알림이 닫히면 연 요소로 돌아온다.
- * 부모가 언마운트해 닫아도 된다 (저장한 뒤 등). dismissible이 false면(가져오는 중 등) 닫지 않는다.
- * 오버레이(shadow DOM)에서는 그 안의 포털 칸에 그린다 (components/ui/dialog.tsx). 폭은 className으로 준다 (sm:max-w-[480px] 등).
- */
-export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true, disablePointerDismissal, actionsRef, className, children}: {
+// native <dialog class="modal">+showModal - top-layer, ::backdrop, Tab 가두기, Esc(cancel), 열림/닫힘 전환을 daisyUI .modal이 맡는다.
+export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true, disablePointerDismissal, actionsRef, contentSlot = "dialog-content", role, className, children}: {
     onClose: () => void;
     focusOnOpen?: AutoFocus;
     dismissible?: boolean;
-    /** 바깥 클릭으로 닫지 않는다 (Esc로는 닫힌다). 창 밖에 뜬 버블을 누를 때 등. */
     disablePointerDismissal?: boolean;
-    /** 창 안의 일이 끝나 스스로 닫을 때 쓴다 (actionsRef.current.close()). 닫기 애니메이션·포커스 돌려주기를 거친다. */
-    actionsRef?: RefObject<DialogPrimitive.Root.Actions | null>;
+    actionsRef?: RefObject<{close: () => void} | null>;
+    /** e2e 계약: 확인 창(alert)은 dialog-content가 아니라 alert-dialog-content로 찾는다. */
+    contentSlot?: string;
+    /** 확인 창처럼 대답을 요구하는 창은 alertdialog 역할을 건다(e2e 계약). */
+    role?: "alertdialog";
     className?: string;
     children: ReactNode;
 }) => {
-    const modal = useModal(onClose, focusOnOpen);
+    const dialog = useRef<HTMLDialogElement>(null);
+    // 문자 선택 드래그처럼 박스 안에서 눌러 밖에서 놓으면 click이 공통 조상인 dialog에서 발생한다. 누른 곳이 배경인지도 확인한다.
+    const pressedBackdrop = useRef(false);
+    const focus = useReturnFocus(dialog);
+    const titleId = useId();
+    // 옵션 페이지에는 모듈 설정이 없어 기본(흐림)이다.
+    const blur = useModuleSettings("preview")?.popupBlur ?? true;
+
+    // actionsRef.close()는 dismissible과 상관없이 닫는다. 일이 끝난 직후라 dismissible이 아직 옛 값일 수 있다.
+    const close = () => {
+        const el = dialog.current;
+        if (!el?.open) return;
+        // onClose가 알림 창을 띄우면 body를 연 요소로 기억하므로 먼저 돌려준다.
+        el.close();
+        focus.restoreFocus();
+        // 닫힘 전환을 기다렸다 닫으면 그 사이에 다시 연 창을 옛 타이머가 지우므로 즉시 닫는다(열림 전환만 daisyUI가 맡는다).
+        onClose();
+    };
+    useLayoutEffect(() => {
+        if (actionsRef) actionsRef.current = {close};
+    });
+
+    useLayoutEffect(() => {
+        const el = dialog.current!;
+        el.showModal();
+        // 마우스로 열었으면 브라우저가 dialog 요소에 둔 포커스를 그대로 둔다(모달이라 안으로는 들어온다).
+        if (typeof focusOnOpen === "object") focusOnOpen.current?.focus();
+        else if (focusOnOpen === "first" || (focusOnOpen === "keyboard" && focus.keyboard)) firstFocusable(el)?.focus();
+    }, []);
 
     return (
-        // actionsRef.close()는 dismissible과 상관없이 닫는다. 일이 끝난 직후라 dismissible이 아직 옛 값일 수 있다.
-        <Dialog {...modal.root} actionsRef={actionsRef} disablePointerDismissal={disablePointerDismissal}
-                onOpenChange={(next, {reason}) => !next && (dismissible || reason === "imperative-action") && modal.close()}>
-            <DialogContent {...modal.popup} showCloseButton={false} className={className}>
-                {children}
-            </DialogContent>
-        </Dialog>
+        <DialogTitleContext.Provider value={titleId}>
+            <DialogCloseContext.Provider value={close}>
+                <dialog
+                    ref={dialog}
+                    className="modal"
+                    data-slot="dialog-overlay"
+                    data-blur={blur ? "" : undefined}
+                    aria-labelledby={titleId}
+                    role={role}
+                    onCancel={(ev) => {
+                        // Esc의 기본 닫기는 전환을 기다리지 않으므로 막고 직접 닫는다.
+                        ev.preventDefault();
+                        if (dismissible) close();
+                    }}
+                    onPointerDown={(ev) => {
+                        pressedBackdrop.current = ev.target === ev.currentTarget;
+                    }}
+                    onClick={(ev) => {
+                        // ::backdrop 누름은 dialog 요소로 전달된다.
+                        if (ev.target === ev.currentTarget && pressedBackdrop.current && dismissible && !disablePointerDismissal) close();
+                    }}
+                >
+                    <div
+                        data-slot={contentSlot}
+                        className={cn("modal-box relative grid gap-6 bg-base-100 text-sm ring-1 ring-base-content/10 outline-none", className)}
+                        // Chromium의 모달 Tab 순환은 창 요소를 거치는 빈 돌점에서 포커스가 shadow 밖(body)으로 샌다 - 가장자리에서 직접 돈다.
+                        onKeyDown={keepTabInside}
+                    >
+                        {children}
+                    </div>
+                </dialog>
+            </DialogCloseContext.Provider>
+        </DialogTitleContext.Provider>
     );
 };
 
-/**
- * 다이얼로그 하단 버튼 줄. 취소(닫기) 버튼 뒤에 children을 둔다. cancelLabel이 null이면 취소 버튼을 뺀다.
- * cancelDisabled는 닫지 못하는 동안(ModalDialog의 dismissible이 false) 취소 버튼도 꺼 둔다.
- */
 export const DialogActions = ({cancelLabel = "취소", cancelDisabled, children}: { cancelLabel?: string | null; cancelDisabled?: boolean; children?: ReactNode }) => (
     <DialogFooter>
-        {cancelLabel !== null && <DialogClose disabled={cancelDisabled} render={<Button variant="outline"/>}>{cancelLabel}</DialogClose>}
+        {cancelLabel !== null && <DialogClose className="btn btn-outline" disabled={cancelDisabled}>{cancelLabel}</DialogClose>}
         {children}
     </DialogFooter>
 );
 
-/** Enter로 저장하는 다이얼로그 폼. 폼 제출이라 한글 조합을 끝내는 Enter로는 브라우저가 제출하지 않는다. */
+export const DialogHeader = ({className, ...props}: ComponentProps<"div">) => (
+    <div data-slot="dialog-header" className={cn("flex flex-col gap-2", className)} {...props}/>
+);
+
+export const DialogFooter = ({className, ...props}: ComponentProps<"div">) => (
+    <div data-slot="dialog-footer" className={cn("modal-action", className)} {...props}/>
+);
+
+export const DialogTitle = ({className, ...props}: ComponentProps<"h2">) => {
+    const titleId = useContext(DialogTitleContext);
+    return <h2 data-slot="dialog-title" id={titleId ?? undefined} className={cn("leading-none font-medium", className)} {...props}/>;
+};
+
+export const DialogDescription = ({className, ...props}: ComponentProps<"p">) => (
+    <p data-slot="dialog-description" className={cn("text-sm text-base-content/60 *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-base-content", className)} {...props}/>
+);
+
+export const DialogCloseButton = () => (
+    <DialogClose className="btn btn-ghost btn-square btn-sm absolute top-4 right-4" aria-label="닫기">
+        <X className="size-4"/>
+    </DialogClose>
+);
+
+/** 폼 제출이라 한글 조합 중 Enter로는 제출되지 않는다. */
 export const SubmitForm = ({onSubmit, className, children}: { onSubmit: () => unknown; className?: string; children: ReactNode }) => (
     <form className={cn("flex flex-col gap-4", className)} onSubmit={(ev) => {
         ev.preventDefault();
@@ -122,43 +170,24 @@ export const SubmitForm = ({onSubmit, className, children}: { onSubmit: () => un
     </form>
 );
 
-/** 제목 줄 오른쪽 닫기(X) 버튼. 아래 버튼 줄 없이 보기만 하거나 고르면 바로 닫히는 창(디시콘 정보·선택)에 둔다. */
-export const DialogCloseButton = () => (
-    <DialogClose render={<Button variant="ghost" size="icon-sm" aria-label="닫기"/>}>
-        <X/>
-    </DialogClose>
-);
-
-/**
- * confirm()/alert() 대체. role이 alertdialog라 바깥 클릭으로는 닫히지 않고 Esc나 버튼으로 닫힌다.
- * 열 때만 마운트해야 닫힘 애니메이션 동안 비워진 제목("null" 등)이 비치지 않는다.
- */
+// confirm()/alert() 대체 - 열 때만 마운트해야 닫힘 애니메이션 동안 빈 제목이 비치지 않는다.
 export const ConfirmDialog = ({title, confirmLabel = "확인", cancelLabel = "취소", danger, onConfirm, onClose}: {
     title: string;
     confirmLabel?: string;
-    /** null이면 취소 버튼 없음 (알림 전용). */
     cancelLabel?: string | null;
     danger?: boolean;
     onConfirm: () => void;
     onClose: () => void;
-}) => {
-    const modal = useModal(onClose, "first");
+}) => (
+    <ModalDialog onClose={onClose} className="sm:max-w-110" contentSlot="alert-dialog-content" role="alertdialog">
+        {/* 이미지 해시처럼 띄어쓰기 없는 긴 값도 창 안에서 줄을 바꾼다. */}
+        <DialogTitle className="text-sm leading-snug wrap-anywhere">{title}</DialogTitle>
+        <DialogFooter>
+            {cancelLabel !== null && <DialogClose className="btn btn-outline">{cancelLabel}</DialogClose>}
+            <DialogClose className={cn("btn", danger ? "btn-error" : "btn-primary")} onClick={onConfirm}>{confirmLabel}</DialogClose>
+        </DialogFooter>
+    </ModalDialog>
+);
 
-    return (
-        <AlertDialog {...modal.root} onOpenChange={(next) => !next && modal.close()}>
-            {/* 생김새는 다른 창(DialogContent·DialogTitle)과 맞춘다. */}
-            <AlertDialogContent {...modal.popup} className="text-sm data-[size=default]:max-w-[calc(100%-2rem)] data-[size=default]:sm:max-w-[440px]">
-                {/* 이미지 해시처럼 띄어쓰기 없는 긴 값도 창 안에서 줄을 바꾼다. */}
-                <AlertDialogTitle className="text-sm leading-snug wrap-anywhere">{title}</AlertDialogTitle>
-                <AlertDialogFooter>
-                    {cancelLabel !== null && <AlertDialogCancel>{cancelLabel}</AlertDialogCancel>}
-                    <AlertDialogAction variant={danger ? "destructive" : "default"} onClick={onConfirm}>{confirmLabel}</AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
-    );
-};
-
-/** 확인 버튼만 있는 알림. message가 없으면 그리지 않는다. */
 export const Notice = ({message, onClose}: { message: string | null; onClose: () => void }) =>
     message ? <ConfirmDialog title={message} cancelLabel={null} onConfirm={onClose} onClose={onClose}/> : null;

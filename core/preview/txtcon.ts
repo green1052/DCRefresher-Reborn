@@ -23,7 +23,7 @@ const txtconLength = (text: string): number => {
     return plain.length + (plain.match((bmpEmoji ??= /[\p{Emoji_Presentation}--[\u{10000}-\u{10FFFF}]]/gv))?.length ?? 0);
 };
 
-// 디시 txtcon_clusters 대신 브라우저 grapheme 분할을 쓴다. 국기·스킨톤·ZWJ 같은 흔한 글자는 결과가 같고, 분해형 한글 자모 등만 다르다.
+// 디시 txtcon_clusters 대신 브라우저 grapheme 분할을 쓴다. 국기, 스킨톤, ZWJ 같은 흔한 글자는 결과가 같고, 분해형 한글 자모 등만 다르다.
 let segmenter: Intl.Segmenter | undefined;
 /** 글자콘의 '한 글자'(grapheme) 단위로 나눈다. 분할기도 bmpEmoji처럼 처음 쓸 때 만든다. */
 export const graphemes = (text: string): string[] => Array.from((segmenter ??= new Intl.Segmenter()).segment(text), ({segment}) => segment);
@@ -36,7 +36,7 @@ export const wrapTxtcon = (text: string): string =>
         .map((line) => graphemes(line).map((char, i) => (i && i % TXTCON_MAX_LINE_LEN === 0 ? "\n" : "") + char).join(""))
         .join("\n");
 
-/** 글자콘 입력값 정리 (txtcon.js 'wide' 문자 필터 + 20자·4줄·줄당 5자 제한). */
+/** 글자콘 입력값 정리 (txtcon.js 'wide' 문자 필터 + 20자, 4줄, 줄당 5자 제한). */
 export const normalizeTxtcon = (value: string): string => {
     let text = value
         .replace(/\r\n?/g, "\n")
@@ -63,7 +63,7 @@ export const normalizeTxtcon = (value: string): string => {
     while (wrapTxtcon(text).split("\n").length > TXTCON_MAX_LINES) text = Array.from(text).slice(0, -1).join("");
 
     // 20자 제한. 코드포인트 단위로 앞에서부터 채우다가 넘치면 멈춘다.
-    // 넘치는 글자만 건너뛰고 계속하면 가운데가 빠지고, 뒤의 ZWJ·결합 문자가 엉뚱한 글자에 붙는다.
+    // 넘치는 글자만 건너뛰고 계속하면 가운데가 빠지고, 뒤의 ZWJ, 결합 문자가 엉뚱한 글자에 붙는다.
     let count = 0;
     let output = "";
     for (const char of text) {

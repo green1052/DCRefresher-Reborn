@@ -45,7 +45,7 @@ describe("buildCandidates", () => {
 });
 
 describe("normalizeBans", () => {
-    it("아이디의 공백·빈 값·중복을 빼고 갤러리와 아이디를 정렬한다", () => {
+    it("아이디의 공백, 빈 값, 중복을 빼고 갤러리와 아이디를 정렬한다", () => {
         expect(normalizeBans({b: [" y ", "x", "y", ""], a: []})).toEqual({a: [], b: ["x", "y"]});
     });
 

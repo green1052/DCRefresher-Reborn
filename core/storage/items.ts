@@ -4,7 +4,7 @@ import {objectKeys} from "@/utils/typed";
 
 import type {BlockType, DatabaseMeta, DetectMode, MemoType, SettingValue} from "./types";
 
-/** 차단 유형 → 이름. 유형·모드 목록과 타입(core/storage/types.ts)은 이름표의 키 순서를 따른다. */
+/** 차단 유형 → 이름. 유형, 모드 목록과 타입(core/storage/types.ts)은 이름표의 키 순서를 따른다. */
 export const TYPE_NAMES = {
     NICK: "닉네임",
     ID: "아이디",
@@ -13,8 +13,7 @@ export const TYPE_NAMES = {
     TEXT: "내용",
     COMMENT: "댓글",
     DCCON: "디시콘",
-    TAB: "말머리",
-    IMAGE: "이미지"
+    TAB: "말머리"
 };
 
 export const DETECT_MODE_NAMES = {
@@ -42,25 +41,16 @@ export const DEFAULT_DETECT_MODE: Record<BlockType, DetectMode> = {
     TEXT: "CONTAIN",
     COMMENT: "CONTAIN",
     DCCON: "SAME",
-    TAB: "SAME",
-    IMAGE: "SAME"
+    TAB: "SAME"
 };
 
-/**
- * defineItem은 만드는 순간 저장소를 한 번 읽는다 (@wxt-dev/storage의 getOrInitValue). 이 파일은 콘텐츠 스크립트·배경·옵션·팝업이
- * 모두 불러오므로, 모듈 최상위에서 만들면 디시 페이지마다·서비스 워커가 깰 때마다 쓰지도 않는 키를 십여 번 읽는다.
- * 그래서 항목은 처음 쓸 때 만들어 재사용한다. 읽기만 하는 곳(콘텐츠 스크립트의 스토어·레지스트리)은 항목을 만들지 않고
- * 키로 storage.getItems·storage.watch를 써서 한 번의 storage.local.get으로 여러 키를 읽는다.
- */
+/** defineItem은 만드는 순간 저장소를 읽으므로 항목은 처음 쓸 때 만들어 재사용한다. */
 const lazyItem = <T>(key: StorageItemKey, fallback: T): (() => WxtStorageItem<T, {}>) => {
     let item: WxtStorageItem<T, {}> | undefined;
     return () => (item ??= storage.defineItem<T>(key, {fallback}));
 };
 
-/**
- * browser.storage.local에 실제로 저장되는 이름 (local: 없이). 백업·가져오기처럼 storage.local을 직접 다룰 때 쓴다.
- * WXT 키에서 만들어 두 이름이 어긋나지 않게 한다.
- */
+/** browser.storage.local에 실제로 저장되는 이름 (local: 없이). */
 export const rawKey = <K extends string>(key: `local:${K}`): K => key.slice("local:".length) as K;
 
 export const blockListKey = (type: BlockType): `local:refresher:block:${BlockType}` => `local:refresher:block:${type}`;
@@ -68,10 +58,11 @@ export const BLOCK_DEFAULTS_KEY = "local:refresher:block:defaults";
 export const memoMapKey = (type: MemoType): `local:refresher:memo:${MemoType}` => `local:refresher:memo:${type}`;
 export const MODULES_KEY = "local:refresher:modules";
 
-/** 기본 차단 모드 항목 (쓰기용). */
+/** 목록, 설정 쓰기의 Web Locks 이름. 스토어와 설정 옮기기가 같은 이름을 써야 직렬되므로 한곳에 둔다. */
+export const LIST_LOCKS = {blocks: "refresher:blocks", memos: "refresher:memos", moduleSettings: "refresher:module-settings"} as const;
+
 export const blockDefaultsStorage = lazyItem<Record<BlockType, DetectMode>>(BLOCK_DEFAULTS_KEY, {...DEFAULT_DETECT_MODE});
 
-/** 모듈 on/off 항목 (쓰기·감시용). */
 export const modulesStorage = lazyItem<Record<string, boolean>>(MODULES_KEY, {});
 
 const settingsItems = new Map<string, WxtStorageItem<Record<string, SettingValue>, {}>>();
@@ -79,7 +70,6 @@ const settingsItems = new Map<string, WxtStorageItem<Record<string, SettingValue
 /** 모듈 설정 키. 읽기만 할 때와 없어진 모듈의 설정을 지울 때는 항목을 만들지 않고 이 키를 쓴다. */
 export const moduleSettingsKey = (id: string): `local:refresher:module:${string}:settings` => `local:refresher:module:${id}:settings`;
 
-/** 모듈 설정 항목 (쓰기용). 모듈마다 하나를 만들어 재사용한다. */
 export const moduleSettingsStorage = (id: string): WxtStorageItem<Record<string, SettingValue>, {}> => {
     let item = settingsItems.get(id);
     if (!item) {
@@ -89,34 +79,25 @@ export const moduleSettingsStorage = (id: string): WxtStorageItem<Record<string,
     return item;
 };
 
-/** 모듈 설정 키면 그 모듈 id, 아니면 undefined (local: 없이). */
 export const settingsKeyModule = (key: string): string | undefined => /^refresher:module:(.+):settings$/.exec(key)?.[1];
 
-/** 모듈 캐시(글댓비 등) 항목 (쓰기용). 백업·내보내기에는 넣지 않는다 (core/backup.ts의 isBackupTarget). 만드는 순간 값을 읽으므로 쓸 때만 만든다. */
+/** 모듈 캐시(글댓비 등) 항목. 백업, 내보내기에서는 뺀다 (core/backup.ts). */
 export const moduleDataStorage = <T>(id: string, fallback: T): WxtStorageItem<T, {}> =>
     storage.defineItem<T>(moduleDataKey(id), {fallback});
 
-/** 모듈 캐시 키. 읽기·감시는 항목 대신 이 키로 한다 (storage.getItem, core/storage/sync.ts의 watchStorage). */
+/** 모듈 캐시 키. 읽기, 감시는 항목 대신 이 키로 한다. */
 export const moduleDataKey = (id: string): `local:refresher:module:${string}:data` => `local:refresher:module:${id}:data`;
 
-/** 모듈 설정·캐시 키(local: 없이)의 모듈 id. 둘 다 아니면 undefined. */
 export const moduleKeyModule = (key: string): string | undefined => /^refresher:module:(.+):(?:settings|data)$/.exec(key)?.[1];
 
-/** 차단 목록 키(blockListKey)인지 (local: 없이). 기본 차단 모드(refresher:block:defaults)는 아니다. */
+/** 차단 목록 키인지 (기본 차단 모드 키는 제외). */
 export const isBlockListKey = (key: string): boolean => /^refresher:block:[A-Z]+$/.test(key);
 
-/**
- * IP/밴 DB는 필요한 것만 읽도록 세 키로 나눈다: 갱신 확인은 meta, 페이지는 ip, 밴은 쓸 때만 ban (ip·ban은 각각 수백 KB).
- * meta를 읽기만 하는 콘텐츠 스크립트(core/database.ts의 initDatabase)는 항목 대신 DB_META_KEY로 읽는다.
- */
+/** IP/밴 DB는 meta, ip, ban 세 키로 나눠 필요한 것만 읽는다 (ip, ban은 각각 수백 KB). */
 export const DB_META_KEY = "local:refresher:db:meta";
 export const dbMetaStorage = lazyItem<DatabaseMeta>(DB_META_KEY, {version: "", lastUpdate: 0});
 
-/**
- * ip·ban 키. 항목으로 만들면 만드는 순간 수백 KB를 읽으므로(lazyItem 참고) 쓰는 곳(core/database.ts)에서 키로 다룬다.
- * 값은 CompactIpData(core/ipdb.ts)·BanList의 JSON 문자열이고, 없으면 ""다. ip는 서버(ip.json)가 준 문자열 그대로다.
- * 객체로 두면 값 약 10만 개짜리 객체 그래프를 읽을 때마다 메인 스레드가 10ms 넘게 막힌다.
- */
+/** ip, ban 값은 CompactIpData, BanList의 JSON 문자열. 항목으로 만들면 수백 KB를 바로 읽으므로 키로만 다룬다. */
 export const DB_KEYS = {
     ip: "local:refresher:db:ip",
     ban: "local:refresher:db:ban"
@@ -130,29 +111,18 @@ export const writeDatabase = (meta: DatabaseMeta, ip: string, ban: string): Prom
         {key: DB_KEYS.ban, value: ban}
     ]);
 
-/** 클라우드 백업 상태. refresher:backup:* 키는 백업 대상에서 빠진다 (core/backup.ts). 백업 시각은 클라우드의 메타에서 읽는다. */
+/** 클라우드 백업 상태. refresher:backup:* 키는 백업 대상에서 빠진다. */
 let backupDevice: WxtStorageItem<string, {}> | undefined;
 export const backupStorage = {
     /** 설정이 바뀌면 잠시 뒤 자동으로 백업. */
     auto: lazyItem<boolean>("local:refresher:backup:auto", false),
-    /** 마지막 백업이 실패했으면 이유 (성공하면 빈 문자열). */
     error: lazyItem<string>("local:refresher:backup:error", ""),
-    /** 자동 백업 알람이 걸려 있고 아직 울리지 않았다. 브라우저를 끄면 알람이 사라질 수 있어 다음 시작 때 이 값을 보고 다시 건다. */
+    /** 알람이 브라우저 종료로 사라질 수 있어 다음 시작 때 다시 걸게 하는 표시. */
     pending: lazyItem<boolean>("local:refresher:backup:pending", false),
-    /**
-     * 마지막 초기화·복원·가져오기(core/settings-transfer.ts의 writeSettings) 직전의 백업 대상 값과 그 시각. 데이터 탭의 되돌리기가 쓴다.
-     * 이 기기에만 둔다. 클라우드 자동 백업이 1분 뒤 바뀐 값으로 덮여도 이것으로 돌아갈 수 있다.
-     */
+    /** 마지막 초기화, 복원, 가져오기 직전 값. 데이터 탭의 되돌리기가 쓴다. */
     undo: lazyItem<{ data: Record<string, unknown>; createdAt: number } | null>("local:refresher:backup:undo", null),
-    /** 이 기기의 id. 처음 읽을 때 만든다. 클라우드 백업 메타에 남겨 다른 기기가 올린 백업을 덮기 전에 묻는다. */
+    /** 이 기기의 id. 클라우드 백업 메타에 남겨 다른 기기 백업인지 가린다. */
     device: (): WxtStorageItem<string, {}> =>
         (backupDevice ??= storage.defineItem<string>("local:refresher:backup:device", {init: () => crypto.randomUUID()}))
 };
 
-/**
- * 차단 항목·메모가 마지막으로 쓰인(걸린·보인) 시각. 옵션의 차단·메모 탭이 오래 안 쓰인 항목을 거를 때 쓴다.
- * 기기마다 따로 두고 백업하지 않는다 (core/backup.ts의 isBackupTarget).
- * block은 차단 항목 id, memo는 "종류:대상" 키다.
- * 여러 탭과 옵션 페이지가 함께 고치므로 쓰기는 배경 한 곳에서 차례로 한다 (core/usage.ts의 recordUsage·syncUsage). 따로 읽고 쓰면 그사이 다른 쪽의 기록을 덮는다.
- */
-export const USAGE_KEY = "local:refresher:usage";

@@ -7,27 +7,19 @@ import {type ImageOptions, UPLOAD_OPTIONS_KEY} from "./images";
 import {AUTO, EDITOR, LEAVE, POSTED, SUBJECT, SUBMIT} from "./markup";
 import meta from "./meta";
 
-/**
- * hookUploads를 넣어 달라고 이미 했다. 넣은 스크립트는 페이지에 남으므로 다시 보내 배경을 깨울 필요가 없다.
- * 모듈을 껐다 켜도 페이지의 스크립트는 그대로라 setup 밖에 둔다.
- */
+/** hookUploads 넣기를 이미 요청했다. 넣은 스크립트는 모듈을 껐다 켜도 페이지에 남는다. */
 let hookRequested = false;
 
-/**
- * 수정 페이지에서 고쳤다는 표시. 파이어폭스는 업데이트하면 이 스크립트를 정리 없이 없애고 다시 주입하므로 새 인스턴스가 이어받게 <html>에 둔다.
- * 모듈을 껐다 켤 때도 이어받아야 하므로 끌 때(onRevoke)도 지우지 않는다. 지우면 고친 글을 두고 나갈 때 확인 없이 날아간다.
- */
+/** 수정 페이지에서 고쳤다는 표시. 파이어폭스 재주입 인스턴스가 이어받게 <html>에 두고 끌 때도 지우지 않는다. */
 const EDITED_KEY = "refresherEdited";
 
-/**
- * hookUploads가 읽을 설정을 둔다. 켜진 설정이 있으면 배경에 hookUploads를 넣어 달라고 한다 (페이지마다 한 번만 걸린다).
- */
-const publishImageOptions = ({webpConvert: webp, webpQuality, webpConcurrency: concurrency, obfuscateName: rename}: ModuleSettings["write"]): void => {
+/** hookUploads가 읽을 설정을 <html>에 둔다. 켜진 설정이 있으면 배경에 넣어 달라고 한다 (한 번만). */
+const publishImageOptions = ({webpConvert: webp, webpQuality, obfuscateName: rename}: ModuleSettings["write"]): void => {
     if (!webp && !rename) {
         delete document.documentElement.dataset[UPLOAD_OPTIONS_KEY];
         return;
     }
-    const options: ImageOptions = {webp, quality: webpQuality / 100, rename, concurrency};
+    const options: ImageOptions = {webp, quality: webpQuality / 100, rename};
     document.documentElement.dataset[UPLOAD_OPTIONS_KEY] = JSON.stringify(options);
     if (hookRequested) return;
     hookRequested = true;
@@ -39,8 +31,7 @@ const publishImageOptions = ({webpConvert: webp, webpQuality, webpConcurrency: c
 
 export default defineModule(meta, {
     setup(ctx) {
-        // 업로드 설정은 ctx.signal이 아니라 끌 때만 지운다. 확장 업데이트로 컨텍스트가 무효화돼도(stopAll) 페이지의 hookUploads는 살아 있어,
-        // 지우면 이미지가 원래 이름으로 올라간다.
+        // 끌 때만 지운다. stopAll(업데이트)로 지우면 페이지의 hookUploads가 살아 있어 원래 이름으로 올라간다.
         ctx.onRevoke(() => {
             delete document.documentElement.dataset[UPLOAD_OPTIONS_KEY];
         });
@@ -66,7 +57,9 @@ export default defineModule(meta, {
         };
 
         const onInput = (): void => {
+            // 나가기 확인 뒤 계속 쓰면 막기를 다시 건다. leaving이 남아 있으면 확인 뒤에 쓴 글이 확인 없이 날아간다.
             submitting = false;
+            leaving = false;
             if (!edited) markEdited();
         };
 
@@ -76,7 +69,7 @@ export default defineModule(meta, {
             const posted = flag ? flag.value === "Y" : submitting;
             if (!ctx.settings.preventExit || posted || leaving || !edited) return;
 
-            // 글자 없이 이미지·동영상만 올린 본문도 작성 중인 글이다. 디시가 넣은 자동 짤방·작성 가이드는 빼고 본다.
+            // 글자 없이 이미지, 동영상만 올린 본문도 작성 중인 글이다. 디시가 넣은 자동 짤방, 작성 가이드는 빼고 본다.
             const editor = document.querySelector<HTMLElement>(EDITOR);
             const text = Array.from(editor?.childNodes ?? [], (node) => (node instanceof Element && node.matches(AUTO) ? "" : node.textContent)).join("").trim();
             const media = Array.from(editor?.querySelectorAll("img, video, iframe, embed") ?? []).some((element) => !element.closest(AUTO));
@@ -84,8 +77,7 @@ export default defineModule(meta, {
             if (written) ev.preventDefault();
         };
 
-        // 나가기 방지 리스너도 ctx.signal에 묶지 않고 끌 때만 푼다. 컨텍스트가 무효화될 때 ctx.signal로 풀리면
-        // 새로고침 안내를 따를 때 작성 중인 글이 확인 없이 날아간다.
+        // 나가기 방지 리스너도 끌 때만 푼다. 업데이트로 풀리면 새로고침 안내를 따를 때 글이 확인 없이 날아간다.
         const listeners = new AbortController();
         ctx.onRevoke(() => listeners.abort());
         const {signal} = listeners;
@@ -93,9 +85,7 @@ export default defineModule(meta, {
         document.addEventListener("input", onInput, {capture: true, signal});
         window.addEventListener("beforeunload", onBeforeUnload, {signal});
 
-        // 수정 페이지에서 에디터 스크립트로 넣거나 뺀 이미지는 input 이벤트가 나지 않아 에디터의 DOM 변화로 알아챈다.
-        // 디시가 원래 글을 채우는 변화는 빼려고 사용자가 페이지를 건드린 뒤부터 보고, 속성(hover·class) 변화는 보지 않는다.
-        // 등록 뒤에 디시가 에디터를 고칠 수 있어 submitting은 풀지 않는다. 같은 요소를 다시 observe하면 옵션만 바뀐다.
+        // 에디터 스크립트로 넣거나 뺀 이미지는 input 이벤트가 나지 않아 DOM 변화로 알아챈다. 디시가 원래 글을 채우는 변화는 빼려고 사용자가 건드린 뒤부터 본다.
         if (edited) return;
         const observer = new MutationObserver(() => {
             markEdited();

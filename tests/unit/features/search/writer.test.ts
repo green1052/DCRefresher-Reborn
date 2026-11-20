@@ -22,7 +22,7 @@ beforeEach(() => {
 
 afterEach(() => controller.abort());
 
-it("아이디·IP를 고르면 디시 검색 대신 search를 부르고, 디시 종류를 고르면 디시 검색으로 돌아간다", () => {
+it("아이디, IP를 고르면 디시 검색 대신 search를 부르고, 디시 종류를 고르면 디시 검색으로 돌아간다", () => {
     addWriterTypes(null, search, controller.signal);
     item("IP").click();
     expect(label()).toBe("IP");
@@ -52,4 +52,11 @@ it("작성자 거르기 중인 페이지면 그 종류와 값을 채워 두고, 
 
     removeWriterTypes();
     expect(Array.from(document.querySelectorAll("#searchTypeLayer > li"), (li) => li.textContent)).toEqual(["글쓴이"]);
+});
+
+it("다시 주입돼 또 불려도 종류가 한 벌만 남는다", () => {
+    addWriterTypes(null, search, controller.signal);
+    addWriterTypes(null, search, new AbortController().signal);
+
+    expect(Array.from(document.querySelectorAll("#searchTypeLayer > li"), (li) => li.textContent)).toEqual(["글쓴이", "아이디", "IP"]);
 });

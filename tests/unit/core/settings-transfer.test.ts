@@ -81,7 +81,7 @@ describe("mergeBackup", () => {
 });
 
 describe("writeSettings", () => {
-    it("replace는 없는 설정 키를 지우지만 DB·모듈 캐시는 그대로 둔다", async () => {
+    it("replace는 없는 설정 키를 지우지만 DB, 모듈 캐시는 그대로 둔다", async () => {
         await browser.storage.local.set({
             [MODULES]: {a: true},
             [SETTINGS]: {width: 900},
@@ -122,7 +122,7 @@ describe("writeSettings", () => {
         expect(list).toEqual([expect.objectContaining({id: expect.any(String)})]);
     });
 
-    it("id 없는 항목은 이 기기의 같은 항목 id를 이어 써 사용 기록을 지킨다", async () => {
+    it("id 없는 항목은 이 기기의 같은 항목 id를 이어 쓴다", async () => {
         await browser.storage.local.set({[NICK]: [entry("a", {id: "local-a"}), entry("a", {id: "local-ga", gallery: "g"})]});
         await writeSettings({[NICK]: [{content: "a", isRegex: false}, {content: "a", isRegex: false, gallery: "g"}, {content: "b", isRegex: false}]}, "replace");
         const [a, ga, b] = (await stored(NICK)) as BlockEntry[];
@@ -179,7 +179,6 @@ describe("writeSettings", () => {
         expect(undo).toEqual({data: {[MODULES]: {a: true}, [NICK]: [entry("b")], [SETTINGS]: {width: 900}}, createdAt: at});
         await writeSettings(undo?.data ?? {}, "replace");
         expect(await settings()).toEqual({[MODULES]: {a: true}, [NICK]: [entry("b")], [SETTINGS]: {width: 900}});
-        // 되돌리기도 직전 상태(빈 설정)를 남겨 다시 앞으로 갈 수 있다.
         expect(await stored(UNDO)).toEqual({data: {}, createdAt: expect.any(Number)});
     });
 
@@ -226,5 +225,16 @@ describe("parseImport", () => {
         expect(() => parseImport(`{"${NICK}":"[]"}`)).toThrow("v5 데이터");
         expect(() => parseImport("{\"refresher:memo:UID\":\"{}\"}")).toThrow("v5 데이터");
         expect(parseImport(`{"${SETTINGS}":{},"${DEFAULTS}":{},"${NICK}":[]}`)).toEqual({[SETTINGS]: {}, [DEFAULTS]: {}, [NICK]: []});
+    });
+
+    it("값 형태가 잘못된 키는 던진다", () => {
+        // 차단 목록은 배열이, 메모, 설정 객체는 객체가 아닌 값이 오면 그대로 쓰여 이 기기 값을 지운다.
+        expect(() => parseImport(`{"${NICK}":42}`)).toThrow("형태가 올바르지 않습니다");
+        expect(() => parseImport(`{"${MODULES}":42}`)).toThrow("형태가 올바르지 않습니다");
+        expect(() => parseImport(`{"${SETTINGS}":42}`)).toThrow("형태가 올바르지 않습니다");
+        expect(() => parseImport(`{"${DEFAULTS}":42}`)).toThrow("형태가 올바르지 않습니다");
+        expect(() => parseImport("{\"refresher:memo:UID\":42}")).toThrow("형태가 올바르지 않습니다");
+        expect(() => parseImport("{\"refresher:memo:UID\":[]}")).toThrow("형태가 올바르지 않습니다");
+        expect(parseImport("{\"refresher:memo:UID\":{}}")).toEqual({"refresher:memo:UID": {}});
     });
 });

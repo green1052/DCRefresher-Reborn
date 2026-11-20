@@ -1,31 +1,15 @@
-import {webcrypto} from "node:crypto";
-import {ReadableStream as NodeReadableStream} from "node:stream/web";
+import {beforeEach, describe, expect, it} from "vitest";
 
-import {beforeEach, describe, expect, it, vi} from "vitest";
-
-import {blockingEntries, dcconCode, groupDuplicates, imageHash, isAnyBlocked, isBlocked, isBlockedHidden, isImageBlocked} from "@/core/block";
+import {blockingEntries, dcconCode, groupDuplicates, isAnyBlocked, isBlocked, isBlockedHidden} from "@/core/block";
 import {DETECT_MODES} from "@/core/storage/items";
 import type {BlockEntry} from "@/core/storage/types";
-import {markUsed} from "@/core/usage";
 import {useBlocksStore} from "@/stores/blocks";
-import {sha256} from "@/utils/hash";
-import {imageFingerprints, isSimilarSet} from "@/utils/imageFingerprint";
 
 import {blockEntry, setBlockLists} from "../../helpers";
-
-vi.mock("@/core/usage", () => ({markUsed: vi.fn()}));
-// jsdom은 이미지를 디코딩하지 못해 지문은 테스트가 정한다.
-// isSimilarSet은 실제 함수를 감싸 몇 번 훑는지 센다.
-vi.mock("@/utils/imageFingerprint", async (original) => {
-    const actual = await original<typeof import("@/utils/imageFingerprint")>();
-    return {...actual, imageFingerprints: vi.fn(), isSimilarSet: vi.fn(actual.isSimilarSet)};
-});
 
 let nextId = 0;
 // 색인 비교 테스트에 내용이 같은 항목이 있어 id는 순번으로 붙인다.
 const entry = (content: string, fields: Partial<BlockEntry> = {}): BlockEntry => blockEntry(content, {id: `e${nextId++}`, ...fields});
-
-const usedIds = (): string[] => vi.mocked(markUsed).mock.calls.map(([, id]) => id);
 
 beforeEach(() => setBlockLists());
 
@@ -33,7 +17,6 @@ describe("isBlocked", () => {
     it("유형의 기본 모드를 따른다", () => {
         setBlockLists({NICK: [entry("닉")], TITLE: [entry("광고")]});
         expect(isBlocked("NICK", "닉")).toBe(true);
-        // 닉네임 기본은 일치라 포함만으로는 막지 않는다.
         expect(isBlocked("NICK", "닉네임")).toBe(false);
         expect(isBlocked("TITLE", "무료 광고 글")).toBe(true);
     });
@@ -47,6 +30,17 @@ describe("isBlocked", () => {
         setBlockLists({TITLE: [entry("광고", {mode: "SAME"})]});
         expect(isBlocked("TITLE", "무료 광고")).toBe(false);
         expect(isBlocked("TITLE", "광고")).toBe(true);
+    });
+
+    it("IP 포함은 숫자 경계에서만 맞는다", () => {
+        setBlockLists({IP: [entry("1.2.3.4", {mode: "CONTAIN"})]});
+        expect(isBlocked("IP", "1.2.3.4")).toBe(true);
+        expect(isBlocked("IP", "11.2.3.45")).toBe(false);
+        expect(isBlocked("IP", "1.2.3.45")).toBe(false);
+        setBlockLists({IP: [entry("1.2.3", {mode: "CONTAIN"})]});
+        expect(isBlocked("IP", "1.2.3.4")).toBe(true);
+        expect(isBlocked("IP", "1.2.34.5")).toBe(false);
+        expect(isBlocked("IP", "21.2.3.4")).toBe(false);
     });
 
     it("빈 내용은 막지 않는다", () => {
@@ -85,7 +79,6 @@ describe("isBlocked", () => {
 
     it("NOT_* 항목들은 하나의 허용 목록이다", () => {
         setBlockLists({NICK: [entry("가", {mode: "NOT_SAME"}), entry("나", {mode: "NOT_SAME"})]});
-        // 항목마다 뒤집었다면 '가'는 '나' 항목에, '나'는 '가' 항목에 막힌다.
         expect(isBlocked("NICK", "가")).toBe(false);
         expect(isBlocked("NICK", "나")).toBe(false);
         expect(isBlocked("NICK", "다")).toBe(true);
@@ -112,23 +105,6 @@ describe("isBlocked", () => {
         setBlockLists({NICK: [entry("가", {mode: "NOT_SAME"}), entry("가")]});
         expect(isBlocked("NICK", "가")).toBe(true);
     });
-
-    it("막은 항목과 허용한 항목을 모두 쓰였다고 적는다", () => {
-        const byNick = entry("닉", {mode: "CONTAIN"});
-        const byExact = entry("닉네임");
-        const unused = entry("다른닉");
-        setBlockLists({NICK: [byNick, byExact, unused]});
-        expect(isBlocked("NICK", "닉네임")).toBe(true);
-        // 색인에서 찾는 일치 항목이 먼저 적히므로 순서는 보지 않는다.
-        expect(usedIds().toSorted()).toEqual([byNick.id, byExact.id].toSorted());
-
-        vi.mocked(markUsed).mockClear();
-        const allow = entry("가", {mode: "NOT_SAME"});
-        const miss = entry("나", {mode: "NOT_SAME"});
-        setBlockLists({NICK: [allow, miss]});
-        expect(isBlocked("NICK", "가")).toBe(false);
-        expect(usedIds()).toEqual([allow.id]);
-    });
 });
 
 describe("isAnyBlocked", () => {
@@ -136,14 +112,6 @@ describe("isAnyBlocked", () => {
         setBlockLists({ID: [entry("uid")]});
         expect(isAnyBlocked({NICK: "닉", ID: "uid"})).toBe(true);
         expect(isAnyBlocked({NICK: "닉", ID: null, IP: undefined})).toBe(false);
-    });
-
-    it("막힌 유형에서 멈추지 않고 다른 유형 항목도 쓰였다고 적는다", () => {
-        const nick = entry("닉");
-        const id = entry("uid");
-        setBlockLists({NICK: [nick], ID: [id]});
-        expect(isAnyBlocked({NICK: "닉", ID: "uid"})).toBe(true);
-        expect(usedIds()).toEqual([nick.id, id.id]);
     });
 });
 
@@ -168,12 +136,6 @@ describe("blockingEntries", () => {
         const {defaults} = useBlocksStore.getState();
         expect(blockingEntries({NICK: "닉"}, undefined, {entries: {...useBlocksStore.getState().entries, NICK: [nick]}, defaults})).toEqual([{type: "NICK", entry: nick}]);
         expect(blockingEntries({NICK: "닉"})).toEqual([]);
-    });
-
-    it("쓰였다고 적지 않는다", () => {
-        setBlockLists({NICK: [entry("닉")]});
-        blockingEntries({NICK: "닉"});
-        expect(markUsed).not.toHaveBeenCalled();
     });
 });
 
@@ -217,7 +179,7 @@ describe("dcconCode", () => {
         expect(dcconCode(element("<img src='' data-src='/dccon.php?no=v2'>"))).toBe("v2");
     });
 
-    it("src가 없는 요소는 안의 img·source를 본다", () => {
+    it("src가 없는 요소는 안의 img, source를 본다", () => {
         expect(dcconCode(element("<span><img src='/dccon.php?no=i1'></span>"))).toBe("i1");
         expect(dcconCode(element("<video><source src='/dccon.php?no=s1'></video>"))).toBe("s1");
     });
@@ -262,201 +224,5 @@ describe("groupDuplicates", () => {
         expect(groupDuplicates(items, ({text}) => text, {count: 3, minLength: 3}).size).toBe(0);
         expect(groupDuplicates(items, ({text}) => text, {count: 3, minLength: 2}).size).toBe(3);
         expect(groupDuplicates(items, ({text}) => text, {count: 2, minLength: 2}).size).toBe(5);
-    });
-});
-
-describe("이미지 차단", () => {
-    // 해시는 주소별로 모듈에 남으므로 테스트마다 다른 주소를 쓴다.
-    let seq = 0;
-    const imageUrl = (): string => `https://dcimg8.dcinside.co.kr/viewimage.php?id=x&no=${seq++}`;
-    const FINGERPRINT = "0".repeat(32);
-    const MIRRORED = "f".repeat(32);
-    // dHash·pHash가 각각 4비트 다르다.
-    const NEAR = `${"0".repeat(15)}f${"0".repeat(15)}f`;
-
-    const image = (url: string, size = 100): HTMLImageElement => {
-        const element = document.createElement("img");
-        for (const [key, value] of Object.entries({currentSrc: url, complete: true, naturalWidth: size, naturalHeight: size})) {
-            Object.defineProperty(element, key, {value});
-        }
-        return element;
-    };
-
-    let fetchImage: ReturnType<typeof vi.fn>;
-    beforeEach(() => {
-        // 파일 해시에 WebCrypto(crypto.subtle)가 필요한데 jsdom의 crypto에는 없다.
-        vi.stubGlobal("crypto", webcrypto);
-        fetchImage = vi.fn(async () => new Response("abc"));
-        vi.stubGlobal("fetch", fetchImage);
-        vi.mocked(imageFingerprints).mockReset().mockResolvedValue([[FINGERPRINT, MIRRORED]]);
-        vi.mocked(markUsed).mockClear();
-        vi.spyOn(console, "warn").mockImplementation(() => {});
-        return () => vi.unstubAllGlobals();
-    });
-
-    describe("imageHash", () => {
-        it("주소마다 한 번만 읽고, 지문이 필요해지면 그때 한 번 더 읽는다", async () => {
-            const url = imageUrl();
-            expect(await imageHash(url)).toEqual({file: await sha256(new TextEncoder().encode("abc")), similar: undefined});
-            await imageHash(url);
-            expect(fetchImage).toHaveBeenCalledTimes(1);
-
-            expect((await imageHash(url, {similar: true}))?.similar).toEqual([[FINGERPRINT, MIRRORED]]);
-            await imageHash(url, {similar: true});
-            expect(fetchImage).toHaveBeenCalledTimes(2);
-        });
-
-        it("같은 주소를 한 번에 여럿 물어도 한 번만 읽고, 지문도 한 번만 다시 읽는다", async () => {
-            const url = imageUrl();
-            await Promise.all([imageHash(url), imageHash(url)]);
-            expect(fetchImage).toHaveBeenCalledTimes(1);
-
-            await Promise.all([imageHash(url, {similar: true}), imageHash(url, {similar: true})]);
-            expect(fetchImage).toHaveBeenCalledTimes(2);
-            expect(imageFingerprints).toHaveBeenCalledTimes(1);
-        });
-
-        it("읽지 못한 주소는 retry일 때만 다시 읽는다", async () => {
-            const url = imageUrl();
-            fetchImage.mockRejectedValueOnce(new TypeError("Failed to fetch"));
-            expect(await imageHash(url)).toBeUndefined();
-            expect(await imageHash(url)).toBeUndefined();
-            expect(fetchImage).toHaveBeenCalledTimes(1);
-
-            expect(await imageHash(url, {retry: true})).toBeDefined();
-            expect(fetchImage).toHaveBeenCalledTimes(2);
-        });
-
-        it("구간 요청의 206은 mp4 파일 전체를 담았을 때만 받는다", async () => {
-            // ftyp(16바이트) + mdat(12바이트)
-            const mp4 = Uint8Array.from([0, 0, 0, 16, 102, 116, 121, 112, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 109, 100, 97, 116, 1, 2, 3, 4]);
-            fetchImage.mockResolvedValueOnce(new Response(mp4, {status: 206}));
-            expect((await imageHash(imageUrl()))?.file).toBe(await sha256(mp4));
-
-            fetchImage.mockResolvedValueOnce(new Response(mp4.subarray(16), {status: 206}));
-            expect(await imageHash(imageUrl())).toBeUndefined();
-        });
-
-        it("머리나 본문이 멈춘 읽기는 60초에 끊어 다음 읽기를 막지 않는다", async () => {
-            vi.useFakeTimers();
-            try {
-                // jsdom 환경에는 ReadableStream이 없다.
-                vi.stubGlobal("ReadableStream", NodeReadableStream);
-                const stalledBody = () => new Response(new ReadableStream());
-                fetchImage.mockImplementationOnce(() => new Promise(() => {})).mockImplementationOnce(() => new Promise(() => {}))
-                    .mockResolvedValueOnce(stalledBody()).mockResolvedValueOnce(stalledBody());
-                const stalled = [1, 2, 3, 4].map(() => imageHash(imageUrl()));
-                const next = imageHash(imageUrl());
-                await vi.advanceTimersByTimeAsync(60_000);
-
-                expect(await Promise.all(stalled)).toEqual([undefined, undefined, undefined, undefined]);
-                expect(await next).toBeDefined();
-            } finally {
-                vi.useRealTimers();
-            }
-        });
-
-        it("다시 읽다 실패해도 앞서 구한 파일 해시를 지킨다", async () => {
-            const url = imageUrl();
-            const first = await imageHash(url);
-            fetchImage.mockRejectedValue(new TypeError("Failed to fetch"));
-
-            expect(await imageHash(url, {retry: true, similar: true})).toEqual(first);
-            expect(await imageHash(url)).toEqual(first);
-        });
-    });
-
-    describe("isImageBlocked", () => {
-        it("같은 파일이면 막는다", async () => {
-            const url = imageUrl();
-            setBlockLists({IMAGE: [entry((await imageHash(url))!.file)]});
-            expect(await isImageBlocked(image(url))).toBe(true);
-        });
-
-        it("기준을 주면 지문이 비슷한 이미지와 좌우 반전본도 막는다", async () => {
-            setBlockLists({IMAGE: [entry("다른 파일", {similar: NEAR})]});
-            expect(await isImageBlocked(image(imageUrl()))).toBe(false);
-            expect(await isImageBlocked(image(imageUrl()), undefined, 3)).toBe(false);
-            expect(await isImageBlocked(image(imageUrl()), undefined, 4)).toBe(true);
-
-            setBlockLists({IMAGE: [entry("다른 파일", {similar: MIRRORED})]});
-            expect(await isImageBlocked(image(imageUrl()), undefined, 4)).toBe(true);
-        });
-
-        it("허용 목록(NOT_*) 항목과 다른 갤러리 항목은 지문으로 막지 않는다", async () => {
-            setBlockLists({IMAGE: [entry("다른 파일", {similar: FINGERPRINT, gallery: "a"})]});
-            expect(await isImageBlocked(image(imageUrl()), "b", 12)).toBe(false);
-            expect(await isImageBlocked(image(imageUrl()), "a", 12)).toBe(true);
-
-            const url = imageUrl();
-            setBlockLists({IMAGE: [entry((await imageHash(url))!.file, {similar: FINGERPRINT, mode: "NOT_SAME"})]});
-            // 같은 파일이라 허용 목록에 맞는다. 지문으로 넓혀 막지 않는다.
-            expect(await isImageBlocked(image(url), undefined, 12)).toBe(false);
-        });
-
-        it("같은 파일로 막혀도 지문으로 걸린 항목까지 쓰였다고 적는다", async () => {
-            const url = imageUrl();
-            const exact = entry((await imageHash(url))!.file);
-            const near = entry("다른 파일", {similar: NEAR});
-            setBlockLists({IMAGE: [exact, near]});
-
-            expect(await isImageBlocked(image(url), undefined, 12)).toBe(true);
-            // 같은 파일이면 지문을 기다리지 않고 답하므로 지문 판정은 뒤이어 적힌다.
-            await vi.waitFor(() => expect(usedIds()).toEqual(expect.arrayContaining([exact.id, near.id])));
-        });
-
-        it("같은 파일은 지문을 다 구하기 전에 막는다", async () => {
-            const url = imageUrl();
-            const file = await sha256(new TextEncoder().encode("abc"));
-            setBlockLists({IMAGE: [entry(file), entry("다른 파일", {similar: NEAR})]});
-            // 앞선 이미지들의 지문 계산이 밀려 있어 끝나지 않는다.
-            vi.mocked(imageFingerprints).mockReturnValue(new Promise(() => {}));
-
-            expect(await isImageBlocked(image(url), undefined, 12)).toBe(true);
-            // 차단 목록이 바뀌어 다시 판정해도(recheck·미리보기를 다시 열 때) 밀린 지문을 기다리지 않는다.
-            expect(await isImageBlocked(image(url), undefined, 12)).toBe(true);
-        });
-
-        it("움짤 항목은 정지 이미지라면 한 장면만, 움짤이라면 하나 빼고 모든 장면이 맞아야 막는다", async () => {
-            const scene = (n: number): string => n.toString(16).repeat(32);
-            setBlockLists({IMAGE: [entry("움짤", {similar: scene(1), frames: [scene(2), scene(3), scene(4)]})]});
-
-            // 정지 이미지: 한 장면만 같아도 막는다.
-            vi.mocked(imageFingerprints).mockResolvedValue([[scene(3), scene(9)]]);
-            expect(await isImageBlocked(image(imageUrl()), undefined, 4)).toBe(true);
-
-            // 움짤: 네 장면 중 셋이 같으면 막고(순서는 보지 않는다), 둘이면 막지 않는다.
-            vi.mocked(imageFingerprints).mockResolvedValue([[scene(4), scene(9)], [scene(9), scene(1)], [scene(2), scene(9)], [scene(9), scene(9)]]);
-            expect(await isImageBlocked(image(imageUrl()), undefined, 4)).toBe(true);
-            vi.mocked(imageFingerprints).mockResolvedValue([[scene(1), scene(9)], [scene(2), scene(9)], [scene(9), scene(9)], [scene(9), scene(9)]]);
-            expect(await isImageBlocked(image(imageUrl()), undefined, 4)).toBe(false);
-        });
-
-        it("같은 표본은 목록이 그대로면 다시 훑지 않고 걸린 항목만 다시 쓰였다고 적는다", async () => {
-            const url = imageUrl();
-            const near = entry("다른 파일", {similar: NEAR});
-            setBlockLists({IMAGE: [near, entry("먼 파일", {similar: "5".repeat(32)})]});
-            vi.mocked(isSimilarSet).mockClear();
-
-            // 반복 재생하는 움짤처럼 같은 주소를 거듭 본다.
-            expect(await isImageBlocked(image(url), undefined, 4)).toBe(true);
-            expect(await isImageBlocked(image(url), undefined, 4)).toBe(true);
-            expect(isSimilarSet).toHaveBeenCalledTimes(2);
-            expect(usedIds().filter((id) => id === near.id)).toHaveLength(2);
-
-            // 목록이 바뀌면 다시 훑는다.
-            setBlockLists({IMAGE: [entry("다른 파일", {similar: "5".repeat(32)})]});
-            expect(await isImageBlocked(image(url), undefined, 4)).toBe(false);
-            expect(isSimilarSet).toHaveBeenCalledTimes(3);
-        });
-
-        it("지문 있는 항목이 없거나 너무 큰 이미지면 디코딩하지 않는다", async () => {
-            setBlockLists({IMAGE: [entry("다른 파일")]});
-            await isImageBlocked(image(imageUrl()), undefined, 12);
-
-            setBlockLists({IMAGE: [entry("다른 파일", {similar: FINGERPRINT})]});
-            expect(await isImageBlocked(image(imageUrl(), 10_000), undefined, 12)).toBe(false);
-            expect(imageFingerprints).not.toHaveBeenCalled();
-        });
     });
 });

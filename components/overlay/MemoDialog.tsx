@@ -1,20 +1,14 @@
-import {Shuffle} from "lucide-react";
-import {useId, useRef, useState} from "react";
+import {Shuffle} from "lucide-preact";
+import { useId, useRef, useState } from "preact/hooks";
 
 import {ColorInput} from "@/components/ColorInput";
-import {ModalDialog, SubmitForm} from "@/components/dialogs";
-import {Button} from "@/components/ui/button";
-import {Checkbox} from "@/components/ui/checkbox";
-import {DialogClose, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog";
-import {Field, FieldLabel} from "@/components/ui/field";
-import {InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput} from "@/components/ui/input-group";
-import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
+import {DialogClose, DialogDescription, DialogFooter, DialogHeader, DialogTitle, ModalDialog, SubmitForm} from "@/components/dialogs";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
 import type {MemoType} from "@/core/storage/types";
+import {cn} from "cn";
 import {ownMemo, randomColor, useMemosStore} from "@/stores/memos";
 import {type MemoTargetState, selectedGallery, useUiStore} from "@/stores/ui";
 import {SAVE_FAILED} from "@/utils/error";
-import {arrayIncludes} from "@/utils/typed";
 
 const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     const closeMemo = useUiStore((s) => s.closeMemo);
@@ -25,13 +19,11 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     const id = useId();
     const input = useRef<HTMLInputElement>(null);
 
-    // 지금 보고 있는 갤러리. 이 갤러리에서만 보이는 메모로 저장할 때 쓴다.
     const gallery = selectedGallery(state.gallery);
 
     const memoOf = (memoType: MemoType, user: string) => ownMemo(memos[memoType], user);
 
-    // 열릴 때와 종류를 바꿀 때 기존 메모로 채운다.
-    // 범위(scope)는 저장된 갤러리를 그대로 가져와, 다른 갤러리 전용 메모를 여기서 저장해도 범위가 바뀌지 않게 한다.
+    // 열거나 종류를 바꿀 때 기존 메모로 채운다 - scope는 저장된 갤러리를 그대로 가져온다.
     const prefill = (memoType: MemoType): { text: string; color: string; scope?: string } => {
         const memo = memoOf(memoType, state.targets[memoType] ?? "");
         return {text: memo?.text ?? "", color: memo?.color ?? randomColor(), scope: memo?.gallery};
@@ -50,7 +42,6 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     const value = state.targets[type] ?? "";
     const existing = Boolean(memoOf(type, value));
 
-    /** 저장·삭제를 마치면 알리고 닫는다. 실패하면 창을 열어 둔다. 닫으면 입력한 메모가 사라진다. */
     const save = async (write: Promise<void>, done: string): Promise<void> => {
         try {
             await write;
@@ -74,66 +65,66 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     };
 
     return (
-        <ModalDialog onClose={closeMemo} focusOnOpen={input} className="sm:max-w-[400px]">
+        <ModalDialog onClose={closeMemo} focusOnOpen={input} className="sm:max-w-100">
             <DialogHeader>
                 <DialogTitle>메모</DialogTitle>
                 <DialogDescription>
-                    {MEMO_TYPE_NAMES[type]}: <strong className="text-foreground">{value}</strong>
+                    {MEMO_TYPE_NAMES[type]}: <strong className="text-base-content">{value}</strong>
                 </DialogDescription>
             </DialogHeader>
 
             <SubmitForm onSubmit={submit}>
                 <div className="flex flex-col gap-3">
-                    <ToggleGroup aria-label="메모 대상" variant="outline" spacing={0} value={[type]} onValueChange={([next]) => {
-                        if (!arrayIncludes(MEMO_TYPES, next)) return;
-                        setType(next);
-                        if (!touched) setForm(prefill(next));
-                    }}>
+                    <div role="group" aria-label="메모 대상" className="join">
                         {MEMO_TYPES.filter((memoType) => state.targets[memoType]).map((memoType) => (
-                            <ToggleGroupItem key={memoType} value={memoType}>
+                            <button key={memoType} type="button" aria-pressed={type === memoType}
+                                    className={cn("btn btn-outline btn-sm join-item", type === memoType && "btn-active")}
+                                    onClick={() => {
+                                        setType(memoType);
+                                        if (!touched) setForm(prefill(memoType));
+                                    }}>
                                 {MEMO_TYPE_NAMES[memoType]}
-                            </ToggleGroupItem>
+                            </button>
                         ))}
-                    </ToggleGroup>
+                    </div>
 
-                    <InputGroup>
-                        <InputGroupAddon>
-                            <ColorInput width={20} height={20} aria-label="색상" value={color} onChange={(ev) => edit({color: ev.target.value})}/>
-                        </InputGroupAddon>
-                        <InputGroupInput
+                    <div className="input h-auto flex-row items-center gap-2 py-1">
+                        <ColorInput width={20} height={20} aria-label="색상" value={color} onChange={(ev) => edit({color: ev.currentTarget.value})}/>
+                        <input
                             ref={input}
+                            className="grow bg-transparent outline-none"
                             maxLength={160}
                             aria-label="메모"
                             placeholder="메모를 입력해 주세요 (160자 제한)"
                             value={text}
-                            onChange={(ev) => edit({text: ev.target.value})}
+                            onInput={(ev) => edit({text: ev.currentTarget.value})}
                         />
-                        <InputGroupAddon align="inline-end">
-                            <InputGroupButton size="icon-xs" aria-label="랜덤 색상" onClick={() => edit({color: randomColor()})}>
-                                <Shuffle/>
-                            </InputGroupButton>
-                        </InputGroupAddon>
-                    </InputGroup>
+                        <button type="button" className="btn btn-ghost btn-square btn-xs" aria-label="랜덤 색상" onClick={() => edit({color: randomColor()})}>
+                            <Shuffle className="size-3"/>
+                        </button>
+                    </div>
 
                     {gallery && (
-                        <Field orientation="horizontal">
-                            <Checkbox id={`${id}-scope`} checked={scope === gallery} onCheckedChange={(checked) => edit({scope: checked ? gallery : undefined})}/>
-                            <FieldLabel htmlFor={`${id}-scope`}>이 갤러리에서만 ({gallery})</FieldLabel>
-                        </Field>
+                        <div className="flex items-center gap-3">
+                            <input type="checkbox" id={`${id}-scope`} className="checkbox"
+                                   checked={scope === gallery}
+                                   onChange={(ev) => edit({scope: ev.currentTarget.checked ? gallery : undefined})}/>
+                            <label htmlFor={`${id}-scope`} className="text-sm font-medium leading-snug">이 갤러리에서만 ({gallery})</label>
+                        </div>
                     )}
                     {scope && scope !== gallery && (
-                        <p className="text-muted-foreground">지금은 {scope} 갤러리 전용 메모입니다.</p>
+                        <p className="text-base-content/60">지금은 {scope} 갤러리 전용 메모입니다.</p>
                     )}
                 </div>
 
                 <DialogFooter>
                     {existing && (
-                        <Button type="button" variant="destructive" onClick={() => void remove()}>
+                        <button type="button" className="btn btn-error" onClick={() => void remove()}>
                             삭제
-                        </Button>
+                        </button>
                     )}
-                    <DialogClose render={<Button variant="outline"/>}>취소</DialogClose>
-                    <Button type="submit">저장</Button>
+                    <DialogClose className="btn btn-outline">취소</DialogClose>
+                    <button type="submit" className="btn btn-primary">저장</button>
                 </DialogFooter>
             </SubmitForm>
         </ModalDialog>

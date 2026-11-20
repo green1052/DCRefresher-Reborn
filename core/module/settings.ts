@@ -5,7 +5,7 @@ import {isRecord} from "@/utils/record";
 
 import type {ModuleDefinition, SettingSchema} from "./types";
 
-/** 모듈 on/off. 저장값이 boolean이 아니면(가져온 설정의 "false" 문자열 등) defaultEnable을 따른다. 콘텐츠·배경·옵션이 모두 이 함수로 판단한다. */
+/** 모듈 on/off. 저장값이 boolean이 아니면(가져온 설정의 "false" 문자열 등) defaultEnable을 따른다. 콘텐츠, 배경, 옵션이 모두 이 함수로 판단한다. */
 export const isModuleEnabled = (def: Pick<ModuleDefinition, "id" | "defaultEnable">, enables: Record<string, unknown>): boolean => {
     const value = enables[def.id];
     return typeof value === "boolean" ? value : def.defaultEnable ?? true;
@@ -16,7 +16,7 @@ export const defaultValue = (schema: SettingSchema): SettingValue => (schema.typ
 
 /**
  * 저장값을 스키마에 맞춘다. 타입이 틀리면 기본값을 쓰고, range는 슬라이더처럼 step 단위로 맞춰 min~max로 자른다
- * (가져온 설정의 소수 등. 동시 요청 수는 정수가 아니면 p-limit이 던진다).
+ * (가져온 설정의 소수 등을 바로잡는다).
  * order는 스키마에 없거나 겹친 항목을 빼고, 새로 생긴 항목을 덧붙인다.
  */
 export const normalizeSetting = (schema: SettingSchema, value: unknown): SettingValue => {
@@ -54,7 +54,7 @@ export const enablesOf = (stored: unknown): Record<string, unknown> => (isRecord
 
 /**
  * 저장소의 모듈 설정을 스키마에 맞춘다. 없거나 모양이 다르면 기본값.
- * 옵션 스토어·콘텐츠 레지스트리·배경이 같은 값을 보도록 모두 이 함수를 쓴다.
+ * 옵션 스토어, 콘텐츠 레지스트리, 배경이 같은 값을 보도록 모두 이 함수를 쓴다.
  */
 export const settingsOf = (def: Pick<ModuleDefinition, "settings">, stored: unknown): Record<string, SettingValue> => {
     const values = isRecord(stored) ? stored : {};
@@ -64,7 +64,7 @@ export const settingsOf = (def: Pick<ModuleDefinition, "settings">, stored: unkn
 /**
  * 모듈 on/off와 주어진 모듈들의 설정을 한 번의 storage.local.get으로 읽는다. 모듈마다 따로 읽으면 왕복이 모듈 수만큼 쌓인다.
  * 항목(defineItem)은 만드는 순간 키마다 한 번 더 읽으므로 키로 읽는다 (core/storage/items.ts). 설정은 저장소 값 그대로다 (settingsOf로 맞춘다).
- * 콘텐츠 레지스트리·배경 모듈이 같이 쓴다.
+ * 콘텐츠 레지스트리, 배경 모듈이 같이 쓴다.
  */
 export const readModuleStorage = async (ids: readonly string[]): Promise<{ enables: Record<string, unknown>; settings: Map<string, unknown> }> => {
     const items = await readItems([MODULES_KEY, ...ids.map(moduleSettingsKey)]);

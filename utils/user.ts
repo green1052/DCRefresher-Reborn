@@ -1,4 +1,4 @@
-/** 고정닉 닉콘 파일명(대소문자 구분). 관리자·부관리자 닉콘도 fix_ 접두사가 있으면 고정닉이다. */
+/** 고정닉 닉콘 파일명(대소문자 구분). 관리자, 부관리자 닉콘도 fix_ 접두사가 있으면 고정닉이다. */
 const FIXED_ICONS = new Set([
     "fix_managernik.gif",
     "fix_sub_managernik.gif",
@@ -38,10 +38,7 @@ export const nickType = (iconUrl: string): NickType => {
     return FIXED_ICONS.has(file) ? "FIXED" : HALF_FIXED_ICONS.has(file) ? "HALF_FIXED" : "UNFIXED";
 };
 
-/**
- * 현재 페이지에서 갤러리 관리 권한이 있는지. 관리 버튼, 목록 머리의 체크박스 열, 매니저 말머리 탭(listSearchHead(999))으로 판단한다.
- * 미니 갤러리에는 관리 버튼이 없고, 매니저 탭 목록에는 체크박스 열이 없다. 매니저 탭은 매니저에게만 보인다 (#271).
- */
+/** 갤러리 관리 권한이 있는지. 관리 버튼, 체크박스 열, 매니저 말머리 탭으로 판단한다(매니저 탭은 매니저에게만 보인다). */
 export const isGalleryManager = (): boolean =>
     Boolean(document.querySelector(".useradmin_btnbox button, .gall_list .chkbox_th, a[onclick^=\"listSearchHead(999)\"]"));
 

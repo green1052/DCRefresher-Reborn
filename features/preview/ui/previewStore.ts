@@ -1,4 +1,4 @@
-import {create} from "zustand";
+import {create} from "@/utils/store";
 
 import {needOverlayWhen} from "@/components/overlay/demands";
 import type {TurnstileResult} from "@/core/messaging/protocol";
@@ -9,9 +9,9 @@ import type {GalleryPreData, PostInfo, TurnstileConfig} from "@/core/preview/typ
 
 export interface ErrorState {
     detail: string;
-    /** HTTP 상태 코드 (HTTPError일 때). 임시 차단(BlockedError)은 429다. */
+    /** HTTP 상태 코드 (HTTPError일 때). */
     status?: number;
-    /** 성인 인증이 필요한 글 (비로그인·미인증이면 본문 대신 인증 안내가 온다). */
+    /** 성인 인증이 필요한 글 (비로그인, 미인증이면 본문 대신 인증 안내가 온다). */
     adult?: boolean;
     /** 미니 갤러리 비밀글 (비밀번호는 원문에서만 넣을 수 있다). */
     secret?: boolean;
@@ -19,10 +19,9 @@ export interface ErrorState {
 
 export type ManageKind = "notice" | "recommend" | "delete" | "bump";
 
-/** 댓글 스레드 순서: 등록순·최신순·답글순 (CommentList.tsx의 threadParents). */
 export type CommentOrderValue = "oldest" | "newest" | "replies";
 
-/** 공지·개념글 [등록, 해제] 동작. 관리 패널의 확인 문구와 결과 알림이 같이 쓴다. */
+/** 공지, 개념글 [등록, 해제] 동작. 관리 패널의 확인 문구와 결과 알림이 같이 쓴다. */
 export const MANAGE_LABELS = {notice: ["공지로 등록", "공지를 해제"], recommend: ["개념글로 등록", "개념글을 해제"]} as const;
 
 type Reply = { commentNo: string | null; replyNo: string | null };
@@ -34,10 +33,7 @@ export interface ViewerImage {
     pop?: string;
 }
 
-/**
- * blockMedia: blockImage로 이미지를 가릴지. 전체 미리보기와 같은 클래스로 가린다.
- * interactive: 마우스로 카드를 조작할 수 있다 (tooltipInteraction). 커서를 따라다니지 않는다.
- */
+/** blockMedia: 전체 미리보기와 같은 클래스로 이미지를 가린다. interactive: 마우스로 카드를 조작할 수 있다. */
 type MiniState = { x: number; y: number; title: string; contents: string; blockMedia: boolean; interactive: boolean; gallery: string };
 
 /** 게시글을 새로 열 때마다 초기화되는 상태. */
@@ -50,10 +46,10 @@ interface PostState {
     comments: ProcessedComment[] | undefined;
     /** 댓글을 받지 못했다. comments가 없는 동안 받는 중 표시 대신 '다시 시도' 안내를 보인다. */
     commentsFailed: boolean;
-    /** 댓글·답글 쓰기 허용. 멤버만 댓글을 쓸 수 있는 갤러리면 댓글 응답의 allow_reply가 0이다. */
+    /** 댓글, 답글 쓰기 허용. 멤버만 댓글을 쓸 수 있는 갤러리면 댓글 응답의 allow_reply가 0이다. */
     allowReply: boolean;
     collapsed: Set<string>;
-    /** 이 글에서만 가린 댓글(숨김 차단·접힌 같은 댓글) 보기. 댓글 머리의 요약에서 켜고 끈다. 페이지의 '가린 내용 보기'와 따로다. */
+    /** 이 글에서만 가린 댓글(숨김 차단, 접힌 같은 댓글) 보기. 댓글 머리의 요약에서 켜고 끈다. 페이지의 '가린 내용 보기'와 따로다. */
     commentsRevealed: boolean;
     /** 댓글 새로고침으로 새로 들어온 댓글 번호. 잠깐 강조한다 (Comment.tsx의 animate-fresh-comment). */
     freshComments: ReadonlySet<string>;
@@ -205,10 +201,7 @@ let signalSeq = 0;
 
 const KST = 9 * 3_600_000;
 
-/**
- * 디시 시각 문자열을 읽는다 ("2026.09.26 02:29:40", 올해 것은 연도 없이 "09.26 02:29:40").
- * 한국 시간이므로 +09:00을 붙인다. 브라우저 시간대로 읽으면 해외에서 어긋난다.
- */
+/** 디시 시각 문자열(올해 것은 연도 없음)을 +09:00을 붙여 읽는다 - 브라우저 시간대로 읽으면 해외에서 어긋난다. */
 export const parseDate = (value: string): Date => {
     const missingYear = value.substring(0, 4).includes(".");
     // 빠진 연도도 한국 날짜 기준으로 채운다. 로컬 연도를 쓰면 해가 바뀌는 무렵 시차로 한 해 어긋난다.
@@ -238,10 +231,10 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     commentOrder: "oldest",
 
     open: (preData, patch) => {
-        // 이전 글의 캡차·Turnstile 창은 닫는다. 남아 있으면 입력한 코드가 이전 글로 간다.
+        // 이전 글의 캡차, Turnstile 창은 닫는다. 남아 있으면 입력한 코드가 이전 글로 간다.
         get().captcha?.resolve("");
         get().turnstile?.resolve(undefined);
-        set({...freshPost(), ...patch, visible: true, fading: false, preData, signalId: ++signalSeq, mini: null, captcha: null, turnstile: null, dcconInfo: null});
+        set({...freshPost(), ...patch, visible: true, fading: false, preData, signalId: ++signalSeq, mini: null, captcha: null, turnstile: null, dcconInfo: null, warm: false});
     },
 
     close: () => {
@@ -267,22 +260,18 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     moveMini: (clientX, clientY) => set((state) => (state.mini ? {mini: {...state.mini, ...miniPosition(clientX, clientY)}} : state))
 }));
 
-/**
- * 미리보기에서 연 유저 버블·메모 창이 갤러리 한정 차단·메모에 쓰는 갤러리 (SelectedUser.gallery). 미리보기가 떠 있지 않으면 undefined라 이 문서의 갤러리를 쓴다.
- */
+/** 유저 버블, 메모 창이 쓸 갤러리 - 미리보기가 아니면 undefined라 이 문서의 갤러리를 쓴다. */
 export const previewGallery = (): string | undefined => {
     const {visible, preData} = usePreviewStore.getState();
     return visible ? preData?.gallery : undefined;
 };
 
-/**
- * 댓글을 올리거나 지운 글의 댓글 목록을 새로 받는다. 이 글이 열려 있을 때만 받고, 캐시의 목록은 늘 낡은 것으로 표시한다.
- * 두면 보내는 사이 다른 글에 갔다 10초 안에 돌아올 때 바뀌기 전 목록을 방금 받은 것(COMMENTS_REUSE)으로 쳐 다시 받지 않는다.
- */
+/** 댓글을 올리거나 지운 글의 목록을 새로 받는다 - 캐시 목록은 낡은 것으로 표시해 10초 재사용 창을 피한다. */
 export const refreshCommentsOf = (preData: GalleryPreData): void => {
     setEntry(preData, {commentsAt: 0});
     const current = usePreviewStore.getState();
-    if (current.preData && postKey(current.preData) === postKey(preData)) void current.requestRefresh();
+    // 전체 목록을 받는다. 증분 갱신은 최신 댓글 번호가 그대로면 건너뛰는데, 지우기는 번호를 못 올리므로 표시가 갱신되지 않는다.
+    if (current.preData && postKey(current.preData) === postKey(preData)) void current.requestRefresh(true);
 };
 
 // 미리보기 UI 중 하나라도 떠 있으면 오버레이를 띄운다 (components/overlay/demands). 새 미리보기 UI를 추가하면 여기에 넣는다.

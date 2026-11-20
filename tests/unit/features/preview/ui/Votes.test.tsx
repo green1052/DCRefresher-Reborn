@@ -1,6 +1,4 @@
-import {render} from "preact";
-import {act} from "preact/test-utils";
-import type {ReactNode} from "react";
+import {render, act} from "@/tests/helpers";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {getEntry, setEntry} from "@/core/preview/cache";
@@ -8,15 +6,10 @@ import {vote} from "@/core/preview/request";
 import type {PostInfo} from "@/core/preview/types";
 import {usePreviewStore} from "@/features/preview/ui/previewStore";
 import {Votes} from "@/features/preview/ui/Votes";
-import {preData, tick} from "../../../../helpers";
+import {preData, tick} from "@/tests/helpers";
 
-// Base UI·lucide는 변환되지 않아 진짜 React를 불러 그려지지 않으므로 평범한 요소로 바꾼다.
-vi.mock("@/components/ui/button", () => ({
-    Button: ({children, disabled, onClick, "aria-label": label}: { children?: ReactNode; disabled?: boolean; onClick?: () => void; "aria-label"?: string }) =>
-        <button disabled={disabled} onClick={onClick} aria-label={label}>{children}</button>
-}));
-vi.mock("@/components/ui/spinner", () => ({Spinner: () => null}));
-vi.mock("lucide-react", () => ({ChevronDown: () => null, ChevronUp: () => null, ExternalLink: () => null, Link2: () => null}));
+// lucide, TooltipButton는 평범한 요소로 바꾼다(그리기, 계산에 필요한 것만 남긴다).
+vi.mock("lucide-preact", () => ({ChevronDown: () => null, ChevronUp: () => null, ExternalLink: () => null, Link: () => null}));
 vi.mock("@/components/WithTooltip", () => ({TooltipButton: () => null}));
 vi.mock("@/core/preview/request", async (importOriginal) => ({...await importOriginal<typeof import("@/core/preview/request")>(), vote: vi.fn()}));
 
@@ -35,7 +28,7 @@ beforeEach(() => setEntry(target, {post: post()}));
 afterEach(() => render(null, root));
 
 describe("Votes", () => {
-    it("추천하면 추천 수·고정닉 추천 수와 캐시 본문의 숫자를 고친다", async () => {
+    it("추천하면 추천 수, 고정닉 추천 수와 캐시 본문의 숫자를 고친다", async () => {
         vi.mocked(vote).mockResolvedValue({success: true, counts: "4", fixedCounts: "2"});
         await click(post(), "추천");
         await vi.waitFor(() => expect(getEntry(target)?.post?.upvotes).toBe("4"));

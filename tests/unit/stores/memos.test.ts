@@ -9,7 +9,7 @@ const memo = (text: string, gallery?: string): MemoEntry => ({text, color: "#000
 beforeEach(() => useMemosStore.setState({memos: {UID: {}, NICK: {}, IP: {}}}));
 
 describe("findMemo", () => {
-    it("아이디 메모가 IP·닉네임 메모보다 먼저다", () => {
+    it("아이디 메모가 IP, 닉네임 메모보다 먼저다", () => {
         useMemosStore.setState({memos: {UID: {u: memo("아이디")}, IP: {"1.2": memo("아이피")}, NICK: {닉: memo("닉네임")}}});
         expect(findMemo({uid: "u", ip: "1.2", nick: "닉"}, "g")?.text).toBe("아이디");
         expect(findMemo({ip: "1.2", nick: "닉"}, "g")?.text).toBe("아이피");
@@ -22,7 +22,7 @@ describe("findMemo", () => {
         expect(findMemo({uid: "u", nick: "닉"}, "other")?.text).toBe("아이디");
     });
 
-    it("닉네임이 constructor·toString이어도 빈 목록이면 메모가 없다", () => {
+    it("닉네임이 constructor, toString이어도 빈 목록이면 메모가 없다", () => {
         for (const nick of ["constructor", "toString"]) {
             expect(ownMemo({}, nick)).toBeUndefined();
             expect(findMemo({uid: nick, ip: nick, nick})).toBeUndefined();

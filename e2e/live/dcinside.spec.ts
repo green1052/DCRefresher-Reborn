@@ -1,26 +1,18 @@
-import {COMMENT_SITE_KEYS, D_ALPHABET, decodeD, ICON_SITE_KEY} from "../../core/preview/dcinside-js";
-import {COUNT_CELLS, COUNT_TEXT, LIST_TABLE} from "../../features/refresh/markup";
-import {AUTO, EDITOR, LEAVE, POSTED, SUBJECT, SUBMIT} from "../../features/write/markup";
+import {COMMENT_SITE_KEYS, D_ALPHABET, decodeD, ICON_SITE_KEY} from "@/core/preview/dcinside-js";
+import {COUNT_CELLS, COUNT_TEXT, LIST_TABLE} from "@/features/refresh/markup";
+import {AUTO, EDITOR, LEAVE, POSTED, SUBJECT, SUBMIT} from "@/features/write/markup";
 import {expect, test} from "../fixtures";
 import {openListPage} from "../pages/list";
 
-/**
- * 실제 디시에서 읽기만 한다 (bun run e2e:live). 디시 마크업·API가 바뀌면 여기서 걸린다. 쓰기 요청은 픽스처가 끊는다.
- * 글·댓글은 그때그때 다르므로 개수·내용이 아니라 모양만 본다.
- * 갤러리는 미니 갤러리 bjwg64로 고정이다. 콘텐츠 스크립트는 모바일 페이지에서 돌지 않아 PC 주소로 연다.
- */
+/** 실제 디시에서 읽기만 한다 (bun run e2e:live). 디시 마크업, API가 바뀌면 여기서 걸린다. 쓰기는 픽스처가 끊는다. */
 const LIST_URL = "https://gall.dcinside.com/mini/board/lists/?id=bjwg64";
 const {pathname: LIST_PATH, searchParams} = new URL(LIST_URL);
 const GALLERY = searchParams.get("id") ?? "";
-/** 공지·설문·광고가 아닌 글 행. */
+/** 공지, 설문, 광고가 아닌 글 행. */
 const POSTS = ".gall_list tbody tr.us-post[data-no]:not([data-type=icon_notice], [data-type=icon_survey])";
 const escape = (text: string): string => text.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
 
-/**
- * 기능이 찾는 디시 마크업. 못 찾으면 오류 없이 조용히 멈추는 것들이라 여기서 하나 이상 맞는지 본다.
- * optional은 갤러리·글에 따라 없을 수 있어 없으면 실패 대신 주석만 남긴다.
- * 선택자는 각 기능의 코드(core/list.ts, features/block·search·layout·stealth)에서 옮겼다. 그쪽을 바꾸면 여기도 바꾼다.
- */
+/** 기능이 찾는 디시 마크업. 선택자는 각 기능 코드에서 옮겼다(그쪽을 바꾸면 여기도). optional은 없으면 주석만 남긴다. */
 interface Markup {
     feature: string;
     selector: string;
@@ -30,9 +22,9 @@ interface Markup {
 const PAGING = ".left_content article:has(.gall_listwrap) .bottom_paging_box";
 
 const LIST_MARKUP: Markup[] = [
-    {feature: "새로고침·검색 (갈아끼울 목록)", selector: ".gall_list:not([id]) tbody > tr.ub-content"},
-    {feature: "새로고침·검색 (페이징의 현재 쪽)", selector: `${PAGING} em`},
-    {feature: "차단 (작성자 닉네임·아이디·IP)", selector: ".gall_list tr.ub-content > .ub-writer[data-nick][data-uid][data-ip]"},
+    {feature: "새로고침, 검색 (갈아끼울 목록)", selector: ".gall_list:not([id]) tbody > tr.ub-content"},
+    {feature: "새로고침, 검색 (페이징의 현재 쪽)", selector: `${PAGING} em`},
+    {feature: "차단 (작성자 닉네임, 아이디, IP)", selector: ".gall_list tr.ub-content > .ub-writer[data-nick][data-uid][data-ip]"},
     {feature: "차단 (제목)", selector: ".gall_list tr.ub-content .gall_tit > a:not([class])"},
     {feature: "차단 (말머리)", selector: ".gall_list tr.ub-content .gall_subject", optional: true},
     {feature: "레이아웃 (갤러리 뷰 숨기기)", selector: ".issue_wrap"},
@@ -50,7 +42,7 @@ const VIEW_MARKUP: Markup[] = [
     {feature: "차단 (글 보기 말머리)", selector: ".gallview_head.ub-content .title_headtext", optional: true},
     {feature: "스텔스 (본문)", selector: ".writing_view_box .write_div"},
     {feature: "스텔스 (본문 미디어)", selector: ".writing_view_box :is(img, video, embed, iframe)", optional: true},
-    {feature: "레이아웃·스텔스 (갤러리 대문)", selector: "#zzbang_div", optional: true}
+    {feature: "레이아웃, 스텔스 (갤러리 대문)", selector: "#zzbang_div", optional: true}
 ];
 
 const SEARCH_MARKUP: Markup[] = [
@@ -62,7 +54,7 @@ const SEARCH_MARKUP: Markup[] = [
     {feature: "검색 (다음 검색)", selector: `${PAGING} a.search_next`, optional: true}
 ];
 
-// 에디터(EDITOR)와 자동 짤방·작성 가이드(AUTO)는 디시 스크립트가 그려 여기 없다. 테스트에서 디시 스크립트가 그 선택자를 쓰는지 따로 본다.
+// 에디터(EDITOR)와 자동 짤방, 작성 가이드(AUTO)는 디시 스크립트가 그려 여기 없다. 테스트에서 디시 스크립트가 그 선택자를 쓰는지 따로 본다.
 const WRITE_MARKUP: Markup[] = [
     {feature: "글쓰기 나가기 방지 (등록 버튼)", selector: SUBMIT},
     {feature: "글쓰기 나가기 방지 (취소 레이어의 확인 버튼)", selector: LEAVE},
@@ -84,7 +76,7 @@ test.describe("실제 디시", () => {
         expect(refreshed.ok()).toBe(true);
         await expect(page.locator(POSTS).first()).toBeVisible();
 
-        // 갈아끼운 행에 디시 자체 차단·메모 배지를 다시 거는 디시 함수(entrypoints/background/page.ts). 없으면 오류 없이 건너뛴다.
+        // 갈아끼운 행에 디시 자체 차단, 메모 배지를 다시 거는 디시 함수(entrypoints/background/page.ts). 없으면 오류 없이 건너뛴다.
         // 식을 문자열로 넘긴다. UserMemo가 없을 때 ReferenceError가 나지 않게 window.를 붙인다.
         expect.soft(await page.evaluate("typeof chk_user_block"), "디시 자체 차단 다시 걸기: chk_user_block이 없다").toBe("function");
         expect.soft(await page.evaluate("typeof window.UserMemo?.renderWriterMemoBadges"), "메모 배지 다시 걸기: UserMemo.renderWriterMemoBadges가 없다").toBe("function");
@@ -136,12 +128,11 @@ test.describe("실제 디시", () => {
         const href = await page.locator(`${POSTS} .ub-word a`).first().getAttribute("href");
         await page.goto(new URL(href ?? "", LIST_URL).href);
         await expect(page.locator(".writing_view_box")).toBeVisible();
-        // 글 아래 목록에도 새로고침 버튼을 붙인다.
         await expect(page.locator("button[data-refresher-refresh]")).toHaveCount(1);
         await expect.poll(() => page.locator(".refresher-user-badges").count()).toBeGreaterThan(0);
     });
 
-    // 디시 JS에서 옮겨 쓴 값(core/preview/dcinside-js.ts)이 디시 파일에 그대로 있는지 본다. 바뀌면 댓글·디시콘 작성이 실패한다.
+    // 디시 JS에서 옮겨 쓴 값(core/preview/dcinside-js.ts)이 디시 파일에 그대로 있는지 본다. 바뀌면 댓글, 디시콘 작성이 실패한다.
     // 확장 없이 글 페이지와 디시 스크립트만 GET으로 받는다.
     test("디시 JS에서 옮긴 reCAPTCHA 키와 _d() 해독표가 그대로 있다", async ({request}) => {
         const get = async (url: string): Promise<string> => {
@@ -165,7 +156,7 @@ test.describe("실제 디시", () => {
         for (const [name, key] of Object.entries(COMMENT_SITE_KEYS)) {
             expect(comment).toMatch(new RegExp(`dc_rc_pairs\\s*=\\s*\\{[^}]*['"]${name}['"]\\s*:\\s*\\[\\s*['"]${escape(key)}['"]`));
         }
-        // 디시콘·글자콘: dccon.js·txtcon.js의 키다.
+        // 디시콘, 글자콘: dccon.js, txtcon.js의 키다.
         for (const name of ["dccon/dccon", "dccon/txtcon"]) expect(await script(name)).toContain(ICON_SITE_KEY);
 
         // _d()는 common.js가 String.fromCharCode로 숨긴 알파벳으로 풀고, service_code 끝 10자리를 바꾸는 식은 _d()로 숨겨 둔다.
@@ -177,9 +168,9 @@ test.describe("실제 디시", () => {
         expect(hidden).toContain("2*(_rs[n]-n-1)/(13-n-1)");
         expect(hidden).toContain(".replace(/(.{10})$/");
 
-        // 글 페이지: 파서(core/preview/parser.ts)가 읽는 자리에 _d('…')와 service_code가 있고, 푼 값은 숫자 목록이다.
+        // 글 페이지: 파서(core/preview/parser.ts)가 읽는 자리에 _d('...')와 service_code가 있고, 푼 값은 숫자 목록이다.
         const dValue = /id="reply-setting-tmpl"[\s\S]*?<\/script>\s*<script[^>]*>[^<]*?_d\('([^']*)'\)/.exec(view)?.[1];
-        expect(dValue, "reply-setting-tmpl 다음 스크립트에 _d('…')가 있다").toBeDefined();
+        expect(dValue, "reply-setting-tmpl 다음 스크립트에 _d('...')가 있다").toBeDefined();
         expect(decodeD(dValue ?? "")).toMatch(/^\d+(\.\d+)?(,\d+(\.\d+)?)*$/);
         expect(view).toMatch(/name="service_code" value="[^"]{10,}"/);
 
@@ -187,14 +178,14 @@ test.describe("실제 디시", () => {
         for (const name of ["cf-turnstile-response=", "ts_state=", "ts_focus_ms=", "ts_token_ms=", "ts_test=1"]) expect(comment).toContain(name);
         expect(comment).toContain("action: 'comment'");
         // 켜져 있으면 파서(core/preview/parser.ts parseTurnstile)가 읽는 모양이다.
-        const turnstile = /var _TS_CMT_\s*=\s*(\{[^;]*\});/.exec(view)?.[1];
+        const turnstile = /var _TS_CMT_\s*=\s*(\{[^;]*});/.exec(view)?.[1];
         if (turnstile) expect(JSON.parse(turnstile)).toMatchObject({mode: expect.any(Number), sitekey: expect.any(String)});
     });
 
-    // 목록·글·검색 결과·글쓰기 페이지를 한 번씩 GET으로 받아(요청 4개) 디시 스크립트를 뺀 채 빈 페이지에 그리고 선택자를 센다.
+    // 목록, 글, 검색 결과, 글쓰기 페이지를 한 번씩 GET으로 받아(요청 4개) 디시 스크립트를 뺀 채 빈 페이지에 그리고 선택자를 센다.
     // 확장이 고치기 전의 디시 마크업을 봐야 하므로 디시 주소로 열지 않는다. 댓글은 댓글 API로 따로 받아 그리므로 여기서 보지 않는다.
-    test("새로고침·차단·검색·레이아웃·스텔스·글쓰기가 찾는 디시 마크업이 그대로 있다", async ({page, request}) => {
-        // 그린 HTML의 스타일·이미지·iframe은 받지 않는다. 마크업만 보면 된다.
+    test("새로고침, 차단, 검색, 레이아웃, 스텔스, 글쓰기가 찾는 디시 마크업이 그대로 있다", async ({page, request}) => {
+        // 그린 HTML의 스타일, 이미지, iframe은 받지 않는다. 마크업만 보면 된다.
         await page.route("**/*", (route) => route.abort());
         const check = async (url: string, markups: Markup[]): Promise<string> => {
             const response = await request.get(url);
@@ -234,7 +225,7 @@ test.describe("실제 디시", () => {
         const viewHtml = await check(new URL(href ?? "", LIST_URL).href, VIEW_MARKUP);
         // 디시 자체 차단을 다시 걸 때 인라인 스크립트에서 읽는 값이다. 미니 갤러리 글 페이지는 'mi$id'를 넘긴다.
         // 정규식은 entrypoints/background/page.ts(직렬화돼 import할 수 없다)에서 옮겼다. 그쪽을 바꾸면 여기도 바꾼다.
-        expect.soft(viewHtml, "디시 자체 차단 다시 걸기: 글 페이지에 chk_user_block('…') 호출이 없다").toMatch(/chk_user_block\('[^']*'\)/);
+        expect.soft(viewHtml, "디시 자체 차단 다시 걸기: 글 페이지에 chk_user_block('...') 호출이 없다").toMatch(/chk_user_block\('[^']*'\)/);
 
         const search = new URL(LIST_URL);
         search.searchParams.set("s_type", "search_subject");

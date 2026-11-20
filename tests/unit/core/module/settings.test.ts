@@ -31,7 +31,7 @@ describe("defaultValue", () => {
 describe("normalizeSetting", () => {
     const range = setting({type: "range", default: 5, min: 1, max: 10, step: 0.5, unit: ""});
 
-    it("check·text는 타입이 틀리면 기본값", () => {
+    it("check, text는 타입이 틀리면 기본값", () => {
         const check = setting({type: "check", default: true});
         expect(normalizeSetting(check, false)).toBe(false);
         expect(normalizeSetting(check, "false")).toBe(true);
@@ -49,7 +49,7 @@ describe("normalizeSetting", () => {
         expect(normalizeSetting(option, "toString")).toBe("a");
     });
 
-    it("key는 소문자 영문·숫자 한 글자만", () => {
+    it("key는 소문자 영문, 숫자 한 글자만", () => {
         const key = setting({type: "key", default: "q"});
         expect(normalizeSetting(key, "z")).toBe("z");
         expect(normalizeSetting(key, "7")).toBe("7");
@@ -72,7 +72,7 @@ describe("normalizeSetting", () => {
         for (const bad of ["3", Number.NaN, Number.POSITIVE_INFINITY, null]) expect(normalizeSetting(range, bad)).toBe(5);
     });
 
-    it("order는 모르는·겹친 항목을 빼고 빠진 항목을 뒤에 붙인다", () => {
+    it("order는 모르는, 겹친 항목을 빼고 빠진 항목을 뒤에 붙인다", () => {
         const order = setting({type: "order", default: ["a", "b", "c"], items: {a: "", b: "", c: ""}});
         expect(normalizeSetting(order, ["c", "x", "c", 1, "a"])).toEqual(["c", "a", "b"]);
         expect(normalizeSetting(order, "a,b")).toEqual(["a", "b", "c"]);

@@ -1,28 +1,29 @@
-import {Fragment, type MouseEvent, type ReactNode, useSyncExternalStore} from "react";
-import {useShallow} from "zustand/react/shallow";
+import {cn} from "cn";
+import { useSyncExternalStore } from "@/utils/useSyncExternalStore";
+import { Fragment, type TargetedMouseEvent as MouseEvent, type ComponentChild as ReactNode } from "preact";
 
+import {FOCUS_RING} from "@/components/focusRing";
+import {useGallogActivity} from "@/components/overlay/gallogActivity";
 import {type BadgeKey, badgeViewOf, DEFAULT_BADGE_VIEW, showsUid} from "@/core/badges";
 import {banReasonsOf, databaseVersion, ipInfoOf, onDatabaseChange, passesIpFilter} from "@/core/database";
 import {useRunningModuleSettings} from "@/core/module/useModuleSettings";
 import type {User} from "@/core/preview/types";
 import {useUserMemo} from "@/stores/memos";
 import {isFresh, isLowActivity, useUiStore} from "@/stores/ui";
-import {useGallogActivity} from "@/components/overlay/gallogActivity";
-import {cn} from "cn";
 
 import {previewGallery, usePreviewStore} from "./previewStore";
 
 /**
  * 작성자 표시. 우클릭하거나 닉네임을 누르면(키보드 포함) 유저 버블을 연다.
  * fetchRatio: 글댓비가 캐시에 없으면 갤로그에서 받는다. 댓글마다 받으면 요청이 너무 많아 글쓴이에게만 켠다.
- * op: 글쓴이가 단 댓글. v5처럼 작성자 칸을 파랗게 칠한다. 닉네임만 칩 색으로, 배지(아이디·IP·글댓비·갱차·메모)는 설정한 색 그대로 둔다.
+ * op: 글쓴이가 단 댓글. v5처럼 작성자 칸을 파랗게 칠한다. 닉네임만 칩 색으로, 배지(아이디, IP, 글댓비, 갱차, 메모)는 설정한 색 그대로 둔다.
  */
 export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: boolean; op?: boolean }) => {
-    // 배지 순서·표시 조건·색은 페이지와 같게 userinfo 설정을 따른다. 모듈이 꺼져 있으면 기본값이고 색이 없다.
+    // 배지 순서, 표시 조건, 색은 페이지와 같게 userinfo 설정을 따른다. 모듈이 꺼져 있으면 기본값이고 색이 없다.
     const userinfo = useRunningModuleSettings("userinfo");
     const view = userinfo ? badgeViewOf(userinfo) : DEFAULT_BADGE_VIEW;
-    // DB를 읽을 때마다 오르는 번호를 구독해 다시 그린다. 0이면 아직 읽지 않아 IP·밴을 찾지 않는다.
-    // 읽기는 시작하지 않는다(onDatabaseChange). IP·갱차 배지를 그릴 설정이면 userinfo setup이 이미 읽고, 아니면 읽어도 쓸 데가 없다.
+    // DB를 읽을 때마다 오르는 번호를 구독해 다시 그린다. 0이면 아직 읽지 않아 IP, 밴을 찾지 않는다.
+    // 읽기는 시작하지 않는다(onDatabaseChange). IP, 갱차 배지를 그릴 설정이면 userinfo setup이 이미 읽고, 아니면 읽어도 쓸 데가 없다.
     const dbVersion = useSyncExternalStore(onDatabaseChange, databaseVersion);
     const ipInfo = dbVersion > 0 && !user.id && user.ip ? ipInfoOf(user.ip) : undefined;
     const ipColor = ipInfo ? userinfo?.[`${ipInfo.category}Color`] : undefined;
@@ -37,8 +38,8 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
     const showsRatio = useUiStore((state) => state.ratios !== null);
     const alarm = useUiStore((state) => state.ratios?.alarm ?? 0);
     const action = useUiStore((state) => state.ratios?.action);
-    const cached = useUiStore(useShallow((state) =>
-        user.id && state.ratios && Object.hasOwn(state.ratios.cache, user.id) ? state.ratios.cache[user.id] : undefined));
+    const cached = useUiStore((state) =>
+        user.id && state.ratios && Object.hasOwn(state.ratios.cache, user.id) ? state.ratios.cache[user.id] : undefined);
     const fetched = useGallogActivity(fetchRatio && showsRatio && !isFresh(cached) ? user.id : undefined);
     const ratio = (typeof fetched === "object" ? fetched : undefined) ?? cached;
     const lowActivity = ratio !== undefined && isLowActivity(ratio, alarm);
@@ -47,24 +48,24 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
     // 이 사람의 버블이 열려 있는지 (닉네임 버튼의 aria-expanded). 열렸는지만 구독해 버블을 여닫을 때 다른 작성자는 다시 그리지 않는다.
     const expanded = useUiStore(({bubble, selected}) =>
         bubble !== null && selected?.nick === user.nick && selected?.uid === user.id && selected?.ip === user.ip);
-    const openBubble = (x: number, y: number): void => useUiStore.getState().openBubble({nick: user.nick, uid: user.id, ip: user.ip, gallery: previewGallery()}, x, y);
+    const openBubble = (x: number, y: number): void => useUiStore.getState().openBubble({nick: user.nick, uid: user.id, ip: user.ip, icon: user.image, gallery: previewGallery()}, x, y);
 
-    const openMenu = (ev: MouseEvent): void => {
+    const openMenu = (ev: MouseEvent<HTMLElement>): void => {
         // 목록과 같이 Shift+우클릭은 브라우저 기본 메뉴로 남긴다.
         if (ev.shiftKey) return;
         ev.preventDefault();
         openBubble(ev.clientX, ev.clientY);
     };
 
-    // 설정한 색이 없으면 아이디·IP는 회색, IP 정보는 파랑이다.
-    const identityClass = cn("truncate text-xs", !uidColor && "text-muted-foreground");
+    // 설정한 색이 없으면 아이디, IP는 회색, IP 정보는 파랑이다.
+    const identityClass = cn("truncate text-xs", !uidColor && "text-base-content/60");
 
     const badges: Record<BadgeKey, ReactNode> = {
         UID: user.id
             ? showsUid(view, user.image) && <span className={identityClass} style={{color: uidColor}}>({user.id})</span>
             : ipInfo && passesIpFilter(ipInfo, view.ipFilter) &&
             // 후보가 많으면 길어지므로 글 보기 머리(features/userinfo/page.css)처럼 IP 정보만 줄인다. 전체는 툴팁에 있다.
-            <span className={cn("max-w-[300px] truncate text-xs", !ipColor && "text-blue-600 dark:text-blue-400")} style={{color: ipColor}} title={ipInfo.title}>[{ipInfo.label}]</span>,
+            <span className={cn("max-w-75 truncate text-xs", !ipColor && "text-blue-600 dark:text-blue-400")} style={{color: ipColor}} title={ipInfo.title}>[{ipInfo.label}]</span>,
         MEMO: memo && <span className="truncate text-xs" style={{color: memo.color || undefined}} title={memo.text}>[{memo.text}]</span>,
         RATIO: ratio && <span className="truncate text-xs" style={{color: ratioColor}} title="글/댓글">[{ratio.article}/{ratio.comment}]</span>,
         PERMBAN: banReasons && banColor && <span className="truncate text-xs" style={{color: banColor}} title={banReasons}>[{banReasons}]</span>
@@ -75,7 +76,7 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
              onContextMenu={openMenu}>
             {/* 버블은 닉네임 바로 아래에 띄운다. 키보드로 열면 버블 안으로 포커스가 옮겨 간다 (components/overlay/UserBubble.tsx의 useReturnFocus). */}
             <button type="button" aria-haspopup="dialog" aria-expanded={expanded}
-                    className="cursor-pointer truncate rounded-sm text-sm font-bold outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                    className={cn(FOCUS_RING, "truncate text-sm font-bold")}
                     onClick={(ev) => {
                         const rect = ev.currentTarget.getBoundingClientRect();
                         openBubble(rect.left, rect.bottom);
@@ -86,7 +87,7 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
             {/* 유동 IP는 디시가 닉 옆에 바로 보여 주는 값이라 배지 순서와 상관없이 여기 둔다. */}
             {user.ip && <span className={identityClass} style={{color: uidColor}}>({user.ip})</span>}
             {view.order.map((key) => <Fragment key={key}>{badges[key]}</Fragment>)}
-            {/* 페이지처럼 배지 뒤에 붙인다. 흐리게·숨기기는 댓글을 가린다 (core/preview/comments.ts). */}
+            {/* 페이지처럼 배지 뒤에 붙인다. 흐리게, 숨기기는 댓글을 가린다 (core/preview/comments.ts). */}
             {lowActivity && action === "tag" && <span className="truncate text-xs" style={{color: userinfo?.ratioAlarmColor}} title={`글댓합 ${alarm}개 이하`}>[깡계]</span>}
         </div>
     );

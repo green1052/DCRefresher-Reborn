@@ -1,11 +1,6 @@
 import {listUrl, WRITER_PARAMS, type WriterFilter, type WriterKind} from "@/core/http/urls";
 
-// 아이디·IP로 작성자 글 찾기. 디시 글쓴이 검색(search_name)은 닉네임만 찾고 아이디·IP로는 아무것도 나오지 않는다.
-// 그래서 목록 주소에 이 값(core/http/urls.ts의 WRITER_PARAMS)을 얹어 두고 그 작성자가 아닌 행을 숨긴다.
-// 닉네임을 알면 글쓴이 검색으로 범위를 넓히고, 모르면 목록을 넘기며 거른다.
-
-/** 그 작성자의 작성자 칸 (디시 목록의 td.ub-writer[data-uid|data-ip]). */
-export const writerSelector = ({kind, value}: WriterFilter): string => `.ub-writer[data-${kind}="${CSS.escape(value)}"]`;
+// 디시 글쓴이 검색은 닉네임만 찾으므로 목록 주소에 아이디·IP를 얹고 다른 행을 숨겨 찾는다.
 
 const withFilter = (href: string, filter: WriterFilter): string => {
     const url = new URL(href);
@@ -13,10 +8,7 @@ const withFilter = (href: string, filter: WriterFilter): string => {
     return url.href;
 };
 
-/**
- * 이 갤러리 목록에서 그 작성자의 글을 찾는 주소. nick을 주면 디시 글쓴이 검색으로 찾고, 없으면 목록 1쪽부터 거른다.
- * filter가 null이면 거르지 않고 닉네임으로만 찾는다 (디시 글쓴이 검색 그대로).
- */
+/** 그 작성자의 글을 찾는 주소. nick이 있으면 글쓴이 검색으로, filter가 null이면 거르지 않는다. */
 export const writerSearchUrl = (filter: WriterFilter | null, nick?: string): string => {
     const url = new URL(listUrl(location.href));
     for (const key of ["page", "s_type", "s_keyword", "search_pos", "search_head", "exception_mode"]) url.searchParams.delete(key);
@@ -38,10 +30,7 @@ export const keepWriterFilter = (paging: Element, filter: WriterFilter): void =>
 const TYPE_NAMES: Record<WriterKind, string> = {uid: "아이디", ip: "IP"};
 const ADDED_TYPE = "refresherWriterType";
 
-/**
- * 갤러리 검색창의 종류(글쓴이 등)에 아이디·IP를 더한다. 고르고 검색하면 디시 검색 대신 search를 부른다.
- * 이 페이지가 작성자 거르기 중이면 그 종류와 값을 채워 둔다.
- */
+/** 검색창 종류에 아이디, IP를 더한다. 고르고 검색하면 디시 검색 대신 search를 부른다. */
 export const addWriterTypes = (filter: WriterFilter | null, search: (filter: WriterFilter) => void, signal: AbortSignal): void => {
     const layer = document.querySelector<HTMLElement>("#searchTypeLayer");
     const label = document.querySelector("#search_type_txt");
@@ -49,6 +38,8 @@ export const addWriterTypes = (filter: WriterFilter | null, search: (filter: Wri
     const button = document.querySelector(".bottom_search .bnt_search");
     if (!layer || !label || !input || !button) return;
 
+    // 파이어폭스 재주입 전 인스턴스가 더한 종류는 리스너가 죽어 있다. 갈아끼운다.
+    removeWriterTypes();
     for (const kind of ["uid", "ip"] as const) {
         const item = Object.assign(document.createElement("li"), {textContent: TYPE_NAMES[kind], className: ADDED_TYPE});
         item.dataset.kind = kind;
@@ -72,7 +63,7 @@ export const addWriterTypes = (filter: WriterFilter | null, search: (filter: Wri
         layer.style.display = "none";
     }, {signal});
 
-    // 디시의 검색 버튼·입력칸 처리기보다 먼저 받아 막는다.
+    // 디시의 검색 버튼, 입력칸 처리기보다 먼저 받아 막는다.
     const submit = (ev: Event): void => {
         if (!chosen) return;
         ev.preventDefault();
@@ -88,4 +79,7 @@ export const addWriterTypes = (filter: WriterFilter | null, search: (filter: Wri
 /** 검색창에 더한 종류를 뺀다 (모듈을 끌 때). */
 export const removeWriterTypes = (): void => {
     for (const item of document.querySelectorAll(`.${ADDED_TYPE}`)) item.remove();
+    // 고른 종류가 빠지면 검색창 라벨을 디시 기본값으로 돌린다.
+    const label = document.querySelector("#search_type_txt");
+    if (label && (label.textContent === TYPE_NAMES.uid || label.textContent === TYPE_NAMES.ip)) label.textContent = "제목";
 };

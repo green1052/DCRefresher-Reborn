@@ -1,12 +1,7 @@
-import {Dialog} from "@base-ui/react/dialog";
-import {Archive, ArrowUp, CircleAlert, Eye, MessageSquare, RotateCw} from "lucide-react";
-import {Fragment, useEffect, useLayoutEffect, useRef, useState} from "react";
+import {Archive, ArrowUp, CircleAlert, Eye, MessageSquare, RotateCw} from "lucide-preact";
+import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
+import { Fragment } from "preact";
 
-import {overlay} from "@/components/overlay/shadow";
-import {Alert, AlertDescription} from "@/components/ui/alert";
-import {Button} from "@/components/ui/button";
-import {Separator} from "@/components/ui/separator";
-import {Spinner} from "@/components/ui/spinner";
 import {TooltipButton} from "@/components/WithTooltip";
 import {focusedElement} from "@/components/useReturnFocus";
 import {BLOCKED_TEXT} from "@/core/block";
@@ -14,34 +9,33 @@ import {useContentModuleSettings, useRunningModuleSettings} from "@/core/module/
 import {postKey as keyOfPost} from "@/core/preview/cache";
 import {useUiStore} from "@/stores/ui";
 import {smoothScroll} from "@/utils/dom";
-import {hasModifier, isTyping, MODAL_OVERLAY_SELECTOR} from "@/utils/event";
+import {hasModifier, isTyping} from "@/utils/event";
 import {cn} from "cn";
 
 import {adjacentPreData} from "../rows";
 import {TimeStamp} from "./TimeStamp";
 import {UserCard} from "./UserCard";
 import {CommentList, CommentOrder, CommentSummary, threadParents} from "./CommentList";
-import {clickContents, markPressable, pressContents} from "./contentsClick";
+import {clickContents, markMedia, markPressable, pressContents} from "./contentsClick";
 import {CountDown} from "./CountDown";
 import {ErrorBlock} from "./ErrorBlock";
 import {AdminPanel} from "./Popups";
 import {postTitle, usePreviewStore} from "./previewStore";
+import {PreviewDialogRoot} from "./PreviewDialogRoot";
 import {usePreviewMedia} from "./usePreviewMedia";
+import {useScrollLock} from "./useScrollLock";
 import {useWheelGesture} from "./useWheelGesture";
 import {Votes} from "./Votes";
 import {WriteComment} from "./WriteComment";
 
-/**
- * 목록에서 앞(-1)/뒤(1) 글로 넘어간다. PageUp/Down과 스크롤 끝 넘기기가 같이 쓴다.
- * 방향을 넘겨 컨트롤러가 그 방향 다음 글을 미리 받게 한다.
- */
+/** 목록에서 앞(-1)/뒤(1) 글로 넘어간다 - 방향을 넘겨 다음 글을 미리 받게 한다. */
 const goToAdjacent = (dir: number): void => {
     const st = usePreviewStore.getState();
     const next = st.preData && adjacentPreData(st.preData, dir);
     if (next) st.requestOpen(next, false, dir);
 };
 
-/** 그 방향에 넘어갈 글이 있는지. 목록 처음·끝 글에서는 스크롤 끝 넘기기를 안내하지 않는다. */
+/** 그 방향에 넘어갈 글이 있는지. 목록 처음, 끝 글에서는 스크롤 끝 넘기기를 안내하지 않는다. */
 const hasAdjacent = (dir: number): boolean => {
     const {preData} = usePreviewStore.getState();
     return preData !== null && adjacentPreData(preData, dir) !== null;
@@ -56,17 +50,22 @@ const RefreshButton = ({label, run}: { label: string; run: () => Promise<void> }
             setBusy(true);
             void run().finally(() => setBusy(false));
         }}>
-            {busy ? <Spinner aria-hidden/> : <RotateCw/>}
+            {busy ? <span aria-hidden className="loading loading-spinner"/> : <RotateCw/>}
         </TooltipButton>
     );
 };
 
-/**
- * 스크롤 끝에서 한 번 더 굴리면 넘어간다는 안내 (v5와 같은 모양). 목록은 번호가 큰 글이 위라 위로 넘기면 다음 글이다.
- * 창 위에 겹치되 누르거나 굴리는 것은 막지 않는다.
- */
+const Separator = () => <div role="none" className="divider m-0"/>;
+
+/* ui/alert의 모양을 그대로 옮긴 것(ErrorBlock과 같음). */
+const ALERT = "alert w-full";
+
+/** 스크롤 끝에서 한 번 더 굴리면 넘어간다는 안내(v5 모양) - 누르거나 굴리는 것은 막지 않는다.
+ *  pointer-events는 인라인으로 끈다: 이 칸은 #portal의 직계 자식이라 overlay.css의 `#portal > *`(레이어 밖)가
+ *  pointer-events-none 유틸리티(@layer 안)를 이겨, 안내가 화면을 덮은 채 아래 클릭을 삼킨다. */
 const SkipHint = ({dir}: { dir: number }) => (
-    <div className={cn("refresher-skip-hint pointer-events-none fixed inset-x-0 flex h-[40%] items-center justify-center text-white motion-reduce:animate-none",
+    <div style={{pointerEvents: "none"}}
+         className={cn("refresher-skip-hint fixed inset-x-0 flex h-[40%] items-center justify-center text-white motion-reduce:animate-none",
                        dir < 0
                            ? "top-0 animate-skip-hint-top bg-linear-to-b from-[rgb(12_23_53/0.7)] via-[rgb(32_42_72/0.3)] to-transparent"
                            : "bottom-0 animate-skip-hint-bottom bg-linear-to-t from-[rgb(12_23_53/0.7)] via-[rgb(32_42_72/0.3)] to-transparent")}>
@@ -76,10 +75,7 @@ const SkipHint = ({dir}: { dir: number }) => (
     </div>
 );
 
-/**
- * 미리보기 본문 칸. 댓글만 보기·오류일 때는 빠지고 글마다(Frame의 Fragment key) 새로 마운트되며, 창을 닫으면 페이드가 끝난 뒤 빠진다.
- * 그래서 넣은 HTML이 바뀔 때만 다시 보면 되고, 떨어진 영상의 감시·받기는 언마운트 정리가 끊는다.
- */
+/** 본문 칸 - 글마다 새로 마운트되므로 HTML이 바뀔 때만 다시 보면 된다. */
 const PostContents = () => {
     const post = usePreviewStore((s) => s.post);
     const imageBlocked = usePreviewStore((s) => s.imageBlocked);
@@ -91,7 +87,7 @@ const PostContents = () => {
     const hideText = post?.textBlocked === "hide" && !revealed;
     const html = hideText ? BLOCKED_TEXT : post?.contents ?? "";
 
-    // 본문이 새로 들어오면 다시 본다. hideText가 풀려도 동영상·이미지가 새로 들어온다.
+    // 본문이 새로 들어오면 다시 본다. hideText가 풀려도 동영상, 이미지가 새로 들어온다.
     usePreviewMedia(contentsBox, html, gallery);
     // 이미지 크게 보기와 디시콘 정보 창을 키보드로도 연다 (pressContents).
     useEffect(() => {
@@ -106,8 +102,8 @@ const PostContents = () => {
                 className={cn("refresher-html refresher-preview-contents", imageBlocked && "refresher-preview-block-media")}
                 onClick={(ev) => clickContents(ev, imageViewer)}
                 onKeyDown={pressContents}
-                // 이미지가 깨지면 크게 보기 버튼 표시를 다시 맞춘다. 이미지의 error는 버블링되지 않아 캡처로 받는다.
-                onErrorCapture={(ev) => ev.target instanceof HTMLImageElement && markPressable(ev.currentTarget, imageViewer)}
+                // 이미지가 깨지면 그 이미지의 크게 보기 버튼 표시만 다시 맞춘다. 이미지의 error는 버블링되지 않아 캡처로 받는다.
+                onErrorCapture={(ev) => ev.target instanceof HTMLImageElement && markMedia(ev.target, imageViewer)}
                 dangerouslySetInnerHTML={{__html: html}}
             />
         </div>
@@ -132,44 +128,18 @@ export const Frame = () => {
     const listTitle = usePreviewStore((s) => s.preData?.title);
     const scroller = useRef<HTMLDivElement>(null);
     const commentsSection = useRef<HTMLDivElement>(null);
-    // 창은 비모달이라(아래 Dialog.Root) 포커스를 가두지 않는다. 연 동안 뒤 페이지를 inert로 막아 Tab·스크린 리더가 목록으로 나가지 않게 한다.
-    // 오버레이(refresher-root: 버블·토스트·관리 패널)와 body에 붙인 확장 UI(data-refresher-ui)는 남긴다.
-    // 키보드로 열었을 때(:focus-visible)만 닫으며 연 요소로 포커스를 돌려준다. 마우스로 연 창까지 돌려주면 Esc로 닫을 때
-    // 제목 링크에 포커스 링이 생겨 새로고침 모듈이 자동 갱신을 멈춘다. 연 요소는 아래 스크롤 칸 포커스 효과보다 먼저 읽어야 한다.
-    useEffect(() => {
-        if (!visible) return;
+    // 비모달이라 뒤 페이지를 inert로 잠그고, 키보드로 열었을 때만 연 요소로 포커스를 돌려준다.
+    useScrollLock(visible);
 
-        const focused = focusedElement();
-        const opener = focused?.matches(":focus-visible") ? focused : null;
-        const html = document.documentElement;
-        const previous = {overflow: html.style.overflow, gutter: html.style.scrollbarGutter};
-        // 스크롤바가 실제로 있을 때만 그 자리를 남겨, 잠가도 뒤 페이지가 옆으로 밀리지 않게 한다. 짧은 페이지에 걸면 오히려 빈 홈이 생긴다.
-        if (window.innerWidth > html.clientWidth) html.style.scrollbarGutter = "stable";
-        html.style.overflow = "hidden";
-        const blocked = document.body.querySelectorAll<HTMLElement>(":scope > :not(refresher-root, [data-refresher-ui], [inert])");
-        for (const element of blocked) element.inert = true;
-
-        return () => {
-            html.style.overflow = previous.overflow;
-            html.style.scrollbarGutter = previous.gutter;
-            for (const element of blocked) element.inert = false;
-            opener?.focus({preventScroll: true});
-        };
-    }, [visible]);
-
-    // 열거나 글을 바꾸면 스크롤 칸에 포커스를 줘 방향키·스페이스로 바로 스크롤되게 한다.
+    // 열거나 글을 바꾸면 스크롤 칸에 포커스를 줘 방향키, 스페이스로 바로 스크롤되게 한다.
     useEffect(() => {
         if (visible) scroller.current?.focus({preventScroll: true});
     }, [visible, postKey]);
 
-    // 글을 바꾸면 맨 위에서 보인다. 캐시 hit이면 새 글이 한 번에 그려져 앞 글의 스크롤 위치가 남는다.
-    // 닫을 때도 오르는 signalId가 아니라 글 주소로 건다. 페이드아웃 중에 맨 위로 튀면 안 된다.
+    // 글을 바꾸면 맨 위에서 - 캐시 hit이면 앞 글의 스크롤 위치가 남는다. 페이드아웃 중엔 튀지 않게 글 주소로 건다.
     useLayoutEffect(() => {
         if (scroller.current) scroller.current.scrollTop = 0;
     }, [postKey]);
-
-    // 창 안에서 글자를 끌어 고르다 바깥에서 놓거나 그 반대여도 click은 둘을 감싼 스크롤 칸에 떨어진다. 바깥에서 누르고 뗀 것만 닫는다.
-    const pressedOutside = useRef(false);
 
     // 창이 그려진 뒤에 걸면 뜨자마자 누른 PageDown을 놓친다. 그리기 전에 건다.
     useLayoutEffect(() => {
@@ -178,15 +148,15 @@ export const Frame = () => {
         const onKey = (ev: KeyboardEvent): void => {
             // Ctrl+PageUp/Down(탭 전환) 같은 조합키는 브라우저에 맡긴다.
             if (hasModifier(ev) || isTyping(ev)) return;
-            // 디시콘 정보 창·크게 보기가 떠 있으면 그 창이 키를 받는다. 옆 글로 넘어가면 창이 닫힌다.
+            // 디시콘 정보 창, 크게 보기가 떠 있으면 그 창이 키를 받는다. 옆 글로 넘어가면 창이 닫힌다.
             if (usePreviewStore.getState().dcconInfo || usePreviewStore.getState().viewer) return;
             // 누른 버튼이 로딩으로 막히거나 사라져 포커스가 body로 빠졌으면 스크롤 칸으로 되돌린다 (Tab은 브라우저의 이어가기 위치에 맡긴다).
             if (ev.key !== "Tab" && focusedElement() === document.body) scroller.current?.focus({preventScroll: true});
 
-            // key로 본다. NumLock을 끈 숫자패드 9·3은 code가 Numpad9·Numpad3이다.
+            // key로 본다. NumLock을 끈 숫자패드 9, 3은 code가 Numpad9, Numpad3이다.
             if (ev.key === "PageUp" || ev.key === "PageDown") {
                 ev.preventDefault();
-                // 누르고 있을 때의 반복 입력으로는 넘기지 않는다. 지나가는 글마다 본문 요청이 나가 임시 차단된다(#273).
+                // 누르고 있을 때의 반복 입력으로는 넘기지 않는다. 지나가는 글마다 본문 요청이 나가 임시 차단된다.
                 if (!ev.repeat) goToAdjacent(ev.key === "PageUp" ? -1 : 1);
             }
         };
@@ -207,71 +177,17 @@ export const Frame = () => {
     const hasComments = comments !== undefined || (post !== undefined && visible);
 
     return (
-        // 비모달 창이다. 스크롤 잠금과 PageUp/Down 이동은 직접 처리한다. 바깥 클릭 닫기는 아래 click이 맡는다(위에 뜬 팝업·버블을 눌러도 닫히지 않게).
-        <Dialog.Root
-            open
-            modal={false}
-            disablePointerDismissal
-            onOpenChange={(open, details) => {
-                if (open) return;
-                // 닫히는 동안(페이드)과 닫힌 뒤 Preact가 effect 정리를 미룬 사이에도 Base UI가 Esc를 받는다. 이미 닫았으면 키를 흘려보내 목록의 Esc(선택 풀기)가 받게 한다.
-                if (!usePreviewStore.getState().visible) {
-                    details.cancel();
-                    details.allowPropagation();
-                    return;
-                }
-                // Esc는 위에 뜬 것(유저 버블·다이얼로그)부터 닫는다. 그것들은 따로 그려져 Base UI는 미리보기를 맨 위로 본다.
-                // 버블은 여기서 닫는다. Base UI는 Esc 리스너를 effect로 거는데 Preact는 effect를 그린 뒤에 돌려, 막 뜬 버블은 아직 Esc를 받지 못한다.
-                if (details.reason === "escape-key" && useUiStore.getState().bubble) {
-                    details.cancel();
-                    useUiStore.getState().closeBubble();
-                    return;
-                }
-                // 다이얼로그는 키를 흘려보내 그쪽이 닫히게 한다.
-                if (details.reason === "escape-key" && overlay.portal?.querySelector(`${MODAL_OVERLAY_SELECTOR}, [data-slot=popover-content]`)) {
-                    details.cancel();
-                    details.allowPropagation();
-                    return;
-                }
-                usePreviewStore.getState().requestClose();
-            }}
+        <PreviewDialogRoot
+            fading={fading}
+            busy={busy}
+            blur={backgroundBlur}
+            onWheel={onWheel}
+            scroller={scroller}
+            after={hintDir !== 0 ? <SkipHint dir={hintDir}/> : undefined}
         >
-            <Dialog.Portal container={overlay.portal}>
-                <div className={cn("fixed inset-0 bg-black/40 duration-150 animate-in fade-in data-fading:pointer-events-none data-fading:animate-out data-fading:fade-out data-fading:fill-mode-forwards",
-                                   backgroundBlur && "backdrop-blur-[5px]")}
-                     data-fading={fading || undefined}/>
-                {/* v5처럼 화면 전체가 스크롤 칸이고 창은 내용만큼 길어진다. 짧은 글은 가운데(margin: auto), 긴 글은 위아래 5vh를 띄운다.
-                    스크롤바 폭을 양쪽에 비워야 긴 글과 짧은 글을 오갈 때 창이 옆으로 흔들리지 않는다. 키보드 스크롤용 포커스(tabIndex -1)라 테두리는 그리지 않는다. */}
-                <Dialog.Popup
-                    className="refresher-frame-scroll fixed inset-0 flex overflow-y-auto overscroll-contain py-[5vh] outline-none duration-150 animate-in fade-in [scrollbar-color:var(--border)_transparent] [scrollbar-gutter:stable_both-edges] [scrollbar-width:thin] data-fading:pointer-events-none data-fading:animate-out data-fading:fade-out data-fading:fill-mode-forwards"
-                    ref={scroller}
-                    tabIndex={-1}
-                    data-fading={fading || undefined}
-                    aria-busy={busy}
-                    // 비모달이지만 연 동안 뒤 페이지를 inert로 막으므로 보조 기술에는 모달로 알린다.
-                    aria-modal
-                    // 포커스는 위 효과가 스크롤 칸에 주고, 닫을 때는 연 요소로 직접 돌려준다.
-                    initialFocus={false}
-                    finalFocus={false}
-                    onWheel={onWheel}
-                    // 창 바깥을 누르면 닫는다. pointerdown에서 닫으면 칸이 곧바로 사라져 이어지는 click/contextmenu가 아래 목록에 떨어진다
-                    // (우클릭으로 닫으면 다른 글 미리보기가 열린다). 그래서 click/contextmenu에서 닫는다.
-                    onPointerDown={(ev) => (pressedOutside.current = ev.target === ev.currentTarget)}
-                    onPointerUp={(ev) => (pressedOutside.current = pressedOutside.current && ev.target === ev.currentTarget)}
-                    onClick={(ev) => {
-                        if (pressedOutside.current && ev.target === ev.currentTarget) usePreviewStore.getState().requestClose();
-                    }}
-                    onContextMenu={(ev) => {
-                        if (ev.target !== ev.currentTarget) return;
-                        ev.preventDefault();
-                        usePreviewStore.getState().requestClose();
-                    }}
-                >
-                {/* 너비는 설정(previewWidth)을 쓰되 둘레에 배경이 보이게 화면의 90%까지만 쓴다.
-                    관리 패널(150px)이 있으면 양옆에 그 폭을 비운다 (최소 480px). 둥근 모서리 밖으로 댓글 배경이 나가지 않게 자르는데,
-                    hidden이면 스크롤 칸이 되어 맨 위로 버튼(sticky)이 붙지 않으므로 clip이다. */}
+                {/* 너비는 설정을 쓰되 90%까지, 관리 패널 폭을 비운다 - sticky 버튼을 위해 clip이다. */}
                 <div
-                    className="refresher-frame m-auto flex min-h-[min(800px,90vh)] flex-col overflow-clip rounded-2xl bg-background text-sm shadow-2xl ring-1 ring-foreground/10"
+                    className="refresher-frame m-auto flex min-h-[min(800px,90vh)] flex-col overflow-clip rounded-2xl bg-base-100 text-sm shadow-2xl ring-1 ring-base-content/10"
                     data-blur-reveal={block?.blurReveal || undefined}
                     data-block-revealed={revealed || undefined}
                     style={{width: adminVisible ? `min(${frameWidth}px, 90vw, max(480px, calc(100vw - 2 * (150px + 12px))))` : `min(${frameWidth}px, 90vw)`}}
@@ -280,7 +196,7 @@ export const Frame = () => {
                     <Fragment key={postKey}>
                     <div className="px-8 pt-6 pb-3">
                         {/* 본문을 못 받았으면(삭제된 글 등) 목록의 제목이라도 보인다. */}
-                        <Dialog.Title render={<h2 className="text-2xl font-bold"/>}>{post ? postTitle(post) : listTitle ?? ""}</Dialog.Title>
+                        <h2 className="text-2xl font-bold">{post ? postTitle(post) : listTitle ?? ""}</h2>
 
                         {post && (
                             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
@@ -288,7 +204,7 @@ export const Frame = () => {
                                 <div className="flex items-center gap-3">
                                     <CountDown/>
                                     {post.date && <TimeStamp date={post.date} size="2"/>}
-                                    <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                                    <span className="flex items-center gap-1 text-sm text-base-content/60">
                                         <Eye className="size-3.5"/>
                                         {post.views}
                                     </span>
@@ -304,18 +220,18 @@ export const Frame = () => {
                     <div className="flex grow flex-col px-8 pt-6">
                         {/* 보존본은 삭제되었거나 바뀐 글일 수 있으니 지금 글이 아니라고 알린다. */}
                         {archived && (
-                            <Alert className="mb-4 text-amber-700 dark:text-amber-400">
+                            <div role="alert" className={cn(ALERT, "alert-warning alert-soft mb-4")}>
                                 <Archive/>
-                                <AlertDescription className="text-current">불러오지 못해 저장해 둔 내용을 보여 줍니다.</AlertDescription>
-                            </Alert>
+                                <p data-slot="alert-description">불러오지 못해 저장해 둔 내용을 보여 줍니다.</p>
+                            </div>
                         )}
                         {/* 오류를 먼저 본다. 댓글만 보기여도 본문을 못 받았으면 알린다. */}
                         {error ? (
                             <ErrorBlock error={error}/>
                         ) : commentsOnly ? (
-                            <Button variant="secondary" className="mb-6 w-full" onClick={() => usePreviewStore.setState({commentsOnly: false})}>
+                            <button type="button" className="btn mb-6 w-full" onClick={() => usePreviewStore.setState({commentsOnly: false})}>
                                 댓글만 표시 중입니다. 눌러서 본문 보기
-                            </Button>
+                            </button>
                         ) : (
                             <>
                                 <PostContents/>
@@ -325,7 +241,7 @@ export const Frame = () => {
 
                         {busy && (
                             <div className="flex justify-center py-8">
-                                <Spinner className="size-6"/>
+                                <span aria-hidden className="loading loading-spinner size-6"/>
                             </div>
                         )}
                     </div>
@@ -341,57 +257,52 @@ export const Frame = () => {
                                 </div>
                             </div>
                             {comments === undefined ? (commentsFailed ? (
-                                <Alert variant="destructive" className="mx-8 my-4 w-auto">
+                                <div role="alert" className={cn(ALERT, "alert-error alert-soft mx-8 my-4 w-auto")}>
                                     <CircleAlert/>
-                                    <AlertDescription className="text-current">
+                                    <div data-slot="alert-description">
                                         댓글을 불러오지 못했습니다.
                                         <div className="mt-2">
                                             {/* 안내가 곧 알림이라 실패를 토스트로 다시 알리지 않는다. */}
-                                            <Button size="sm" variant="destructive" onClick={() => void usePreviewStore.getState().requestRefresh()}>
+                                            <button type="button" className="btn btn-sm btn-error" onClick={() => void usePreviewStore.getState().requestRefresh()}>
                                                 다시 시도
-                                            </Button>
+                                            </button>
                                         </div>
-                                    </AlertDescription>
-                                </Alert>
+                                    </div>
+                                </div>
                             ) : (
                                 <div className="flex justify-center py-8">
-                                    <Spinner className="size-6" aria-label="댓글을 불러오는 중"/>
+                                    <span role="status" aria-label="댓글을 불러오는 중" className="loading loading-spinner size-6"/>
                                 </div>
                             )) : comments.length === 0 ? (
-                                <p className="py-8 text-center text-muted-foreground">댓글이 없습니다.</p>
+                                <p className="py-8 text-center text-base-content/60">댓글이 없습니다.</p>
                             ) : (
                                 <CommentList comments={comments}/>
                             )}
                         </div>
                     )}
 
-                    {post && (allowReply ? <WriteComment/> : (
-                        <p className="px-8 pt-3 pb-6 text-muted-foreground">멤버만 댓글을 쓸 수 있습니다.</p>
+                    {/* 아카이브 글은 서버가 이미 없는 글이므로 댓글을 받지 않는다. */}
+                    {post && !archived && (allowReply ? <WriteComment/> : (
+                        <p className="px-8 pt-3 pb-6 text-base-content/60">멤버만 댓글을 쓸 수 있습니다.</p>
                     ))}
                     </Fragment>
 
-                    {/* 맨 위로 / 댓글로 — 창 오른쪽 아래. 높이 0인 칸을 화면 아래 끝에 sticky로 붙여 긴 글을 읽는 동안에도 보이게 한다. */}
-                    <div className="sticky bottom-0 h-0">
-                        <div className="absolute right-4 bottom-4 flex flex-col gap-2">
-                            <TooltipButton tip="맨 위로" side="left" variant="secondary" size="icon" className="rounded-full"
-                                           onClick={() => scroller.current?.scrollTo({top: 0, behavior: smoothScroll()})}>
-                                <ArrowUp/>
-                            </TooltipButton>
-                            {hasComments && (
-                                <TooltipButton tip="댓글로" side="left" variant="secondary" size="icon" className="rounded-full"
-                                               onClick={() => commentsSection.current?.scrollIntoView({behavior: smoothScroll(), block: "start"})}>
-                                    <MessageSquare/>
-                                </TooltipButton>
-                            )}
-                        </div>
-                    </div>
                 </div>
-                {/* 화면 왼쪽에 fixed로 붙인다. 스크롤 칸에 transform이 없어 화면 기준 그대로이고,
-                    aria-modal 창 안에 두어야 스크린 리더가 창 밖 내용으로 보고 건너뛰지 않는다. */}
+                {/* 맨 위로 / 댓글로 - 화면 오른쪽 아래(창 밖). 창 안에 두면 본문을 가린다. 스크롤 칸(fade) 안에 두면 닫힘 페이드도 함께 탄다. */}
+                <div className="fixed right-4 bottom-4 z-10 flex flex-col gap-2">
+                    <TooltipButton tip="맨 위로" side="left" variant="secondary" size="icon" className="rounded-full"
+                                   onClick={() => scroller.current?.scrollTo({top: 0, behavior: smoothScroll()})}>
+                        <ArrowUp/>
+                    </TooltipButton>
+                    {hasComments && (
+                        <TooltipButton tip="댓글로" side="left" variant="secondary" size="icon" className="rounded-full"
+                                       onClick={() => commentsSection.current?.scrollIntoView({behavior: smoothScroll(), block: "start"})}>
+                            <MessageSquare/>
+                        </TooltipButton>
+                    )}
+                </div>
+                {/* aria-modal 창 안에 두어 스크린 리더가 건너뛰지 않게 한다. */}
                 {visible && adminVisible && <AdminPanel/>}
-                </Dialog.Popup>
-                {hintDir !== 0 && <SkipHint dir={hintDir}/>}
-            </Dialog.Portal>
-        </Dialog.Root>
+        </PreviewDialogRoot>
     );
 };

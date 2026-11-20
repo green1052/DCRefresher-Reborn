@@ -1,4 +1,5 @@
-import {type WheelEvent, useRef, useState} from "react";
+import { useRef, useState } from "preact/hooks";
+import { type TargetedWheelEvent as WheelEvent } from "preact";
 
 /** 휠 이벤트 사이가 이보다 벌어지면 새 동작으로 본다(ms). 관성 스크롤은 이보다 촘촘하게 이어진다. */
 const WHEEL_GESTURE_GAP = 250;
@@ -9,7 +10,7 @@ const canScroll = (el: Element, dir: number): boolean => (dir > 0 ? el.scrollTop
 /**
  * 스크롤 끝에서 새로 한 번 더 굴리면 이전/다음 글로 넘어간다 (Frame의 스크롤 칸). 끝에 닿은 그 동작으로 넘기면
  * 트랙패드 관성에 글이 연달아 넘어간다. 끝에 닿으면 v5처럼 안내를 띄운다. hint.key가 지금 연 창(signalId)일 때만 보이고,
- * canGo가 그 방향에 넘어갈 글이 없다고 하면(목록 처음·끝) 띄우지 않는다.
+ * canGo가 그 방향에 넘어갈 글이 없다고 하면(목록 처음, 끝) 띄우지 않는다.
  */
 export const useWheelGesture = (key: string, goToAdjacent: (dir: number) => void, canGo: (dir: number) => boolean, enabled: boolean) => {
     const wheel = useRef({last: 0, armed: 0, key: "", settling: false});
@@ -37,7 +38,9 @@ export const useWheelGesture = (key: string, goToAdjacent: (dir: number) => void
             goToAdjacent(dir);
         }
         // 끝에 닿은 방향을 기억해 두고 다음 동작을 기다린다. 넘어갈 글이 없으면 기다리지 않는다.
-        else if (atEdge && canGo(dir)) armed = dir;
+        // canGo는 목록 행 전체를 훑으므로 처음 그 방향으로 무장할 때만 한 번 본다. 관성 틱마다 다시 보면 초당
+        // 수십 번 훑는다. 그사이 목록이 바뀌어 글이 없어져도 안내만 남을 뿐 넘어가지 않는다(goToAdjacent가 알아서 걸른다).
+        else if (atEdge) armed = state.armed === dir ? dir : canGo(dir) ? dir : 0;
 
         if (armed !== state.armed) setHint({dir: armed, key});
         state.armed = armed;
@@ -48,7 +51,7 @@ export const useWheelGesture = (key: string, goToAdjacent: (dir: number) => void
 
         const box = ev.currentTarget;
         const target = ev.target;
-        // 스크롤 칸 DOM 안에서 난 휠만 본다. Preact는 포털로 뜬 창(디시콘 등)의 이벤트를 컴포넌트 트리로 올리지 않아 보통은 늘 참이다.
+        // 스크롤 칸 DOM 안에서 난 휠만 본다. preact는 포털로 뜬 창(디시콘 등)의 이벤트도 컴포넌트 트리로 올리므로 이 검사로 걸러 낸다.
         if (!(target instanceof Element) || !box.contains(target)) return;
 
         const dir = ev.deltaY > 0 ? 1 : -1;

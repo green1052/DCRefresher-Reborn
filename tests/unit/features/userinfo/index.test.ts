@@ -14,7 +14,7 @@ import {useUiStore} from "@/stores/ui";
 import {stored, tick} from "../../../helpers";
 import {type Running, runModule} from "../module";
 
-// IP·밴 DB와 갤로그는 저장소·네트워크 대신 표로 둔다.
+// IP, 밴 DB와 갤로그는 저장소, 네트워크 대신 표로 둔다.
 const db = vi.hoisted(() => ({
     ips: new Map<string, { label: string; title: string; category: IpCategory }>(),
     bans: new Map<string, string>(),
@@ -38,8 +38,18 @@ const gallog = vi.hoisted(() => ({
     asked: new Array<string>(),
     listeners: new Set<(uid: string, activity: GallogActivity) => void>()
 }));
-vi.mock("@/core/gallog", () => ({
+vi.mock("@/core/gallog", async (importOriginal) => ({
+    ...await importOriginal<typeof import("@/core/gallog")>(),
     getGallogActivity: async (uid: string) => {
+        gallog.asked.push(uid);
+        const activity = gallog.activity.get(uid);
+        if (activity) {
+            for (const listener of gallog.listeners) listener(uid, activity);
+        }
+        return activity;
+    },
+    // 자동 조회(새 글 폴링)는 바쁘지 않을 때만 받는다 - 테스트에서는 항상 이 탭이 받는다.
+    getGallogActivityUnlessBusy: async (uid: string) => {
         gallog.asked.push(uid);
         const activity = gallog.activity.get(uid);
         if (activity) {
@@ -97,7 +107,7 @@ afterEach(() => {
     running = undefined;
 });
 
-describe("아이디·IP 배지", () => {
+describe("아이디, IP 배지", () => {
     it("회원은 아이디를, 유동은 IP 정보를 붙인다", async () => {
         db.ips.set("1.2", {label: "KT", title: "KT\nSK", category: "korea"});
         mountRows([{no: "1", uid: "member"}, {no: "2", ip: "1.2"}, {no: "3", ip: "9.9"}]);
@@ -106,7 +116,6 @@ describe("아이디·IP 배지", () => {
         expect(badges("2")).toEqual(["[KT]"]);
         expect(badge("2", "[KT]")?.title).toBe("KT\nSK");
         expect(badge("2", "[KT]")?.style.color).toBe("rgb(100, 149, 237)");
-        // IP 정보가 없는 유동은 배지 묶음을 만들지 않는다.
         expect(document.querySelector("tr[data-no='3'] .refresher-user-badges")).toBeNull();
     });
 
@@ -135,7 +144,7 @@ describe("아이디·IP 배지", () => {
         expect(badges("2")).toEqual(["[Tencent (VPN)]"]);
     });
 
-    it("고정닉·반고정닉 아이디는 설정대로 숨긴다", async () => {
+    it("고정닉, 반고정닉 아이디는 설정대로 숨긴다", async () => {
         mountRows([{no: "1", uid: "fixed", icon: "fix_nik.gif"}, {no: "2", uid: "half", icon: "nik.gif"}]);
         const {change} = await start({showFixedNickUID: false});
         expect(badges("1")).toEqual([]);
@@ -153,7 +162,7 @@ describe("아이디·IP 배지", () => {
     });
 });
 
-describe("메모·순서·갱차", () => {
+describe("메모, 순서, 갱차", () => {
     it("메모를 붙이고 메모가 바뀌면 다시 그린다", async () => {
         mountRows([{no: "1", uid: "member"}]);
         await start();
@@ -193,7 +202,7 @@ describe("메모·순서·갱차", () => {
     });
 });
 
-describe("글댓비·깡계", () => {
+describe("글댓비, 깡계", () => {
     const saveRatio = async (ratio: Record<string, RatioInfo>): Promise<void> =>
         fakeBrowser.storage.local.set({[RATIO_KEY]: {ratio}});
 
@@ -239,7 +248,7 @@ describe("글댓비·깡계", () => {
         expect(badges("1")).toEqual(["(low)", "[0/0]"]);
     });
 
-    it("흐리게·숨기기는 행에 걸고 알리고, 설정을 바꾸면 뗀다", async () => {
+    it("흐리게, 숨기기는 행에 걸고 알리고, 설정을 바꾸면 뗀다", async () => {
         await saveRatio({low: {article: 1, comment: 2, date: Date.now()}});
         mountRows([{no: "1", uid: "low"}]);
         const notified = vi.fn();
@@ -288,51 +297,21 @@ describe("글댓비·깡계", () => {
         expect(document.querySelector(".refresherLowActivityHide")).toBeNull();
     });
 
-    it("새 글 작성자의 글댓비를 받아 그리고 모아서 저장한다", async () => {
+    it("새 글 작성자의 글댓비를 받아 그린다. 저장은 배경이 한다", async () => {
         gallog.activity.set("fresh", {article: 3, comment: 4});
         mountRows([{no: "1", uid: "fresh"}, {no: "2", uid: "fresh"}]);
         const {api, stop} = await start({checkRatio: true});
         api.checkNewPosts([...document.querySelectorAll<HTMLElement>("tr")]);
         await vi.waitFor(() => expect(badges("1")).toEqual(["(fresh)", "[3/4]"]));
         expect(badges("2")).toEqual(["(fresh)", "[3/4]"]);
-        // 같은 사람은 한 번만 묻는다.
         expect(gallog.asked).toEqual(["fresh"]);
+
+        stop();
+        running = undefined;
         expect(await stored(RATIO_KEY)).toBeUndefined();
-
-        // 모듈을 끌 때 모아 둔 것을 저장한다.
-        stop();
-        running = undefined;
-        await vi.waitFor(async () => expect(await stored(RATIO_KEY)).toEqual({ratio: {fresh: {article: 3, comment: 4, date: expect.any(Number)}}}));
     });
 
-    it("저장하는 사이 받은 글댓비는 다음 저장에 넣는다", async () => {
-        gallog.activity.set("a", {article: 1, comment: 2});
-        gallog.activity.set("b", {article: 3, comment: 4});
-        mountRows([{no: "1", uid: "a"}, {no: "2", uid: "b"}]);
-        const {api, stop} = await start({checkRatio: true});
-        const rows = [...document.querySelectorAll<HTMLElement>("tr")];
-        api.checkNewPosts(rows.slice(0, 1));
-        await vi.waitFor(() => expect(badges("1")).toEqual(["(a)", "[1/2]"]));
-
-        // 탭을 떠나며 쓰는 동안 저장소가 늦게 끝난다.
-        const set = fakeBrowser.storage.local.set.bind(fakeBrowser.storage.local);
-        const {promise: gate, resolve: release} = Promise.withResolvers<void>();
-        vi.spyOn(fakeBrowser.storage.local, "set").mockImplementation(async (items) => {
-            await gate;
-            await set(items);
-        });
-        window.dispatchEvent(new Event("pagehide"));
-        api.checkNewPosts(rows.slice(1));
-        await vi.waitFor(() => expect(badges("2")).toEqual(["(b)", "[3/4]"]));
-        release();
-        await vi.waitFor(async () => expect(await stored(RATIO_KEY)).toBeDefined());
-
-        stop();
-        running = undefined;
-        await vi.waitFor(async () => expect(Object.keys((await stored(RATIO_KEY) as { ratio?: Record<string, RatioInfo> }).ratio ?? {}).sort()).toEqual(["a", "b"]));
-    });
-
-    it("bfcache에 있는 동안 다른 탭이 저장한 글댓비를 돌아올 때 다시 읽어, 저장할 때 지우지 않는다", async () => {
+    it("bfcache에 있는 동안 다른 탭이 저장한 글댓비를 돌아올 때 다시 읽는다", async () => {
         // bfcache에 있는 동안은 감시가 오지 않는다.
         vi.spyOn(storage, "watch").mockImplementation(() => () => {});
         gallog.activity.set("fresh", {article: 3, comment: 4});
@@ -346,23 +325,26 @@ describe("글댓비·깡계", () => {
 
         stop();
         running = undefined;
-        await vi.waitFor(async () => expect(Object.keys((await stored(RATIO_KEY) as { ratio?: Record<string, RatioInfo> }).ratio ?? {}).sort()).toEqual(["fresh", "other"]));
+        // 이 탭은 저장하지 않으니 저장소에는 다른 탭이 넣은 값만 남는다.
+        expect(Object.keys((await stored(RATIO_KEY) as { ratio?: Record<string, RatioInfo> }).ratio ?? {})).toEqual(["other"]);
     });
 
-    it("미리보기·버블이 새로 받은 글댓비도 그리고 저장한다", async () => {
+    it("미리보기, 버블이 새로 받은 글댓비도 그린다", async () => {
         mountRows([{no: "1", uid: "seen"}]);
         const {stop} = await start({checkRatio: true});
         for (const listener of gallog.listeners) listener("seen", {article: 7, comment: 8});
+        // 받은 값은 모았다가 다음 마이크로태스크에 한 번에 넣는다.
+        await tick();
         expect(badges("1")).toEqual(["(seen)", "[7/8]"]);
         expect(useUiStore.getState().ratios?.cache.seen?.article).toBe(7);
 
         stop();
         running = undefined;
-        await vi.waitFor(async () => expect(await stored(RATIO_KEY)).toEqual({ratio: {seen: {article: 7, comment: 8, date: expect.any(Number)}}}));
+        expect(await stored(RATIO_KEY)).toBeUndefined();
         expect(gallog.listeners.size).toBe(0);
     });
 
-    it("글댓비 표시를 끄면 미리보기·버블이 받은 값을 넣지 않는다", async () => {
+    it("글댓비 표시를 끄면 미리보기, 버블이 받은 값을 넣지 않는다", async () => {
         mountRows([{no: "1", uid: "seen"}]);
         await start();
         for (const listener of gallog.listeners) listener("seen", {article: 7, comment: 8});
@@ -421,7 +403,7 @@ describe("글댓비·깡계", () => {
     });
 });
 
-describe("미리보기 공유·끄기", () => {
+describe("미리보기 공유, 끄기", () => {
     it("끄면 배지를 떼고 미리보기에 올린 글댓비를 거둔다", async () => {
         db.ips.set("1.2", {label: "KT", title: "KT", category: "korea"});
         mountRows([{no: "1", ip: "1.2"}]);

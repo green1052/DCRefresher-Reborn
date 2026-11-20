@@ -24,13 +24,12 @@ const buildCss = (ctx: Ctx): string => {
 
 const STYLE_ID = "refresher-fonts";
 
-const apply = (ctx: Ctx): void => writeStyle(STYLE_ID, buildCss(ctx));
+const apply = (ctx: Ctx): (() => void) => writeStyle(STYLE_ID, buildCss(ctx));
 
 export default defineModule(meta, {
     setup(ctx) {
-        ctx.onRevoke(() => document.querySelector(`style#${STYLE_ID}`)?.remove());
+        ctx.onRevoke(apply(ctx));
 
-        apply(ctx);
         ctx.onSettingsChanged(() => apply(ctx));
     }
 });

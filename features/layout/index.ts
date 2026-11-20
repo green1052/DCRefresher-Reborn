@@ -19,25 +19,28 @@ const applyCompact = (ctx: Ctx, narrow: boolean): void => {
     document.documentElement.classList.toggle("refresherCompact", useCompact);
 };
 
-const applyHide = (ctx: Ctx): void => {
+/** 쓴 <style>을 떼는 정리 함수를 돌려준다 (writeStyle이 같은 요소를 이어 쓰므로 몇 번을 불러도 같다). */
+const applyHide = (ctx: Ctx): (() => void) => {
     // 공지 모아보기(?exception_mode=notice)에서는 공지를 숨기지 않는다 (디시 공지도).
     const noticePage = queryString("exception_mode") === "notice";
 
     // 선택자마다 규칙을 따로 둔다. 하나로 합치면 :has 등을 모르는 브라우저가 규칙 전체를 버린다.
-    writeStyle(HIDE_STYLE_ID, HIDE_KEYS
+    const removeHideStyle = writeStyle(HIDE_STYLE_ID, HIDE_KEYS
         .filter((key) => ctx.settings[key] && !(noticePage && (key === "removeNotice" || key === "removeDCNotice")))
         .map((key) => `${HIDE_OPTIONS[key].selector} { display: none !important; }`)
         .join("\n"));
 
     // 본문 확장은 잡다 링크가 숨겨졌을 때만 (page.css의 폭 조정).
     document.documentElement.classList.toggle(PUSH_CLASS, ctx.settings.pushToRight && ctx.settings.hideUselessView);
+    return removeHideStyle;
 };
 
 export default defineModule(meta, {
     setup(ctx) {
+        let removeHideStyle: (() => void) | undefined;
         ctx.onRevoke(() => {
             // 폭 감시는 모듈을 멈출 때 ctx.signal로 이미 풀렸다 (watchWidth).
-            document.querySelector(`style#${HIDE_STYLE_ID}`)?.remove();
+            removeHideStyle?.();
 
             document.documentElement.classList.remove("refresherCompact", PUSH_CLASS);
         });
@@ -45,7 +48,7 @@ export default defineModule(meta, {
         // 창 폭 감시. 기준이 바뀌면 새로 건다.
         let width: { query: MediaQueryList; watch: AbortController } | undefined;
         const compact = (): void => applyCompact(ctx, width?.query.matches === true);
-        /** 창 폭이 기준(activePixel)을 넘나들 때만 다시 맞춘다 — resize는 창 크기를 바꾸는 동안 수십 번 온다. */
+        /** 창 폭이 기준(activePixel)을 넘나들 때만 다시 맞춘다 - resize는 창 크기를 바꾸는 동안 수십 번 온다. */
         const watchWidth = (): void => {
             width?.watch.abort();
             width = {query: window.matchMedia(`(max-width: ${ctx.settings.activePixel}px)`), watch: new AbortController()};
@@ -54,11 +57,11 @@ export default defineModule(meta, {
         };
 
         watchWidth();
-        applyHide(ctx);
+        removeHideStyle = applyHide(ctx);
         ctx.onSettingsChanged((keys) => {
             if (keys.has("activePixel")) watchWidth();
             if (!keys.isDisjointFrom(COMPACT_KEYS)) compact();
-            if ([...keys].some((key) => key !== "activePixel" && !COMPACT_KEYS.has(key))) applyHide(ctx);
+            if ([...keys].some((key) => key !== "activePixel" && !COMPACT_KEYS.has(key))) removeHideStyle = applyHide(ctx);
         });
     }
 });

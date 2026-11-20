@@ -1,14 +1,14 @@
-import {render} from "preact";
+import {render} from "@/tests/helpers";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import {clickContents, markPressable} from "@/features/preview/ui/contentsClick";
+import {clickContents, markMedia, markPressable} from "@/features/preview/ui/contentsClick";
 import {usePreviewStore} from "@/features/preview/ui/previewStore";
 
 /** 받기 상태를 지정한 본문 이미지. 받기 전(lazy)은 complete=false, 깨진 것은 complete=true에 naturalWidth=0이다. */
 const image = (src: string, complete: boolean, naturalWidth: number): string =>
     `<img src="${src}" data-complete="${complete}" data-width="${naturalWidth}">`;
 
-/** jsdom은 이미지를 받지 않으므로 data-*에 적은 받기 상태를 complete·naturalWidth로 옮긴다. */
+/** jsdom은 이미지를 받지 않으므로 data-*에 적은 받기 상태를 complete, naturalWidth로 옮긴다. */
 const setLoadState = (root: HTMLElement): void => {
     for (const element of root.querySelectorAll("img")) {
         Object.defineProperty(element, "complete", {value: element.dataset.complete !== "false"});
@@ -60,7 +60,7 @@ describe("clickContents", () => {
         expect(hidden.getAttribute("aria-label")).toBe("이미지 크게 보기");
     });
 
-    it("아직 받지 않은(lazy·받는 중) 이미지도 크게 보기 목록에 넣고, 깨진 이미지만 뺀다", () => {
+    it("아직 받지 않은(lazy, 받는 중) 이미지도 크게 보기 목록에 넣고, 깨진 이미지만 뺀다", () => {
         Element.prototype.checkVisibility = () => true;
         const container = document.createElement("div");
         document.body.append(container);
@@ -142,5 +142,31 @@ describe("clickContents", () => {
         root.querySelector("img")!.click();
 
         expect(usePreviewStore.getState().viewer?.images[0]?.pop).toBe(expected);
+    });
+});
+
+describe("markMedia", () => {
+    it("깨진 이미지는 크게 보기 표시를 떼고 원본 보기만 남긴다", () => {
+        const setLoad = (image: HTMLImageElement, width: number): void => {
+            Object.defineProperty(image, "complete", {value: true, configurable: true});
+            Object.defineProperty(image, "naturalWidth", {value: width, configurable: true});
+        };
+        const box = document.createElement("div");
+        const breaking = document.createElement("img");
+        breaking.dataset.pop = "https://gall.dcinside.com/viewimage.php";
+        const fine = document.createElement("img");
+        fine.dataset.pop = "https://gall.dcinside.com/viewimage.php";
+        setLoad(breaking, 100);
+        setLoad(fine, 100);
+        box.append(breaking, fine);
+        markPressable(box, true);
+        expect(breaking.getAttribute("aria-label")).toContain("이미지 크게 보기");
+
+        // 받다가 깨졌다. error는 그 이미지만 다시 맞춘다. 옆의 멀쩡한 이미지는 그대로다.
+        setLoad(breaking, 0);
+        markMedia(breaking, true);
+        expect(breaking.getAttribute("aria-label")).toBe("원본 보기");
+        expect(breaking.getAttribute("role")).toBe("button");
+        expect(fine.getAttribute("aria-label")).toContain("이미지 크게 보기");
     });
 });

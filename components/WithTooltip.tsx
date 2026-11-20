@@ -1,28 +1,52 @@
-import type {ComponentProps, ReactElement, ReactNode} from "react";
+import { cloneElement, type ComponentProps, type VNode as ReactElement, type ComponentChild as ReactNode } from "preact";
 
-import {Button} from "@/components/ui/button";
-import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
+import {cn} from "cn";
 
-/**
- * 툴팁을 단 요소. trigger는 툴팁을 여는 요소(주로 Button)이고, 그 안의 내용(아이콘 등)은 children으로 준다.
- * 줄마다 그리는 목록(차단 목록 줄·댓글)에는 쓰지 않는다. 수천 개를 그리면 느려지므로 브라우저 기본(title)을 쓴다.
- */
-export const WithTooltip = ({tip, side, trigger, children}: {
-    tip: ReactNode;
-    side?: ComponentProps<typeof TooltipContent>["side"];
+const SIDE = {top: "", bottom: "tooltip-bottom", left: "tooltip-left", right: "tooltip-right"} as const;
+
+// 수천 개를 그리는 목록 줄, 댓글에는 느려지므로 브라우저 기본(title)을 쓴다.
+export const WithTooltip = ({tip, side = "top", trigger, children}: {
+    tip: string;
+    side?: keyof typeof SIDE;
     trigger: ReactElement;
     children: ReactNode;
 }) => (
-    <Tooltip>
-        <TooltipTrigger render={trigger}>{children}</TooltipTrigger>
-        <TooltipContent side={side}>{tip}</TooltipContent>
-    </Tooltip>
+    // inline-flex: inline-block이면 안의 단추 아래로 줄 간격(strut)이 붙어 제목 줄 높이가 커진다.
+    <span className={cn("tooltip inline-flex", SIDE[side])} data-tip={tip}>
+        {cloneElement(trigger, undefined, children)}
+    </span>
 );
 
-/** 툴팁 글이 곧 이름(aria-label)인 버튼. 아이콘만 있는 버튼에 쓴다. */
-export const TooltipButton = ({tip, side, children, ...props}: ComponentProps<typeof Button> & {
+const VARIANT = {
+    default: "btn-primary",
+    destructive: "btn-error",
+    outline: "btn-outline",
+    secondary: "",
+    ghost: "btn-ghost",
+    link: "btn-link",
+} as const;
+
+const SIZE = {
+    default: "",
+    xs: "btn-xs",
+    sm: "btn-sm",
+    lg: "btn-lg",
+    icon: "btn-square",
+    "icon-xs": "btn-square btn-xs",
+    "icon-sm": "btn-square btn-sm",
+    "icon-lg": "btn-square btn-lg",
+} as const;
+
+export const TooltipButton = ({tip, side, variant = "default", size = "default", className, children, ...props}: Omit<ComponentProps<"button">, "children"> & {
     tip: string;
-    side?: ComponentProps<typeof TooltipContent>["side"];
+    side?: keyof typeof SIDE;
+    variant?: keyof typeof VARIANT;
+    size?: keyof typeof SIZE;
+    children?: ReactNode;
 }) => (
-    <WithTooltip tip={tip} side={side} trigger={<Button aria-label={tip} {...props}/>}>{children}</WithTooltip>
+    <WithTooltip tip={tip} side={side} trigger={
+        <button type="button" aria-label={tip} className={cn("btn", VARIANT[variant], SIZE[size], className)} {...props}/>
+    }>
+        {children}
+    </WithTooltip>
 );

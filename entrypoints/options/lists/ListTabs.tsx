@@ -1,0 +1,334 @@
+import {cn} from "cn";
+import {Download, Plus, Trash2, Upload} from "lucide-preact";
+import { useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
+import { type ComponentChild as ReactNode } from "preact";
+
+import {ConfirmDialog} from "@/components/dialogs";
+import {FOCUS_RING} from "@/components/focusRing";
+import {TooltipButton} from "@/components/WithTooltip";
+import {focusPanel, panelOf} from "@/components/useReturnFocus";
+import {friendlyMessage, SAVE_FAILED} from "@/utils/error";
+import {isRecord} from "@/utils/record";
+
+import {ImportDialog} from "../shared/ImportDialog";
+import {EmptyList, SearchInput} from "../shared/widgets";
+import {notify, notifyDone} from "../optionsStore";
+import {copyText} from "@/stores/ui";
+import {RefresherSelect} from "../shared/RefresherSelect";
+
+
+/** 받침이 있으면 "을", 없으면 "를". */
+const objectParticle = (word: string): string => ((word.charCodeAt(word.length - 1) - 0xac00) % 28 > 0 ? "을" : "를");
+
+/** 표에 한 번에 그리는 줄 수. 수천 줄을 다 그리면 검색어를 칠 때마다 느려진다(5,000줄에서 한 글자에 50ms쯤). 검색은 전체에서 한다. */
+const PAGE = 200;
+
+// 지운 항목을 저장된 자리에 되살린다 - 같은 키가 다시 생겼으면 두고 건너뛴다.
+export const restoreRemoved = <I, >(current: readonly I[], removed: readonly { index: number; item: I }[], key: (item: I) => string): I[] => {
+    const next = [...current];
+    const kept = new Set(current.map(key));
+    for (const {index, item} of removed) {
+        if (!kept.has(key(item))) next.splice(index, 0, item);
+    }
+    return next;
+};
+
+export const ListRow = ({head, label, info, onEdit, onRemove}: {
+    head: ReactNode;
+    label: string;
+    info: ReactNode;
+    onEdit: () => void;
+    onRemove: () => void;
+}) => {
+    // 확인 창을 연 휴지통 버튼. 지우면 버튼이 사라지므로 확인 뒤 탭 패널로 포커스를 돌린다.
+    const [opener, setOpener] = useState<HTMLElement | null>(null);
+    // native 모달이 살아 있는 동안엔 브라우저가 창 밖(탭 패널)으로 포커스를 옮기지 못하게 막는다 - 줄이 지워지는 이 시점에 돌려준다.
+    // 패널은 줄이 떨어지면 closest가 끊긴 트리를 못 벗어나므로 누를 때 미리 잡아 둔다.
+    const panel = useRef<HTMLElement | null | undefined>(null);
+    const removing = useRef(false);
+    useLayoutEffect(() => () => {
+        // 같은 commit에서 모달이 지워지면 아직 창 밖 포커스가 풀리지 않았다 - 다음 틱에 돌려준다.
+        if (removing.current) setTimeout(() => panel.current?.focus({preventScroll: true}));
+    }, []);
+
+    return (
+        <>
+            <tr className="cursor-pointer border-b [content-visibility:auto] [contain-intrinsic-size:auto_45px] hover:bg-base-200/50" onClick={onEdit}>
+                <th scope="row" className="text-left font-normal">
+                    {/* 줄(tr)은 버튼이 될 수 없어 첫 칸을 편집 버튼으로 알린다 - click이 줄로 올라가 편집이 열린다. */}
+                    <button type="button" title="수정" className={cn(FOCUS_RING, "block w-full text-left")}>
+                        {head}
+                    </button>
+                </th>
+                <td className="whitespace-normal">{info}</td>
+                <td className="text-right">
+                    {/* 줄마다 툴팁 부품이나 Base UI Button을 달면 수천 줄에서 느려지므로 title과 맨 button 포커스 링을 쓴다. */}
+                    <button type="button" aria-label={`${label} 삭제`} title="삭제"
+                            className={cn(FOCUS_RING, "grid size-8 place-items-center rounded-[10px] text-error hover:bg-base-200")}
+                            onClick={(ev) => {
+                                ev.stopPropagation();
+                                panel.current = panelOf(ev.currentTarget);
+                                removing.current = false;
+                                setOpener(ev.currentTarget);
+                            }}>
+                        <Trash2/>
+                    </button>
+                </td>
+            </tr>
+            {/* 확인 창은 줄(tr) 밖에 둔다. 창 안의 클릭이 줄로 올라가 편집이 열리지 않게 한다. */}
+            {opener && (
+                <ConfirmDialog
+                    title={`"${label}" 삭제할까요?`}
+                    confirmLabel="삭제"
+                    danger
+                    onConfirm={() => {
+                        removing.current = true;
+                        onRemove();
+                        setOpener(null);
+                    }}
+                    onClose={() => setOpener(null)}
+                />
+            )}
+        </>
+    );
+};
+
+/** 차단/메모 탭 공용 틀 - 종류 탭, 검색, 내보내기/가져오기, 삭제/추가, 표 머리. 줄은 row가 그린다. */
+export const ListTabs = <T extends string, I>({
+                                                  types,
+                                                  names,
+                                                  label,
+                                                  columns,
+                                                  emptyText,
+                                                  exportData,
+                                                  importData,
+                                                  onClear,
+                                                  onAdd,
+                                                  toolbar,
+                                                  items,
+                                                  searchText,
+                                                  galleryOf,
+                                                  onRemoveMany,
+                                                  itemKey,
+                                                  onRestore,
+                                                  row
+                                              }: {
+    types: readonly T[];
+    names: Record<T, string>;
+    label: string;
+    columns: [string, string];    emptyText: (type: T) => string;
+    exportData: () => unknown;
+    /** 돌려준 수가 0이면 다른 데이터로 보고 실패로 알린다. */
+    importData: (parsed: Record<string, unknown>) => Promise<number>;
+    onClear: (type: T) => Promise<void>;
+    onAdd: (type: T) => void;
+    toolbar: (type: T) => ReactNode;
+    /** 오래된 것부터 준다. 표시할 때 뒤집는다. */
+    items: (type: T) => readonly I[];
+    searchText: (item: I) => (string | undefined)[];
+    galleryOf: (item: I) => string | undefined;
+    onRemoveMany: (type: T, items: readonly I[]) => Promise<void>;
+    itemKey: (item: I) => string;
+    onRestore: (type: T, restore: (current: I[]) => I[]) => Promise<void>;
+    row: (type: T, item: I, remove: () => void) => ReactNode;
+}) => {
+    // 모든 탭이 같은 검색어를 쓴다. 탭 배지에 탭마다 걸린 개수가 보여 다른 탭에 있는지도 알 수 있다.
+    const [query, setQuery] = useState("");
+    // 열려 있는 종류 탭.
+    const [current, setCurrent] = useState(types[0]);
+    const needle = query.trim().toLowerCase();
+    // 갤러리 거르기: all(전체), common(모든 갤러리 항목), g:<ID>(그 갤러리 한정 항목). 검색어처럼 모든 탭이 같이 쓴다.
+    const [gallery, setGallery] = useState("all");
+    // 표에 그리는 줄 수 - 종류마다 따로 세고 거르기가 바뀌면 처음 PAGE줄로 돌린다.
+    const [limits, setLimits] = useState<Record<string, number>>({});
+    const resetLimits = (): void => setLimits({});
+    // 걸르기와 갤러리 목록은 조건이 바뀔 때만 한다 (확인 창, 더 보기에는 다시 하지 않는다).
+    const galleries = useMemo(
+        () => [...new Set(types.flatMap((type) => items(type).map(galleryOf)).filter((id): id is string => Boolean(id)))].sort(),
+        [types, items, galleryOf]
+    );
+    const galleryOptions: Record<string, string> = {all: "모든 항목", common: "갤러리 공통", ...Object.fromEntries(galleries.map((id) => [`g:${id}`, id]))};
+    // 고르던 갤러리의 항목을 다 지우면 선택지에서 빠지므로 전체로 돌린다.
+    const galleryFilter = gallery in galleryOptions ? gallery : "all";
+    const filtering = Boolean(needle) || galleryFilter !== "all";
+
+    const visible = (item: I): boolean => {
+        if (needle && !searchText(item).some((text) => text?.toLowerCase().includes(needle))) return false;
+        if (galleryFilter !== "all" && (galleryOf(item) ?? "") !== (galleryFilter === "common" ? "" : galleryFilter.slice(2))) return false;
+        return true;
+    };
+    // items는 오래된 순이므로 뒤집고, 종류마다 한 번만 걸러 탭 배지와 표가 같이 쓴다 (total은 거르기 전 개수).
+    const shown = useMemo(() => new Map(types.map((type) => {
+        const all = items(type);
+        return [type, {total: all.length, list: all.filter((item) => visible(item)).reverse()}];
+    })), [types, items, needle, galleryFilter, searchText, galleryOf]);
+
+    // 떠 있는 확인 창: 그 종류 전체 삭제.
+    const [confirm, setConfirm] = useState<{type: T} | null>(null);
+    // 삭제를 확인하면 연 버튼이 사라지거나 막히므로 지우기 전에 탭 패널로 포커스를 옮겨 둔다.
+    const filterRow = useRef<HTMLDivElement>(null);
+    const [importOpen, setImportOpen] = useState(false);
+    const object = label + objectParticle(label);
+
+    // 지울 항목을 저장된 자리와 함께 잡아 두고, 지운 뒤 알림의 되돌리기로 그 자리에 되살린다.
+    const removeItems = (type: T, targets: readonly I[], run: () => Promise<void>): void => {
+        const picked = new Set(targets.map(itemKey));
+        const removed = items(type).flatMap((item, index) => (picked.has(itemKey(item)) ? [{index, item}] : []));
+        run().then(
+            () => notifyDone({
+                message: `${names[type]} ${object} ${removed.length}개 삭제했습니다.`,
+                undo: () => void onRestore(type, (current) => restoreRemoved(current, removed, itemKey)).catch(() => notify(SAVE_FAILED))
+            }),
+            () => notify(`${object} 삭제하지 못했습니다.`)
+        );
+    };
+
+    const exportList = (): Promise<void> =>
+        copyText(JSON.stringify(exportData()), `${object} 클립보드로 내보냈습니다.`, `${object} 내보내지 못했습니다.`);
+
+    const submitImport = async (text: string): Promise<string | undefined> => {
+        let data: unknown;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            notify(`${object} 가져오지 못했습니다. ${friendlyMessage(e)}`);
+            return;
+        }
+
+        try {
+            if (isRecord(data) && (await importData(data)) > 0) return `${object} 가져왔습니다.`;
+            // 데이터 탭의 전체 내보내기는 저장소 키(refresher:...)로 되어 있다.
+            notify(isRecord(data) && Object.keys(data).some((key) => key.startsWith("refresher:"))
+                ? "전체 데이터는 데이터 탭에서 가져와 주세요."
+                : `${label} 데이터가 아닙니다. 이 탭에서 내보낸 JSON인지 확인해 주세요.`);
+        } catch {
+            // 종류마다 따로 쓰므로 앞 종류는 이미 들어갔을 수 있다. 실패한 종류는 스토어가 되돌린다.
+            notify(SAVE_FAILED);
+        }
+    };
+
+    return (
+        <section className="card card-border">
+            <div className="card-body gap-6 p-6">
+                <div>
+                    <div className="flex items-end gap-3">
+                        {/* daisyUI 탭: aria-selected가 곧 활성 상태이고 tabs-border가 활성 밑줄을 그린다. */}
+                        <div role="tablist" className="tabs tabs-border h-auto min-h-9 flex-1 flex-wrap justify-start gap-1">
+                            {types.map((type) => {
+                                const {total, list} = shown.get(type)!;
+                                return (
+                                    <button key={type} type="button" role="tab" aria-selected={type === current}
+                                            className="tab h-auto min-h-9 flex-none gap-1.5 py-1 text-sm"
+                                            onClick={() => setCurrent(type)}>
+                                        {names[type]}
+                                        {total > 0 && (
+                                            <span className={cn("badge badge-sm", filtering ? "badge-primary" : "")}>
+                                                {filtering ? `${list.length}/${total}` : total}
+                                            </span>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <div className="flex gap-1 pb-1">
+                            <TooltipButton tip="내보내기" variant="ghost" size="icon" onClick={() => void exportList()}>
+                                <Download/>
+                            </TooltipButton>
+                            <TooltipButton tip="가져오기" variant="ghost" size="icon" onClick={() => setImportOpen(true)}>
+                                <Upload/>
+                            </TooltipButton>
+                        </div>
+                    </div>
+
+                    {types.map((type) => {
+                        const {total, list} = shown.get(type)!;
+                        const limit = limits[type] ?? PAGE;
+                        return type !== current ? null : (
+                            <div key={type} role="tabpanel" tabIndex={-1} className="tab-enter">
+                                <div ref={filterRow} className="flex flex-wrap items-center justify-between gap-3 py-4">
+                                    {toolbar(type)}
+                                    <div className="ml-auto flex flex-wrap items-center gap-2">
+                                        {/* 갤러리 한정 항목이 있을 때만 거르기를 보여 준다. 없으면 "모든 항목"과 결과가 같다. */}
+                                        {galleries.length > 0 && (
+                                            <RefresherSelect value={galleryFilter} options={galleryOptions} aria-label="갤러리" onChange={(value) => {
+                                                setGallery(value);
+                                                resetLimits();
+                                            }}/>
+                                        )}
+                                        <SearchInput className="w-45" placeholder="검색" aria-label={`${label} 검색`} value={query}
+                                                     onChange={(ev) => {
+                                                         setQuery(ev.currentTarget.value);
+                                                         resetLimits();
+                                                     }}/>
+                                        {/* 검색 중에도 걸러진 것만이 아니라 이 종류 전부를 지우므로 확인 문구에 전체 개수를 적는다. */}
+                                        <TooltipButton tip="전체 삭제" variant="destructive" size="icon" disabled={total === 0} onClick={() => setConfirm({type})}>
+                                            <Trash2/>
+                                        </TooltipButton>
+                                        <TooltipButton tip="추가" size="icon" onClick={() => {
+                                            // 걸러진 조건에 안 맞는 새 항목이 바로 숨어 추가가 안 된 것처럼 보이지 않게 검색어와 거르기를 모두 푼다.
+                                            setQuery("");
+                                            setGallery("all");
+                                            resetLimits();
+                                            onAdd(type);
+                                        }}>
+                                            <Plus/>
+                                        </TooltipButton>
+                                    </div>
+                                </div>
+
+                                {total === 0 ? (
+                                    <EmptyList>{emptyText(type)}</EmptyList>
+                                ) : list.length === 0 ? (
+                                    <EmptyList>{needle ? `"${query.trim()}" 검색 결과 없음` : "조건에 맞는 항목 없음"}</EmptyList>
+                                ) : (
+                                    <>
+                                    <div className="overflow-hidden rounded-lg border">
+                                        <table className="table table-sm">
+                                            <thead className="bg-base-200/50">
+                                                <tr>
+                                                    <th>{columns[0]}</th>
+                                                    <th>{columns[1]}</th>
+                                                    <th className="w-12"/>
+                                                </tr>
+                                            </thead>
+                                            <tbody>{list.slice(0, limit).map((item) => row(type, item, () => removeItems(type, [item], () => onRemoveMany(type, [item]))))}</tbody>
+                                        </table>
+                                    </div>
+                                    {list.length > limit && (
+                                        <div className="flex justify-center pt-4">
+                                            <button type="button" className="btn btn-outline" onClick={(ev) => {
+                                                // 마지막 묶음을 펼치면 버튼이 사라지므로 포커스를 탭 패널로 옮겨 둔다.
+                                                if (list.length <= limit + PAGE) focusPanel(ev.currentTarget);
+                                                setLimits({...limits, [type]: limit + PAGE});
+                                            }}>
+                                                더 보기 (+{Math.min(PAGE, list.length - limit)})
+                                            </button>
+                                        </div>
+                                    )}
+                                    </>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {confirm && (
+                <ConfirmDialog
+                    title={`${names[confirm.type]} ${object} 모두(${items(confirm.type).length}개) 삭제할까요?`}
+                    confirmLabel="삭제"
+                    danger
+                    onConfirm={() => {
+                        const {type} = confirm;
+                        const targets = items(type);
+                        removeItems(type, targets, () => onClear(type));
+                        setConfirm(null);
+                    }}
+                    onClose={() => setConfirm(null)}
+                />
+            )}
+
+            {importOpen && <ImportDialog title={`${label} 가져오기`} onClose={() => setImportOpen(false)} onSubmit={submitImport}/>}
+        </section>
+    );
+};

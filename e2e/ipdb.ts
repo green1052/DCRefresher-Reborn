@@ -2,10 +2,7 @@ import type {Route} from "@playwright/test";
 
 import {encodeIpData} from "../core/ipdb";
 
-/**
- * 가짜 IP·밴 DB 서버 (dcrefresher.green1052.com). 크로미엄은 context.route가 서비스 워커 요청도 가로채 배경이 이것을 받는다.
- * ip.json은 가짜 목록의 유동 ㅇㅇ(1.2) 대역에 통신사 하나만 둔다.
- */
+/** 가짜 IP, 밴 DB 서버. Chromium은 route가 서비스 워커 요청도 가로채 배경이 이것을 받는다. */
 export class FakeIpDb {
     readonly version = "2026-01-01T00:00";
 

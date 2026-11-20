@@ -14,7 +14,7 @@ const CHECKBOX_ROW = `${WRITER_ROW_SELECTOR}, .cmt_nickbox`;
 
 const GIF_VIDEO = ".gallview_contents video";
 
-/** GIF 조작을 건 영상의 원래 onmousedown(없으면 null). 설정·모듈을 끌 때 되돌린다. */
+/** GIF 조작을 건 영상의 원래 onmousedown(없으면 null). 설정, 모듈을 끌 때 되돌린다. */
 const gifOriginals = new WeakMap<HTMLVideoElement, string | null>();
 
 const enableGifControl = (element: Element): void => {
@@ -52,8 +52,8 @@ export default defineModule(meta, {
             if (ctx.settings.enableGifControl) enableGifControl(element);
         });
 
-        // ===== 글 보기: 이미지 출처·같은 제목 찾기 =====
-        // 본문·첨부 목록까지 읽은 뒤에 한 번 그린다. 필터로 걸면 머리를 읽는 순간 불려 본문이 아직 없다.
+        // ===== 글 보기: 이미지 출처, 같은 제목 찾기 =====
+        // 본문, 첨부 목록까지 읽은 뒤에 한 번 그린다. 필터로 걸면 머리를 읽는 순간 불려 본문이 아직 없다.
         whenDomReady(() => renderViewTools(ctx.settings), ctx.signal);
         // 필터는 등록할 때와 요소가 새로 붙을 때만 돌므로, 이미 열린 글의 영상은 설정이 바뀔 때 여기서 바꾸고 되돌린다.
         ctx.onSettingsChanged((keys) => {
@@ -97,8 +97,7 @@ export default defineModule(meta, {
                     }
                 }, {signal: ctx.signal});
 
-                // 왼쪽 버튼을 누른 채 지나간 칸만 체크한다. 그냥 지나가도 체크하면 Shift+클릭이 방금 체크된 칸을 도로 푼다.
-                // 드래그를 시작한 칸은 누르기 전에 들어왔으므로 떠날 때(mouseout) 체크한다.
+                // 왼쪽 버튼을 누른 채 지나간 칸만 체크한다. 그냥 지나가도 체크하면 Shift+클릭이 도로 푼다.
                 const checkOnDrag = (ev: MouseEvent): void => {
                     if (ctx.settings.checkViaShift && ev.shiftKey && ev.buttons === 1) element.checked = true;
                 };

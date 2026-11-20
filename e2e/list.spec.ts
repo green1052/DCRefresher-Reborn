@@ -45,7 +45,6 @@ test.describe("글 목록", () => {
         await expect(page).toHaveURL(/\/board\/lists\/\?id=test&page=2$/);
         await expect(listPage.rows).toHaveCount(1);
         await expect(listPage.row(51)).toContainText("2쪽 첫 글");
-        // 페이징 박스도 받은 페이지 것으로 바뀐다.
         await expect(listPage.paging.locator("em")).toHaveText("2");
         // 바꾼 행에 디시 자체 차단과 메모 배지를 다시 건다 (콘텐츠 스크립트 → 페이지 이벤트). 처음 그릴 때 부른 block:test 뒤에 한 번씩 더 불린다.
         await expect.poll(() => page.evaluate("window.e2eListScripts.join()")).toBe("block:test,block:test,memo");
@@ -167,13 +166,6 @@ test.describe("스텔스 모드", () => {
     });
 });
 
-test.describe("임시 차단", () => {
-    test("디시가 빈 페이지를 주면 미리보기가 없는 페이지에서도 오버레이로 알린다", async ({page}) => {
-        await page.goto("https://gall.dcinside.com/board/write/?id=test");
-        await expect(page.locator("refresher-root [data-slot=toast]")).toContainText("잠시 접속을 막았습니다");
-    });
-});
-
 test.describe("작성자 검색", () => {
     test("아이디로 거르면 그 사람의 글만 남기고, 다음 쪽도 이어 보며, 페이징 링크에 거르기를 남긴다", async ({page, storage}) => {
         await storage.setModules({search: true});
@@ -188,16 +180,19 @@ test.describe("작성자 검색", () => {
         await expect(page.locator(".bottom_paging_box a").first()).toHaveAttribute("href", /rf_uid=user1/);
     });
 
-    test("유저 메뉴의 아이디/IP 검색은 글쓴이 검색에 IP 거르기를 얹고, 닉네임 검색은 닉네임으로만 찾는다", async ({listPage, storage}) => {
+    test("유저 메뉴의 작성글 검색은 반고닉은 아이디로, 유동은 IP 거르기를 얹는다", async ({listPage, storage, page}) => {
         await storage.setModules({search: true});
-        const {page} = listPage;
         await page.reload();
+
+        // 유동(ㅇㅇ)은 IP 거르기로 찾는다.
         await listPage.writer(2).click({button: "right"});
-        await listPage.bubble.getByRole("button", {name: "아이디/IP(으)로 글 검색"}).click();
+        await listPage.bubble.getByRole("button", {name: "작성글 검색"}).click();
         await expect(page).toHaveURL(/s_type=search_name&s_keyword=%E3%85%87%E3%85%87&rf_ip=1\.2/);
 
-        await listPage.writer(2).click({button: "right"});
-        await listPage.bubble.getByRole("button", {name: "닉네임(으)로 글 검색"}).click();
-        await expect(page).toHaveURL(/s_type=search_name&s_keyword=%E3%85%87%E3%85%87$/);
+        // 고닉은 아이디 거르기로 찾는다.
+        await page.goto("https://gall.dcinside.com/board/lists/?id=test");
+        await listPage.writer(1).click({button: "right"});
+        await listPage.bubble.getByRole("button", {name: "작성글 검색"}).click();
+        await expect(page).toHaveURL(/s_type=search_name&s_keyword=%EA%B3%A0%EB%8B%89&rf_uid=user1/);
     });
 });

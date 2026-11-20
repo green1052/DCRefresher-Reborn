@@ -15,7 +15,7 @@ const row = (no: string, {title = `글 ${no}`, count = 1, replies = 0, notice = 
     `<td class="gall_tit"><a href="/board/view/?id=test&no=${no}">${title}</a><a class="reply_numbox"><span class="reply_num">[${replies}]</span></a></td>` +
     `<td class="gall_count">${count}</td><td class="gall_recommend">0</td></tr>`;
 
-/** 번호 없는 설문·AD 행. */
+/** 번호 없는 설문, AD 행. */
 const adRow = (label: string): string => `<tr class="ub-content"><td class="gall_num">${label}</td><td class="gall_tit">광고</td></tr>`;
 
 const tbody = (rows: string[], head = "<th>번호</th>"): HTMLElement => {
@@ -53,7 +53,7 @@ describe("replaceList", () => {
         expect(nos(list)).toEqual(["n", "5", "4", "3", "2"]);
         expect(added.map((element) => element.dataset.no)).toEqual(["5", "4"]);
         expect(changed).toBe(true);
-        // 그대로인 행은 같은 요소로 남는다 (hover·리스너 유지).
+        // 그대로인 행은 같은 요소로 남는다 (hover, 리스너 유지).
         expect(list.children[0]).toBe(notice);
         expect(list.children[3]).toBe(three);
         expect(list.children[4]).toBe(two);
@@ -96,7 +96,7 @@ describe("replaceList", () => {
         expect(list.children[1]).toBe(second);
     });
 
-    it("페이지가 처음 그린 행은 제목·작성자가 같으면 첫 교체에서도 그대로 두고, 제목이 바뀌었으면 갈아끼운다", () => {
+    it("페이지가 처음 그린 행은 제목, 작성자가 같으면 첫 교체에서도 그대로 두고, 제목이 바뀌었으면 갈아끼운다", () => {
         const list = tbody([row("2"), row("1")]);
         document.body.append(list.closest("table")!);
         const [second, first] = list.children;
@@ -105,7 +105,7 @@ describe("replaceList", () => {
         expect(list.children[1]).not.toBe(first);
     });
 
-    it("페이지가 처음 그린 행에 댓글이 처음 달리거나 다 지워지면 조회·추천 칸이 밀리지 않게 갈아끼운다", () => {
+    it("페이지가 처음 그린 행에 댓글이 처음 달리거나 다 지워지면 조회, 추천 칸이 밀리지 않게 갈아끼운다", () => {
         // 디시는 댓글이 없으면 댓글 수 칸을 그리지 않는다.
         const noReplies = (no: string) => row(no, {count: 7}).replace(/<a class="reply_numbox">.*?<\/a>/, "");
         const list = tbody([noReplies("2"), row("1", {replies: 2})]);
@@ -209,7 +209,6 @@ describe("replaceList", () => {
             kept.classList.add("refresherNewPost");
             kept.style.animationDelay = "50ms";
             replaceList(current(), tbody([row("3"), row("1"), row("0")]), KEEP);
-            // 남긴 행은 등장 효과를 다시 재생하지 않는다.
             expect(kept.classList.contains("refresherNewPost")).toBe(false);
             expect(kept.style.animationDelay).toBe("");
             expect(nos(current())).toEqual(["3", "2", "1"]);
@@ -284,13 +283,11 @@ describe("replaceList", () => {
             const kept = list.querySelector("[data-no='2']");
             expect(kept?.classList.contains("refresherDeleted")).toBe(true);
 
-            // 같은 목록을 다시 받으면 남긴 행은 그대로 두고 아무것도 갈아끼우지 않는다.
             const {changed} = replaceList(list, tbody([row("3", {count: 9}), row("1"), row("0")]), KEEP);
             expect(changed).toBe(false);
             expect(current()).toBe(list);
             expect(list.querySelector("[data-no='2']")).toBe(kept);
 
-            // 새 글이 들어오면 남긴 행이 한 칸 내려가고 맨 아래 행이 밀려난다.
             replaceList(list, tbody([row("4"), row("3"), row("1")]), KEEP);
             expect(current()).toBe(list);
             expect(nos(list)).toEqual(["4", "3", "2"]);
@@ -306,7 +303,6 @@ describe("isWholeFirstPage", () => {
         expect(isWholeFirstPage("https://gall.dcinside.com/board/lists/?id=test&page=2")).toBe(false);
         expect(isWholeFirstPage("https://gall.dcinside.com/board/lists/?id=test&exception_mode=recommend")).toBe(false);
         expect(isWholeFirstPage("https://gall.dcinside.com/board/lists/?id=test&search_head=10")).toBe(false);
-        // 작성자 거르기는 다음 쪽 글을 이어 붙인다.
         expect(isWholeFirstPage("https://gall.dcinside.com/board/lists/?id=test&rf_ip=1.2")).toBe(false);
     });
 });

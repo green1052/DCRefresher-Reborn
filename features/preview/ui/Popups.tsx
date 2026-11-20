@@ -1,28 +1,23 @@
-import {ArrowBigUpDash, Ban, Megaphone, Star, Trash2} from "lucide-react";
-import {type ReactNode, useEffect, useId, useRef, useState} from "react";
+import {ArrowBigUpDash, Ban, Megaphone, Star, Trash2} from "lucide-preact";
+import { useEffect, useId, useRef, useState } from "preact/hooks";
+import { type ComponentChild as ReactNode } from "preact";
 
-import {DialogActions, ModalDialog, SubmitForm} from "@/components/dialogs";
-import {Button} from "@/components/ui/button";
-import {Checkbox} from "@/components/ui/checkbox";
-import {DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dialog";
-import {Field, FieldLabel} from "@/components/ui/field";
-import {Input} from "@/components/ui/input";
-import {Kbd} from "@/components/ui/kbd";
-import {RadioGroup, RadioGroupItem} from "@/components/ui/radio-group";
-import {Spinner} from "@/components/ui/spinner";
+import {DialogActions, DialogDescription, DialogHeader, DialogTitle, ModalDialog, SubmitForm} from "@/components/dialogs";
 import {sendMessage, TURNSTILE_CANCEL_EVENT, TURNSTILE_HOST} from "@/core/messaging/protocol";
 import {useContentModuleSettings} from "@/core/module/useModuleSettings";
 import {BLOCK_DAYS, BLOCK_REASONS, type BlockDay, type BlockReason} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
+import {cn} from "cn";
 import {createDoublePress} from "@/utils/doublePress";
-import {focusOnMount} from "@/utils/focus";
 import {objectEntries} from "@/utils/typed";
 
 import {DcconInfoPopup} from "./DcconInfoPopup";
 import {ImageViewer} from "./ImageViewer";
 import {MANAGE_LABELS, type ManageKind, type TurnstilePrompt, usePreviewStore} from "./previewStore";
 
-/** 고를 수 있는 값만 onChange로 넘긴다 (RadioGroup은 unknown을 준다). */
+// 붙을 때 포커스한다 (ref 콜백). autoFocus는 처음 마운트에만 붙으므로 나중에 나타나는 입력칸에 쓴다.
+const focusOnMount = (element: HTMLElement | null): void => element?.focus();
+
 const RadioGrid = <T extends string, >({label, items, value, onChange}: {
     label: string;
     items: readonly (readonly [T, string])[];
@@ -31,17 +26,14 @@ const RadioGrid = <T extends string, >({label, items, value, onChange}: {
 }) => {
     const id = useId();
     return (
-        <RadioGroup value={value} aria-label={label} className="grid-cols-3" onValueChange={(next) => {
-            const found = items.find(([item]) => item === next);
-            if (found) onChange(found[0]);
-        }}>
+        <div role="radiogroup" aria-label={label} className="grid grid-cols-3 gap-x-2 gap-y-1.5">
             {items.map(([item, text]) => (
-                <Field key={item} orientation="horizontal">
-                    <RadioGroupItem id={`${id}-${item}`} value={item}/>
-                    <FieldLabel htmlFor={`${id}-${item}`} className="font-normal">{text}</FieldLabel>
-                </Field>
+                <label key={item} className="flex cursor-pointer items-center gap-2">
+                    <input type="radio" name={id} checked={value === item} onChange={() => onChange(item)} className="radio radio-sm"/>
+                    <span className="text-sm leading-snug font-normal">{text}</span>
+                </label>
             ))}
-        </RadioGroup>
+        </div>
     );
 };
 
@@ -54,7 +46,6 @@ const BlockPopup = ({comments}: { comments?: string[] }) => {
     const [delChk, setDelChk] = useState(false);
     const [userTypeChk, setUserTypeChk] = useState(false);
     const [sending, setSending] = useState(false);
-    const id = useId();
 
     const submit = async (): Promise<void> => {
         // 연타로 차단 요청이 두 번 가지 않게 한다.
@@ -72,7 +63,7 @@ const BlockPopup = ({comments}: { comments?: string[] }) => {
     };
 
     return (
-        <ModalDialog onClose={() => usePreviewStore.setState({blockPopup: false})} className="sm:max-w-[440px]" focusOnOpen="keyboard">
+        <ModalDialog onClose={() => usePreviewStore.setState({blockPopup: false})} className="sm:max-w-110" focusOnOpen="keyboard">
             <DialogHeader>
                 <DialogTitle>{comments ? `댓글 작성자 차단 (${comments.length}개)` : "유저 차단"}</DialogTitle>
             </DialogHeader>
@@ -86,32 +77,33 @@ const BlockPopup = ({comments}: { comments?: string[] }) => {
                 <p className="font-bold">사유</p>
                 <RadioGrid label="사유" items={BLOCK_REASONS} value={reason} onChange={setReason}/>
                 {reason === "0" && (
-                    <Input
+                    <input
+                        className="input w-full"
                         value={custom}
                         aria-label="차단 사유"
                         placeholder="차단 사유 직접 입력 (한글 20자 이내)"
                         maxLength={20}
                         ref={focusOnMount}
-                        onChange={(ev) => setCustom(ev.target.value)}
+                        onInput={(ev) => setCustom(ev.currentTarget.value)}
                     />
                 )}
             </div>
 
             <div className="flex flex-col gap-2">
-                <Field orientation="horizontal">
-                    <Checkbox id={`${id}-del`} checked={delChk} onCheckedChange={setDelChk}/>
-                    <FieldLabel htmlFor={`${id}-del`} className="font-normal">{comments ? "선택한 댓글 삭제" : "선택한 글 삭제"}</FieldLabel>
-                </Field>
-                <Field orientation="horizontal">
-                    <Checkbox id={`${id}-ip`} checked={userTypeChk} onCheckedChange={setUserTypeChk}/>
-                    <FieldLabel htmlFor={`${id}-ip`} className="font-normal">식별 코드 차단 시 IP 동시 차단</FieldLabel>
-                </Field>
+                <label className="flex items-center gap-3">
+                    <input type="checkbox" className="checkbox" checked={delChk} onChange={(ev) => setDelChk(ev.currentTarget.checked)}/>
+                    <span className="text-sm leading-snug font-normal">{comments ? "선택한 댓글 삭제" : "선택한 글 삭제"}</span>
+                </label>
+                <label className="flex items-center gap-3">
+                    <input type="checkbox" className="checkbox" checked={userTypeChk} onChange={(ev) => setUserTypeChk(ev.currentTarget.checked)}/>
+                    <span className="text-sm leading-snug font-normal">식별 코드 차단 시 IP 동시 차단</span>
+                </label>
             </div>
 
             <DialogActions>
-                <Button variant="destructive" disabled={sending} onClick={() => void submit()}>
-                    {sending && <Spinner aria-hidden data-icon="inline-start"/>}차단
-                </Button>
+                <button type="button" className="btn btn-error" disabled={sending} onClick={() => void submit()}>
+                    {sending && <span aria-hidden className="loading loading-spinner"/>}차단
+                </button>
             </DialogActions>
         </ModalDialog>
     );
@@ -132,7 +124,7 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
                 captcha.resolve("");
                 usePreviewStore.setState({captcha: null});
             }}
-            className="sm:max-w-[320px]"
+            className="sm:max-w-80"
             focusOnOpen={input}
         >
             <DialogHeader>
@@ -140,15 +132,16 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
             </DialogHeader>
             <img src={captcha.url} alt="자동입력 방지 코드" className="block w-full rounded-lg"/>
             <SubmitForm onSubmit={send}>
-                <Input
+                <input
                     ref={input}
+                    className="input w-full"
                     value={code}
                     aria-label="자동입력 방지 코드"
                     placeholder="자동입력 방지 코드"
-                    onChange={(ev) => setCode(ev.target.value)}
+                    onInput={(ev) => setCode(ev.currentTarget.value)}
                 />
                 <DialogActions>
-                    <Button type="submit" disabled={!code.trim()}>전송</Button>
+                    <button type="submit" className="btn btn-primary" disabled={!code.trim()}>전송</button>
                 </DialogActions>
             </SubmitForm>
         </ModalDialog>
@@ -168,7 +161,7 @@ const TurnstilePopup = ({turnstile}: { turnstile: TurnstilePrompt }) => {
         void sendMessage("refresher:turnstileToken", {config: turnstile.config, visible: true}).catch(() => undefined).then((result) => {
             done = true;
             turnstile.resolve(result);
-            usePreviewStore.setState((state) => (state.turnstile === turnstile ? {turnstile: null} : {}));
+            usePreviewStore.setState((state) => (state.turnstile === turnstile ? {turnstile: null} : state));
         });
         return () => {
             if (!done) element?.dispatchEvent(new Event(TURNSTILE_CANCEL_EVENT));
@@ -181,14 +174,14 @@ const TurnstilePopup = ({turnstile}: { turnstile: TurnstilePrompt }) => {
                 turnstile.resolve(undefined);
                 usePreviewStore.setState({turnstile: null});
             }}
-            className="sm:max-w-[360px]"
+            className="sm:max-w-90"
         >
             <DialogHeader>
                 <DialogTitle>보안 확인</DialogTitle>
                 <DialogDescription>체크박스를 누르면 댓글을 보냅니다.</DialogDescription>
             </DialogHeader>
             {/* 위젯(300×65)이 뜨기 전에도 자리를 잡아 둔다. */}
-            <div ref={host} {...{[TURNSTILE_HOST]: ""}} className="flex min-h-[65px] justify-center"/>
+            <div ref={host} {...{[TURNSTILE_HOST]: ""}} className="flex min-h-16.25 justify-center"/>
             <DialogActions/>
         </ModalDialog>
     );
@@ -213,7 +206,7 @@ interface AdminAction {
 /**
  * 관리 권한이 있을 때 미리보기를 연 동안 화면 왼쪽 가장자리에 붙는 관리 패널.
  * 차단 버튼은 차단 키 두 번(프리셋으로 즉시 차단)과 달리 옵션 창을 연다. 나머지는 두 번 눌러야 실행하고, 첫 번째는 토스트로 알린다.
- * Frame이 미리보기 포털 안에 그린다. 나중에 뜬 창(차단·메모 등)이 패널 위를 덮어야
+ * Frame이 미리보기 포털 안에 그린다. 나중에 뜬 창(차단, 메모 등)이 패널 위를 덮어야
  * 한 번 클릭에 창 닫기와 관리 동작이 같이 일어나지 않는다.
  */
 export const AdminPanel = () => {
@@ -225,13 +218,13 @@ export const AdminPanel = () => {
     // 두 번 누르기 확인 상태. 바뀌어도 다시 그릴 필요가 없어 ref에 둔다.
     const confirmPress = useRef(createDoublePress(CONFIRM_WINDOW)).current;
 
-    // key는 고정된 id로 준다. 라벨을 key로 쓰면 공지·개념글을 토글할 때 버튼이 새로 마운트돼 포커스가 사라진다.
+    // key는 고정된 id로 준다. 라벨을 key로 쓰면 공지, 개념글을 토글할 때 버튼이 새로 마운트돼 포커스가 사라진다.
     const actions: AdminAction[] = [
-        {id: "notice", label: notice ? "공지 해제" : "공지 등록", confirm: MANAGE_LABELS.notice[notice ? 1 : 0], icon: <Megaphone data-icon="inline-start"/>, active: notice, run: () => requestManage("notice")},
-        {id: "recommend", label: recommend ? "개념글 해제" : "개념글 등록", confirm: MANAGE_LABELS.recommend[recommend ? 1 : 0], icon: <Star data-icon="inline-start"/>, active: recommend, run: () => requestManage("recommend")},
-        {id: "bump", label: "끌올", confirm: "게시글을 끌올", icon: <ArrowBigUpDash data-icon="inline-start"/>, run: () => requestManage("bump")},
-        {id: "block", label: "차단", hint: keys?.block, icon: <Ban data-icon="inline-start"/>, danger: true, instant: true, run: () => usePreviewStore.setState({blockPopup: "post"})},
-        {id: "delete", label: "삭제", confirm: "게시글을 삭제", hint: keys?.delete, icon: <Trash2 data-icon="inline-start"/>, danger: true, run: () => requestManage("delete")}
+        {id: "notice", label: notice ? "공지 해제" : "공지 등록", confirm: MANAGE_LABELS.notice[notice ? 1 : 0], icon: <Megaphone className="size-4"/>, active: notice, run: () => requestManage("notice")},
+        {id: "recommend", label: recommend ? "개념글 해제" : "개념글 등록", confirm: MANAGE_LABELS.recommend[recommend ? 1 : 0], icon: <Star className="size-4"/>, active: recommend, run: () => requestManage("recommend")},
+        {id: "bump", label: "끌올", confirm: "게시글을 끌올", icon: <ArrowBigUpDash className="size-4"/>, run: () => requestManage("bump")},
+        {id: "block", label: "차단", hint: keys?.block, icon: <Ban className="size-4"/>, danger: true, instant: true, run: () => usePreviewStore.setState({blockPopup: "post"})},
+        {id: "delete", label: "삭제", confirm: "게시글을 삭제", hint: keys?.delete, icon: <Trash2 className="size-4"/>, danger: true, run: () => requestManage("delete")}
     ];
 
     const press = ({id, label, confirm, instant, run}: AdminAction): void => {
@@ -250,22 +243,22 @@ export const AdminPanel = () => {
     };
 
     return (
-        <div className="pointer-events-auto fixed top-[20%] left-0 w-[150px] rounded-r-xl bg-card p-2 text-card-foreground shadow-md ring-1 ring-foreground/10 duration-150 animate-in fade-in">
-            <p className="mb-2 ml-1 text-xs font-medium text-muted-foreground">관리</p>
+        <div className="pointer-events-auto fixed top-[20%] left-0 w-37.5 rounded-r-xl bg-base-100 p-2 text-base-content shadow-md ring-1 ring-base-content/10 duration-150 animate-in fade-in">
+            <p className="mb-2 ml-1 text-xs font-medium text-base-content/60">관리</p>
             <div className="flex flex-col gap-1">
                 {actions.map((action) => (
-                    <Button
+                    <button
+                        type="button"
                         key={action.id}
-                        variant={action.danger ? "destructive" : action.active ? "default" : "secondary"}
-                        className="justify-start"
+                        className={cn("btn justify-start", action.danger ? "btn-error" : action.active ? "btn-primary" : "")}
                         // 눌러도 포커스를 가져가지 않는다. 첫 클릭 뒤 스페이스로 스크롤하면 포커스된 버튼이 눌려 두 번째 확인이 된다.
                         onMouseDown={(ev) => ev.preventDefault()}
                         onClick={() => press(action)}
                     >
                         {action.icon}
                         <span className="flex-1 text-left">{action.label}</span>
-                        {action.hint && <Kbd>{action.hint}</Kbd>}
-                    </Button>
+                        {action.hint && <kbd className="kbd kbd-xs">{action.hint}</kbd>}
+                    </button>
                 ))}
             </div>
         </div>

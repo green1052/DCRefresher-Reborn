@@ -1,7 +1,6 @@
-import {CircleAlert, ExternalLink} from "lucide-react";
+import {CircleAlert, ExternalLink} from "lucide-preact";
 
-import {Alert, AlertDescription} from "@/components/ui/alert";
-import {Button} from "@/components/ui/button";
+import {cn} from "cn";
 
 import {type ErrorState, usePreviewStore} from "./previewStore";
 
@@ -9,14 +8,14 @@ import {type ErrorState, usePreviewStore} from "./previewStore";
 export const ErrorBlock = ({error}: { error: ErrorState }) => {
     const preData = usePreviewStore((s) => s.preData);
     const {detail, status, adult, secret} = error;
-    // 성인 인증·비밀글 비밀번호는 원문 페이지에서만 된다. 원문에서 푼 뒤 다시 시도하면 미리보기로 볼 수 있다.
+    // 성인 인증, 비밀글 비밀번호는 원문 페이지에서만 된다. 원문에서 푼 뒤 다시 시도하면 미리보기로 볼 수 있다.
     const original = adult || secret;
     // 삭제된 글은 다시 받아도 같다.
     const deleted = status === 404;
     const limited = status === 403 || status === 429;
 
     let text: string;
-    // 원문 열기 버튼. 원문에서만 풀 수 있는 글과, 원문에서 확인하라고 안내하는 읽지 못한 글(로그인이 필요한 글·옮긴 글 등)에 둔다.
+    // 원문 열기 버튼. 원문에서만 풀 수 있는 글과, 원문에서 확인하라고 안내하는 읽지 못한 글(로그인이 필요한 글, 옮긴 글 등)에 둔다.
     let showOriginal = original;
     if (adult) text = "성인 인증이 필요한 글입니다. 원문에서 확인해 주세요.";
     else if (secret) text = "비밀글입니다. 원문에서 비밀번호를 입력해 주세요.";
@@ -30,30 +29,32 @@ export const ErrorBlock = ({error}: { error: ErrorState }) => {
     }
 
     return (
-        <Alert variant={original ? "default" : "destructive"} className={original ? "my-4 text-amber-700 dark:text-amber-400" : "my-4"}>
+        <div role="alert" className={cn(
+            "alert my-4 w-full",
+            original ? "alert-warning alert-soft" : "alert-error alert-soft"
+        )}>
             <CircleAlert/>
-            <AlertDescription className="text-current">
+            <div data-slot="alert-description">
                 {text}
                 <div className="mt-2 flex gap-2">
                     {showOriginal && (
-                        <Button size="sm" variant="secondary" nativeButton={false}
-                                render={<a href={preData?.link ?? location.href} target="_blank" rel="noreferrer"/>}>
-                            <ExternalLink data-icon="inline-start"/>
+                        <a className="btn btn-sm" href={preData?.link ?? location.href} target="_blank" rel="noreferrer">
+                            <ExternalLink className="size-4"/>
                             원문 열기
-                        </Button>
+                        </a>
                     )}
                     {!deleted && (
-                        <Button
-                            size="sm"
-                            variant={original ? "secondary" : "destructive"}
+                        <button
+                            type="button"
+                            className={cn("btn btn-sm", original ? "" : "btn-error")}
                             // 같은 글을 다시 열면 컨트롤러가 제자리에서 다시 받는다.
                             onClick={() => preData && usePreviewStore.getState().requestOpen(preData, usePreviewStore.getState().commentsOnly)}
                         >
                             다시 시도
-                        </Button>
+                        </button>
                     )}
                 </div>
-            </AlertDescription>
-        </Alert>
+            </div>
+        </div>
     );
 };

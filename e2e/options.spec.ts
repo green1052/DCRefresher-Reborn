@@ -12,7 +12,6 @@ test.describe("옵션 - 설정 탭", () => {
         const options = await openOptions(page, extensionId, "general");
         await expect(options.card("글 목록 새로고침")).toBeVisible();
         expect(await options.cards.count()).toBeGreaterThanOrEqual(10);
-        // 범위 설정마다 손잡이가 하나다.
         await expect(page.getByRole("slider", {name: "새로고침 주기", exact: true})).toHaveCount(1);
 
         const stealth = page.getByRole("switch", {name: "스텔스 모드 사용", exact: true});
@@ -37,7 +36,6 @@ test.describe("옵션 - 설정 탭", () => {
         await expect(card.getByRole("switch", {name: "검색 사용", exact: true})).not.toBeChecked();
         await expect(slider).toBeVisible();
         await expect(card.getByText("모듈을 켜야 적용됩니다.")).toBeVisible();
-        // 맞은 글자(설정 이름)를 칠한다.
         await expect.poll(() => page.evaluate(() => [...CSS.highlights.get("refresher-search") ?? []].map(String))).toEqual(["최대 다음 검색"]);
 
         await search.fill("없는 설정");
@@ -61,7 +59,6 @@ test.describe("옵션 - 설정 탭", () => {
         await expect(fadeIn).not.toBeChecked();
         await expect.poll(() => storage.get("refresher:module:refresh:settings")).toEqual({fadeIn: false});
 
-        // 키보드로 되돌리면 사라진 버튼 대신 그 설정의 컨트롤로 포커스가 간다.
         await reset.focus();
         await page.keyboard.press("Enter");
         await expect(fadeIn).toBeChecked();
@@ -76,7 +73,6 @@ test.describe("옵션 - 설정 탭", () => {
         await order.getByRole("button", {name: "메모 위로", exact: true}).focus();
         await page.keyboard.press("Enter");
         await expect.poll(() => storage.get("refresher:module:userinfo:settings")).toEqual({badgeOrder: ["MEMO", "UID", "RATIO", "PERMBAN"]});
-        // 맨 위로 와 '위로'가 막혔으니 같은 항목의 '아래로'로 옮긴다.
         await expect(order.getByRole("button", {name: "메모 아래로", exact: true})).toBeFocused();
     });
 
@@ -98,37 +94,28 @@ test.describe("옵션 - 설정 탭", () => {
 test.describe("옵션 - 차단 탭", () => {
     test("항목을 추가하면 표에 보이고 저장소에 남는다", async ({page, extensionId, storage}) => {
         const options = await openOptions(page, extensionId, "block");
-        await expect(page.getByText("기본 차단 모드")).toBeVisible();
-        // 모드마다 무엇을 가리는지 적는다. 불일치·불포함은 나머지를 모두 가린다고 알린다.
-        const defaultMode = page.getByRole("combobox", {name: "기본 차단 모드", exact: true});
-        await expect(defaultMode).toHaveAccessibleDescription("모드가 '기본값'인 항목에 씁니다. 값과 똑같으면 가립니다.");
+        await expect(page.getByText("기본 모드")).toBeVisible();
+        await expect(page.getByRole("button", {name: "값과 똑같으면 가립니다."})).toBeVisible();
 
         await page.getByRole("button", {name: "추가", exact: true}).click();
         const {dialog} = options;
-        // 차단 모드의 '기본값'은 고른 값으로 보인다 (빈 값이 자리표시자로 흐려지지 않는다).
         const mode = dialog.getByRole("combobox", {name: "차단 모드", exact: true});
         await expect(mode).not.toHaveAttribute("data-placeholder");
-        await expect(mode).toHaveAccessibleDescription("기본 차단 모드(일치): 값과 똑같으면 가립니다.");
         const input = dialog.getByPlaceholder("닉네임 값을 입력해 주세요");
         await expect(input).toBeFocused();
         await input.fill("차단닉");
-        // 다른 모드를 골랐다가 '기본값'으로 되돌리면 모드 없이 저장된다.
-        await mode.click();
-        await page.getByRole("option", {name: "포함", exact: true}).click();
-        await expect(mode.getByText("포함", {exact: true})).toBeVisible();
-        await expect(mode).toHaveAccessibleDescription("값이 들어 있으면 가립니다.");
-        await mode.click();
-        await page.getByRole("option", {name: "불일치", exact: true}).click();
-        await expect(mode).toHaveAccessibleDescription(/나머지를 모두 가립니다/);
-        await mode.click();
-        await page.getByRole("option", {name: "기본값", exact: true}).click();
+        // native select는 option이 닫혀 있어 hidden이므로 값으로 고른다.
+        await mode.selectOption("CONTAIN");
+        await expect(mode).toHaveValue("CONTAIN");
+        await mode.selectOption("NOT_SAME");
+        await mode.selectOption("");
         await dialog.getByRole("button", {name: "추가", exact: true}).click();
 
         await expect(options.table.getByText("차단닉", {exact: true})).toBeVisible();
         await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([{id: expect.any(String), content: "차단닉", isRegex: false}]);
     });
 
-    test("틀린 정규식과 64자가 아닌 이미지 해시는 저장하지 않고 알리며, 이미지 해시는 소문자로 저장한다", async ({page, extensionId, storage}) => {
+    test("틀린 정규식은 저장하지 않고 알린다", async ({page, extensionId, storage}) => {
         const {dialog} = await openOptions(page, extensionId, "block");
         const alert = dialog.getByRole("alert");
 
@@ -139,29 +126,12 @@ test.describe("옵션 - 차단 탭", () => {
         await expect(alert).toContainText("정규식이 올바르지 않습니다");
         await page.keyboard.press("Escape");
         await expect(dialog).toHaveCount(0);
-
-        await page.getByRole("tab", {name: /^이미지/}).click();
-        // 탭이 바뀌는 동안은 앞 탭의 추가 버튼도 잠깐 남는다. 하나만 남은 뒤 누른다.
-        const add = page.getByRole("button", {name: "추가", exact: true});
-        await expect(add).toHaveCount(1);
-        await add.click();
-        const input = dialog.getByPlaceholder("이미지 값을 입력해 주세요");
-        // 이미지 값은 파일 해시라 정규식을 고르지 않는다.
-        await expect(dialog.getByRole("checkbox", {name: "정규식", exact: true})).toHaveCount(0);
-        await input.fill("A".repeat(63));
-        await dialog.getByRole("button", {name: "추가", exact: true}).click();
-        await expect(alert).toContainText("16진수 64자");
-        // 파일 해시는 소문자 16진수라 대문자로 넣어도 소문자로 저장한다.
-        await input.fill("A".repeat(64));
-        await dialog.getByRole("button", {name: "추가", exact: true}).click();
-        await expect.poll(() => storage.get("refresher:block:IMAGE")).toEqual([{id: expect.any(String), content: "a".repeat(64), isRegex: false}]);
         expect(await storage.get("refresher:block:NICK")).toBeUndefined();
     });
 
-    test("같은 값·갤러리 항목은 추가하지 않고, 자기 항목은 값 그대로 수정하며, 이미지 값을 바꿔야 비슷한 이미지 지문을 버린다", async ({page, extensionId, storage}) => {
+    test("같은 값, 갤러리 항목은 추가하지 않고, 자기 항목은 값 그대로 수정한다", async ({page, extensionId, storage}) => {
         const nick = {id: "a", content: "있는닉", isRegex: false, gallery: "g1"};
-        const image = {id: "i", content: "a".repeat(64), isRegex: false, similar: "0".repeat(32), frames: ["1".repeat(32)]};
-        await storage.set({"refresher:block:NICK": [nick], "refresher:block:IMAGE": [image]});
+        await storage.set({"refresher:block:NICK": [nick]});
         const {dialog, table} = await openOptions(page, extensionId, "block");
 
         await page.getByRole("button", {name: "추가", exact: true}).click();
@@ -173,21 +143,9 @@ test.describe("옵션 - 차단 탭", () => {
         await expect(dialog).toHaveCount(0);
 
         await table.getByText("있는닉", {exact: true}).click();
-        await dialog.getByRole("combobox", {name: "차단 모드", exact: true}).click();
-        await page.getByRole("option", {name: "포함", exact: true}).click();
+        await dialog.getByRole("combobox", {name: "차단 모드", exact: true}).selectOption("CONTAIN");
         await dialog.getByRole("button", {name: "수정", exact: true}).click();
         await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([{...nick, mode: "CONTAIN"}]);
-
-        await page.getByRole("tab", {name: /^이미지/}).click();
-        await table.getByText(image.content, {exact: true}).click();
-        await dialog.getByRole("button", {name: "수정", exact: true}).click();
-        await expect(dialog).toHaveCount(0);
-        expect(await storage.get("refresher:block:IMAGE")).toEqual([image]);
-
-        await table.getByText(image.content, {exact: true}).click();
-        await dialog.getByPlaceholder("이미지 값을 입력해 주세요").fill("b".repeat(64));
-        await dialog.getByRole("button", {name: "수정", exact: true}).click();
-        await expect.poll(() => storage.get("refresher:block:IMAGE")).toEqual([{id: "i", content: "b".repeat(64), isRegex: false}]);
     });
 
     test("줄의 휴지통은 항목 이름을 달고, 확인해야 그 항목만 지운다", async ({page, extensionId, storage}) => {
@@ -195,7 +153,6 @@ test.describe("옵션 - 차단 탭", () => {
         const {table, alert, dialog} = await openOptions(page, extensionId, "block");
         const remove = table.getByRole("button", {name: "지울닉 삭제", exact: true});
 
-        // 취소하면 지우지 않고 포커스가 휴지통으로 돌아온다. 편집 창도 열리지 않는다.
         await remove.click();
         await expect(alert).toContainText("\"지울닉\" 삭제할까요?");
         await alert.getByRole("button", {name: "취소", exact: true}).click();
@@ -212,26 +169,6 @@ test.describe("옵션 - 차단 탭", () => {
         await expect(page.getByRole("tabpanel")).toBeFocused();
     });
 
-    test("삭제 알림의 되돌리기는 지운 항목을 id 그대로 원래 자리에 되살리고 사용 기록도 지킨다", async ({page, extensionId, storage}) => {
-        const list = [{id: "a", content: "가닉", isRegex: false}, {id: "b", content: "나닉", isRegex: false}, {id: "c", content: "다닉", isRegex: false}];
-        const old = Date.now() - 200 * 24 * 60 * 60 * 1000;
-        const usage = {block: {a: old, b: old, c: old}, memo: {}};
-        await storage.set({"refresher:block:NICK": list, "refresher:usage": usage});
-        const {table, alert, toasts} = await openOptions(page, extensionId, "block");
-
-        await table.getByRole("button", {name: "나닉 삭제", exact: true}).click();
-        await alert.getByRole("button", {name: "삭제", exact: true}).click();
-        await expect(toasts).toContainText("닉네임 차단 목록을 1개 삭제했습니다.");
-        await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([list[0], list[2]]);
-
-        await toasts.getByRole("button", {name: "되돌리기", exact: true}).click();
-        await expect.poll(() => storage.get("refresher:block:NICK")).toEqual(list);
-        await expect(table.getByText("나닉", {exact: true})).toBeVisible();
-        // 되살린 항목의 마지막 사용이 '오늘'로 바뀌지 않는다.
-        await expect(table.getByText("200일 전")).toHaveCount(3);
-        expect(await storage.get("refresher:usage")).toEqual(usage);
-    });
-
     test("지운 뒤 같은 차단을 다시 넣었으면 되돌리기가 그것을 겹쳐 넣지 않는다", async ({page, extensionId, storage}) => {
         const list = [{id: "a", content: "가닉", isRegex: false}, {id: "b", content: "나닉", isRegex: false}];
         await storage.set({"refresher:block:NICK": list});
@@ -241,7 +178,6 @@ test.describe("옵션 - 차단 탭", () => {
         await expect(alert).toContainText("모두(2개) 삭제할까요?");
         await alert.getByRole("button", {name: "삭제", exact: true}).click();
         await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([]);
-        // 다른 곳에서 같은 닉을 새 id로 다시 차단했다.
         const readded = {id: "z", content: "가닉", isRegex: false};
         await storage.set({"refresher:block:NICK": [readded]});
         await expect(table.getByText("가닉", {exact: true})).toBeVisible();
@@ -250,59 +186,19 @@ test.describe("옵션 - 차단 탭", () => {
         await expect.poll(() => storage.get("refresher:block:NICK")).toEqual([readded, list[1]]);
     });
 
-    test("갤러리·마지막 사용으로 걸러 보이는 항목만 지우고, 페이지를 다시 열 때 지운 항목의 사용 기록을 정리한다", async ({page, extensionId, storage}) => {
-        const day = 24 * 60 * 60 * 1000;
-        await storage.set({
-            "refresher:block:NICK": [
-                {id: "a", content: "오래된닉", isRegex: false, gallery: "g1"},
-                {id: "b", content: "공통닉", isRegex: false},
-                {id: "c", content: "최근닉", isRegex: false, gallery: "g1"}
-            ],
-            "refresher:usage": {block: {a: Date.now() - 100 * day, b: Date.now() - 100 * day, c: Date.now()}, memo: {}}
-        });
-        const {table, alert} = await openOptions(page, extensionId, "block");
-        await expect(table.getByText("공통닉")).toBeVisible();
-        await expect(table.getByText("100일 전").first()).toBeVisible();
-
-        await page.getByRole("combobox", {name: "갤러리", exact: true}).click();
-        await page.getByRole("option", {name: "g1"}).click();
-        await expect(table.getByText("공통닉")).toHaveCount(0);
-        await expect(table.getByText("최근닉")).toBeVisible();
-
-        await page.getByRole("combobox", {name: "마지막 사용", exact: true}).click();
-        await page.getByRole("option", {name: "90일 넘게 안 쓰임"}).click();
-        await expect(table.getByText("최근닉")).toHaveCount(0);
-        await expect(table.getByText("오래된닉")).toBeVisible();
-
-        await page.getByRole("button", {name: "보이는 1개 삭제"}).click();
-        await alert.getByRole("button", {name: "삭제", exact: true}).click();
-        await expect.poll(() => storage.get("refresher:block:NICK")).toMatchObject([{id: "b"}, {id: "c"}]);
-        // 보이는 항목이 없어 삭제 버튼이 막히므로 포커스는 그 버튼이 아니라 탭 패널로 돌아간다.
-        await expect(page.getByRole("tabpanel")).toBeFocused();
-        // 지운 항목의 사용 기록은 되돌리기로 쓸 수 있게 남겼다가 페이지를 다시 열 때 정리한다.
-        expect(await storage.get("refresher:usage")).toMatchObject({block: {a: expect.any(Number)}});
-        await page.reload();
-        await expect(table.getByText("공통닉")).toBeVisible();
-        await expect.poll(() => storage.get("refresher:usage")).toEqual({block: {b: expect.any(Number), c: expect.any(Number)}, memo: {}});
-    });
-
     test("거르기 중에 추가하면 거르기를 풀어 새 항목이 보인다", async ({page, extensionId, storage}) => {
         await storage.set({
-            "refresher:block:NICK": [{id: "a", content: "오래된닉", isRegex: false, gallery: "g1"}],
-            "refresher:usage": {block: {a: Date.now() - 100 * 24 * 60 * 60 * 1000}, memo: {}}
+            "refresher:block:NICK": [{id: "a", content: "갤닉", isRegex: false, gallery: "g1"}]
         });
         const {table, dialog} = await openOptions(page, extensionId, "block");
-        await page.getByRole("combobox", {name: "갤러리", exact: true}).click();
-        await page.getByRole("option", {name: "g1"}).click();
-        await page.getByRole("combobox", {name: "마지막 사용", exact: true}).click();
-        await page.getByRole("option", {name: "90일 넘게 안 쓰임"}).click();
+        await page.getByRole("combobox", {name: "갤러리", exact: true}).selectOption("g1");
 
         await page.getByRole("button", {name: "추가", exact: true}).click();
         await dialog.getByPlaceholder("닉네임 값을 입력해 주세요").fill("새닉");
         await dialog.getByRole("button", {name: "추가", exact: true}).click();
 
         await expect(table.getByText("새닉", {exact: true})).toBeVisible();
-        await expect(table.getByText("오래된닉", {exact: true})).toBeVisible();
+        await expect(table.getByText("갤닉", {exact: true})).toBeVisible();
     });
 
     test("긴 목록은 200줄씩 그리고 더 보기로 펼치며, 검색은 그리지 않은 줄까지 찾는다", async ({page, extensionId, storage}) => {
@@ -313,7 +209,6 @@ test.describe("옵션 - 차단 탭", () => {
         await expect(rows).toHaveCount(200);
         await expect(table.getByText("닉0번", {exact: true})).toHaveCount(0);
 
-        // 가장 오래된 항목은 처음 200줄 밖이지만 검색하면 나온다.
         const search = page.getByRole("searchbox", {name: "차단 목록 검색", exact: true});
         await search.fill("닉0번");
         await expect(rows).toHaveCount(1);
@@ -323,13 +218,11 @@ test.describe("옵션 - 차단 탭", () => {
         await more.click();
         await expect(rows).toHaveCount(400);
         await expect(more).toHaveText("더 보기 (+50)");
-        // 마지막 묶음을 펼치면 버튼이 사라지므로 포커스는 탭 패널로 간다.
         await more.click();
         await expect(rows).toHaveCount(450);
         await expect(more).toHaveCount(0);
         await expect(page.getByRole("tabpanel")).toBeFocused();
 
-        // 검색어가 바뀌면 다시 200줄부터 그린다.
         await search.fill("닉");
         await expect(rows).toHaveCount(200);
         await expect(more).toHaveText("더 보기 (+200)");
@@ -352,28 +245,22 @@ test.describe("옵션 - 차단 탭", () => {
         await expect(alert).toHaveCount(0);
         await expect(importButton).toBeFocused();
 
-        // 실패는 확인해야 하는 알림 창으로 남는다.
         await importButton.click();
         await json.fill("{");
         await dialog.getByRole("button", {name: "가져오기", exact: true}).click();
         await expect(alert).toContainText("차단 목록을 가져오지 못했습니다.");
     });
 
-    test("파일로 내보낸 목록을 가져오기 창에서 파일로 불러와 되살린다", async ({page, extensionId, storage}) => {
-        await storage.set({"refresher:block:NICK": [{id: "a", content: "파일닉", isRegex: false}]});
+    test("가져오기 창에서 파일을 불러와 목록을 되살린다", async ({page, extensionId, storage}) => {
+        await storage.set({"refresher:block:NICK": []});
         const {dialog, toasts} = await openOptions(page, extensionId, "block");
 
-        const downloading = page.waitForEvent("download");
-        await page.getByRole("button", {name: "파일로 내보내기", exact: true}).click();
-        const download = await downloading;
-        expect(download.suggestedFilename()).toMatch(/^dcrefresher-block-\d{8}\.json$/);
-        await expect(toasts).toContainText("차단 목록을 파일로 내보냈습니다.");
-
-        await storage.set({"refresher:block:NICK": []});
         await page.getByRole("button", {name: "가져오기", exact: true}).click();
         const choosing = page.waitForEvent("filechooser");
         await dialog.getByRole("button", {name: "파일에서 불러오기", exact: true}).click();
-        await (await choosing).setFiles(await download.path());
+        // 내보내기(cl립보드)가 만드는 JSON과 같은 모양을 파일로 올린다.
+        const json = JSON.stringify({NICK: [{id: "a", content: "파일닉", isRegex: false}], ID: [], IP: []});
+        await (await choosing).setFiles({name: "dcrefresher-block.json", mimeType: "application/json", buffer: Buffer.from(json)});
 
         await expect(toasts).toContainText("차단 목록을 가져왔습니다.");
         await expect.poll(() => storage.get("refresher:block:NICK")).toMatchObject([{content: "파일닉"}]);
@@ -381,7 +268,7 @@ test.describe("옵션 - 차단 탭", () => {
     });
 });
 
-test.describe("옵션 - 메모·데이터 탭", () => {
+test.describe("옵션 - 메모, 데이터 탭", () => {
     test("메모 탭에서 메모를 추가하면 표에 보이고 저장소에 남는다", async ({page, extensionId, storage}) => {
         const {dialog, table} = await openOptions(page, extensionId, "memo");
         await page.getByRole("button", {name: "추가", exact: true}).click();
@@ -433,7 +320,7 @@ test.describe("옵션 - 메모·데이터 탭", () => {
     });
 });
 
-test.describe("옵션 - 데이터 탭 백업·초기화", () => {
+test.describe("옵션 - 데이터 탭 백업, 초기화", () => {
     test("수동 백업을 덮어쓰기로 복원하면 백업할 때의 목록으로 돌아간다", async ({page, extensionId, storage}) => {
         await storage.set({"refresher:block:NICK": [{id: "a", content: "백업닉", isRegex: false}]});
         const {dialog, toasts} = await openOptions(page, extensionId, "data");
@@ -456,7 +343,6 @@ test.describe("옵션 - 데이터 탭 백업·초기화", () => {
         await backup.click();
         await expect(toasts).toContainText("데이터를 클라우드에 백업했습니다.");
 
-        // 다른 기기가 같은 칸에 올린 것처럼 메타의 기기와 시각을 바꾼다.
         await page.evaluate(async () => {
             const {backup: meta} = await chrome.storage.sync.get<ManualMeta>("backup");
             await chrome.storage.sync.set({backup: {...meta, device: "다른 기기", createdAt: Date.UTC(2020, 5, 15)}});
@@ -483,13 +369,11 @@ test.describe("옵션 - 데이터 탭 백업·초기화", () => {
         expect(await storage.get("refresher:backup:auto")).toBe(false);
         expect(await storage.get("refresher:block:NICK")).toBeUndefined();
 
-        // 알림의 되돌리기는 초기화가 끈 자동 백업도 다시 켠다.
         await toasts.getByRole("button", {name: "되돌리기", exact: true}).click();
         await expect(toasts).toContainText("자동 백업도 다시 켰습니다.");
         expect(await storage.get("refresher:backup:auto")).toBe(true);
         expect(await storage.get("refresher:block:NICK")).toEqual([{id: "a", content: "지울닉", isRegex: false}]);
 
-        // 탭의 되돌리기로 빈 상태에 돌아가면 빈 설정이 클라우드를 덮지 않게 다시 끈다.
         await card("되돌리기").getByRole("button", {name: "되돌리기", exact: true}).click();
         await expect(toasts).toContainText("되돌렸습니다. 클라우드 백업을 지키려고 자동 백업을 껐습니다.");
         expect(await storage.get("refresher:backup:auto")).toBe(false);

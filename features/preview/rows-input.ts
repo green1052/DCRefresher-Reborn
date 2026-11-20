@@ -19,7 +19,7 @@ interface RowHandlers {
 }
 
 /**
- * 목록 행·제목 칸의 마우스 입력. 우클릭(짧게)·좌클릭(키 반전)으로 미리보기를 열고, 제목 칸에는 미니 미리보기를 띄운다.
+ * 목록 행, 제목 칸의 마우스 입력. 우클릭(짧게), 좌클릭(키 반전)으로 미리보기를 열고, 제목 칸에는 미니 미리보기를 띄운다.
  * 우클릭 길게 누르기는 브라우저 메뉴로 남긴다.
  */
 export const bindRows = (ctx: Ctx, {open, prefetch, mini}: RowHandlers): void => {
@@ -51,7 +51,7 @@ export const bindRows = (ctx: Ctx, {open, prefetch, mini}: RowHandlers): void =>
         pressStart = 0;
     };
 
-    // 우클릭·좌클릭·미리 받기가 같은 기준으로 대상을 고르게 한 곳에서 판정한다.
+    // 우클릭, 좌클릭, 미리 받기가 같은 기준으로 대상을 고르게 한 곳에서 판정한다.
     // link: 키 반전 우클릭으로 이동할 주소. 댓글 수는 그 링크(댓글 위치, t=cv)다.
     const resolveTarget = (ev: MouseEvent): { preData: GalleryPreData; commentsOnly: boolean; link: string } | null => {
         const target = ev.target;
@@ -66,7 +66,7 @@ export const bindRows = (ctx: Ctx, {open, prefetch, mini}: RowHandlers): void =>
         if (!commentsOnly) {
             if (element.classList.contains("ub-content") && !ctx.settings.expandRecognizeRange) return null;
 
-            // 작성자 칸 클릭은 유저 버블(차단·유저 정보 모듈) 몫이고, 관리자 체크박스 칸은 글 고르기 몫이라 행 전체 인식이어도 열지 않는다.
+            // 작성자 칸 클릭은 유저 버블(차단, 유저 정보 모듈) 몫이고, 관리자 체크박스 칸은 글 고르기 몫이라 행 전체 인식이어도 열지 않는다.
             if (target.closest(".ub-writer, td:has(.article_chkbox)")) return null;
         }
 
@@ -76,7 +76,7 @@ export const bindRows = (ctx: Ctx, {open, prefetch, mini}: RowHandlers): void =>
     };
 
     const onContextMenu = (ev: MouseEvent) => {
-        // Shift+우클릭은 브라우저 메뉴로 남긴다. 맥·리눅스는 누르는 순간 메뉴가 떠서 길게 누르기로는 열 수 없다.
+        // Shift+우클릭은 브라우저 메뉴로 남긴다. 맥, 리눅스는 누르는 순간 메뉴가 떠서 길게 누르기로는 열 수 없다.
         if (ev.shiftKey) return;
 
         const resolved = resolveTarget(ev);
@@ -95,10 +95,10 @@ export const bindRows = (ctx: Ctx, {open, prefetch, mini}: RowHandlers): void =>
     };
 
     const onClick = (ev: MouseEvent) => {
-        // 수정키 클릭(새 탭·창으로 열기, manage 모듈의 Ctrl+클릭 삭제)은 가로채지 않는다.
+        // 수정키 클릭(새 탭, 창으로 열기, manage 모듈의 Ctrl+클릭 삭제)은 가로채지 않는다.
         if (hasModifier(ev)) return;
 
-        // 좌클릭은 키 반전일 때만 미리보기다. 아니면 제목·댓글 수 모두 원래대로 링크를 연다.
+        // 좌클릭은 키 반전일 때만 미리보기다. 아니면 제목, 댓글 수 모두 원래대로 링크를 연다.
         if (!ctx.settings.reversePreviewKey) return;
         const resolved = resolveTarget(ev);
         if (!resolved) return;
@@ -115,7 +115,7 @@ export const bindRows = (ctx: Ctx, {open, prefetch, mini}: RowHandlers): void =>
     document.addEventListener("contextmenu", onContextMenu, options);
     document.addEventListener("click", onClick, options);
 
-    // 미니 미리보기: 커서가 있는 제목 칸을 따라간다. mouseenter·mouseleave는 버블링하지 않아 mouseover·mouseout으로 가린다.
+    // 미니 미리보기: 커서가 있는 제목 칸을 따라간다. mouseenter, mouseleave는 버블링하지 않아 mouseover, mouseout으로 가린다.
     let hovered: HTMLElement | null = null;
     const wordOf = (target: EventTarget | null): HTMLElement | null => (target instanceof Element ? target.closest<HTMLElement>(WORD) : null);
 

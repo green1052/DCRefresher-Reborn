@@ -1,12 +1,7 @@
-import {Ban, type LucideIcon, NotebookPen, Puzzle, Settings} from "lucide-react";
-import {type ReactNode, useEffect, useId, useLayoutEffect, useState} from "react";
+import {Ban, type LucideIcon, NotebookPen, Puzzle, Settings} from "lucide-preact";
+import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
+import { type ComponentChild as ReactNode } from "preact";
 
-import {Badge} from "@/components/ui/badge";
-import {Button} from "@/components/ui/button";
-import {Card, CardContent} from "@/components/ui/card";
-import {Field, FieldContent, FieldDescription, FieldLabel} from "@/components/ui/field";
-import {Switch} from "@/components/ui/switch";
-import {Toggle} from "@/components/ui/toggle";
 import {type PageAction, type PageState, sendMessage} from "@/core/messaging/protocol";
 import {backupStorage} from "@/core/storage/items";
 import features from "@/features/meta";
@@ -20,11 +15,11 @@ const VERSION = browser.runtime.getManifest().version;
 interface Page {
     tabId: number;
     gallery: string;
-    /** 처음 물었을 때의 탭 상태. 콘텐츠 스크립트가 없으면(설치·업데이트 전에 열린 탭 등) null이다. */
+    /** 콘텐츠 스크립트가 없는 탭(설치 전에 열린 탭 등)이면 null. */
     state: PageState | null;
 }
 
-/** 활성 탭이 디시 갤러리 페이지면 탭과 갤러리 id를 돌려준다. tabs 권한이 없어 탭 주소는 host_permissions가 있는 디시 탭에서만 보인다. */
+/** 활성 탭이 디시 갤러리면 탭과 갤러리 id - tabs 권한이 없어 url은 디시 탭에서만 보인다. */
 const findPage = async (): Promise<Page | null> => {
     const [tab] = await browser.tabs.query({active: true, currentWindow: true});
     const url = tab?.url ? URL.parse(tab.url) : null;
@@ -51,7 +46,7 @@ const toggleLabel = ({module, id}: PageAction): string =>
 
 const SectionTitle = ({children, aside}: { children: ReactNode; aside?: ReactNode }) => (
     <div className="mb-2 flex items-center justify-between px-1">
-        <span className="text-xs font-bold text-muted-foreground">{children}</span>
+        <span className="text-xs font-bold text-base-content/60">{children}</span>
         {aside}
     </div>
 );
@@ -62,20 +57,18 @@ const ToggleRow = ({icon: Icon, label, desc, checked, onChange}: {
     desc: string;
     checked: boolean;
     onChange: () => void;
-}) => {
-    const id = useId();
-    return (
-        <Field orientation="horizontal" className="items-center">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground transition-colors data-on:bg-primary/15 data-on:text-link"
-                  data-on={checked || undefined}><Icon size={15}/></span>
-            <FieldContent>
-                <FieldLabel htmlFor={id}>{label}</FieldLabel>
-                <FieldDescription>{desc}</FieldDescription>
-            </FieldContent>
-            <Switch id={id} size="sm" checked={checked} onCheckedChange={onChange}/>
-        </Field>
-    );
-};
+}) => (
+    <label className="flex cursor-pointer items-center gap-2.5">
+        <span className={`flex size-8 shrink-0 items-center justify-center rounded-selector transition-colors ${checked ? "bg-primary/15 text-primary" : "bg-base-200 text-base-content/70"}`}>
+            <Icon size={15}/>
+        </span>
+        <span className="min-w-0 grow">
+            <span className="block text-sm leading-tight font-medium">{label}</span>
+            <span className="block text-xs leading-tight text-base-content/60">{desc}</span>
+        </span>
+        <input type="checkbox" role="switch" className="toggle toggle-sm" checked={checked} onChange={() => onChange()}/>
+    </label>
+);
 
 /** toggled: 팝업에서 모듈 on/off를 저장한 횟수. 0이면 처음 물은 상태(initial) 그대로다. */
 function PageSection({tabId, gallery, state: initial, toggled}: Page & { toggled: number }) {
@@ -83,8 +76,7 @@ function PageSection({tabId, gallery, state: initial, toggled}: Page & { toggled
     const memos = useMemosStore((state) => state.memos);
     const [state, setState] = useState(initial);
 
-    // 모듈을 켜고 끄면 탭의 모듈도 멈추거나 시작하므로 다시 묻는다. 저장이 끝난 뒤에 물어야 탭이 새 값으로 답한다
-    // (탭은 저장소를 다시 읽고 모듈이 다 뜬 뒤에 답한다). 늦게 온 이전 응답은 버린다.
+    // 모듈을 끄면 탭의 모듈도 멈추므로 저장 뒤에 다시 묻는다 - 늦게 온 이전 응답은 버린다.
     useEffect(() => {
         if (toggled === 0) return;
         let current = true;
@@ -101,7 +93,13 @@ function PageSection({tabId, gallery, state: initial, toggled}: Page & { toggled
         };
     }, [tabId, toggled]);
 
-    const act = (action: PageAction): void => void sendMessage("refresher:pageAction", action, tabId).then(setState, () => setState(null));
+    // 위 효과와 같이 늦게 온 이전 응답은 버린다. 빠르게 두 번 누르면 먼저 보낸 응답이 나중에 올 수 있다.
+    const latest = useRef(0);
+    const act = (action: PageAction): void => {
+        const id = ++latest.current;
+        const apply = (next: PageState | null): void => void (latest.current === id && setState(next));
+        void sendMessage("refresher:pageAction", action, tabId).then(apply, () => apply(null));
+    };
 
     const visible = (entry: { gallery?: string }): boolean => !entry.gallery || entry.gallery === gallery;
     const blockCount = Object.values(blocks).flat().filter(visible).length;
@@ -112,30 +110,30 @@ function PageSection({tabId, gallery, state: initial, toggled}: Page & { toggled
         <div>
             <SectionTitle aside={
                 <div className="flex gap-1">
-                    <Badge variant="secondary"><Ban/> 차단 {blockCount}</Badge>
-                    <Badge variant="secondary"><NotebookPen/> 메모 {memoCount}</Badge>
+                    <span className="badge badge-sm gap-1"><Ban size={12}/> 차단 {blockCount}</span>
+                    <span className="badge badge-sm gap-1"><NotebookPen size={12}/> 메모 {memoCount}</span>
                 </div>
             }>
                 현재 페이지
             </SectionTitle>
 
-            {state === null && <p className="text-center text-xs text-muted-foreground">페이지를 새로고침하면 이 페이지 설정이 나옵니다.</p>}
+            {state === null && <p className="text-center text-xs text-base-content/60">페이지를 새로고침하면 이 페이지 설정이 나옵니다.</p>}
             {/* 켜져 있는데 setup이 던진 모듈. 모듈 타일은 켜짐으로만 보여 왜 안 되는지 알 수 없다. */}
             {failed.length > 0 && (
-                <p className="mb-2 text-center text-xs text-destructive" role="alert">
+                <p className="mb-2 text-center text-xs text-error" role="alert">
                     이 페이지에서 시작하지 못한 모듈: {failed.join(", ")}. 페이지를 새로고침해 보세요.
                 </p>
             )}
-            {state?.toggles.length === 0 && <p className="text-center text-xs text-muted-foreground">이 페이지에서 바꿀 수 있는 설정이 없습니다.</p>}
+            {state?.toggles.length === 0 && <p className="text-center text-xs text-base-content/60">이 페이지에서 바꿀 수 있는 설정이 없습니다.</p>}
             {state && state.toggles.length > 0 && (
-                <Card className="py-3">
-                    <CardContent className="flex flex-col gap-3 px-3">
+                <div className="card card-border">
+                    <div className="card-body gap-3 p-3">
                         {state.toggles.map((toggle) => (
                             <ToggleRow key={`${toggle.module}:${toggle.id}`} icon={toggleIcon(toggle)} label={toggleLabel(toggle)} desc={toggle.desc}
                                        checked={toggle.on} onChange={() => act({module: toggle.module, id: toggle.id})}/>
                         ))}
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             )}
         </div>
     );
@@ -149,27 +147,28 @@ function ModulesSection({onToggled}: { onToggled: () => void }) {
 
     return (
         <div>
-            <SectionTitle aside={<span className="text-xs text-muted-foreground">{on}/{features.length} 켜짐</span>}>모듈</SectionTitle>
+            <SectionTitle aside={<span className="text-xs text-base-content/60">{on}/{features.length} 켜짐</span>}>모듈</SectionTitle>
             <div className="grid grid-cols-2 gap-2">
                 {features.map((feature) => {
                     const enabled = enables[feature.id] === true;
                     const Icon = feature.icons.module;
 
                     return (
-                        <Toggle key={feature.id} variant="outline" className="min-w-0 justify-start font-normal"
-                                title={feature.description} pressed={enabled}
-                                onPressedChange={(next) => void toggle(feature.id, next).then(() => {
+                        <button key={feature.id} type="button"
+                                className={`btn btn-outline btn-sm min-w-0 justify-start font-normal ${enabled ? "btn-active" : ""}`}
+                                title={feature.description} aria-pressed={enabled}
+                                onClick={() => void toggle(feature.id, !enabled).then(() => {
                                     setFailed(false);
                                     onToggled();
                                 }, () => setFailed(true))}>
-                            <Icon/>
+                            <Icon size={16}/>
                             <span className="grow truncate text-left">{feature.name}</span>
-                            <span className="size-1.5 shrink-0 rounded-full bg-muted-foreground/40 group-data-pressed/toggle:bg-primary"/>
-                        </Toggle>
+                            <span className={`size-1.5 shrink-0 rounded-full ${enabled ? "bg-primary" : "bg-base-content/30"}`}/>
+                        </button>
                     );
                 })}
             </div>
-            {failed && <p className="mt-2 text-center text-xs text-destructive" role="alert">저장하지 못했습니다. 팝업을 닫았다가 다시 열어 주세요.</p>}
+            {failed && <p className="mt-2 text-center text-xs text-error" role="alert">저장하지 못했습니다. 팝업을 닫았다가 다시 열어 주세요.</p>}
         </div>
     );
 }
@@ -178,14 +177,11 @@ export function App() {
     const [loaded, setLoaded] = useState<{ page: Page | null; backupError: string } | null>(null);
     const [toggled, setToggled] = useState(0);
 
-    // 한 번에 그려야 팝업 크기가 여러 번 바뀌지 않는다. 모두 로컬 읽기라 금방 끝난다.
-    // 하나가 실패해도 빈 팝업으로 남지 않게 기본값으로 그린다.
-    // useEffect는 한 프레임 뒤에 돌아 읽기가 그만큼 늦게 시작하므로 그리기 전에 시작한다.
+    // 한 번에 그리기 전 읽기를 시작한다(useEffect는 한 프레임 늦다) - 하나가 실패해도 기본값으로 그린다.
     useLayoutEffect(() => {
         void Promise.all([
             findPage().catch(() => null),
-            // 자동 백업은 배경에서 돌아 실패해도 데이터 탭을 열기 전에는 모른다. 켜져 있을 때만 팝업에서 한 줄로 알린다.
-            // 오류는 백업이 성공해야 지워지므로 꺼진 뒤에도 알리면 경고가 사라지지 않는다 (지난 실패는 데이터 탭에 남는다).
+            // 자동 백업 실패는 백업이 성공해야 지워지므로 켜져 있을 때만 한 줄로 알린다.
             Promise.all([backupStorage.auto().getValue(), backupStorage.error().getValue()]).then(([auto, error]) => (auto ? error : "")).catch(() => ""),
             initBlocksStore().catch(console.error),
             initMemosStore().catch(console.error),
@@ -202,21 +198,21 @@ export function App() {
                 <img src={LOGO_URL} alt="" width={32} height={32} className="rounded-md"/>
                 <div className="min-w-0 grow">
                     <div className="font-bold">DCRefresher Reborn</div>
-                    <div className="text-xs text-muted-foreground">v{VERSION}</div>
+                    <div className="text-xs text-base-content/60">v{VERSION}</div>
                 </div>
-                <Button variant="ghost" size="icon" className="text-muted-foreground" aria-label="설정" title="설정" onClick={() => void openOptions()}>
-                    <Settings/>
-                </Button>
+                <button type="button" className="btn btn-ghost btn-sm btn-square text-base-content/60" aria-label="설정" title="설정" onClick={() => void openOptions()}>
+                    <Settings size={18}/>
+                </button>
             </div>
 
             <div className="flex flex-col gap-4 p-3">
                 {loaded.backupError && (
-                    <p className="text-center text-xs text-destructive">클라우드에 백업하지 못했습니다. 설정의 데이터 탭에서 확인해 주세요.</p>
+                    <p className="text-center text-xs text-error">클라우드에 백업하지 못했습니다. 설정의 데이터 탭에서 확인해 주세요.</p>
                 )}
                 {loaded.page ? (
                     <PageSection {...loaded.page} toggled={toggled}/>
                 ) : (
-                    <p className="text-center text-xs text-muted-foreground">디시인사이드 갤러리에서 열면 이 페이지 설정이 나옵니다.</p>
+                    <p className="text-center text-xs text-base-content/60">디시인사이드 갤러리에서 열면 이 페이지 설정이 나옵니다.</p>
                 )}
                 <ModulesSection onToggled={() => setToggled((count) => count + 1)}/>
             </div>

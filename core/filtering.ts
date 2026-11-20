@@ -24,7 +24,7 @@ const rebuildUnion = (): void => {
     union = filters.size > 0 ? [...filters].map((filter) => filter.scope).join(", ") : null;
 };
 
-// 옵저버가 넘기는 mutation 묶음을 한 번에 처리한다. 추가된 요소 자신·자손과, 자식이 붙어 조건을 새로 만족했을 수 있는 조상을 본다.
+// 옵저버가 넘기는 mutation 묶음을 한 번에 처리한다. 추가된 요소 자신, 자손과, 자식이 붙어 조건을 새로 만족했을 수 있는 조상을 본다.
 // 문서를 읽는 동안에는 한 묶음에 노드가 수천 개라 가장 바깥 덩어리만 훑는다.
 // FILTER_SKIP_ATTR이 붙은 장식은 건너뛴다. closest로 작성자 요소가 다시 잡혀 행마다 모든 필터(차단 정규식 등)가 한 번 더 돌기 때문이다.
 const flush = (mutations: MutationRecord[]): void => {

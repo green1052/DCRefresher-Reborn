@@ -65,7 +65,7 @@ jobs:
                         test-results
                     retention-days: 7
 
-    # 실제 디시 E2E (bun run e2e:live). 디시 마크업·API와 디시 JS에서 옮긴 키(core/preview/dcinside-js.ts)가 바뀌었는지 본다.
+    # 실제 디시 E2E (bun run e2e:live). 디시 마크업, API와 디시 JS에서 옮긴 키(core/preview/dcinside-js.ts)가 바뀌었는지 본다.
     # 읽기 요청만 보낸다 (e2e/fixtures.ts가 쓰기를 끊는다).
     live:
         runs-on: ubuntu-latest

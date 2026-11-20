@@ -1,90 +1,104 @@
-/*
- * Tailwind + shadcn 토큰. 색은 shadcn 테마 값 그대로다 (base-vega, 기본색 zinc, 테마 indigo. https://ui.shadcn.com/init?base=base&style=vega&baseColor=zinc&theme=indigo&only=theme의 cssVars). --link 말고는 손으로 고치지 않는다 (오버레이의 다크 색은 overlay.css).
- * 오버레이 shadow에서도 쓰도록 :root와 :host에 같이 건다. 다크 모드는 조상의 .dark 클래스가 정한다 (utils/appearance.ts).
- */
+/* Tailwind + daisyUI 5. 부품 색은 내장 테마 light(기본)/black(다크 모드) 둘로 간다.
+   테마 전환은 appearance.ts가 data-theme 속성으로, dark: 변형과 콘텐츠 반전 규칙은 같은 함수가 단 .dark 클래스를 본다. */
 @import "tailwindcss" source(none);
 @import "tw-animate-css";
-/* shadcn 부품이 쓰는 variant(data-horizontal·data-open 등, Base UI 데이터 속성에 맞춘 것)와 유틸리티. */
-@import "shadcn/tailwind.css";
-/* 클래스를 찾을 폴더를 직접 정한다. 자동 탐색은 .gitignore에 기대는데 파이어폭스 심사용 소스 zip에는 .gitignore가 없어,
-   심사 쪽 빌드의 CSS와 해시 붙은 파일 이름이 우리가 올린 빌드와 달라진다. */
+
+@plugin "daisyui" {
+    themes: false;
+    logs: false;
+}
+/* 스캔 폴더 직접 지정 - 파이어폭스 심사 zip엔 .gitignore가 없어 자동 탐색을 못 쓴다. */
 @source "../../{components,core,entrypoints,features,stores,utils}";
-/* cn 플러그인이 만드는 클래스 그룹 표(wxt.config.ts). 표의 낱말이 클래스로 읽혀 쓰지 않는 유틸리티가 생긴다. */
-@source not "../../utils/cn-tables.ts";
+
+/* 커스텀 테마(내장 테마 안 씀). 강조색은 라이트/다크 같은 인디고로 통일.
+   base-100=배경, base-200=muted, base-300=accent, neutral=secondary. 모서리는 옛 룩 - 입력/버튼 8px, 카드 12px, 체크박스·슬라이더 엄지 둥글게. */
+@plugin "daisyui/theme" {
+    name: "light";
+    default: true;
+    color-scheme: light;
+    --color-base-100: oklch(1 0 0);
+    --color-base-200: oklch(96.7% 0.001 286.375);
+    --color-base-300: oklch(96.7% 0.001 286.375);
+    --color-base-content: oklch(14.1% 0.005 285.823);
+    --color-primary: oklch(45.7% 0.24 277.023);
+    --color-primary-content: oklch(96.2% 0.018 272.314);
+    --color-secondary: oklch(96.7% 0.001 286.375);
+    --color-secondary-content: oklch(21% 0.006 285.885);
+    --color-accent: oklch(96.7% 0.001 286.375);
+    --color-accent-content: oklch(21% 0.006 285.885);
+    --color-neutral: oklch(96.7% 0.001 286.375);
+    --color-neutral-content: oklch(21% 0.006 285.885);
+    --color-info: oklch(68.5% 0.169 237.323);
+    --color-info-content: oklch(98.5% 0 0);
+    --color-success: oklch(72.3% 0.219 149.579);
+    --color-success-content: oklch(98.5% 0 0);
+    --color-warning: oklch(76.9% 0.188 70.08);
+    --color-warning-content: oklch(27.9% 0.077 45.635);
+    --color-error: oklch(57.7% 0.245 27.325);
+    --color-error-content: oklch(98.5% 0 0);
+    --radius-selector: 0.5rem;
+    --radius-field: 0.5rem;
+    --radius-box: 0.75rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 0;
+    --noise: 0;
+    --card-fs: 1rem;
+}
+@plugin "daisyui/theme" {
+    name: "black";
+    color-scheme: dark;
+    --color-base-100: oklch(14.1% 0.005 285.823);
+    --color-base-200: oklch(27.4% 0.006 286.033);
+    --color-base-300: oklch(27.4% 0.006 286.033);
+    --color-base-content: oklch(98.5% 0 0);
+    --color-primary: oklch(45.7% 0.24 277.023);
+    --color-primary-content: oklch(96.2% 0.018 272.314);
+    --color-secondary: oklch(27.4% 0.006 286.033);
+    --color-secondary-content: oklch(98.5% 0 0);
+    --color-accent: oklch(27.4% 0.006 286.033);
+    --color-accent-content: oklch(98.5% 0 0);
+    --color-neutral: oklch(27.4% 0.006 286.033);
+    --color-neutral-content: oklch(98.5% 0 0);
+    --color-info: oklch(68.5% 0.169 237.323);
+    --color-info-content: oklch(98.5% 0 0);
+    --color-success: oklch(72.3% 0.219 149.579);
+    --color-success-content: oklch(98.5% 0 0);
+    --color-warning: oklch(76.9% 0.188 70.08);
+    --color-warning-content: oklch(27.9% 0.077 45.635);
+    --color-error: oklch(70.4% 0.191 22.216);
+    --color-error-content: oklch(98.5% 0 0);
+    --radius-selector: 0.5rem;
+    --radius-field: 0.5rem;
+    --radius-box: 0.75rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 0;
+    --noise: 0;
+    --card-fs: 1rem;
+}
 
 @custom-variant dark (&:is(.dark *));
 
-:root, :host {
-    --radius: 0.625rem;
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.141 0.005 285.823);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.141 0.005 285.823);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.141 0.005 285.823);
-    --primary: oklch(0.457 0.24 277.023);
-    --primary-foreground: oklch(0.962 0.018 272.314);
-    /* 강조색 글자 (링크·글쓴이 표시 등). 다크 모드의 --primary는 흰 글자를 얹는 버튼 배경이라 글자로 쓰면 묻힌다. */
+/* 디시 링크색(본문 a, text-link). 테마 색이 아니라 콘텐츠 색이라 직접 정의한다 (라이트=진한 보라, 다크=밝은 보라).
+   --ring은 포커스 링 색 - 인풋·단추 포커스 룩이 이걸 본다. */
+:root,
+:host {
     --link: oklch(0.457 0.24 277.023);
-    --secondary: oklch(0.967 0.001 286.375);
-    --secondary-foreground: oklch(0.21 0.006 285.885);
-    --muted: oklch(0.967 0.001 286.375);
-    --muted-foreground: oklch(0.552 0.016 285.938);
-    --accent: oklch(0.967 0.001 286.375);
-    --accent-foreground: oklch(0.21 0.006 285.885);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.92 0.004 286.32);
-    --input: oklch(0.92 0.004 286.32);
     --ring: oklch(0.705 0.015 286.067);
 }
 
 .dark {
-    --background: oklch(0.141 0.005 285.823);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.21 0.006 285.885);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.21 0.006 285.885);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.398 0.195 277.366);
-    --primary-foreground: oklch(0.962 0.018 272.314);
     --link: oklch(0.673 0.182 276.935);
-    --secondary: oklch(0.274 0.006 286.033);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.274 0.006 286.033);
-    --muted-foreground: oklch(0.705 0.015 286.067);
-    --accent: oklch(0.274 0.006 286.033);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.552 0.016 285.938);
 }
 
 @theme inline {
     /* 폰트 교체 모듈이 켜져 있으면 html에 --refresher-font가 들어온다. */
     --font-sans: var(--refresher-font, -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif);
-    --radius-sm: calc(var(--radius) - 4px);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) + 4px);
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
-    --color-card: var(--card);
-    --color-card-foreground: var(--card-foreground);
-    --color-popover: var(--popover);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-primary: var(--primary);
-    --color-primary-foreground: var(--primary-foreground);
     --color-link: var(--link);
-    --color-secondary: var(--secondary);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-muted: var(--muted);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-accent: var(--accent);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-destructive: var(--destructive);
-    --color-border: var(--border);
-    --color-input: var(--input);
     --color-ring: var(--ring);
 
     /* 자동 새로고침으로 새로 들어온 미리보기 댓글. 길이는 features/preview/index.ts의 FRESH_DURATION과 같다. */
@@ -92,7 +106,7 @@
 
     @keyframes fresh-comment {
         from, 30% {
-            background: color-mix(in oklch, var(--primary) 15%, transparent);
+            background: color-mix(in oklch, var(--color-primary) 15%, transparent);
         }
     }
 
@@ -114,7 +128,6 @@
         }
     }
 
-    /* 옵션 로고 연타 이스터에그 (DcconRain). 회전각은 이미지마다 --spin으로 준다. */
     --animate-dccon-fall: dccon-fall linear both;
 
     @keyframes dccon-fall {
@@ -128,9 +141,22 @@
     }
 }
 
+@layer components {
+    /* daisyUI .btn은 아이콘(svg) 크기를 정하지 않는다 - lucide 기본 24px 대신 16px(xs는 12px)을 기본으로 준다. 명시적 size-* 유틸리티가 이 규칙을 이긴다. */
+    .btn :where(svg:not([class*="size-"])) {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .btn-xs :where(svg:not([class*="size-"])) {
+        width: 0.75rem;
+        height: 0.75rem;
+    }
+}
+
 @layer base {
     * {
-        @apply border-border outline-ring/50;
+        @apply border-base-content/10 outline-ring/50;
     }
 
     /* Tailwind v4는 버튼 커서를 기본(화살표)으로 되돌린다. v3처럼 누를 수 있는 버튼엔 손가락을 보인다 (Tailwind v4 업그레이드 안내의 규칙). */
@@ -140,8 +166,113 @@
     }
 
     body {
-        @apply bg-background text-foreground;
-        /* 크롬은 확장 페이지(옵션·팝업)의 body에 자체 폰트 규칙을 레이어 밖에 넣어, 레이어 안의 규칙은 진다. 폰트 교체 설정이 먹도록 important로 건다. */
-        font-family: var(--font-sans) !important;
+        @apply bg-base-100 text-base-content;
+        /* 크롬은 확장 페이지(옵션, 팝업)의 body에 자체 폰트 규칙(크기 75% 포함)을 레이어 밖에 넣어, 레이어 안의 규칙은 진다. 폰트 교체 설정과 옛 글씨 크기(1rem)가 먹도록 important로 건다. */
+        font-family: var(--font-sans, sans-serif) !important;
+        font-size: 1rem !important;
+    }
+
+}
+
+/* 창(dialogs.tsx)은 daisyUI .modal(가운데 그리드, 열림/닫힘 전환)에 얹는다. daisyUI는 ::backdrop를 숨기고 열린 .modal 요소 자체에 40% 검정을 치므로 요소 배경을 덮어쓴다. */
+dialog.modal {
+    /* 이전 dialog-overlay: bg-black/10. blur는 data-blur 속성으로 켠다(dialogs.tsx가 preview.popupBlur 설정을 넣는다). */
+    background: rgb(0 0 0 / 10%);
+}
+
+/* 이미지 크게 보기(ImageViewer)는 더 어두운 배경을 쓴다(이전 Backdrop bg-black/85).
+   daisyUI는 ::backdrop를 숨기고 열린 .modal 요소 자체에 40% 검정을 칠므로 요소 배경을 덮어쓴다. */
+dialog.modal[data-viewer] {
+    background: rgb(0 0 0 / 90%);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+    dialog.modal[data-blur] {
+        backdrop-filter: blur(2px);
+    }
+}
+
+/* ===== 룩 보정 - daisyUI 문서(Customize)가 제안하는 @utility로 daisyUI 컴포넌트를 확장한다. ===== */
+
+/* 인풋 포커스: 진한 색 아웃라인 대신 옛 룩 - 회색 3px 링 + 테두리만 진해지게. daisyUI는 --input-color 하나로 idle 테두리와 포커스를 같이 굴러서 속성을 덮어야 한다.
+   label.input(검색창)처럼 안에 input을 감싼 경우 포커스는 :focus-within으로 붙는다. */
+@utility input {
+    &:is(:focus-visible, :focus-within) {
+        border-color: var(--color-ring);
+        outline: 3px solid color-mix(in oklab, var(--color-ring) 50%, transparent);
+        outline-offset: 0;
+    }
+}
+
+@utility select {
+    &:is(:focus-visible, :focus-within) {
+        border-color: var(--color-ring);
+        outline: 3px solid color-mix(in oklab, var(--color-ring) 50%, transparent);
+        outline-offset: 0;
+    }
+}
+
+@utility textarea {
+    &:is(:focus-visible, :focus-within) {
+        border-color: var(--color-ring);
+        outline: 3px solid color-mix(in oklab, var(--color-ring) 50%, transparent);
+        outline-offset: 0;
+    }
+}
+
+/* 무색 btn-outline: daisyUI 기본은 currentColor 테두리라 진하고, 상태(hover/눌림)마다 검정을 섞어 옛 룩보다 훨씬 진해진다.
+   옅은 회색 테두리 + 옅은 배경으로. (색 조합 btn-outline btn-primary 등은 안 쓴다) */
+@utility btn-outline {
+    &:not(.btn-primary, .btn-secondary, .btn-error, .btn-ghost) {
+        border-color: color-mix(in oklab, var(--color-base-content) 15%, transparent);
+        background-color: var(--color-base-100);
+
+        &:hover {
+            background-color: color-mix(in oklab, var(--color-base-content) 10%, transparent);
+        }
+
+        &:is(.btn-active, [aria-pressed="true"]) {
+            border-color: color-mix(in oklab, var(--color-base-content) 25%, transparent);
+            background-color: color-mix(in oklab, var(--color-base-content) 10%, transparent);
+        }
+    }
+}
+
+/* btn-error: daisyUI 기본은 빨간 바탕에 흰 글씨라 지나치게 강하다. 옅은 빨간 바탕에 빨간 글씨로. */
+@utility btn-error {
+    border-color: transparent;
+    background-color: color-mix(in oklab, var(--color-error) 10%, transparent);
+    color: var(--color-error);
+
+    &:hover {
+        background-color: color-mix(in oklab, var(--color-error) 20%, transparent);
+    }
+
+    &:is(.dark *) {
+        background-color: color-mix(in oklab, var(--color-error) 20%, transparent);
+    }
+
+    &:is(.dark *):hover {
+        background-color: color-mix(in oklab, var(--color-error) 30%, transparent);
+    }
+}
+
+/* kbd: daisyUI 기본은 키캡(테두리+아래 그림자) 룩이다. muted 배경 + muted-foreground 글씨에 테두리·그림자 없이. */
+@utility kbd {
+    height: 1.25rem;
+    min-width: 1.25rem;
+    padding-inline: 0.25rem;
+    border: none;
+    border-radius: 0.375rem; /* 옛 --radius-sm = 0.625rem - 4px */
+    background-color: oklch(96.8% 0.007 247.896);
+    color: oklch(55.4% 0.046 257.417);
+    font-family: var(--font-sans, sans-serif);
+    font-size: 0.75rem;
+    font-weight: 500;
+    box-shadow: none;
+
+    &:is(.dark *) {
+        background-color: oklch(27.9% 0.041 260.031);
+        color: oklch(70.4% 0.04 256.788);
     }
 }

@@ -2,6 +2,7 @@
 import {afterEach, beforeEach, describe, expect, it, onTestFinished} from "vitest";
 
 import block from "@/features/block/index";
+import {useBlocksStore} from "@/stores/blocks";
 import {useUiStore} from "@/stores/ui";
 
 import {blockEntry as entry, setBlockLists, tick} from "../../../helpers";
@@ -33,7 +34,7 @@ beforeEach(() => {
     document.body.innerHTML = `<table class="gall_list"><tbody>${[
         row({no: "1", nick: "도배", uid: "spam"}),
         row({no: "2", nick: "착한", title: "광고 <script>var 광고 = 1</script>아님"}),
-        row({no: "3", subject: "<span class=\"subject_inner\">긴 말머리 전체</span>긴 말머…"})
+        row({no: "3", subject: "<span class=\"subject_inner\">긴 말머리 전체</span>긴 말머..."})
     ].join("")}</tbody></table>`;
     setBlockLists();
     useUiStore.setState({toasts: [], blockRevealed: false, selected: null, bubble: null});
@@ -45,7 +46,7 @@ afterEach(() => {
 });
 
 describe("작성자 칸 판정", () => {
-    it("닉네임·아이디로 막은 행을 숨긴다", async () => {
+    it("닉네임, 아이디로 막은 행을 숨긴다", async () => {
         setBlockLists({NICK: [entry("도배")]});
         await start();
         expect(hidden()).toEqual(["1"]);
@@ -105,6 +106,21 @@ describe("작성자 칸 판정", () => {
         expect(hidden()).toEqual([]);
     });
 
+    it("항목이 더해지기만 하면 가린 행은 그대로 두고 새로 막을 행만 판정한다", async () => {
+        setBlockLists({NICK: [entry("도배")]});
+        await start();
+        useBlocksStore.setState((state) => ({entries: {...state.entries, NICK: [...state.entries.NICK, entry("착한")]}}));
+        expect(hidden()).toEqual(["1", "2"]);
+    });
+
+    it("NOT_* 항목을 더하면 허용 목록이 늘어 다시 판정해 푼다", async () => {
+        setBlockLists({NICK: [entry("도배", {mode: "NOT_SAME"})]});
+        await start();
+        expect(hidden()).toEqual(["2", "3"]);
+        useBlocksStore.setState((state) => ({entries: {...state.entries, NICK: [...state.entries.NICK, entry("착한", {mode: "NOT_SAME"})]}}));
+        expect(hidden()).toEqual(["3"]);
+    });
+
     it("숨기는 방식을 바꾸면 다시 판정한다", async () => {
         setBlockLists({NICK: [entry("도배")]});
         const {change} = await start();
@@ -114,7 +130,7 @@ describe("작성자 칸 판정", () => {
     });
 });
 
-describe("대댓글·디시콘", () => {
+describe("대댓글, 디시콘", () => {
     const comments = (): void => {
         document.body.innerHTML = "<ul class=\"cmt_list\">" +
             "<li class=\"ub-content\" id=\"comment_li_1\"><span class=\"ub-writer\" data-nick=\"도배\" data-uid=\"\" data-ip=\"\"></span></li>" +
@@ -148,8 +164,8 @@ describe("대댓글·디시콘", () => {
     });
 });
 
-describe("보기 방식·가린 내용 보기", () => {
-    it("블러 강도·마우스 오버 보기를 <html>에 건다", async () => {
+describe("보기 방식, 가린 내용 보기", () => {
+    it("블러 강도, 마우스 오버 보기를 <html>에 건다", async () => {
         const {change} = await start({blur: true, blurStrength: 7});
         const root = document.documentElement;
         expect(root.style.getPropertyValue("--refresher-blur")).toBe("7px");

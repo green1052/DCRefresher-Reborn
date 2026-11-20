@@ -46,7 +46,7 @@ describe("encodeIpData / createIpLookup", () => {
         expect(encoded.orgs[encoded.meta[0]!]).toBe("KT");
     });
 
-    it("같은 조직·국가 이름은 표에 한 번만 담는다", () => {
+    it("같은 조직, 국가 이름은 표에 한 번만 담는다", () => {
         const encoded = encodeIpData(new Map([[slot(1, 1), [KT]], [slot(1, 2), [{org: "KT", vpn: true}]], [slot(1, 3), [{org: "KT", country: "미국", vpn: false}]]]));
         expect(encoded.orgs).toEqual(["KT"]);
         expect(encoded.countries).toEqual(["", "미국"]);
@@ -137,7 +137,7 @@ describe("parseIpData", () => {
 });
 
 describe("candidateKey", () => {
-    it("조직·국가·VPN이 모두 같아야 같은 키다", () => {
+    it("조직, 국가, VPN이 모두 같아야 같은 키다", () => {
         expect(candidateKey({org: "KT", vpn: false})).toBe(candidateKey({org: "KT", country: undefined, vpn: false}));
         expect(candidateKey(KT)).not.toBe(candidateKey({...KT, vpn: true}));
         expect(candidateKey({org: "a", vpn: false})).not.toBe(candidateKey({country: "a", vpn: false}));

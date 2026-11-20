@@ -1,10 +1,8 @@
 import {pageGallery, pagePostNo, postSearchUrl} from "@/core/http/urls";
 import {sendMessage} from "@/core/messaging/protocol";
-import {BLOCKED_PAGE_MESSAGE} from "@/core/pages";
 import {NUMBERED_SOURCE} from "@/core/preview/parser";
 import {useUiStore} from "@/stores/ui";
 import {textWithoutScripts} from "@/utils/dom";
-import {isBlockedError} from "@/utils/error";
 
 const ORIGIN_CLASS = "refresherImageOrigin";
 const SEARCH_CLASS = "refresherTitleSearch";
@@ -33,8 +31,7 @@ const showImageOrigin = (head: Element): void => {
     };
 
     const media = document.querySelectorAll<HTMLImageElement | HTMLVideoElement>(".write_div :is(img:not(.written_dccon, .og-img), video)");
-    // 늦게 불러오는 이미지는 data-original, GIF를 바꾼 영상은 data-src에 주소가 있다.
-    // 번호는 디시처럼 첨부 이미지·동영상만 센다. 외부 이미지까지 세면 디시·미리보기가 단 번호와 어긋난다.
+    // 늦게 불러오는 이미지는 data-original, GIF 영상은 data-src에 주소가 있다. 번호는 디시처럼 첨부만 센다.
     let number = 0;
     for (const element of media) {
         const source = element.dataset.original ?? element.dataset.src ?? element.src;
@@ -45,7 +42,7 @@ const showImageOrigin = (head: Element): void => {
     }
     if (foreign.size === 0) return;
 
-    const text = Array.from(foreign, ([source, labels]) => `${source}(${labels.join(", ")})`).join(" · ");
+    const text = Array.from(foreign, ([source, labels]) => `${source}(${labels.join(", ")})`).join(", ");
     head.prepend(Object.assign(document.createElement("p"), {className: ORIGIN_CLASS, textContent: `다른 갤러리의 이미지: ${text}`}));
 };
 
@@ -66,8 +63,6 @@ const searchSameTitle = async (button: HTMLButtonElement, title: string): Promis
         if (galleries.length === 0) showToast("제목이 같은 글을 찾지 못했습니다.", "info", 5000, openResults);
         else showToast(`제목이 같은 글 ${galleries.length}개: ${[...new Set(galleries)].join(", ")}`, "warning", 10_000, openResults);
     } catch (e) {
-        // 임시 차단은 배경이 받아 이 탭엔 아직 알림이 없다.
-        if (isBlockedError(e)) return showToast(BLOCKED_PAGE_MESSAGE, "warning");
         console.error("Title search failed:", e);
         showToast("통합검색을 불러오지 못했습니다.", "error");
     } finally {

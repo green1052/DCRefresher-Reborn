@@ -3,10 +3,7 @@ import {defineModuleMeta} from "@/core/module/define";
 import type {ModuleContext, SettingSchema, SettingsSchema} from "@/core/module/types";
 import {BOARD_PAGE} from "@/core/pages";
 
-/**
- * 배지 색 기본값. 키마다 `${key}Color` 설정이 하나씩 생기고 옵션 화면에선 한 그룹으로 묶인다 (이름은 labels.ts의 BADGE_NAMES).
- * IP 배지는 분류(korea…vpn)가 키다.
- */
+/** 배지 색 기본값. 키마다 `${key}Color` 설정이 생긴다 (IP는 분류가 키). */
 export const BADGE_COLORS = {
     uid: "#999999",
     ratio: "#999999",
@@ -21,7 +18,7 @@ export const BADGE_COLORS = {
 
 export type BadgeColor = keyof typeof BADGE_COLORS;
 
-const IP_INFO_FILTERS: Record<IpInfoFilter, string> = {all: "전체", foreign: "해외·VPN만", vpn: "VPN만", none: "표시 안 함"};
+const IP_INFO_FILTERS: Record<IpInfoFilter, string> = {all: "전체", foreign: "해외, VPN만", vpn: "VPN만", none: "표시 안 함"};
 
 const LOW_ACTIVITY_ACTIONS = {none: "배지 색만", tag: "[깡계] 표시", blur: "흐리게", hide: "숨기기"};
 

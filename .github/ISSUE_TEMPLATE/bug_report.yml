@@ -91,7 +91,7 @@ body:
         id: diagnostics
         attributes:
             label: 진단 정보
-            description: 리프레셔 옵션 > 정보 탭의 **진단 정보 복사** 버튼을 누른 뒤 여기에 붙여 넣어 주세요. (버전·브라우저·켜진 모듈이 들어 있습니다)
+            description: 리프레셔 옵션 > 정보 탭의 **진단 정보 복사** 버튼을 누른 뒤 여기에 붙여 넣어 주세요. (버전, 브라우저, 켜진 모듈이 들어 있습니다)
             placeholder: |
                 DCRefresher Reborn v6.0.0 (chrome)
                 브라우저: ...

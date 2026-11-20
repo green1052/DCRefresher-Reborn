@@ -1,16 +1,15 @@
-import {render} from "preact";
-import {act} from "preact/test-utils";
-import type {ReactNode} from "react";
+import {render, act} from "@/tests/helpers";
+import type { ComponentChild as ReactNode } from "preact";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import {MemoTab} from "@/entrypoints/options/MemoTab";
+import {MemoTab} from "@/entrypoints/options/tabs/MemoTab";
 import {useMemosStore} from "@/stores/memos";
 
 vi.mock("@/core/messaging/protocol", () => ({sendMessage: vi.fn(async () => ({}))}));
 type ImportData = (parsed: Record<string, unknown>) => Promise<number>;
 const captured = vi.hoisted(() => ({importData: undefined as ImportData | undefined}));
 // 목록 화면(Base UI) 대신 UID 메모의 행 머리만 그리고 가져오기 함수를 잡아 둔다.
-vi.mock("@/entrypoints/options/ListTabs", () => ({
+vi.mock("@/entrypoints/options/lists/ListTabs", () => ({
     ListTabs: ({items, row, importData}: { items: (type: "UID") => [string, unknown][]; row: (type: "UID", item: [string, unknown], remove: () => void) => ReactNode; importData: ImportData }) => {
         captured.importData = importData;
         return <>{items("UID").map((item) => row("UID", item, () => undefined))}</>;
@@ -33,7 +32,7 @@ describe("메모 탭의 색 점", () => {
         expect((await dotOf("#ff0000")).style.backgroundColor).toBe("rgb(255, 0, 0)");
     });
 
-    it("가져온 메모 색의 url(…)을 배경 이미지로 불러오지 않는다", async () => {
+    it("가져온 메모 색의 url(...)을 배경 이미지로 불러오지 않는다", async () => {
         const dot = await dotOf("url(https://example.com/x.png)");
         expect(dot.style.backgroundImage).toBe("");
         expect(dot.getAttribute("style") ?? "").not.toContain("url(");

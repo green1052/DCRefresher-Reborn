@@ -1,4 +1,4 @@
-import {useRef} from "react";
+import { useRef } from "preact/hooks";
 
 import {cn} from "cn";
 
@@ -20,15 +20,18 @@ export const Mini = () => {
     if (!mini) return null;
 
     return (
-        <div className={cn("refresher-mini-preview fixed flex max-w-[calc(100vw-20px)] flex-col overflow-hidden rounded-xl bg-card p-3 text-card-foreground shadow-lg ring-1 ring-foreground/10",
+        <div className={cn("refresher-mini-preview fixed flex max-w-[calc(100vw-20px)] flex-col overflow-hidden rounded-xl bg-base-100 p-3 text-base-content shadow-lg ring-1 ring-base-content/10",
                            mini.interactive && "pointer-events-auto")}
              onPointerEnter={mini.interactive ? () => hoverMini(true) : undefined} onPointerLeave={mini.interactive ? () => hoverMini(false) : undefined}
-             style={{left: mini.x, top: mini.y, width: MINI_WIDTH, maxHeight: `min(${MINI_HEIGHT}px, calc(100vh - 20px))`}}>
+             style={{left: `${mini.x}px`, top: `${mini.y}px`, width: `${MINI_WIDTH}px`, maxHeight: `min(${MINI_HEIGHT}px, calc(100vh - 20px))`}}>
             <h3 className="mb-2 shrink-0 truncate text-base font-bold">{mini.title}</h3>
-            {/* 포인터를 통과시키는 기본값에선 직접 굴릴 수 없어 스크롤바는 내용이 더 있다는 표시다.
-                넓은 내용은 옆을 자른다 (overflow-y만 auto면 가로 스크롤바가 생긴다). */}
+            {/* 상호작용 없이는 직접 굴릴 수 없어 스크롤바를 숨긴다. 상호작용 중에는 끝까지 굴려도
+                스크롤이 페이지로 넘어가지 않게 막는다(overscroll-contain). 넓은 내용은 옆을 자른다. */}
             <div ref={contents}
-                 className={cn("refresher-html refresher-mini-contents min-h-0 flex-1 overflow-x-hidden overflow-y-auto [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin]",
+                 className={cn("refresher-html refresher-mini-contents min-h-0 flex-1 overflow-x-hidden overflow-y-auto",
+                               mini.interactive
+                                   ? "overscroll-contain [scrollbar-color:color-mix(in_oklab,var(--color-base-content)_25%,transparent)_transparent] [scrollbar-width:thin]"
+                                   : "[scrollbar-width:none]",
                                mini.blockMedia && "refresher-preview-block-media")}
                  dangerouslySetInnerHTML={{__html: mini.contents}}/>
         </div>

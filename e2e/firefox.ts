@@ -2,12 +2,7 @@ import net from "node:net";
 
 import {isRecord} from "../utils/record";
 
-/**
- * 플레이라이트의 파이어폭스는 실행 인자로 확장을 올리지 못한다. web-ext처럼 원격 디버깅 서버(-start-debugger-server)에 붙어
- * 압축을 푼 확장을 임시 부가 기능으로 설치하고 같은 연결로 배경 페이지에서 식을 계산한다 (Remote Debugging Protocol).
- * 패킷은 "바이트 길이:JSON"이다. 요청에 대한 응답은 그 actor가 보내는 type 없는 패킷이고 요청 순서대로 온다.
- * type이 있는 패킷은 알림(이벤트)이다.
- */
+/** 플레이라이트 파이어폭스는 실행 인자로 확장을 못 올려 원격 디버깅 서버(-start-debugger-server)에 붙어 임시 부가 기능으로 설치한다. 패킷은 "바이트 길이:JSON". */
 
 /** 디버깅 서버를 켜고 붙을 때 확인 창을 띄우지 않는 설정. */
 export const DEBUGGER_PREFS = {
@@ -18,10 +13,7 @@ export const DEBUGGER_PREFS = {
     "extensions.getAddons.cache.enabled": false
 };
 
-/**
- * 실제 네트워크를 막는 설정. context.route는 배경 페이지의 요청을 가로채지 못해, 막지 않으면 배경이 실제 IP DB를 받아
- * 가짜 목록의 유동 행에도 IP 배지가 붙는다. 없는 프록시로 보내 바로 실패하게 한다. 페이지 요청은 route가 먼저 응답한다.
- */
+/** 실제 네트워크를 막는 설정. 배경 요청은 route로 못 막아 없는 프록시로 보내 실패하게 한다. */
 export const OFFLINE_PREFS = {
     "network.proxy.type": 1,
     "network.proxy.http": "127.0.0.1",
@@ -143,10 +135,7 @@ class RdpClient {
         return withTimeout(reply, `${to}의 ${type} 응답`);
     }
 
-    /**
-     * to에 요청을 보내고 to가 보내는 event 알림 중 match(알림, 응답)에 맞는 것을 기다린다.
-     * 알림이 응답과 같은 묶음으로 올 수 있어 요청 전부터 듣는다. 늦게 온 남의 알림은 match가 걸러 낸다 (evaluationResult의 resultID).
-     */
+    /** to에 요청을 보내고 match에 맞는 event 알림을 기다린다. 알림이 응답과 같은 묶음으로 올 수 있어 요청 전부터 듣는다. */
     async requestEvent(to: string, type: string, params: Record<string, unknown>, event: string, match: (packet: Packet, reply: Packet) => boolean): Promise<Packet> {
         const seen: Packet[] = [];
         let wake = (): void => undefined;
@@ -181,10 +170,7 @@ class RdpClient {
 }
 
 export interface FirefoxAddon {
-    /**
-     * 배경 페이지에서 식(Promise여도 된다)을 계산해 JSON으로 돌려받는다.
-     * 플레이라이트의 파이어폭스는 moz-extension:// 페이지로 이동하지 못해 배경에 직접 붙는다.
-     */
+    /** 배경 페이지에서 식(Promise여도 된다)을 계산해 JSON으로 돌려받는다. 파이어폭스는 moz-extension:// 페이지로 이동하지 못해 배경에 직접 붙는다. */
     evaluate<T>(expression: string): Promise<T>;
 
     close(): void;

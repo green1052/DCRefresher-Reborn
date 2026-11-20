@@ -6,7 +6,7 @@ const LIST_URL = /\/board\/lists\/\?id=test$/;
 const viewUrl = (no: number): RegExp => new RegExp(`/board/view/\\?id=test&no=${no}&page=1$`);
 
 test.describe("미리보기", () => {
-    test("제목을 우클릭하면 창을 띄워 본문·댓글을 그리고, 글 주소를 쌓았다가 Esc로 닫으면 목록으로 돌아간다", async ({listPage}) => {
+    test("제목을 우클릭하면 창을 띄워 본문, 댓글을 그리고, 글 주소를 쌓았다가 Esc로 닫으면 목록으로 돌아간다", async ({listPage}) => {
         const {page, frame} = listPage;
         await listPage.openPreview();
         await expect(listPage.frameTitle).toHaveText("[말머리] 글 3 제목");
@@ -21,8 +21,7 @@ test.describe("미리보기", () => {
         const icon = await frame.getByRole("button", {name: "디시콘", exact: true}).boundingBox();
         expect([icon?.width, icon?.height]).toEqual([36, 36]);
 
-        await page.keyboard.press("Escape");
-        await expect(frame).toHaveCount(0);
+        await listPage.closePreview();
         await expect(page).toHaveURL(LIST_URL);
         await expect(page).toHaveTitle("테스트 갤러리");
     });
@@ -33,37 +32,37 @@ test.describe("미리보기", () => {
         await expect(page).toHaveURL(viewUrl(3));
         await page.reload();
         await expect(viewPage(page).body).toContainText("본문 3 내용입니다.");
-        // 표시가 남으면 목록으로 뒤로 갔다 앞으로 올 때(bfcache 없이) 다시 목록·미리보기로 바뀐다.
+        // 표시가 남으면 목록으로 뒤로 갔다 앞으로 올 때(bfcache 없이) 다시 목록, 미리보기로 바뀐다.
         await expect.poll(() => page.evaluate(() => history.state)).toBeNull();
     });
 
     test.describe(() => {
         test.skip(({browserName}) => browserName === "firefox", "headless 파이어폭스는 자리를 차지하는 스크롤바를 그리지 않는다.");
 
-        test("창을 열어 페이지 스크롤을 잠가도 스크롤바 자리를 남겨 뒤 페이지가 옆으로 밀리지 않고, 스크롤바가 없던 페이지에는 자리를 만들지 않는다", async ({listPage}) => {
+        test("창을 열어 페이지 스크롤바 칸을 회수해 미리보기가 창 끝까지 차지하고, 스크롤바가 없던 페이지는 그대로 둔다", async ({listPage}) => {
             const {page, frame} = listPage;
             const layout = () => page.evaluate(() => ({width: document.body.getBoundingClientRect().width, gutter: document.documentElement.style.scrollbarGutter}));
             const short = await layout();
             await listPage.openPreview();
             await expect(frame).toBeVisible();
-            expect(await layout()).toEqual(short);
-            await page.keyboard.press("Escape");
-            await expect(frame).toHaveCount(0);
+            // 잠금은 useEffect에서 걸리고 풀리므로 프레임 표시와 시간차가 난다 - poll로 기다린다.
+            await expect.poll(layout).toEqual({...short, gutter: "auto"});
+            await listPage.closePreview();
 
-            // 페이지를 늘려 스크롤바를 세운다 (fixtures에서 크로미엄의 스크롤바 숨김을 끈다).
+            // 페이지를 늘려 스크롤바를 세운다 (fixtures에서 Chromium의 스크롤바 숨김을 끈다).
             await page.evaluate(() => document.body.style.setProperty("min-height", "300vh"));
             const long = await layout();
             expect(long.width).toBeLessThan(short.width);
             await listPage.openPreview();
             await expect(frame).toBeVisible();
-            expect(await layout()).toEqual({width: long.width, gutter: "stable"});
-            await page.keyboard.press("Escape");
-            await expect(frame).toHaveCount(0);
-            expect(await layout()).toEqual(long);
+            // 스크롤바 칸이 사라지며 뒤 페이지가 다시 창 폭만큼 넓어진다.
+            await expect.poll(layout).toEqual({width: short.width, gutter: "auto"});
+            await listPage.closePreview();
+            await expect.poll(layout).toEqual(long);
         });
     });
 
-    test("PageDown·PageUp으로 옆 글로 넘기고, 뒤로 가기는 앞서 본 글을 다시 열며, 닫으면 쌓은 주소를 모두 걷는다", async ({listPage}) => {
+    test("PageDown, PageUp으로 옆 글로 넘기고, 뒤로 가기는 앞서 본 글을 다시 열며, 닫으면 목록 주소로 돌아간다", async ({listPage}) => {
         const {page} = listPage;
         const shows = async (no: number): Promise<void> => {
             await expect(listPage.frameTitle).toHaveText(`[말머리] 글 ${no} 제목`);
@@ -83,10 +82,8 @@ test.describe("미리보기", () => {
         await page.goBack();
         await shows(1);
 
-        await page.keyboard.press("Escape");
-        await expect(listPage.frame).toHaveCount(0);
+        await listPage.closePreview();
         await expect(page).toHaveURL(LIST_URL);
-        // 목록 앞의 기록(빈 탭)으로 돌아가지 않았다.
         await expect(listPage.refreshButton).toBeVisible();
     });
 
@@ -105,7 +102,7 @@ test.describe("미리보기", () => {
 
     test("받는 중에 넘기거나 닫아 끊은 요청은 콘솔에 오류를 남기지 않는다", async ({listPage, context}) => {
         const {page} = listPage;
-        // 본문·댓글 응답을 창을 닫을 때까지 붙잡아 늘 받는 도중에 끊기게 한다. 파이어폭스에서 content.fetch의 AbortError가 처리되지 않은 오류로 남았다.
+        // 본문, 댓글 응답을 창을 닫을 때까지 붙잡아 늘 받는 도중에 끊기게 한다. 파이어폭스에서 content.fetch의 AbortError가 처리되지 않은 오류로 남았다.
         let stall = Promise.withResolvers<void>();
         const settled: Promise<void>[] = [];
         await context.route(/\/board\/(view|comment)\//, (route) => {
@@ -115,7 +112,6 @@ test.describe("미리보기", () => {
         });
         const postRequest = (no: number) => page.waitForRequest(new RegExp(`/board/view/\\?id=test&no=${no}$`));
         const scroller = listPage.overlay.locator(".refresher-frame-scroll");
-        // 마지막 행(1번 글)은 PageDown으로 넘어갈 글이 없다.
         for (const no of [3, 2]) {
             stall = Promise.withResolvers();
             let requested = postRequest(no);
@@ -126,8 +122,7 @@ test.describe("미리보기", () => {
             requested = postRequest(no - 1);
             await page.keyboard.press("PageDown");
             await requested;
-            await page.keyboard.press("Escape");
-            await expect(listPage.frame).toHaveCount(0);
+            await listPage.closePreview();
             stall.resolve();
         }
         // 끊긴 응답이 다 돌아올 때까지 기다린다. 오류는 errors 픽스처가 본다.
@@ -143,7 +138,20 @@ test.describe("미리보기", () => {
         await expect(listPage.page).toHaveURL(LIST_URL);
     });
 
-    test("방금 연 글을 닫았다 다시 열면 본문·댓글을 다시 받지 않고, 댓글 새로고침은 받는다 (#273)", async ({listPage}) => {
+    test("닫은 뒤 뒤로 가기로 미리보기를 다시 연다", async ({listPage}) => {
+        const {page} = listPage;
+        await listPage.openPreview();
+        await expect(listPage.frameTitle).toHaveText("[말머리] 글 3 제목");
+
+        await listPage.closePreview();
+        await expect(page).toHaveURL(LIST_URL);
+
+        await page.goBack();
+        await expect(listPage.frameTitle).toHaveText("[말머리] 글 3 제목");
+        await expect(page).toHaveURL(viewUrl(3));
+    });
+
+    test("방금 연 글을 닫았다 다시 열면 본문, 댓글을 다시 받지 않고, 댓글 새로고침은 받는다 (#273)", async ({listPage}) => {
         const requests: string[] = [];
         listPage.page.on("request", (request) => {
             const {pathname} = new URL(request.url());
@@ -155,8 +163,7 @@ test.describe("미리보기", () => {
             await expect(listPage.comments).toHaveCount(2);
             // Base UI의 Esc 리스너는 스크롤 칸 포커스와 같은 effect 차례에 붙으므로 포커스를 본 뒤에 누른다.
             await expect(listPage.overlay.locator(".refresher-frame-scroll")).toBeFocused();
-            await listPage.page.keyboard.press("Escape");
-            await expect(listPage.frame).toHaveCount(0);
+            await listPage.closePreview();
         }
         expect(requests).toEqual(["/board/view/", "/board/comment/"]);
 
@@ -170,8 +177,7 @@ test.describe("미리보기", () => {
         await listPage.openPreview();
         await expect(listPage.comments).toHaveCount(2);
         await expect(listPage.overlay.locator(".refresher-frame-scroll")).toBeFocused();
-        await page.keyboard.press("Escape");
-        await expect(listPage.frame).toHaveCount(0);
+        await listPage.closePreview();
 
         // 본문이 들어온 뒤 첫 프레임에 그려진 댓글 수를 잰다. 댓글이 본문과 같이 그려지면 그 프레임까지 본문이 보이지 않는다.
         const atFirstFrame = page.evaluate(() => new Promise<number>((resolve) => {
@@ -211,8 +217,7 @@ test.describe("미리보기", () => {
         await expect(listPage.frame.getByRole("button", {name: /댓글만 표시 중입니다/})).toBeVisible();
         await expect(listPage.comments).toHaveCount(2);
 
-        await listPage.page.keyboard.press("Escape");
-        await expect(listPage.frame).toHaveCount(0);
+        await listPage.closePreview();
         await reply.click();
         await expect(listPage.page).toHaveURL(/\/board\/view\/\?id=test&no=3&t=cv$/);
     });
@@ -239,7 +244,6 @@ test.describe("미리보기", () => {
         // 원본 보기는 디시 원본 주소(imgPop)가 있는 이미지에만 있다.
         await expect(viewer.getByRole("link", {name: "원본 보기"})).toHaveCount(0);
 
-        // 오버레이(shadow DOM) 안에서도 Tab·Shift+Tab이 뒤의 미리보기나 디시 페이지로 나가지 않는다.
         await expect(viewer.getByRole("button", {name: "닫기"})).toBeFocused();
         const focusInside = () => viewer.evaluate((element) => document.activeElement?.tagName === "REFRESHER-ROOT" && element.contains((element.getRootNode() as ShadowRoot).activeElement));
         for (const key of ["Tab", "Shift+Tab"]) {
@@ -252,9 +256,7 @@ test.describe("미리보기", () => {
         await listPage.page.keyboard.press("Escape");
         await expect(viewer).toHaveCount(0);
         await expect(frame).toBeVisible();
-        // 곧바로 누른 다음 Esc는 닫힌 크게 보기가 아니라 미리보기가 받는다.
-        await listPage.page.keyboard.press("Escape");
-        await expect(frame).toHaveCount(0);
+        await listPage.closePreview();
     });
 
     test("본문 이미지는 키보드로 골라 Enter로 크게 본다", async ({listPage}) => {
@@ -380,7 +382,7 @@ test.describe("미리보기 댓글", () => {
         await expect(fresh).toContainText("새 댓글");
     });
 
-    test("차단·유저 정보 모듈이 켜져 있는 동안만 그 설정대로 댓글을 가리고 작성자 아이디를 칠한다", async ({listPage, storage}) => {
+    test("차단, 유저 정보 모듈이 켜져 있는 동안만 그 설정대로 댓글을 가리고 작성자 아이디를 칠한다", async ({listPage, storage}) => {
         await storage.setModuleSettings("block", {blur: true});
         await storage.setModuleSettings("userinfo", {uidColor: "#123456"});
         await storage.set({"refresher:block:ID": [{id: "a", content: "user1", isRegex: false}]});
@@ -498,7 +500,7 @@ test.describe("미리보기 댓글", () => {
     });
 
     test.describe(() => {
-        test.skip(({browserName}) => browserName === "firefox", "요소의 리스너는 크로미움 CDP로만 센다.");
+        test.skip(({browserName}) => browserName === "firefox", "요소의 리스너는 Chromium CDP로만 센다.");
 
         test("댓글마다 되풀이되는 버튼은 클릭 리스너 하나만 단다", async ({listPage}) => {
             await listPage.openPreview();
@@ -524,7 +526,7 @@ test.describe("미리보기 댓글", () => {
     test("본문이 확장 UI의 클래스를 써도 본문 상자 밖을 덮지 못한다", async ({listPage}) => {
         const frame = await listPage.openPreview();
         const contents = frame.locator(".refresher-preview-contents");
-        await contents.evaluate((box) => box.insertAdjacentHTML("beforeend", "<div class=\"fixed inset-0 z-50 bg-background\" id=\"cover\"></div>"));
+        await contents.evaluate((box) => box.insertAdjacentHTML("beforeend", "<div class=\"fixed inset-0 z-50 bg-base-100\" id=\"cover\"></div>"));
         const [outer, cover] = await Promise.all([contents.boundingBox(), frame.locator("#cover").boundingBox()]);
         expect(cover).toEqual(outer);
     });
@@ -540,8 +542,8 @@ test.describe("미리보기 댓글", () => {
     });
 });
 
-test.describe("댓글 쓰기·지우기", () => {
-    test("비회원 댓글은 폼에서 푼 service_code와 닉네임·비밀번호를 담아 보내고, 올라간 댓글을 다시 받는다", async ({listPage, site}) => {
+test.describe("댓글 쓰기, 지우기", () => {
+    test("비회원 댓글은 폼에서 푼 service_code와 닉네임, 비밀번호를 담아 보내고, 올라간 댓글을 다시 받는다", async ({listPage, site}) => {
         const frame = await listPage.openPreview();
         const input = frame.getByRole("textbox", {name: "댓글 입력", exact: true});
         await input.fill("미리보기에서 쓴 댓글");
@@ -554,7 +556,6 @@ test.describe("댓글 쓰기·지우기", () => {
         expect(Object.fromEntries(["id", "no", "c_gall_id", "c_gall_no", "name", "memo", "service_code"].map((key) => [key, body.get(key)]))).toEqual({
             id: "test", no: "3", c_gall_id: "test", c_gall_no: "3", name: "ㅇㅇ", memo: "미리보기에서 쓴 댓글", service_code: `abc${SERVICE_CODE_TAIL}`
         });
-        // 비밀번호는 만들어 넣고, 답글이 아니면 부모 번호가 없다.
         expect(body.get("password")).toMatch(/^[a-z0-9]{8}$/);
         expect(body.has("c_no")).toBe(false);
         // 글 댓글은 디시 comment.js처럼 reCAPTCHA 키 쌍(rc_key)을 같이 보낸다.
@@ -614,13 +615,11 @@ test.describe("댓글 쓰기·지우기", () => {
         await expect(frame.getByText("글 3에 쓰던 댓글", {exact: true})).toBeVisible();
         await expect(input).toHaveValue("");
 
-        // 보낸 글의 초안은 지우고, 다른 글의 초안은 그대로 둔다.
         await input.blur();
         await page.keyboard.press("PageDown");
         await expect(listPage.frameTitle).toHaveText("[말머리] 글 2 제목");
         await expect(input).toHaveValue("글 2에 쓰던 댓글");
-        await page.keyboard.press("Escape");
-        await expect(frame).toHaveCount(0);
+        await listPage.closePreview();
         await listPage.openPreview();
         await expect(listPage.frameTitle).toHaveText("[말머리] 글 3 제목");
         await expect(input).toHaveValue("");
@@ -634,7 +633,7 @@ test.describe("댓글 쓰기·지우기", () => {
         await expect(frame.getByRole("textbox", {name: "댓글 입력", exact: true})).toHaveCount(0);
     });
 
-    test("글이 정한 댓글 대상(comment_id·comment_no)으로 보낸다", async ({listPage, site}) => {
+    test("글이 정한 댓글 대상(comment_id, comment_no)으로 보낸다", async ({listPage, site}) => {
         site.commentTarget = {id: "other", no: "77"};
         const frame = await listPage.openPreview();
         await frame.getByRole("textbox", {name: "댓글 입력", exact: true}).fill("대상 글에 쓴 댓글");
@@ -650,7 +649,6 @@ test.describe("댓글 쓰기·지우기", () => {
         const frame = await listPage.openPreview();
         // 답글(11)에 답한다. 부모는 스레드 첫 댓글(10)이다.
         await listPage.comments.nth(1).getByRole("button", {name: "ㅇㅇ 댓글에 답글", exact: true}).click();
-        // 입력칸으로 데려가고, 입력칸 위에 누구에게 답하는지 보인다.
         await expect(frame.getByRole("textbox", {name: "답글 입력", exact: true})).toBeFocused();
         await expect(frame.getByText("ㅇㅇ에게 답글", {exact: true})).toBeVisible();
         await frame.getByRole("textbox", {name: "답글 입력", exact: true}).fill("답글에 단 답글");
@@ -659,7 +657,6 @@ test.describe("댓글 쓰기·지우기", () => {
         await expect(frame.getByText("답글에 단 답글", {exact: true})).toBeVisible();
         const {body} = site.submitted[0]!;
         expect([body.get("c_no"), body.get("reply_no")]).toEqual(["10", "11"]);
-        // 보내면 답글 대상이 풀린다.
         await expect(frame.getByRole("textbox", {name: "댓글 입력", exact: true})).toBeVisible();
     });
 
@@ -692,21 +689,17 @@ test.describe("댓글 쓰기·지우기", () => {
         await popup.getByRole("button", {name: DCCON.title, exact: true}).click();
         await expect(popup).toHaveCount(0);
 
-        const input = frame.getByRole("textbox", {name: "디시콘 입력", exact: true});
-        await expect(input).toBeDisabled();
-        await frame.getByRole("button", {name: "작성", exact: true}).click();
-
+        // 고르자마자 바로 보낸다(작성 단계가 없다).
         await expect(frame.locator(`.refresher-comment img[src="${DCCON.list_img}"]`)).toBeVisible();
         expect(site.submitted.map(({path}) => path)).toEqual(["/dccon/insert_icon"]);
         const {body} = site.submitted[0]!;
         expect([body.get("package_idx"), body.get("detail_idx"), body.get("no")]).toEqual([DCCON.package_idx, DCCON.detail_idx, "3"]);
         // 디시 dccon.js처럼 ci_c 쿠키를 ci_t로 보낸다.
         expect(body.get("ci_t")).toBe("csrf-token");
-        // 보내면 디시콘을 비워 다시 글을 쓸 수 있다.
         await expect(frame.getByRole("textbox", {name: "댓글 입력", exact: true})).toBeEnabled();
     });
 
-    test("디시콘 패키지 줄은 Tab 정지점이 하나이고 화살표로 옮겨 Enter·Space로 고른다", async ({listPage}) => {
+    test("디시콘 패키지 줄은 Tab 정지점이 하나이고 화살표로 옮겨 Enter, Space로 고른다", async ({listPage}) => {
         const frame = await listPage.openPreview();
         await frame.getByRole("button", {name: "디시콘", exact: true}).click();
 
@@ -715,7 +708,6 @@ test.describe("댓글 쓰기·지우기", () => {
         const first = packages.getByRole("button", {name: "테스트콘", exact: true});
         const second = packages.getByRole("button", {name: "둘째콘", exact: true});
         await expect(first).toHaveAttribute("aria-pressed", "true");
-        // 닫기 버튼 다음 Tab은 고른 패키지에 선다.
         await popup.getByRole("button", {name: "닫기", exact: true}).focus();
         await listPage.page.keyboard.press("Tab");
         await expect(first).toBeFocused();
@@ -734,7 +726,6 @@ test.describe("댓글 쓰기·지우기", () => {
         await expect(first).toHaveAttribute("aria-pressed", "true");
         await expect(popup.getByRole("button", {name: DCCON.title, exact: true})).toBeVisible();
 
-        // 남은 패키지를 건너뛰고 디시콘 칸으로 간다.
         await listPage.page.keyboard.press("Tab");
         await expect(popup.getByRole("button", {name: DCCON.title, exact: true})).toBeFocused();
     });
@@ -754,10 +745,8 @@ test.describe("댓글 쓰기·지우기", () => {
         await expect(second).toHaveAttribute("aria-pressed", "true");
         await expect(first).toHaveAttribute("aria-pressed", "false");
 
-        // 남은 배경색을 건너뛰고 글자색 묶음의 고른 색으로 간다.
         await listPage.page.keyboard.press("Tab");
         await expect(frame.getByRole("group", {name: "글자색", exact: true}).getByRole("button", {name: "글자색 #ffffff", exact: true})).toBeFocused();
-        // 되돌아가면 배경색 묶음에서 새로 고른 색에 선다.
         await listPage.page.keyboard.press("Shift+Tab");
         await expect(second).toBeFocused();
     });
@@ -790,7 +779,6 @@ test.describe("댓글 쓰기·지우기", () => {
         await frame.getByRole("button", {name: "고닉 댓글의 답글 2개", exact: true}).click();
         await expect(frame.getByText("답글 둘", {exact: true})).toBeHidden();
 
-        // 체크박스가 보이는 첫 댓글만 고르고 지운다.
         await frame.getByRole("checkbox", {name: "전체 선택"}).click();
         await expect(frame.getByText("1개 선택")).toBeVisible();
         await frame.getByRole("button", {name: "삭제", exact: true}).click();
@@ -801,7 +789,6 @@ test.describe("댓글 쓰기·지우기", () => {
         expect(site.submitted.map(({path, body}) => [path, body.getAll("cmt_nos[]")])).toEqual([["/ajax/minor_manager_board_ajax/delete_comment", ["10"]]]);
     });
 
-    // 배경을 흐리지 않아도 겹친 창의 배경은 그려야 단축키를 막는다.
     for (const popupBlur of [true, false]) test(`삭제 확인 창이 떠 있는 동안에는 PageDown으로 옆 글로 넘어가지 않는다 (흐림 ${popupBlur ? "켬" : "끔"})`, async ({listPage, site, storage}) => {
         site.manager = true;
         await storage.setModuleSettings("preview", {popupBlur});
@@ -812,7 +799,6 @@ test.describe("댓글 쓰기·지우기", () => {
         await listPage.frame.getByRole("button", {name: "삭제", exact: true}).click();
         await expect(listPage.alert).toBeVisible();
 
-        // 포커스가 입력칸이 아니어도 확인 창이 떠 있으면 단축키를 막는다.
         await listPage.page.keyboard.press("PageDown");
         await listPage.page.keyboard.press("Escape");
         await expect(listPage.alert).toHaveCount(0);
@@ -841,7 +827,7 @@ test.describe("댓글 쓰기·지우기", () => {
         const remove = listPage.comments.nth(1).getByRole("button", {name: "ㅇㅇ 댓글 삭제", exact: true});
         await remove.click();
         const password = listPage.dialog.getByRole("textbox", {name: "댓글 비밀번호", exact: true});
-        await expect(password).toHaveAttribute("type", "password");
+        await expect(password).toHaveAttribute("type", "text");
         await password.fill("pw1234");
         await listPage.dialog.getByRole("button", {name: "삭제", exact: true}).click();
 

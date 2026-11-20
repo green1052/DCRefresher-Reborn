@@ -27,9 +27,9 @@ beforeEach(() => {
 });
 
 describe("isBackupTarget", () => {
-    it("설정·차단·메모만 대상이다", () => {
+    it("설정, 차단, 메모만 대상이다", () => {
         const targets = ["refresher:modules", "refresher:block:defaults", "refresher:block:NICK", "refresher:block:TAB", "refresher:memo:UID", "refresher:module:preview:settings"];
-        const others = ["refresher:db:ip", "refresher:db:meta", "refresher:module:userinfo:data", "refresher:module:zzz:settings", "refresher:backup:auto", "refresher:usage", "refresher:block:UNKNOWN", "refresher:memo:X", "other"];
+        const others = ["refresher:db:ip", "refresher:db:meta", "refresher:module:userinfo:data", "refresher:module:zzz:settings", "refresher:backup:auto", "refresher:block:UNKNOWN", "refresher:memo:X", "other"];
         expect(targets.filter(isBackupTarget)).toEqual(targets);
         expect(others.filter(isBackupTarget)).toEqual([]);
     });
@@ -53,7 +53,7 @@ describe("readBackupTargets / collectLocalData", () => {
         });
     });
 
-    it("없어진 모듈의 설정은 내보내기·백업에 넣지 않는다", async () => {
+    it("없어진 모듈의 설정은 내보내기, 백업에 넣지 않는다", async () => {
         await browser.storage.local.set({"refresher:module:preview:settings": {width: 900}, "refresher:module:zzz:settings": {width: 1}});
         expect(await collectLocalData()).toEqual({"refresher:module:preview:settings": {width: 900}});
     });
@@ -65,7 +65,7 @@ describe("readBackupTargets / collectLocalData", () => {
 });
 
 describe("runBackup / readCloudBackup", () => {
-    it("올린 설정을 그대로 읽어 오고 수동·자동 칸은 따로다", async () => {
+    it("올린 설정을 그대로 읽어 오고 수동, 자동 칸은 따로다", async () => {
         vi.spyOn(Date, "now").mockReturnValue(1234);
         await browser.storage.local.set({"refresher:modules": {a: true}});
         await runBackup("manual");
@@ -94,7 +94,6 @@ describe("runBackup / readCloudBackup", () => {
 
         await browser.storage.local.set({"refresher:modules": {small: true}});
         await runBackup("manual");
-        // 다른 칸(auto)의 조각은 그대로다.
         expect(await syncKeys()).toEqual(["autoBackup", "autoBackup:0", "backup", "backup:0"]);
         expect((await readCloudBackup("manual"))?.data).toEqual({"refresher:modules": {small: true}});
     });
@@ -104,6 +103,31 @@ describe("runBackup / readCloudBackup", () => {
         await runBackup("manual");
         await browser.storage.sync.remove("backup:1");
         await expect(readCloudBackup("manual")).rejects.toThrow("백업 조각이 빠져 있습니다");
+    });
+
+    it("지우기 전에 다른 기기가 백업을 올렸으면 남는 조각을 그대로 둔다", async () => {
+        await browser.storage.local.set({"refresher:modules": {big: noise(6000)}});
+        await runBackup("manual");
+        await browser.storage.local.set({"refresher:modules": {small: true}});
+
+        // 두 번째 백업이 조각을 쓴 뒤 지우기 전에, 다른 기기가 새 백업(다른 메타)을 올린 상황을 흉내 낸다.
+        const original = browser.storage.sync.set.bind(browser.storage.sync);
+        let planted = false;
+        const set = vi.spyOn(browser.storage.sync, "set").mockImplementation(async (items) => {
+            await original(items);
+            if (!planted && isRecord(items) && "backup" in items) {
+                planted = true;
+                await original({backup: {...(items.backup as Record<string, unknown>), createdAt: 999, hash: "다른 기기"}});
+            }
+        });
+        const remove = vi.spyOn(browser.storage.sync, "remove").mockResolvedValue(undefined);
+        await runBackup("manual");
+
+        expect(remove).not.toHaveBeenCalled();
+        set.mockRestore();
+        remove.mockRestore();
+        await runBackup("manual");
+        expect((await syncKeys()).filter((key) => key.startsWith("backup:"))).toEqual(["backup:0"]);
     });
 
     it("조각이 메타와 맞지 않으면 던진다", async () => {
@@ -171,7 +195,7 @@ describe("runBackup / readCloudBackup", () => {
 });
 
 describe("readCloudBackupStatus", () => {
-    it("칸마다 시각·크기를 알린다", async () => {
+    it("칸마다 시각, 크기를 알린다", async () => {
         vi.spyOn(Date, "now").mockReturnValue(77);
         await browser.storage.local.set({"refresher:modules": {a: true}});
         await runBackup("auto");

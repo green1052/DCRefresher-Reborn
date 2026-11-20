@@ -35,7 +35,7 @@ const ipJson = (prefixes: [string, IpCandidate[]][], version?: string): string =
     return JSON.stringify({...encodeIpData(slots), version});
 };
 
-/** 모듈 상태(once·밴 캐시)를 테스트마다 새로 시작한다. */
+/** 모듈 상태(once, 밴 캐시)를 테스트마다 새로 시작한다. */
 const load = async (): Promise<typeof import("@/core/database")> => {
     vi.resetModules();
     return import("@/core/database");
@@ -156,7 +156,7 @@ describe("ipInfoOf", () => {
         expect(ipInfoOf("1.2.3.4")).toEqual({label: "KT, 부산은행", title: "KT\n부산은행", category: "korea"});
     });
 
-    it("첫 후보의 국가·VPN으로 표시와 구분을 정하고 VPN이 국가보다 앞선다", async () => {
+    it("첫 후보의 국가, VPN으로 표시와 구분을 정하고 VPN이 국가보다 앞선다", async () => {
         const {ipInfoOf} = await setup([
             ["1.1", [{org: "SoftBank", country: "일본", vpn: false}]],
             ["1.2", [{org: "Tencent", country: "중국", vpn: true}, {org: "KT", vpn: false}]],
@@ -223,7 +223,7 @@ describe("ipInfoOf", () => {
         await vi.waitFor(() => expect(databaseVersion()).toBe(before + 1));
     });
 
-    it("ip·meta는 한 번씩만 읽는다", async () => {
+    it("ip, meta는 한 번씩만 읽는다", async () => {
         // 콘텐츠 쪽은 meta를 읽기만 하므로 항목을 만들지 않는다 (만들면 defineItem이 한 번 더 읽는다).
         await browser.storage.local.set({[META]: {version: "v1", lastUpdate: 1, format: IP_FORMAT}, [IP]: ipJson([])});
         const get = vi.spyOn(browser.storage.local, "get");
@@ -276,7 +276,7 @@ describe("banReasonsOf", () => {
     });
 
     it("많은 uid도 모두 찾고 없는 uid는 찾지 않는다", async () => {
-        // 조회는 정렬해 이은 uid를 이진 탐색한다. 앞뒤 끝, 접두어가 겹치는 uid, 한글·빈 uid도 넣는다.
+        // 조회는 정렬해 이은 uid를 이진 탐색한다. 앞뒤 끝, 접두어가 겹치는 uid, 한글, 빈 uid도 넣는다.
         const list: Record<string, string[]> = {갤1: [], 갤2: [], 갤3: ["", "가나", "zz"]};
         for (let index = 0; index < 500; index++) {
             const uid = `user${index}`;

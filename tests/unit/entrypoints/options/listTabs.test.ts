@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest";
 
-import {restoreRemoved} from "@/entrypoints/options/ListTabs";
+import {restoreRemoved} from "@/entrypoints/options/lists/ListTabs";
 
 const key = (item: string): string => item;
 

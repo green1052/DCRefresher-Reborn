@@ -61,12 +61,11 @@ describe("업로드 설정", () => {
 
     it("켜면 설정을 <html>에 두고, 끄면 지운다", async () => {
         const {change} = await start({webpConvert: true, webpQuality: 70});
-        expect(options()).toEqual({webp: true, quality: 0.7, rename: false, concurrency: 2});
-        // 이미 넣어 달라고 했으면 다시 보내지 않는다.
+        expect(options()).toEqual({webp: true, quality: 0.7, rename: false});
         expect(sendMessage).not.toHaveBeenCalled();
 
         change({obfuscateName: true});
-        expect(options()).toEqual({webp: true, quality: 0.7, rename: true, concurrency: 2});
+        expect(options()).toEqual({webp: true, quality: 0.7, rename: true});
         change({webpConvert: false, obfuscateName: false});
         expect(options()).toBeUndefined();
     });
@@ -85,7 +84,7 @@ describe("나가기 방지", () => {
         expect(blocksExit()).toBe(false);
     });
 
-    it("제목·본문 글자·본문 이미지가 있으면 막는다", async () => {
+    it("제목, 본문 글자, 본문 이미지가 있으면 막는다", async () => {
         await start();
         subject().value = "제목";
         expect(blocksExit()).toBe(true);
@@ -98,7 +97,7 @@ describe("나가기 방지", () => {
         expect(blocksExit()).toBe(true);
     });
 
-    it("디시가 넣은 자동 짤방·작성 가이드는 쓴 글로 보지 않는다", async () => {
+    it("디시가 넣은 자동 짤방, 작성 가이드는 쓴 글로 보지 않는다", async () => {
         editor().innerHTML = "<div id=\"auto_zzal_img_div\"><img src=\"z.png\">짤방</div><div class=\"wrt_guide_preview_inn\">가이드</div>";
         await start();
         expect(blocksExit()).toBe(false);
@@ -118,7 +117,6 @@ describe("나가기 방지", () => {
         await start();
         subject().value = "제목";
         document.querySelector<HTMLButtonElement>("button.write")!.click();
-        // 등록이 실패(alert)하면 N 그대로라 계속 막는다.
         expect(blocksExit()).toBe(true);
         document.querySelector<HTMLInputElement>("#clickbutton")!.value = "Y";
         expect(blocksExit()).toBe(false);
@@ -129,6 +127,15 @@ describe("나가기 방지", () => {
         subject().value = "제목";
         document.querySelector<HTMLButtonElement>("#leave_confirm_box .btn_blue")!.click();
         expect(blocksExit()).toBe(false);
+    });
+
+    it("나가기 확인 뒤 다시 쓰면 다시 막는다", async () => {
+        await start();
+        subject().value = "제목";
+        document.querySelector<HTMLButtonElement>("#leave_confirm_box .btn_blue")!.click();
+        // 새 탭 등으로 실제 나가기에 실패해 페이지에 남아 계속 쓰는 경우.
+        type(subject());
+        expect(blocksExit()).toBe(true);
     });
 
     it("설정을 끄면 막지 않는다", async () => {

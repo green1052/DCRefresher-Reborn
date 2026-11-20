@@ -1,5 +1,4 @@
-import {render} from "preact";
-import {act} from "preact/test-utils";
+import {render, act} from "@/tests/helpers";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {fakeBrowser} from "wxt/testing/fake-browser";
 
@@ -89,11 +88,10 @@ describe("initModulesStore", () => {
         await state().changeSetting("fonts", "bodyFontSize", 20);
         await state().toggle("stealth", true);
 
-        // 화면에 먼저 반영한 두 번뿐이다.
         expect(listener).toHaveBeenCalledTimes(2);
     });
 
-    it("없어진 모듈의 값·캐시와 스키마에 없는 설정을 지운다", async () => {
+    it("없어진 모듈의 값, 캐시와 스키마에 없는 설정을 지운다", async () => {
         await fakeBrowser.storage.local.set({
             "refresher:modules": {gone: true, fonts: false},
             "refresher:module:gone:settings": {a: 1},
@@ -108,7 +106,6 @@ describe("initModulesStore", () => {
 
         await expect.poll(() => fakeBrowser.storage.local.get(null)).toEqual({
             "refresher:modules": {fonts: false},
-            // 남은 값은 검사 전 그대로 둔다.
             "refresher:module:fonts:settings": {bodyFontSize: 99},
             "refresher:module:preview:data": {kept: true},
             "refresher:block:NICK": []

@@ -90,7 +90,7 @@ describe("restoreArchive", () => {
     it("잘린 목록은 가장 오래된 스레드 이전을 지우지 않는다", () => {
         const pre = nextPost();
         restoreArchive(pre, [comment(1), comment(2, {c_no: "1", depth: 1}), comment(5), comment(6, {c_no: "5", depth: 1}), comment(8), comment(9)]);
-        // 받은 것 중 가장 오래된 스레드는 6의 스레드(5)다. 1·2·5는 범위 밖으로 밀렸을 수 있고 8만 지워졌다.
+        // 받은 것 중 가장 오래된 스레드는 6의 스레드(5)다. 1, 2, 5는 범위 밖으로 밀렸을 수 있고 8만 지워졌다.
         expect(nos(restoreArchive(pre, [comment(6, {c_no: "5", depth: 1}), comment(9)], true))).toEqual(["6", "8x", "9"]);
     });
 
@@ -110,5 +110,27 @@ describe("restoreArchive", () => {
         const pre = nextPost();
         restoreArchive(pre, [comment(1)]);
         expect(restoreArchive(nextPost(), [])).toEqual([]);
+    });
+
+    it("seen이 상한을 넘으면 오래된 것부터 버린다", () => {
+        const pre = nextPost();
+        restoreArchive(pre, Array.from({length: 2100}, (_, i) => comment(i + 1)));
+        // 1~100번은 기록에서 밀려 되살리지 못하고, 101번부터는 여전히 삭제로 되살린다.
+        const output = restoreArchive(pre, [comment(2100)]);
+        expect(output.length).toBe(2000);
+        expect(nos(output.slice(0, 2))).toEqual(["101x", "102x"]);
+        expect(nos(output.slice(-1))).toEqual(["2100"]);
+        expect(getEntry(pre)!.seen!["101"]).toBeDefined();
+        expect(getEntry(pre)!.seen!["100"]).toBeUndefined();
+    });
+
+    it("seen을 줄일 때 이번 목록에 있는 댓글은 남긴다", () => {
+        const pre = nextPost();
+        restoreArchive(pre, Array.from({length: 2100}, (_, i) => comment(i + 1)));
+        restoreArchive(pre, [comment(1), comment(2100)]);
+        // 1번은 살아 있어 남고, 지워진 2~101번이 대신 밀린다.
+        expect(getEntry(pre)!.seen!["1"]).toBeDefined();
+        expect(getEntry(pre)!.seen!["101"]).toBeUndefined();
+        expect(getEntry(pre)!.seen!["102"]).toBeDefined();
     });
 });

@@ -1,13 +1,13 @@
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
-import {fetchDcconPackage} from "@/core/preview/request";
+import {getDcconPackage} from "@/core/preview/request";
 import type {DcinsideDcconPackage} from "@/core/preview/types";
 import {handleBlockRequest} from "@/stores/blockRequest";
-import {normalizeBlockList} from "@/stores/blocks";
+import {normalizeBlockList} from "@/core/block-list";
 
 import {setBlockLists, stored} from "../../helpers";
 
-vi.mock("@/core/preview/request", () => ({fetchDcconPackage: vi.fn()}));
+vi.mock("@/core/preview/request", () => ({getDcconPackage: vi.fn()}));
 
 beforeEach(() => setBlockLists());
 
@@ -51,7 +51,7 @@ describe("handleBlockRequest", () => {
     });
 
     it("디시콘 하나는 그 코드를 넣는다", async () => {
-        vi.mocked(fetchDcconPackage).mockResolvedValue(dcconPackage(["a", "b"]));
+        vi.mocked(getDcconPackage).mockResolvedValue(dcconPackage(["a", "b"]));
 
         await handleBlockRequest({target: "dccon"}, {dccon: "code1"});
 
@@ -59,14 +59,49 @@ describe("handleBlockRequest", () => {
     });
 
     it("패키지 묶음은 이스케이프한 경로를 정규식 하나로 넣는다", async () => {
-        vi.mocked(fetchDcconPackage).mockResolvedValue(dcconPackage(["a.b", "c+d"]));
+        vi.mocked(getDcconPackage).mockResolvedValue(dcconPackage(["a.b", "c+d"]));
 
         await handleBlockRequest({target: "dccon", dcconPackage: "bundle"}, {dccon: "code1"});
 
         const [entry] = await list("DCCON");
-        expect(entry).toMatchObject({content: `^(${RegExp.escape("a.b")}|${RegExp.escape("c+d")})$`, isRegex: true});
+        expect(entry).toMatchObject({content: `^(?:(?:${RegExp.escape("a.b")}|${RegExp.escape("c+d")}))$`, isRegex: true});
         const pattern = new RegExp(entry?.content ?? "");
         expect(pattern.test("a.b")).toBe(true);
         expect(pattern.test("axb")).toBe(false);
+    });
+
+    it("묶음 정규식은 공통 접두사를 한 번만 쓴다", async () => {
+        vi.mocked(getDcconPackage).mockResolvedValue(dcconPackage(["pkg1234aa", "pkg1234bb"]));
+
+        await handleBlockRequest({target: "dccon", dcconPackage: "bundle"}, {dccon: "code1"});
+
+        const [entry] = await list("DCCON");
+        expect(entry).toMatchObject({content: `^(?:${RegExp.escape("pkg1234")}(?:aa|bb))$`, isRegex: true});
+        const pattern = new RegExp(entry?.content ?? "");
+        expect(pattern.test("pkg1234aa")).toBe(true);
+        expect(pattern.test("pkg1234bb")).toBe(true);
+        expect(pattern.test("pkg1234cc")).toBe(false);
+    });
+
+    it("순수 16진수 경로는 이스케이프 없이 그대로 저장한다", async () => {
+        vi.mocked(getDcconPackage).mockResolvedValue(dcconPackage(["36ab12cd", "36ab12ef"]));
+
+        await handleBlockRequest({target: "dccon", dcconPackage: "bundle"}, {dccon: "code1"});
+
+        const [entry] = await list("DCCON");
+        expect(entry).toMatchObject({content: "^(?:36ab12(?:cd|ef))$", isRegex: true});
+        const pattern = new RegExp(entry?.content ?? "");
+        expect(pattern.test("36ab12cd")).toBe(true);
+        expect(pattern.test("36ab12ef")).toBe(true);
+        expect(pattern.test("36ab12ff")).toBe(false);
+    });
+
+    it("묶음이 하나뿐이면 접두사 없이 그대로 넣는다", async () => {
+        vi.mocked(getDcconPackage).mockResolvedValue(dcconPackage(["x"]));
+
+        await handleBlockRequest({target: "dccon", dcconPackage: "bundle"}, {dccon: "code1"});
+
+        const [entry] = await list("DCCON");
+        expect(entry).toMatchObject({content: `^(${RegExp.escape("x")})$`, isRegex: true});
     });
 });

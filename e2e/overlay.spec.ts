@@ -10,7 +10,8 @@ test.describe("유저 버블", () => {
 
         const {bubble} = listPage;
         await expect(bubble).toContainText("user3");
-        await expect(bubble).toContainText("12 / 34");
+        await expect(bubble).toContainText("게시물 12");
+        await expect(bubble).toContainText("댓글 34");
         await bubble.getByRole("button", {name: "유저 차단"}).click();
 
         await expect(listPage.toast).toContainText("차단 목록에 추가했습니다.");
@@ -39,7 +40,6 @@ test.describe("유저 버블", () => {
 
         const {bubble} = listPage;
         await expect(bubble.getByRole("button", {name: "닉네임 ㅇㅇ 차단 해제"})).toBeVisible();
-        // 허용 목록(고닉만 보기)의 항목을 지우면 이 사람은 그대로 막히고 고닉까지 막힌다.
         await expect(bubble.getByText("닉네임 허용 목록(1개)에 없음")).toBeVisible();
         await expect(bubble.getByRole("button", {name: "닉네임 고닉 차단 해제"})).toHaveCount(0);
     });
@@ -81,7 +81,6 @@ test.describe("메모", () => {
         await expect(input).toBeFocused();
         await input.fill("테스트 메모");
 
-        // 오버레이(shadow DOM) 안에서도 Tab·Shift+Tab이 디시 페이지로 나가지 않는다.
         const focusInside = () => dialog.evaluate((element) => document.activeElement?.tagName === "REFRESHER-ROOT" && element.contains((element.getRootNode() as ShadowRoot).activeElement));
         for (const key of ["Tab", "Shift+Tab"]) {
             for (let i = 0; i < 12; i++) {
@@ -106,7 +105,6 @@ test.describe("오버레이 포커스", () => {
         await page.keyboard.press("Enter");
         await expect(listPage.frameTitle).toHaveText("[말머리] 글 3 제목");
 
-        // 창 머리의 글쓴이 닉네임까지 Tab으로 간다.
         const nick = frame.locator(".refresher-user button").first();
         await expect(nick).toHaveText("고닉");
         await expect(async () => {
@@ -118,7 +116,6 @@ test.describe("오버레이 포커스", () => {
         await page.keyboard.press("Enter");
         await expect(bubble).toBeVisible();
         await expect(nick).toHaveAttribute("aria-expanded", "true");
-        // 키보드로 열면 버블 안으로 포커스가 옮겨 간다.
         await expect.poll(() => bubble.evaluate((element) => element.contains((element.getRootNode() as ShadowRoot).activeElement))).toBe(true);
         await page.keyboard.press("Escape");
         await expect(bubble).toHaveCount(0);
@@ -152,7 +149,6 @@ test.describe("글 페이지 댓글", () => {
         await expect(items.nth(1)).toHaveClass(/refresherDuplicate/);
         await expect(items.nth(2)).toBeHidden();
 
-        // 둘만 남아 기준(3번) 아래다. 접었던 댓글을 다시 보이고 배지도 뗀다.
         await storage.set({"refresher:block:NICK": [{id: "a", content: "가", isRegex: false}]});
         await expect(items.nth(0)).toBeHidden();
         await expect(items.nth(1)).toBeVisible();

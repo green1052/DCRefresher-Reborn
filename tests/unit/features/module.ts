@@ -1,4 +1,4 @@
-/** 기능 모듈 테스트 도우미 (tests/unit/features 전용). 레지스트리·저장소 없이 setup을 한 번 돌린다. */
+/** 기능 모듈 테스트 도우미 (tests/unit/features 전용). 레지스트리, 저장소 없이 setup을 한 번 돌린다. */
 import {addFilter} from "@/core/filtering";
 import {settingsOf} from "@/core/module/settings";
 import type {AnyModule, ModuleContext} from "@/core/module/types";

@@ -1,8 +1,7 @@
 import ky, {NetworkError, TimeoutError as KyTimeoutError} from "ky";
 import {describe, expect, it} from "vitest";
 
-import {BlockedError} from "@/core/http/client";
-import {friendlyMessage, isAbortError, isBlockedError, isTimeoutError} from "@/utils/error";
+import {friendlyMessage, isAbortError, isTimeoutError} from "@/utils/error";
 
 /** ky가 직접 만든 HTTPError. fetch를 바꿔 요청은 나가지 않는다. */
 const httpError = (status: number): Promise<unknown> =>
@@ -32,14 +31,6 @@ describe("isAbortError", () => {
     });
 });
 
-describe("isBlockedError", () => {
-    it("메시지를 건너와 클래스를 잃은 오류도 이름으로 본다", () => {
-        expect(isBlockedError(new BlockedError("디시인사이드 임시 차단"))).toBe(true);
-        expect(isBlockedError({name: "BlockedError", message: "디시인사이드 임시 차단"})).toBe(true);
-        expect(isBlockedError(new Error("BlockedError"))).toBe(false);
-    });
-});
-
 describe("friendlyMessage", () => {
     it("HTTP 오류는 상태별로 안내한다", async () => {
         expect(friendlyMessage(await httpError(403))).toContain("막혔습니다");
@@ -59,7 +50,7 @@ describe("friendlyMessage", () => {
         expect(friendlyMessage(new NetworkError(new Request("https://gall.dcinside.com/")))).toContain("연결하지 못했습니다");
     });
 
-    it("JSON 오류·저장소 한도를 가린다", () => {
+    it("JSON 오류, 저장소 한도를 가린다", () => {
         expect(friendlyMessage(new SyntaxError("Unexpected token"))).toBe("JSON 형식이 올바르지 않습니다.");
         // 크롬의 실제 문구에는 quota도 들어 있어 쓰기 횟수 한도를 용량 한도보다 먼저 본다.
         expect(friendlyMessage(new Error("This request exceeds the MAX_WRITE_OPERATIONS_PER_MINUTE quota."))).toContain("너무 자주");

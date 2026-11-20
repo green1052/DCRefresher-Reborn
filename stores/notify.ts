@@ -1,11 +1,9 @@
 import type {ManageResult} from "@/core/preview/request";
-import {isBlockedError} from "@/utils/error";
 
 import {useUiStore} from "./ui";
 
-/** 원인은 콘솔에 남기고 정해진 문구(message)를 오류 토스트로 띄운다. 임시 차단은 HTTP 클라이언트가 이미 알렸으므로 덮지 않는다. */
+/** 원인은 콘솔에 남기고 정해진 문구(message)를 오류 토스트로 띄운다. */
 export const reportFailure = (e: unknown, label: string, message: string): void => {
-    if (isBlockedError(e)) return;
     console.error(label, e);
     useUiStore.getState().showToast(message, "error");
 };

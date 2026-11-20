@@ -26,7 +26,7 @@ describe("commands 모듈", () => {
 
         const manifest = await generateManifest({commands: {"wxt:reload-extension": {description: "dev"}}});
 
-        // meta.ts가 있는 폴더의 meta.ts·labels.ts만 한 번에 불러온다.
+        // meta.ts가 있는 폴더의 meta.ts, labels.ts만 한 번에 불러온다.
         expect(importEntrypoints).toHaveBeenCalledTimes(1);
         expect(importEntrypoints).toHaveBeenCalledWith([
             join(root, "features", "a", "meta.ts"), join(root, "features", "b", "meta.ts"),
@@ -56,5 +56,11 @@ describe("commands 모듈", () => {
     it("이름이 겹치면 던진다", async () => {
         const {generateManifest} = setup([meta("a", {go: {description: ""}}), meta("b", {go: {description: ""}})]);
         await expect(generateManifest({})).rejects.toThrow("단축키 이름이 겹칩니다: go (b)");
+    });
+
+    it("labels.ts에 설명이 없으면 던진다 (manifest에 \"undefined: undefined\"가 들어가지 않게)", async () => {
+        const {meta: broken, labels} = meta("a", {next: {description: "다음"}});
+        const {generateManifest} = setup([{meta: broken, labels: {...labels, commands: {}}}]);
+        await expect(generateManifest({})).rejects.toThrow("단축키 설명이 labels.ts에 없습니다: next (a)");
     });
 });

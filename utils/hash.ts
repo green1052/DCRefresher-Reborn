@@ -1,11 +1,8 @@
-/** SHA-256 (16진수 소문자). 클라우드 백업의 무결성 확인과 이미지 차단 항목이 쓴다. */
+/** SHA-256 (16진수 소문자). 클라우드 백업의 무결성 확인과 목록 변경 검사가 쓴다. */
 export const sha256 = async (data: BufferSource): Promise<string> =>
     new Uint8Array(await crypto.subtle.digest("SHA-256", data)).toHex();
 
-/**
- * 빠른 53비트 문자열 해시(cyrb53). 암호용이 아니다. 긴 문자열을 들고 있지 않고 같은지만 견줄 때 쓴다.
- * 동기라 DOM을 고치는 흐름 안에서 바로 쓸 수 있다 (sha256은 비동기다).
- */
+/** 빠른 53비트 해시(cyrb53). 암호용 아님 - 동기 비교용. */
 export const hash53 = (text: string): number => {
     let h1 = 0xdeadbeef;
     let h2 = 0x41c6ce57;

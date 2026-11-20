@@ -5,10 +5,7 @@ import {defineWxtModule} from "wxt/modules";
 import type {AnyModuleLabels, AnyModuleMeta} from "../core/module/types";
 import {featureFolders} from "./lib/features";
 
-/**
- * 모듈 메타(features/<id>/meta.ts)의 commands를 모아 manifest commands로 넣는다.
- * 단축키를 추가할 때 메타·labels.ts와 index.ts의 shortcuts만 고치면 된다. 설명은 labels.ts의 "모듈 이름: 명령 설명"으로 브라우저 단축키 설정에 보인다.
- */
+/** 모듈 메타의 commands를 모아 manifest commands로 넣는다. 설명은 labels.ts의 "모듈 이름: 명령 설명". */
 export default defineWxtModule((wxt) => {
     wxt.hook("build:manifestGenerated", async (wxt, manifest) => {
         const folders = featureFolders(wxt.config.root, "meta.ts");
@@ -23,7 +20,10 @@ export default defineWxtModule((wxt) => {
             for (const [name, {key}] of Object.entries(meta.commands ?? {})) {
                 if (name in commands) throw new Error(`단축키 이름이 겹칩니다: ${name} (${meta.id})`);
                 const label = labels[index];
-                commands[name] = {description: `${label?.name}: ${label?.commands?.[name]}`, ...(key ? {suggested_key: {default: key}} : {})};
+                // 없으면 브라우저 단축키 설정에 "undefined: undefined"가 보인다.
+                const description = label?.commands?.[name];
+                if (label?.name === undefined || description === undefined) throw new Error(`단축키 설명이 labels.ts에 없습니다: ${name} (${meta.id})`);
+                commands[name] = {description: `${label.name}: ${description}`, ...(key ? {suggested_key: {default: key}} : {})};
             }
         }
         // dev는 확장 다시 불러오기 명령(dev.reloadCommand)을 이미 넣어 두었으므로 덮지 않고 더한다.

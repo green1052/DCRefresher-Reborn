@@ -1,42 +1,40 @@
-import {Ban, ExternalLink, NotebookPen, Search} from "lucide-react";
-import {type ComponentProps, useEffect, useRef, useState, useSyncExternalStore} from "react";
+import {Ban, ExternalLink, NotebookPen, Search} from "lucide-preact";
+import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
+import { useSyncExternalStore } from "@/utils/useSyncExternalStore";
+import { type ComponentProps } from "preact";
+import { createPortal } from "preact";
 
-import {DialogActions, ModalDialog} from "@/components/dialogs";
-import {Button} from "@/components/ui/button";
-import {DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dialog";
-import {Popover, PopoverContent} from "@/components/ui/popover";
-import {Separator} from "@/components/ui/separator";
-import {Skeleton} from "@/components/ui/skeleton";
+import {DialogActions, DialogDescription, DialogHeader, DialogTitle, ModalDialog, firstFocusable} from "@/components/dialogs";
 import {useReturnFocus} from "@/components/useReturnFocus";
 import {blockingEntries} from "@/core/block";
 import {banReasonsOf, databaseVersion, ipInfoOf, onDatabaseChange, subscribeDatabase} from "@/core/database";
 import {urls} from "@/core/http/urls";
 import {getModuleApi} from "@/core/module/registry";
 import {useRunningModuleSettings} from "@/core/module/useModuleSettings";
-import {dcconPackages, fetchDcconPackage} from "@/core/preview/request";
+import {dcconPackages, getDcconPackage} from "@/core/preview/request";
 import {TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {type BlockRequestOptions, handleBlockRequest} from "@/stores/blockRequest";
 import {blockLabel, useBlocksStore} from "@/stores/blocks";
 import {useUserMemo} from "@/stores/memos";
-import {copyWithToast, type SelectedUser, selectedGallery, useUiStore} from "@/stores/ui";
+import {copyText, type SelectedUser, selectedGallery, useUiStore} from "@/stores/ui";
 import {SAVE_FAILED} from "@/utils/error";
-import {type ActivityState, useGallogActivity} from "@/components/overlay/gallogActivity";
+import {useGallogActivity} from "@/components/overlay/gallogActivity";
 import {cn} from "cn";
 
 import {overlay} from "./shadow";
 
-/** 버블 메뉴 한 줄. 우클릭 메뉴처럼 왼쪽에 맞춰 세로로 쌓는다. danger는 차단처럼 되돌리기 번거로운 동작이다. */
-const MenuItem = ({danger, className, ...props}: ComponentProps<typeof Button> & { danger?: boolean }) => (
-    <Button variant="ghost" size="sm"
-            className={cn("w-full cursor-pointer justify-start font-normal", danger && "text-destructive hover:bg-destructive/10 hover:text-destructive", className)}
+const MENU_ITEM = "btn btn-ghost btn-sm w-full cursor-pointer justify-start font-normal [&_svg:not([class*='size-'])]:size-4";
+
+const MenuItem = ({danger, className, ...props}: ComponentProps<"button"> & { danger?: boolean }) => (
+    <button type="button"
+            className={cn(MENU_ITEM, danger && "text-error hover:bg-error/10 hover:text-error", className)}
             {...props}/>
 );
 
-/**
- * 디시콘 버블 맨 위의 패키지 이름과 설명. 누르면 디시콘 정보 창을 연다. 디시콘 하나의 이름("33" 등)은 뜻이 없는 것이 많아 쓰지 않는다.
- * 정보 창과 같은 캐시(dcconPackages)를 써 이어서 열어도 다시 받지 않는다. 받지 못하면 이름 없이 열기만 둔다.
- */
+const Separator = () => <div role="none" className="divider m-0"/>;
+
+// 디시콘 하나의 이름은 뜻이 없는 경우가 많아 패키지 정보를 쓴다 - 정보 창과 같은 캐시(dcconPackages)를 공유해 다시 받지 않는다.
 const DcconSummary = ({code, onOpen}: { code: string; onOpen: () => void }) => {
     const [dccon, setDccon] = useState(() => dcconPackages.get(code) ?? null);
     const [failed, setFailed] = useState(false);
@@ -44,8 +42,7 @@ const DcconSummary = ({code, onOpen}: { code: string; onOpen: () => void }) => {
     useEffect(() => {
         if (dccon) return;
         const controller = new AbortController();
-        void fetchDcconPackage(code, controller.signal).then((result) => {
-            dcconPackages.set(code, result);
+        void getDcconPackage(code, controller.signal).then((result) => {
             if (!controller.signal.aborted) setDccon(result);
         }, () => !controller.signal.aborted && setFailed(true));
         return () => controller.abort();
@@ -58,17 +55,17 @@ const DcconSummary = ({code, onOpen}: { code: string; onOpen: () => void }) => {
                     <img src={urls.dccon.image + dccon.info.main_img_path} alt="" className="size-10 flex-none rounded-sm object-contain"/>
                     <span className="flex min-w-0 flex-col items-start gap-0.5">
                         <strong>{dccon.info.title}</strong>
-                        {dccon.info.description && <span className="line-clamp-2 text-left text-xs text-muted-foreground">{dccon.info.description}</span>}
+                        {dccon.info.description && <span className="line-clamp-2 text-left text-xs text-base-content/60">{dccon.info.description}</span>}
                     </span>
                 </>
             ) : failed ? (
                 <span>디시콘 정보</span>
             ) : (
                 <>
-                    <Skeleton className="size-10 flex-none"/>
+                    <span className="size-10 flex-none skeleton"/>
                     <span className="flex flex-col gap-1">
-                        <Skeleton className="h-4 w-24"/>
-                        <Skeleton className="h-3 w-40"/>
+                        <span className="h-4 w-24 skeleton"/>
+                        <span className="h-3 w-40 skeleton"/>
                     </span>
                 </>
             )}
@@ -76,8 +73,6 @@ const DcconSummary = ({code, onOpen}: { code: string; onOpen: () => void }) => {
     );
 };
 
-/** 클릭하면 복사되는 값 한 줄. 라벨 폭을 맞춰 값이 한 줄로 늘어서게 하고, 긴 값(IP 후보 등)은 띄어쓰기에서 다음 줄로 넘긴다. onSearch가 있으면 오른쪽에 그 값으로 글을 찾는 버튼을 둔다.
- * color·valueClassName은 값을 배지와 같은 색으로 칠한다. */
 const CopyRow = ({label, value, onCopy, onSearch, color, valueClassName}: {
     label: string;
     value: string;
@@ -88,24 +83,18 @@ const CopyRow = ({label, value, onCopy, onSearch, color, valueClassName}: {
 }) => (
     <div className="flex items-center">
         <MenuItem className="h-auto min-h-8 min-w-0 flex-1 py-1.5 whitespace-normal" title="클릭하면 복사됩니다." onClick={() => onCopy(value)}>
-            <span className="w-18 shrink-0 text-left text-muted-foreground">{label}</span>{" "}
+            <span className="w-18 shrink-0 text-left text-base-content/60">{label}</span>{" "}
             <strong className={cn("min-w-0 text-left break-keep wrap-anywhere", valueClassName)} style={{color}}>{value}</strong>
         </MenuItem>
         {onSearch && (
-            <Button variant="ghost" size="icon-sm" className="shrink-0 cursor-pointer text-muted-foreground" aria-label={`${label}(으)로 글 검색`} title={`${label}(으)로 글 검색`}
+            <button type="button" className="btn btn-ghost btn-square btn-sm shrink-0 cursor-pointer text-base-content/60"
+                    aria-label={`${label}(으)로 글 검색`} title={`${label}(으)로 글 검색`}
                     onClick={onSearch}>
-                <Search/>
-            </Button>
+                <Search className="size-4"/>
+            </button>
         )}
     </div>
 );
-
-const formatActivity = (activity: ActivityState): string | undefined => {
-    if (activity === "loading") return "불러오는 중…";
-    if (activity === "error") return "불러오지 못함";
-    if (!activity) return undefined;
-    return `${activity.article.toLocaleString()} / ${activity.comment.toLocaleString()}`;
-};
 
 const identityValue = ({uid, ip}: { uid?: string; ip?: string }): string | undefined => (uid && ip ? `${uid} (${ip})` : uid || ip);
 
@@ -129,11 +118,7 @@ const unblock = async (type: BlockType, {id, ...fields}: BlockEntry): Promise<vo
 
 type BlockRule = { type: BlockType; entry: BlockEntry };
 
-/**
- * 이 대상을 막고 있는 차단 규칙 목록. 왜 가려졌는지 보여 주고 그 자리에서 풀 수 있게 한다.
- * 허용 목록(불일치·불포함)은 이 대상이 어느 항목에도 맞지 않아 막힌 것이라, 항목을 지워도 풀리지 않고 지운 항목의 사람까지 막히므로 해제를 두지 않는다.
- * 허용 목록은 맞지 않은 항목 전부가 넘어오므로 유형마다 한 줄로 줄인다. 항목마다 그리면 버블이 화면을 넘고(스크롤하면 닫힌다) 해제 버튼이 밀려난다.
- */
+// 허용 목록은 이 대상이 어느 항목에도 맞지 않아 막힌 것이라 항목을 지워도 안 풀려 해제를 두지 않는다.
 const BlockRules = ({rules, defaults}: { rules: BlockRule[]; defaults: Record<BlockType, DetectMode> }) => {
     const isAllowList = ({type, entry}: BlockRule): boolean => (entry.mode ?? defaults[type]).startsWith("NOT_");
     const hits = rules.filter((rule) => !isAllowList(rule));
@@ -141,26 +126,26 @@ const BlockRules = ({rules, defaults}: { rules: BlockRule[]; defaults: Record<Bl
     return (
         <>
             <Separator/>
-            <p className="text-xs text-muted-foreground">걸린 차단 규칙</p>
+            <p className="text-xs text-base-content/60">걸린 차단 규칙</p>
             <div className="flex flex-col gap-1">
                 {hits.map(({type, entry}) => {
-                    const name = blockLabel(type, entry);
+                    const name = blockLabel(entry);
                     return (
                         <div key={entry.id} className="flex items-center justify-between gap-2">
-                            <span className="truncate text-xs" title={entry.isRegex ? "정규식 — 풀면 이 규칙에 걸린 다른 대상도 함께 풀립니다." : undefined}>
-                                <span className="text-muted-foreground">{TYPE_NAMES[type]}</span> {name}
-                                {entry.isRegex && <span className="text-muted-foreground"> (정규식)</span>}
-                                {entry.gallery && <span className="text-muted-foreground"> (이 갤러리만)</span>}
+                            <span className="truncate text-xs" title={entry.isRegex ? "정규식 - 풀면 이 규칙에 걸린 다른 대상도 함께 풀립니다." : undefined}>
+                                <span className="text-base-content/60">{TYPE_NAMES[type]}</span> {name}
+                                {entry.isRegex && <span className="text-base-content/60"> (정규식)</span>}
+                                {entry.gallery && <span className="text-base-content/60"> (이 갤러리만)</span>}
                             </span>
-                            <Button size="xs" variant="ghost" className="shrink-0 text-destructive"
+                            <button type="button" className="btn btn-ghost btn-xs shrink-0 cursor-pointer text-error"
                                     aria-label={`${TYPE_NAMES[type]} ${name} 차단 해제`}
-                                    onClick={() => void unblock(type, entry)}>해제</Button>
+                                    onClick={() => void unblock(type, entry)}>해제</button>
                         </div>
                     );
                 })}
                 {Array.from(allowLists, ([type, entries]) => (
                     <span key={type} className="text-xs">
-                        <span className="text-muted-foreground">{TYPE_NAMES[type]}</span> 허용 목록({entries.length}개)에 없음
+                        <span className="text-base-content/60">{TYPE_NAMES[type]}</span> 허용 목록({entries.length}개)에 없음
                     </span>
                 ))}
             </div>
@@ -168,7 +153,6 @@ const BlockRules = ({rules, defaults}: { rules: BlockRule[]; defaults: Record<Bl
     );
 };
 
-/** 디시콘 패키지 전체를 어떻게 차단할지 고른다. 취소하면 아무것도 차단하지 않는다. */
 export const DcconPackageDialog = ({target, onClose}: { target: SelectedUser; onClose: () => void }) => {
     const choose = (dcconPackage: "bundle" | "each"): void => {
         onClose();
@@ -176,7 +160,7 @@ export const DcconPackageDialog = ({target, onClose}: { target: SelectedUser; on
     };
 
     return (
-        <ModalDialog onClose={onClose} className="sm:max-w-[400px]">
+        <ModalDialog onClose={onClose} className="sm:max-w-100">
             <DialogHeader>
                 <DialogTitle>디시콘 패키지를 어떻게 차단할까요?</DialogTitle>
                 <DialogDescription>
@@ -184,8 +168,8 @@ export const DcconPackageDialog = ({target, onClose}: { target: SelectedUser; on
                 </DialogDescription>
             </DialogHeader>
             <DialogActions>
-                <Button variant="secondary" onClick={() => choose("each")}>하나씩 차단</Button>
-                <Button onClick={() => choose("bundle")}>묶어서 차단</Button>
+                <button type="button" className="btn" onClick={() => choose("each")}>하나씩 차단</button>
+                <button type="button" className="btn btn-primary" onClick={() => choose("bundle")}>묶어서 차단</button>
             </DialogActions>
         </ModalDialog>
     );
@@ -194,7 +178,6 @@ export const DcconPackageDialog = ({target, onClose}: { target: SelectedUser; on
 /** 버블이 여는 창. 창은 버블 밖(ContentRoot)에 그려 버블이 닫혀도 남는다. */
 interface BubbleActions {
     onBlockPackage: (target: SelectedUser) => void;
-    /** 디시콘 코드로 디시콘 정보 창(미리보기의 DcconInfoPopup)을 연다. */
     onDcconInfo: (code: string) => void;
 }
 
@@ -203,10 +186,8 @@ interface BubbleProps extends BubbleActions {
     selected: SelectedUser;
 }
 
-/** 유저 버블. 열 때 마운트되어 닫을 때 연 요소로 포커스를 돌려준다 (useReturnFocus). */
-const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) => {
-    const popup = useRef<HTMLDivElement>(null);
-    const focus = useReturnFocus(popup);
+/** 버블이 보여 줄 데이터 - 스토어 구독과 파생값을 모은다. */
+const useBubbleData = (selected: SelectedUser) => {
     const activityState = useGallogActivity(selected.dccon ? undefined : selected.uid);
     const gallery = selectedGallery(selected.gallery);
     const memo = useUserMemo(selected, gallery);
@@ -214,25 +195,74 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
     const entries = useBlocksStore((s) => s.entries);
     const defaults = useBlocksStore((s) => s.defaults);
     const rules = blockingEntries(selected.dccon ? {DCCON: selected.dccon} : {NICK: selected.nick, ID: selected.uid, IP: selected.ip}, gallery ?? undefined, {entries, defaults});
-    // DB를 읽을 때마다 오르는 번호를 구독해 다시 그린다. 0이면 아직 읽지 않아 IP·밴을 찾지 않는다.
-    // 디시콘 버블은 IP·밴을 그리지 않으므로 읽기를 시작하지 않는다(onDatabaseChange).
+    // DB를 읽을 때마다 오르는 번호를 구독해 다시 그린다 (0이면 아직 읽지 않아 IP, 밴을 찾지 않는다).
     const dbVersion = useSyncExternalStore(selected.dccon ? onDatabaseChange : subscribeDatabase, databaseVersion);
+    const ipInfo = dbVersion > 0 && selected.ip ? ipInfoOf(selected.ip) : undefined;
+    // 배지와 같은 색. 유저 정보 모듈이 꺼져 있거나 색을 비웠으면 미리보기(features/preview/ui/UserCard.tsx)처럼 파랑이다.
+    const userinfo = useRunningModuleSettings("userinfo");
+    const ipColor = ipInfo ? userinfo?.[`${ipInfo.category}Color`] : undefined;
+    const bans = dbVersion > 0 && selected.uid ? banReasonsOf(selected.uid) : undefined;
+    return {gallery, defaults, rules, memo, ipInfo, ipColor, bans, activity: activityState};
+};
 
-    // Popover는 스크롤을 따라가지 않으므로 스크롤하면 닫는다.
-    // scroll 이벤트는 shadow root 밖으로 나가지 않으므로 미리보기 안의 스크롤은 루트에서 잡는다.
+const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) => {
+    const popup = useRef<HTMLDivElement>(null);
+    const focus = useReturnFocus(popup);
+    const {gallery, defaults, rules, memo, ipInfo, ipColor, bans, activity} = useBubbleData(selected);
+
+    // 창을 우클릭한 자리 아래에 놓고, 화면을 넘으면 안으로 접는다. 그리기 전에 계산해 첫 프레임부터 제자리에 둔다.
+    useLayoutEffect(() => {
+        const el = popup.current;
+        if (!el) return;
+        const left = Math.min(Math.max(8, bubble.x), window.innerWidth - el.offsetWidth - 8);
+        const below = bubble.y + 4;
+        const top = below + el.offsetHeight > window.innerHeight - 8 ? Math.max(8, bubble.y - 4 - el.offsetHeight) : below;
+        el.style.left = `${left}px`;
+        el.style.top = `${top}px`;
+    });
+
+    // 키보드로 열었을 때만 창 안으로 포커스를 옮긴다 (initialFocus). 마우스로 열었으면 그 자리에 둔다.
+    useLayoutEffect(() => {
+        if (focus.keyboard) firstFocusable(popup.current!)?.focus();
+    }, []);
+
     useEffect(() => {
-        const onScroll = (): void => useUiStore.getState().closeBubble();
         const controller = new AbortController();
         const options = {capture: true, signal: controller.signal};
+        // 창은 화면 좌표에 붙어 있어 스크롤을 따라가지 못하므로 스크롤하면 닫는다 - 미리보기 스크롤은 shadow 밖으로 이벤트가 안 나가 루트에서도 잡는다.
+        const onScroll = (): void => useUiStore.getState().closeBubble();
         window.addEventListener("scroll", onScroll, options);
         overlay.portal?.getRootNode().addEventListener("scroll", onScroll, options);
+        // 닫는 도중 남은 클릭, Esc은 지금 버블이 아니면 무시한다 (다시 연 버블을 그 클릭으로 닫지 않게).
+        const stillCurrent = (): boolean => useUiStore.getState().bubble === bubble;
+        const onKeyDown = (ev: KeyboardEvent): void => {
+            if (ev.key !== "Escape") return;
+            const tree = overlay.portal?.getRootNode();
+            const dialog = tree instanceof ShadowRoot ? tree.querySelector("dialog[open]") : null;
+            // 모달 창이 열려 있으면 그 창이 Esc를 받는다(native dialog의 cancel). 버블이 그 창 안에 있을 때는 버블이 먼저 닫힌다.
+            if (dialog && !dialog.contains(popup.current!)) return;
+            if (!stillCurrent()) return;
+            // keydown의 기본 동작(모달 창의 cancel)까지 막는다.
+            ev.preventDefault();
+            ev.stopPropagation();
+            useUiStore.getState().closeBubble();
+        };
+        window.addEventListener("keydown", onKeyDown, options);
+        // 창 밖을 누르면 닫는다. 다른 대상을 우클릭하면 버블이 이미 바뀌어 있어 그냥 둔다.
+        const onPointerDown = (ev: PointerEvent): void => {
+            // 창 밖 리스너(window)에는 shadow root 안을 눌러도 대상이 호스트(refresher-root)로 바뀌어 오므로 composedPath로 안팎을 가린다.
+            if (ev.composedPath().includes(popup.current!)) return;
+            if (!stillCurrent()) return;
+            useUiStore.getState().closeBubble();
+        };
+        window.addEventListener("pointerdown", onPointerDown, options);
         return () => controller.abort();
-    }, []);
+    }, [bubble]);
 
     const close = (): void => useUiStore.getState().closeBubble();
     const copy = (value: string): void => {
         close();
-        void copyWithToast(value);
+        void copyText(value, "복사했습니다.", "복사하지 못했습니다.");
     };
     // 이벤트로 보내면 차단 모듈이 꺼져 있을 때 받는 쪽이 없어 조용히 무시되므로 직접 부른다.
     const requestBlock = (options: BlockRequestOptions): void => {
@@ -241,101 +271,138 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
     };
 
     const identity = identityValue(selected);
-    // 검색 모듈이 이 페이지에서 돌 때만 (아이디·IP 거르기를 그 모듈이 한다).
+    // 머리 표시에는 식별 하나만 괄호에 넣는다 - 아이디와 IP가 다 있으면 괄호가 겹친다.
+    const idOrIp = selected.uid || selected.ip;
+    // 검색 모듈이 이 페이지에서 돌 때만 (아이디, IP 거르기를 그 모듈이 한다).
     const searchApi = getModuleApi("search");
     const searchBy = (by: "nick" | "identity"): (() => void) | undefined => searchApi && (() => {
         close();
         searchApi.searchUserPosts(selected, by);
     });
-    const ipInfo = dbVersion > 0 && selected.ip ? ipInfoOf(selected.ip) : undefined;
-    // 배지와 같은 색. 유저 정보 모듈이 꺼져 있거나 색을 비웠으면 미리보기(features/preview/ui/UserCard.tsx)처럼 파랑이다.
-    const userinfo = useRunningModuleSettings("userinfo");
-    const ipColor = ipInfo ? userinfo?.[`${ipInfo.category}Color`] : undefined;
-    const bans = dbVersion > 0 && selected.uid ? banReasonsOf(selected.uid) : undefined;
-    const activity = formatActivity(activityState);
+    // 예전처럼 반고닉은 아이디로, 유동은 IP로 찾는다. 식별값이 없을 때만 닉네임으로 찾는다.
+    const searchPosts = searchBy(selected.uid || selected.ip ? "identity" : "nick");
 
-    return (
-        <Popover open onOpenChange={(open, details) => {
-            if (open) return;
-            // Preact가 effect 정리를 그린 뒤로 미뤄 닫힌 버블도 잠시 클릭·Esc를 받는다. 지금 버블이 아니면 흘려보낸다.
-            // 받으면 곧바로 다시 연 버블을 그 클릭으로 닫고, 다음 Esc(미리보기 닫기 등)를 먹는다.
-            if (useUiStore.getState().bubble !== bubble) {
-                details.cancel();
-                details.allowPropagation();
-                return;
-            }
-            close();
-        }}>
-            {/* 우클릭한 자리에 띄운다. 트리거 대신 그 점을 기준으로 놓는다. */}
-            <PopoverContent ref={popup} side="bottom" align="start" sideOffset={4} className="w-auto min-w-[200px] max-w-[320px] gap-2 p-2"
-                            anchor={{getBoundingClientRect: () => DOMRect.fromRect({x: bubble.x, y: bubble.y, width: 0, height: 0})}}
-                            initialFocus={focus.keyboard} finalFocus={focus.finalFocus}
-                            aria-label={selected.dccon ? "디시콘 메뉴" : `${selected.nick || identity || "사용자"} 메뉴`}>
-                {/* 여기서 여는 창(메모·패키지 차단)은 연 요소로 포커스를 먼저 옮겨 둔다. 그래야 그 창이 닫힐 때 사라진 버블 대신 그리로 돌아간다. */}
-                {selected.dccon ? (
-                    <>
-                        {/* 버블이 떠 있는 채로 다른 디시콘을 우클릭해도 그 디시콘의 정보를 새로 받게 코드로 다시 만든다. */}
-                        <DcconSummary key={selected.dccon} code={selected.dccon} onOpen={() => {
+    const content = (
+        // fixed 창을 overlay.portal(섀도 루트)에 그린다 - transform이나 clip을 쓰는 문서 흐름과 상관없이 화면에 붙는다.
+        <div ref={popup} data-slot="popover-content" role="dialog"
+             aria-label={selected.dccon ? "디시콘 메뉴" : `${selected.nick || identity || "사용자"} 메뉴`}
+             style={{left: `${bubble.x}px`, top: `${bubble.y + 4}px`}}
+             className="fixed isolate z-50 flex min-w-50 max-w-80 flex-col gap-2 rounded-md bg-base-100 p-2 text-sm text-base-content shadow-md ring-1 ring-base-content/10 outline-none duration-100 animate-in fade-in-0 zoom-in-95">
+            {/* 창이 닫힐 때 사라진 버블 대신 연 요소로 돌아오게 먼저 포커스를 옮겨 둔다. */}
+            {selected.dccon ? (
+                <>
+                    {/* 다른 디시콘을 우클릭해도 새로 받게 코드로 다시 만든다. */}
+                    <DcconSummary key={selected.dccon} code={selected.dccon} onOpen={() => {
+                        focus.returnFocus();
+                        close();
+                        onDcconInfo(selected.dccon!);
+                    }}/>
+                    <Separator/>
+                    <div className="flex flex-col">
+                        <MenuItem danger onClick={() => requestBlock({target: "dccon"})}><Ban/> 이 디시콘 차단</MenuItem>
+                        <MenuItem danger title="이 디시콘이 든 패키지를 모두 가립니다."
+                                  onClick={() => {
+                                      focus.returnFocus();
+                                      close();
+                                      onBlockPackage(selected);
+                                  }}>
+                            <Ban/> 전체 차단
+                        </MenuItem>
+                    </div>
+                </>
+            ) : (
+                <>
+                    <div className="flex flex-col">
+                    {/* 디시 사용자 창(user_data_list)처럼 이름(아이디/IP)을 머리에 놓고, 각각 누르면 그 값이 복사된다. 오른쪽에 갤로그 아이콘을 둔다. */}
+                    {(selected.nick || identity) && (
+                        <div className="flex flex-col gap-1 px-3 pt-1 pb-0.5">
+                            <div className="flex items-center justify-between gap-2">
+                                <div className="flex min-w-0 items-baseline gap-1.5">
+                                    {selected.nick ? (
+                                        <>
+                                            <button type="button" className="flex min-w-0 cursor-pointer items-baseline gap-1.5 text-left" title="클릭하면 닉네임이 복사됩니다."
+                                                    onClick={() => copy(selected.nick!)}>
+                                                <strong className="truncate">{selected.nick}</strong>
+                                                {selected.icon && <img src={selected.icon} alt="" height={12} className="self-center"/>}
+                                            </button>
+                                            {idOrIp && (
+                                                <button type="button" className="min-w-0 cursor-pointer truncate text-left text-xs text-base-content/60"
+                                                        title="클릭하면 아이디/IP가 복사됩니다." onClick={() => copy(idOrIp)}>
+                                                    ({idOrIp})
+                                                </button>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <button type="button" className="min-w-0 cursor-pointer text-left" title="클릭하면 복사됩니다."
+                                                onClick={() => copy(identity!)}>
+                                            <strong className="truncate">{identity}</strong>
+                                        </button>
+                                    )}
+                                </div>
+                                {selected.uid && (
+                                    <a className="shrink-0 rounded text-base-content/50 hover:text-base-content"
+                                       href={`https://gallog.dcinside.com/${selected.uid}`} target="_blank" rel="noreferrer" onClick={close}
+                                       title="갤로그" aria-label="갤로그 열기">
+                                        <ExternalLink className="size-3.5"/>
+                                    </a>
+                                )}
+                            </div>
+                            {/* 글/댓글 수는 굵은 숫자로만 보여 준다. */}
+                            {activity !== undefined && (
+                                <p className="flex gap-3 text-xs text-base-content/60">
+                                    {activity === "loading" ? (
+                                        <span className="skeleton h-3 w-20"/>
+                                    ) : activity === "error" ? (
+                                        "글/댓글 수를 불러오지 못함"
+                                    ) : (
+                                        <>
+                                            <span>게시물 <strong className="font-semibold">{activity.article.toLocaleString()}</strong></span>
+                                            <span>댓글 <strong className="font-semibold">{activity.comment.toLocaleString()}</strong></span>
+                                        </>
+                                    )}
+                                </p>
+                            )}
+                        </div>
+                    )}
+                    {ipInfo && <CopyRow label="IP 정보" value={ipInfo.label} onCopy={copy} color={ipColor} valueClassName={cn(!ipColor && "text-blue-600 dark:text-blue-400")}/>}
+                    {bans && <CopyRow label="갱차 갤러리" value={bans} onCopy={copy}/>}
+                    {memo && <CopyRow label="메모" value={memo.text} onCopy={copy} color={memo.color || undefined}/>}
+                </div>
+                    <Separator/>
+                    <div className="flex flex-col">
+                        <MenuItem danger onClick={() => requestBlock({target: "user"})}><Ban/> 유저 차단</MenuItem>
+                        {gallery && (
+                            <MenuItem danger title={`${gallery} 갤러리에서만 가립니다.`} onClick={() => requestBlock({target: "user", gallery})}>
+                                <Ban/> 이 갤러리에서만 차단
+                            </MenuItem>
+                        )}
+                    </div>
+                    <Separator/>
+                    <div className="flex flex-col">
+                        <MenuItem onClick={() => {
                             focus.returnFocus();
-                            close();
-                            onDcconInfo(selected.dccon!);
-                        }}/>
-                        <Separator/>
-                        <div className="flex flex-col">
-                            <MenuItem danger onClick={() => requestBlock({target: "dccon"})}><Ban/> 이 디시콘 차단</MenuItem>
-                            <MenuItem danger title="이 디시콘이 든 패키지를 모두 가립니다."
-                                      onClick={() => {
-                                          focus.returnFocus();
-                                          close();
-                                          onBlockPackage(selected);
-                                      }}>
-                                <Ban/> 전체 차단
+                            useUiStore.getState().openMemo(selected);
+                        }}>
+                            <NotebookPen/> 메모
+                        </MenuItem>
+                        {searchPosts && (
+                            <MenuItem onClick={searchPosts}>
+                                <Search/> 작성글 검색
                             </MenuItem>
-                        </div>
-                    </>
-                ) : (
-                    <>
-                        <div className="flex flex-col">
-                            {selected.nick && <CopyRow label="닉네임" value={selected.nick} onCopy={copy} onSearch={searchBy("nick")}/>}
-                            {identity && <CopyRow label="아이디/IP" value={identity} onCopy={copy} onSearch={searchBy("identity")}/>}
-                            {ipInfo && <CopyRow label="IP 정보" value={ipInfo.label} onCopy={copy} color={ipColor} valueClassName={cn(!ipColor && "text-blue-600 dark:text-blue-400")}/>}
-                            {activity && <CopyRow label="글/댓글" value={activity} onCopy={copy}/>}
-                            {bans && <CopyRow label="갱차 갤러리" value={bans} onCopy={copy}/>}
-                            {memo && <CopyRow label="메모" value={memo.text} onCopy={copy} color={memo.color || undefined}/>}
-                        </div>
-                        <Separator/>
-                        <div className="flex flex-col">
-                            <MenuItem danger onClick={() => requestBlock({target: "user"})}><Ban/> 유저 차단</MenuItem>
-                            {gallery && (
-                                <MenuItem danger title={`${gallery} 갤러리에서만 가립니다.`} onClick={() => requestBlock({target: "user", gallery})}>
-                                    <Ban/> 이 갤러리에서만 차단
-                                </MenuItem>
-                            )}
-                        </div>
-                        <Separator/>
-                        <div className="flex flex-col">
-                            <MenuItem onClick={() => {
-                                focus.returnFocus();
-                                useUiStore.getState().openMemo(selected);
-                            }}>
-                                <NotebookPen/> 메모
-                            </MenuItem>
-                            {selected.uid && (
-                                <MenuItem nativeButton={false}
-                                          render={<a href={`https://gallog.dcinside.com/${selected.uid}`} target="_blank" rel="noreferrer" onClick={close}/>}>
-                                    <ExternalLink/> 갤로그
-                                </MenuItem>
-                            )}
-                        </div>
-                    </>
-                )}
-                {rules.length > 0 && <BlockRules rules={rules} defaults={defaults}/>}
-            </PopoverContent>
-        </Popover>
+                        )}
+                    </div>
+                </>
+            )}
+            {rules.length > 0 && <BlockRules rules={rules} defaults={defaults}/>}
+        </div>
     );
+    // 모달 창(native dialog, top layer)이 열려 있으면 그 안에 그린다 - 밖에 그리면 아무리 z-index를 올려도 창 뒤로 숨는다.
+    // dialog.modal은 fixed 풀스크린이라 그 안의 fixed 좌표도 그대로 화면에 붙는다. 정보 창은 app 트리의 기능 오버레이 호스트가 그리므로 shadow 루트 전체에서 찾는다.
+    const shadowRoot = overlay.portal?.getRootNode();
+    const host = (shadowRoot instanceof ShadowRoot ? shadowRoot.querySelector("dialog[open]") : null) ?? overlay.portal;
+    return host ? createPortal(content, host) : content;
 };
 
-/** 작성자를 우클릭하면 뜨는 유저 버블 (메모·차단·갤로그). */
 export const BubbleHost = (actions: BubbleActions) => {
     const bubble = useUiStore((s) => s.bubble);
     const selected = useUiStore((s) => s.selected);

@@ -1,21 +1,36 @@
 // 유저 버블의 "차단" 처리. 차단 모듈이 꺼져 있어도 차단 목록(stores/blocks.ts)에는 넣으므로 모듈이 아닌 stores에 둔다.
-import {imageHash, pairedMediaUrl} from "@/core/block";
 import {runningModuleSettings} from "@/core/module/registry";
-import {fetchDcconPackage} from "@/core/preview/request";
+import {getDcconPackage} from "@/core/preview/request";
 import {TYPE_NAMES} from "@/core/storage/items";
 import type {BlockType} from "@/core/storage/types";
-import {type BlockInputFields, useBlocksStore} from "@/stores/blocks";
+import {useBlocksStore} from "@/stores/blocks";
 import {reportFailure} from "@/stores/notify";
 import {type SelectedUser, useUiStore} from "@/stores/ui";
 
 /** 패키지 전체 차단 방식. bundle: 정규식 한 항목으로 묶는다, each: 디시콘마다 한 항목 (따로 풀 수 있다). */
 type DcconPackageMode = "bundle" | "each";
 
+// 묶음 차단 정규식. 디시콘 경로는 공통 접두사(패키지 번호)가 길어 DcconRain의 PACKS처럼 접두사를 한 번만 쓴다.
+const esc = (path: string) => (/^[0-9a-f]+$/.test(path) ? path : RegExp.escape(path));
+const bundledPattern = (paths: string[]): string => {
+    const unique = [...new Set(paths)];
+    // 빈 목록(패키지에 detail이 없을 때)은 비지 않는 정규식이 된다.
+    if (unique.length < 2) return `^(${esc(unique[0] ?? "")})$`;
+    let end = unique[0]!.length;
+    for (const path of unique) {
+        let i = 0;
+        while (i < end && i < path.length && path[i] === unique[0]![i]) i++;
+        end = i;
+    }
+    return `^(?:${esc(unique[0]!.slice(0, end))}(?:${unique.map((path) => esc(path.slice(end))).join("|")}))$`;
+};
+
 /**
  * 버블의 차단은 그 값을 막는다. 유형의 기본 모드가 NOT_*(허용 목록)면 모드 없이 넣은 항목이 허용 목록에 들어가므로 일치로 넣는다.
  * 포함(CONTAIN) 기본값은 사용자가 고른 것이라 그대로 따른다.
  */
-const blockMode = (type: BlockType) => (useBlocksStore.getState().defaults[type].startsWith("NOT_") ? "SAME" : undefined);
+// core/block.ts에 "가림 방식" 뜻의 blockMode가 있어 이름을 다르게 한다.
+const defaultDetectMode = (type: BlockType) => (useBlocksStore.getState().defaults[type].startsWith("NOT_") ? "SAME" : undefined);
 
 /** 유저 차단. uid > ip > nick 순으로 있는 값 하나를 쓴다. gallery가 있으면 그 갤러리에서만 막는다. */
 const blockUser = async (selected: SelectedUser, gallery?: string): Promise<void> => {
@@ -24,7 +39,7 @@ const blockUser = async (selected: SelectedUser, gallery?: string): Promise<void
     if (!value) return;
 
     const type: BlockType = selected.uid ? "ID" : selected.ip ? "IP" : "NICK";
-    await useBlocksStore.getState().addEntry(type, {content: value, isRegex: false, extra: selected.nick || value, mode: blockMode(type), gallery});
+    await useBlocksStore.getState().addEntry(type, {content: value, isRegex: false, extra: selected.nick || value, mode: defaultDetectMode(type), gallery});
 
     // 유저 정보 모듈만 켜져 있어도 버블이 열린다. 목록에는 넣었지만 가리지는 않는다는 것을 알린다.
     const off = runningModuleSettings("block") === undefined ? " 콘텐츠 차단 모듈이 꺼져 있어 지금은 가리지 않습니다." : "";
@@ -36,57 +51,21 @@ const blockDccon = async (selected: SelectedUser, dcconPackage?: DcconPackageMod
     const code = selected.dccon;
     if (!code) return;
 
-    const response = await fetchDcconPackage(code);
+    const response = await getDcconPackage(code);
 
     const extra = `${response.info.title} [${response.info.package_idx}]`;
-    const mode = blockMode("DCCON");
+    const mode = defaultDetectMode("DCCON");
 
     if (!dcconPackage) {
         await useBlocksStore.getState().addEntry("DCCON", {content: code, isRegex: false, extra, mode});
     } else if (dcconPackage === "bundle") {
-        // 경로에 정규식 특수문자가 있으면 의미가 변하므로 묶을 때 이스케이프한다.
-        const paths = response.detail.map((detail) => RegExp.escape(detail.path)).join("|");
-        await useBlocksStore.getState().addEntry("DCCON", {content: `^(${paths})$`, isRegex: true, extra: `[묶음] ${extra}`, mode});
+        await useBlocksStore.getState().addEntry("DCCON", {content: bundledPattern(response.detail.map((detail) => detail.path)), isRegex: true, extra: `[묶음] ${extra}`, mode});
     } else {
         // 묶지 않고 하나씩 넣되 addEntries로 한 번에 쓴다. 따로 넣으면 저장소 쓰기와 모든 탭의 watch가 디시콘 수만큼 돈다.
         await useBlocksStore.getState().addEntries("DCCON", response.detail.map(({path}) => ({content: path, isRegex: false, extra, mode})));
     }
 
     useUiStore.getState().showToast(`디시콘을 차단했습니다. (${extra})`);
-};
-
-/**
- * 이미지·움짤 우클릭 메뉴의 "이 이미지 차단" (features/block/background.ts). 같은 파일이면 다른 글에 다시 올려도 가린다.
- * 비슷한 이미지 지문도 늘 넣어 둔다. 나중에 그 설정을 켜도 이미 넣은 항목이 비슷한 이미지를 막는다.
- */
-export const blockImage = async (url: string): Promise<void> => {
-    // 메뉴가 방금 권한을 받았으면 그전에 읽지 못한 것이 남아 있다.
-    const hashes = await imageHash(url, {retry: true, similar: true});
-    if (!hashes) {
-        useUiStore.getState().showToast("이미지를 읽지 못해 차단하지 못했습니다.", "error");
-        return;
-    }
-    // 움짤은 디시가 mp4와 원본 gif를 번갈아 보이므로 짝 파일도 같은 지문으로 넣는다 (core/block.ts의 pairedMediaUrl). 읽지 못하면 이것만 넣는다.
-    const paired = pairedMediaUrl(url);
-    const pairedHashes = paired ? await imageHash(paired, {retry: true}) : undefined;
-    try {
-        const [first, ...rest] = hashes.similar ?? [];
-        const fields: Omit<BlockInputFields, "content"> = {
-            isRegex: false,
-            mode: blockMode("IMAGE"),
-            extra: paired ? "움짤" : undefined,
-            // 표본마다 원본의 지문만 넣는다. 좌우 반전은 판정할 때 대상 쪽에서 본다.
-            similar: first?.[0],
-            frames: rest.length > 0 ? rest.map(([fingerprint]) => fingerprint) : undefined
-        };
-        const files = pairedHashes ? [hashes.file, pairedHashes.file] : [hashes.file];
-        await useBlocksStore.getState().addEntries("IMAGE", files.map((file) => ({...fields, content: file})));
-    } catch (e) {
-        console.error("Image block failed:", e);
-        useUiStore.getState().showToast("차단 목록에 저장하지 못했습니다.", "error");
-        return;
-    }
-    useUiStore.getState().showToast("이미지를 차단했습니다.");
 };
 
 export type BlockRequestOptions = {

@@ -1,6 +1,7 @@
 // @vitest-environment-options {"url": "https://gall.dcinside.com/board/lists/?id=test&s_type=search_subject_memo&s_keyword=abc"}
 import {afterEach, beforeEach, expect, it, vi} from "vitest";
 
+import {historyDoc} from "@/core/preview/history";
 import search from "@/features/search/index";
 import type {SelectedUser} from "@/stores/ui";
 
@@ -55,7 +56,6 @@ it("목록을 갈아끼우면 받아 둔 검색 페이지를 다시 받지 않�
     expect(first.querySelectorAll(".gall_tit .mark")).toHaveLength(4);
     const filled = first.innerHTML;
 
-    // 새로고침 모듈처럼 페이징을 처음 것으로 되돌리고 목록을 갈아끼운다.
     document.querySelector(".bottom_paging_box")!.innerHTML = paging(10000);
     const fresh = document.createElement("tbody");
     fresh.innerHTML = row("30", true) + row("29", true);
@@ -63,7 +63,6 @@ it("목록을 갈아끼우면 받아 둔 검색 페이지를 다시 받지 않�
 
     await vi.waitFor(() => expect(fresh.innerHTML).toBe(filled));
     expect(get).toHaveBeenCalledTimes(2);
-    // 캐시의 행을 옮기지 않고 복제해 붙였다.
     expect(first.innerHTML).toBe(filled);
 });
 
@@ -125,7 +124,6 @@ it("작성자 거르기만 하는 목록은 갈아끼울 때마다 다음 쪽을
         running = await runModule(search);
         await vi.waitFor(() => expect(nos(document.querySelector(".gall_list tbody")!)).toEqual(["30", "29"]));
 
-        // 새 글이 들어와 29가 1쪽으로 오고 28이 2쪽으로 밀렸다. 새로고침 모듈처럼 페이징을 되돌리고 목록을 갈아끼운다.
         second = writerRow("28");
         document.querySelector(".bottom_paging_box")!.innerHTML = "<em>1</em><a href=\"/board/lists/?id=test&page=2\">2</a>";
         const fresh = document.createElement("tbody");
@@ -154,7 +152,6 @@ it("작성자 거르기 목록을 갈아끼워도 1쪽의 이 작성자 글이 �
         await vi.waitFor(() => expect(nos(first)).toEqual(["30", "29", "28"]));
         const added = first.children[1];
 
-        // 다른 사람 글 31이 들어오고 28이 1쪽으로 올라왔다. 이 작성자 글(30)은 그대로다.
         document.querySelector(".bottom_paging_box")!.innerHTML = pagingHtml;
         const fresh = document.createElement("tbody");
         fresh.innerHTML = writerRow("31", "3.4") + writerRow("30") + writerRow("28", "3.4");
@@ -165,7 +162,6 @@ it("작성자 거르기 목록을 갈아끼워도 1쪽의 이 작성자 글이 �
         expect(fresh.children[3]).toBe(added);
         expect(document.querySelector(".bottom_paging_box em")?.textContent).toBe("2");
 
-        // 1분이 지나면 다음 쪽에서 지워진 글이 남지 않게 다시 받는다.
         vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
         document.querySelector(".bottom_paging_box")!.innerHTML = pagingHtml;
         const later = document.createElement("tbody");
@@ -173,6 +169,33 @@ it("작성자 거르기 목록을 갈아끼워도 1쪽의 이 작성자 글이 �
         fresh.replaceWith(later);
         await vi.waitFor(() => expect(get).toHaveBeenCalledTimes(2));
         vi.restoreAllMocks();
+    } finally {
+        history.replaceState(null, "", "/board/lists/?id=test&s_type=search_subject_memo&s_keyword=abc");
+    }
+});
+
+it("미리보기가 글 주소를 쌓은 동안 목록을 갈아끼워도 이어 붙인 행을 다시 받지 않는다", async () => {
+    history.replaceState(null, "", "/board/lists/?id=test&rf_ip=1.2");
+    try {
+        const writerRow = (no: string): string => `<tr class="ub-content" data-no="${no}"><td class="ub-writer" data-ip="1.2"></td></tr>`;
+        const pagingHtml = "<em>1</em><a href=\"/board/lists/?id=test&page=2\">2</a>";
+        get.mockImplementation(async () => new Response(
+            `<div class="left_content"><article><div class="gall_listwrap"><table class="gall_list"><tbody>${writerRow("29")}</tbody></table></div>` +
+            "<div class=\"bottom_paging_box\"><em>2</em></div></article></div>"));
+        document.body.innerHTML = `<input id="list_num" value="2"><div class="left_content"><article><div class="gall_listwrap"><table class="gall_list"><tbody>${writerRow("30")}</tbody></table></div>` +
+            `<div class="bottom_paging_box">${pagingHtml}</div></article></div>`;
+        running = await runModule(search);
+        const first = document.querySelector(".gall_list tbody")!;
+        await vi.waitFor(() => expect(nos(first)).toEqual(["30", "29"]));
+
+        history.pushState({refresher: 1, doc: historyDoc, back: {title: "", url: location.href, state: null}}, "", "/board/view/?id=test&no=30");
+        document.querySelector(".bottom_paging_box")!.innerHTML = pagingHtml;
+        const fresh = document.createElement("tbody");
+        fresh.innerHTML = writerRow("30");
+        first.replaceWith(fresh);
+
+        await vi.waitFor(() => expect(nos(fresh)).toEqual(["30", "29"]));
+        expect(get).toHaveBeenCalledTimes(1);
     } finally {
         history.replaceState(null, "", "/board/lists/?id=test&s_type=search_subject_memo&s_keyword=abc");
     }

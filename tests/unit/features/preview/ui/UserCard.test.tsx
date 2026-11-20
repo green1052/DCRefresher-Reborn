@@ -1,5 +1,4 @@
-import {render} from "preact";
-import {act} from "preact/test-utils";
+import {render, act} from "@/tests/helpers";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {moduleSettingsStore, runningModulesStore} from "@/core/module/registry";
@@ -93,7 +92,7 @@ describe("UserCard 깡계 태그", () => {
         expect(badges()).toEqual(["(member)", "[1/2]", "[깡계]"]);
     });
 
-    it("흐리게·숨기기면 태그를 달지 않는다", () => {
+    it("흐리게, 숨기기면 태그를 달지 않는다", () => {
         setRatios("hide");
         renderCard();
         expect(badges()).toEqual(["(member)", "[1/2]"]);

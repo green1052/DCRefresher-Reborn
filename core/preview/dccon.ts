@@ -8,10 +8,34 @@ import {isRecord} from "@/utils/record";
 import type {DcinsideDcconDetail, DcinsideDcconDetailList, DcinsideDcconPackage} from "./types";
 
 /**
- * 디시콘 코드별 패키지 정보. 같은 디시콘을 다시 눌러도 받지 않는다 (디시콘 목록 캐시처럼 10분). 정보 창과 디시콘 버블이 같이 쓴다.
- * 디시콘을 추가하면 가졌는지(residual)가 바뀌므로 비운다. 같은 패키지의 다른 디시콘도 코드가 달라 따로 담기기 때문이다.
+ * 디시콘 관련 캐시의 수명. 창을 닫았다 열어도 다시 받지 않고, 새로 산 디시콘이 보이도록 이 뒤에는 다시 받는다.
  */
-export const dcconPackages = new QuickLRU<string, DcinsideDcconPackage>({maxSize: 100, maxAge: 10 * 60_000});
+const DCCON_TTL = 10 * 60_000;
+
+/**
+ * 디시콘 코드별 패키지 정보. 같은 디시콘을 다시 눌러도 받지 않는다. 정보 창과 디시콘 버블이 같이 쓴다.
+ * 패키지 안 디시콘마다 코드가 다르므로, 받은 패키지는 구성원 코드 전체에 담는다(getDcconPackage).
+ */
+export const dcconPackages = new QuickLRU<string, DcinsideDcconPackage>({maxSize: 500, maxAge: DCCON_TTL});
+
+/** 내 디시콘 패키지 목록 캐시 (한 슬롯). 디시콘 선택 창이 닫았다 열어도 다시 받지 않게 쓴다. */
+let dcconListCache: { list: DcinsideDcconDetailList[]; at: number } | null = null;
+
+export const cachedDcconList = (): DcinsideDcconDetailList[] | null =>
+    dcconListCache && Date.now() - dcconListCache.at < DCCON_TTL ? dcconListCache.list : null;
+
+export const setCachedDcconList = (list: DcinsideDcconDetailList[]): void => {
+    dcconListCache = {list, at: Date.now()};
+};
+
+/**
+ * 디시콘 캐시를 비운다. 패키지를 추가하면 가졌는지(residual)가 바뀌므로 목록과 패키지 정보 둘 다 비운다.
+ * 같은 패키지의 다른 디시콘도 코드가 달라 따로 담기기 때문이다.
+ */
+export const clearDcconCaches = (): void => {
+    dcconPackages.clear();
+    dcconListCache = null;
+};
 
 const isDcconPackage = (value: unknown): value is DcinsideDcconPackage =>
     isRecord(value) && isRecord(value.info) && Array.isArray(value.detail) && Array.isArray(value.tags);
@@ -28,6 +52,18 @@ export const fetchDcconPackage = async (code: string, signal?: AbortSignal): Pro
     const response: unknown = JSON.parse(text);
     // 다른 모양(실패 응답 등)이면 정보 창을 그리다 오버레이 전체가 깨지므로 실패로 넘긴다 (fetchPage와 같다).
     if (!isDcconPackage(response)) throw new Error("디시콘 정보가 아닙니다.");
+    return response;
+};
+
+/** 캐시에 있으면 캐시, 없으면 받아서 담는다. 버블, 정보 창이 이미 받아 둔 패키지를 차단할 때 다시 받지 않는다. */
+export const getDcconPackage = async (code: string, signal?: AbortSignal): Promise<DcinsideDcconPackage> => {
+    const cached = dcconPackages.get(code);
+    if (cached) return cached;
+
+    const response = await fetchDcconPackage(code, signal);
+    // 패키지 안 디시콘마다 코드가 다르다. 다른 구성원을 눌렀을 때 같은 패키지를 다시 받지 않게 전부에 담는다.
+    dcconPackages.set(code, response);
+    for (const item of response.detail) dcconPackages.set(item.path, response);
     return response;
 };
 
@@ -59,7 +95,7 @@ const fetchPage = async (page: number, signal: AbortSignal): Promise<DcinsideDcc
 
 /**
  * 모든 쪽(0부터 max_page까지)의 패키지를 이어 붙여, 쪽을 넘기지 않고 가로로 훑어 고르게 한다.
- * 첫 쪽 뒤의 쪽은 한꺼번에 받는다 (동시 요청 수는 요청 제한을 따른다).
+ * 첫 쪽 뒤의 쪽은 한꺼번에 받는다.
  */
 export const fetchDcconList = async (signal: AbortSignal): Promise<DcconListResult> => {
     const first = await fetchPage(0, signal);

@@ -1,4 +1,4 @@
-/** 게시글·댓글 받기와 추천. 나머지 디시 요청은 각 파일(manage·submit·txtcon·dccon)로 나뉘어 있고 여기서 다시 내보낸다. */
+/** 게시글, 댓글 받기와 추천. 나머지 디시 요청은 각 파일(manage, submit, txtcon, dccon)로 나뉘어 있고 여기서 다시 내보낸다. */
 import {ajax, http} from "@/core/http/client";
 import {galleryPath, urls} from "@/core/http/urls";
 import {isRecord} from "@/utils/record";
@@ -10,12 +10,12 @@ import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} fro
 export {type BlockOptions, type ManageResult, adminDeleteComments, blockCommenters, blockUser, bump, captchaImage, deletePost, setNotice, setRecommend, userDeleteComment} from "./manage";
 export {submitComment} from "./submit";
 export {TXTCON_BACKGROUNDS, TXTCON_COLORS, normalizeTxtcon, submitTxtcon} from "./txtcon";
-export {addDcconPackage, dcconPackages, fetchDcconList, fetchDcconPackage} from "./dccon";
+export {addDcconPackage, dcconPackages, fetchDcconList, fetchDcconPackage, getDcconPackage} from "./dccon";
 export {type SubmitResult, resultMessage} from "./response";
 
 export const viewUrl = (link: string, gallery: string, id: string): string => `${urls.base}${galleryPath(link)}board/view/?id=${gallery}&no=${id}`;
 
-/** 게시글을 받아 PostInfo로 푼다. 삭제된 글은 디시가 404를 주고, 임시 차단은 HTTP 클라이언트가 BlockedError로 던진다. 그 밖에 글이 없는 페이지면 Error를 던진다. */
+/** 게시글을 받아 PostInfo로 푼다. 삭제된 글은 디시가 404를 주고, 그 밖에 글이 없는 페이지면 Error를 던진다. */
 export const fetchPost = async (preData: GalleryPreData, signal: AbortSignal): Promise<PostInfo> => {
     const response = await http.get(viewUrl(preData.link, preData.gallery, preData.id), {signal}).text();
 
@@ -29,7 +29,10 @@ export const fetchPost = async (preData: GalleryPreData, signal: AbortSignal): P
 const isComment = (value: unknown): value is DcinsideComment => isRecord(value) && typeof value.no === "string";
 
 /** 댓글 목록. 한 쪽에 100개씩이라 여러 쪽을 받아 합친다. */
-export const fetchComments = async (preData: GalleryPreData, postInfo: Pick<PostInfo, "commentId" | "commentNo" | "esno">, signal: AbortSignal): Promise<CommentListResponse> => {
+export async function fetchComments(preData: GalleryPreData, postInfo: Pick<PostInfo, "commentId" | "commentNo" | "esno">, signal: AbortSignal): Promise<CommentListResponse>;
+/** skipIfUnchangedFrom(가장 최근 댓글 번호)보다 새 댓글이 없으면 1쪽만 받고 undefined를 돌려준다. 자동 새로고침용. */
+export async function fetchComments(preData: GalleryPreData, postInfo: Pick<PostInfo, "commentId" | "commentNo" | "esno">, signal: AbortSignal, skipIfUnchangedFrom: string): Promise<CommentListResponse | undefined>;
+export async function fetchComments(preData: GalleryPreData, postInfo: Pick<PostInfo, "commentId" | "commentNo" | "esno">, signal: AbortSignal, skipIfUnchangedFrom?: string): Promise<CommentListResponse | undefined> {
     const body = await dcBody(preData.link, {
         id: preData.gallery,
         no: preData.id,
@@ -39,7 +42,7 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: Pick<Post
     });
 
     // 어느 쪽이든 실패하면(갱신 차단 등) 함께 보낸 다른 쪽 요청도 끊는다. 막힌 서버에 요청을 더 보내지 않는다.
-    // 끊긴 쪽은 AbortError로 실패하는데, 그대로 던지면 사용자가 취소한 것으로 보여 실제 원인(임시 차단 등)이 묻힌다. 처음 실패를 던진다.
+    // 끊긴 쪽은 AbortError로 실패하는데, 그대로 던지면 사용자가 취소한 것으로 보여 실제 원인이 묻힌다. 처음 실패를 던진다.
     const pageAbort = new AbortController();
     let failure: unknown;
     const pageSignal = AbortSignal.any([signal, pageAbort.signal]);
@@ -60,8 +63,27 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: Pick<Post
         });
     };
 
+    const lastPageOf = (first: {pagination: string | null}): number => Math.max(1, ...Array.from(first.pagination?.matchAll(/viewComments\((\d+)/g) ?? [], (match) => Number(match[1])));
+    // 쪽 사이에 같은 댓글이 겹쳐 올 수 있어 번호로 하나만 남기고 번호(등록)순으로 맞춘다. 1쪽이 가장 최근 댓글이다.
+    const merge = (first: {comments: DcinsideComment[]; pagination: string | null; allowReply: boolean}, rest: {comments: DcinsideComment[]}[]): CommentListResponse => {
+        const byNo = new Map<string, DcinsideComment>();
+        for (const response of [first, ...rest]) {
+            for (const comment of response.comments) byNo.set(comment.no, comment);
+        }
+        return {list: [...byNo.values()].sort((a, b) => Number(a.no) - Number(b.no)), allowReply: first.allowReply, truncated: lastPageOf(first) > 10};
+    };
+
+    if (skipIfUnchangedFrom !== undefined) {
+        // 1쪽만 먼저 받아 최신 댓글 번호가 그대로면 나머지 쪽은 받지 않는다.
+        const first = await fetchPage(1);
+        const newest = first.comments.reduce((max, comment) => Math.max(max, Number(comment.no) || 0), 0);
+        if (newest <= (Number(skipIfUnchangedFrom) || 0)) return undefined;
+        const rest = await Promise.all(Array.from({length: Math.max(0, Math.min(10, lastPageOf(first)) - 1)}, (_, index) => fetchPage(index + 2)));
+        return merge(first, rest);
+    }
+
     // 목록의 댓글 수로 쪽 수를 어림해 1쪽과 함께 받는다. 1쪽을 받은 뒤에 요청하면 댓글이 많은 글은 수백 ms 늦게 뜬다.
-    // 목록의 수는 삭제된 댓글을 빼고 세어 모자랄 수 있으므로, 1쪽의 쪽 나눔(viewComments(n, …))에서 마지막 쪽 번호를 읽어 남은 쪽을 마저 받는다.
+    // 목록의 수는 삭제된 댓글을 빼고 세어 모자랄 수 있으므로, 1쪽의 쪽 나눔(viewComments(n, ...))에서 마지막 쪽 번호를 읽어 남은 쪽을 마저 받는다.
     // 1쪽을 먼저 요청해야 요청 제한 모듈에 막혀도 쪽 나눔을 먼저 받는다. 1쪽이 실패하면 어림한 쪽의 실패는 버린다.
     // 10쪽(1000개)까지만 받는다. 더 많은 글은 드물고, 자동 갱신 때마다 전부 다시 받기 때문이다.
     const guessed = Math.min(10, Math.max(1, Math.ceil(preData.commentCount / 100)));
@@ -70,17 +92,9 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: Pick<Post
     early.catch(() => {});
 
     const first = await firstPage;
-    const pages = Math.max(1, ...Array.from(first.pagination?.matchAll(/viewComments\((\d+)/g) ?? [], (match) => Number(match[1])));
-    const rest = Promise.all(Array.from({length: Math.max(0, Math.min(10, pages) - guessed)}, (_, index) => fetchPage(guessed + index + 1)));
+    const rest = Promise.all(Array.from({length: Math.max(0, Math.min(10, lastPageOf(first)) - guessed)}, (_, index) => fetchPage(guessed + index + 1)));
     const [earlyPages, restPages] = await Promise.all([early, rest]);
-
-    // 1쪽이 가장 최근 댓글이고 뒤쪽일수록 오래된 댓글이다. 쪽 사이에 같은 댓글이 겹쳐 올 수 있어 번호로 하나만 남기고 번호(등록)순으로 맞춘다.
-    const byNo = new Map<string, DcinsideComment>();
-    for (const response of [first, ...earlyPages, ...restPages]) {
-        for (const comment of response.comments) byNo.set(comment.no, comment);
-    }
-
-    return {list: [...byNo.values()].sort((a, b) => Number(a.no) - Number(b.no)), allowReply: first.allowReply, truncated: pages > 10};
+    return merge(first, [...earlyPages, ...restPages]);
 };
 
 interface VoteResult {

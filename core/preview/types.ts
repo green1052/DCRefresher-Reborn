@@ -1,15 +1,8 @@
-/**
- * 관리 API의 차단 기간(시간 → 라벨). 차단 팝업과 차단 프리셋 설정(features/preview/meta.ts)이 같이 쓴다.
- * 키가 정수 모양이라 객체 순서는 오름차순이다.
- */
+/** 차단 기간(시간 → 라벨). 정수 키라 객체 순서가 오름차순이다. */
 export const BLOCK_DAYS = {"1": "1시간", "6": "6시간", "24": "1일", "168": "7일", "336": "14일", "744": "31일"} as const;
 export type BlockDay = keyof typeof BLOCK_DAYS;
 
-/**
- * 관리 API의 차단 사유. DC 글·댓글 차단 창(update_avoid_list)의 avoid_reason 값과 같다.
- * "0"은 직접 입력이다. 8(허위사실 적시)은 프로필 차단 창에만 있어 넣지 않는다.
- * 객체로 두면 "0"이 맨 앞으로 오므로 순서대로 배열에 둔다.
- */
+/** 차단 사유(avoid_reason 값). "0"(직접 입력)을 뒤에 두려고 배열이다. */
 export const BLOCK_REASONS = [
     ["1", "음란성"],
     ["2", "광고"],
@@ -30,7 +23,7 @@ export interface GalleryPreData {
     notice: boolean;
     recommend: boolean;
     type: string;
-    /** 목록에 보인 댓글 수 (없으면 0). 댓글을 본문과 함께 요청할지, 댓글을 몇 쪽 한꺼번에 받을지 정한다. */
+    /** 목록에 보인 댓글 수. 댓글 요청 범위를 정한다. */
     commentCount: number;
 }
 
@@ -53,7 +46,7 @@ export interface PostInfo {
     fixedUpvotes?: string;
     downvotes?: string;
     contents?: string;
-    /** 본문이 차단에 걸렸을 때 가리는 방식 (차단 모듈 설정). blur는 흐리게, hide는 안내문으로 가린다. */
+    /** 본문 차단 가림 방식 (blur 흐리게, hide 안내문). */
     textBlocked?: "blur" | "hide";
     commentId?: string;
     commentNo?: string;
@@ -62,36 +55,36 @@ export interface PostInfo {
     requireCommentCaptcha?: boolean;
     v_cur_t?: string;
     randomParam?: { name: string; value: string };
-    /** 그 글의 댓글 요청 토큰 (#e_s_n_o). 갤러리마다 같아 지금 페이지의 값으로 미리 요청하지만, 쓰기 전에 이 값과 맞춰 본다 (features/preview/index.ts의 load). */
+    /** 댓글 요청 토큰(#e_s_n_o). 갤러리마다 같아 미리 쓰지만 쓰기 전에 맞춘다. */
     esno?: string;
     /** 그 글의 추천 토큰 (input[name=code_recommend]). */
     recommendCode?: string;
-    /** 본문 텍스트 (.write_div). 본문 차단 검사를 정화한 contents가 아니라 페이지와 같은 텍스트로 하려고 둔다. */
+    /** 본문 텍스트(.write_div). 차단 검사를 정화 전 텍스트로 하려고 둔다. */
     writeText?: string;
-    /** 댓글·글자콘 쓰기에 보내는 그 글의 폼 값. */
+    /** 댓글, 글자콘 쓰기에 보내는 그 글의 폼 값. */
     commentForm: CommentForm;
-    /** 비밀번호 댓글 삭제 폼(#_cmt_del_form_)의 숨은 input들. [이름, 값]. 이름·값 모두 글마다 무작위다. */
+    /** 댓글 삭제 폼의 숨은 input들 [이름, 값]. 글마다 무작위다. */
     commentDeleteFields?: [string, string][];
 }
 
 
-/** 글 페이지의 댓글 폼에서 미리 꺼내 둔 값. 댓글을 쓸 때 다시 읽으려고 파싱한 문서를 들고 있지 않는다 (core/preview/parser.ts). */
+/** 댓글 폼에서 미리 꺼낸 값. 파싱한 문서를 들고 있지 않는다. */
 export interface CommentForm {
-    /** 댓글 폼(#focus_cmt)의 input들. [이름(없으면 id), 값]을 페이지 순서대로 담는다. */
+    /** 폼 input들 [이름(없으면 id), 값]. */
     fields: [string, string][];
     /** service_code 원래 값. 보낼 때 끝 10자를 dValue로 계산한 값으로 바꾼다. */
     serviceCode: string;
-    /** 댓글 설정 스크립트(#reply-setting-tmpl 다음)의 _d('…') 인자. */
+    /** 댓글 설정 스크립트(#reply-setting-tmpl 다음)의 _d('...') 인자. */
     dValue?: string;
     /** 글자콘 쓰기가 보내는 check_6~8. */
     checks: Record<string, string>;
     /** 갤닉 입력칸(#use_gall_nick)이 있으면 #gall_nick_name의 값, 없으면 undefined다. */
     gallNickName?: string;
-    /** 글 페이지의 window._TS_CMT_. 있으면 댓글·디시콘·글자콘에 Turnstile 칸을 붙여 보낸다 (디시 comment.js의 ts_cmt_fields). */
+    /** window._TS_CMT_. 있으면 Turnstile 칸을 붙인다. */
     turnstile?: TurnstileConfig;
 }
 
-/** 디시 댓글 Turnstile 설정 (글 페이지의 window._TS_CMT_). wait는 토큰을 기다릴 상한(ms)이다. */
+/** Turnstile 설정. wait는 대기 상한(ms). */
 export interface TurnstileConfig {
     mode: number;
     sitekey: string;
@@ -134,7 +127,7 @@ interface DcinsideDcconPackageInfo {
     main_img_path: string;
     /** 내가 올린 패키지 (디시는 '사용' 대신 '수정'을 띄운다). */
     register: boolean;
-    /** 가진 패키지면 남은 기간 문자열(무기한은 "-"), 없으면 false. 디시는 가진 패키지에 '사용'을 띄우지 않는다. */
+    /** 가진 패키지면 남은 기간(무기한 "-"), 아니면 false. */
     residual: string | false;
 }
 
@@ -161,14 +154,14 @@ export interface DcinsideComment {
     user_id: string;
     name: string;
     gallog_icon?: string;
-    /** 닉네임 칸 HTML — 유동은 여기에 IP가 들어 있기도 하다. */
+    /** 닉네임 칸 HTML - 유동은 여기에 IP가 들어 있기도 하다. */
     nickname?: string;
     /** "COMMENT_BOY"면 댓글돌이. */
     nicktype?: string;
     ip: string;
-    /** 비어 오면 null이다. processComments(core/preview/comments.ts)가 문자열로 바꾼다. */
+    /** 비면 null이다. */
     memo: string | null;
-    /** "0"이면 살아 있고 그 밖은 삭제. prepareComments(core/preview/comments.ts)를 거치면 "0"/"1"만 남는다. */
+    /** "0"이면 살아 있고 그 밖은 삭제. */
     is_delete: string;
     /** "Y"면 디시가 지운 댓글. */
     del_yn?: "Y" | "N";
@@ -182,7 +175,7 @@ export interface DcinsideComment {
 
 export interface CommentListResponse {
     list: DcinsideComment[];
-    /** 댓글·답글 쓰기 허용 (allow_reply). 멤버만 댓글을 쓰는 갤러리면 false다. */
+    /** 댓글, 답글 쓰기 허용 (allow_reply). 멤버만 댓글을 쓰는 갤러리면 false다. */
     allowReply: boolean;
     /** 10쪽(1000개)을 넘어 오래된 댓글을 받지 못했는지. */
     truncated?: boolean;

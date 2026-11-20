@@ -12,7 +12,7 @@ const SELECTED_CLASS = "refresherSelected";
 
 /**
  * 목록 키보드 이동 (listKeyboard 설정). J/K로 글을 고르고 Enter로 미리보기, O로 글을 연다. Esc는 선택을 푼다.
- * 키는 위치(code)로 본다. 한글 입력 상태면 key가 'ㅓ'·'ㅏ'로 온다. 미리보기가 열려 있으면 미리보기의 키(PageUp/Down 등)에 맡긴다.
+ * 키는 위치(code)로 본다. 한글 입력 상태면 key가 'ㅓ', 'ㅏ'로 온다. 미리보기가 열려 있으면 미리보기의 키(PageUp/Down 등)에 맡긴다.
  */
 export const bindListKeys = (ctx: Ctx, open: (preData: GalleryPreData) => void): void => {
     // 고른 글. 새로고침으로 행이 바뀌어도 같은 글을 다시 표시한다.
@@ -42,7 +42,7 @@ export const bindListKeys = (ctx: Ctx, open: (preData: GalleryPreData) => void):
         if (usePreviewStore.getState().visible) return;
 
         const current = (): ListRow | undefined => rows().find(({pre}) => postKey(pre) === selected);
-        // Enter·O·Esc는 고른 글이 있을 때만 받는다. 링크에 포커스가 있으면 Enter는 그 링크 몫이다.
+        // Enter, O, Esc는 고른 글이 있을 때만 받는다. 링크에 포커스가 있으면 Enter는 그 링크 몫이다.
         const idle = document.activeElement === null || document.activeElement === document.body;
 
         if (ev.code === "KeyJ" || ev.code === "KeyK") {

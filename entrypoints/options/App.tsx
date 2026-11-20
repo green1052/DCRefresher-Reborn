@@ -1,31 +1,45 @@
-import {Ban, Database, Info, Keyboard, type LucideIcon, NotebookPen, Settings} from "lucide-react";
-import {lazy, Suspense, useEffect, useState, useSyncExternalStore} from "react";
+import {Ban, Database, Info, Keyboard, type LucideIcon, NotebookPen, Settings} from "lucide-preact";
+import {type ComponentChild, type ComponentType} from "preact";
+import { useEffect, useState } from "preact/hooks";
+import { useSyncExternalStore } from "@/utils/useSyncExternalStore";
 
 import {Notice} from "@/components/dialogs";
 import {ToastHost} from "@/components/overlay/Toasts";
-import {Button} from "@/components/ui/button";
-import {Separator} from "@/components/ui/separator";
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
 import {ExtensionPageVars, initModulesStore} from "@/stores/modules";
 import {cn} from "cn";
 
-import {AboutTab} from "./AboutTab";
-import {BlockTab} from "./BlockTab";
-import {DataTab} from "./DataTab";
-import {GeneralTab} from "./GeneralTab";
-import {MemoTab} from "./MemoTab";
+import {AboutTab} from "./tabs/AboutTab";
+import {BlockTab} from "./tabs/BlockTab";
+import {DataTab} from "./tabs/DataTab";
+import {GeneralTab} from "./tabs/GeneralTab";
+import {MemoTab} from "./tabs/MemoTab";
 import {useOptionsStore} from "./optionsStore";
-import {ShortcutTab} from "./ShortcutTab";
+import {ShortcutTab} from "./tabs/ShortcutTab";
 
 // 디시콘 비는 드물게 열리므로 옵션 페이지를 열 때 같이 불러오지 않는다.
-const DcconRain = lazy(() => import("./DcconRain").then(({DcconRain}) => ({default: DcconRain})));
+// preact에는 lazy/Suspense가 없어 불러오는 동안 null을 그리는 얇은 대체물을 쓴다(기존 fallback도 없었다).
+let DcconRainComponent: ComponentType | undefined;
+const DcconRain = () => {
+    // 함수 컴포넌트를 그대로 넘기면 갱신 함수로 실행해 버리니 값으로 감싼다.
+    const [Component, setComponent] = useState<ComponentType | undefined>(() => DcconRainComponent);
+    useEffect(() => {
+        if (!DcconRainComponent) {
+            void import("./DcconRain").then(({DcconRain}) => {
+                DcconRainComponent = DcconRain;
+                setComponent(() => DcconRain);
+            });
+        }
+    }, []);
+    return Component ? <Component/> : null;
+};
 
 interface TabDef {
     id: string;
     label: string;
     icon: LucideIcon;
-    content: () => React.ReactNode;
+    content: () => ComponentChild;
 }
 
 const TABS: TabDef[] = [
@@ -58,29 +72,28 @@ const Sidebar = ({tab, onSelect}: {
 }) => (
     <div className="flex w-full shrink-0 flex-col gap-4 border-r p-4 md:sticky md:top-0 md:h-screen md:w-60">
         <div className="flex items-center gap-3 px-2">
-            <img src={LOGO_URL} alt="" width={36} height={36} className="cursor-pointer rounded-md" onClick={() => useOptionsStore.getState().startRain()}/>
+            <img src={LOGO_URL} alt="" width={36} height={36} className="rounded-md"/>
             {/* h1은 본문의 탭 제목 하나만 둔다. 모양만 제목으로 그린다. */}
             <p className="font-bold">DCRefresher Reborn</p>
         </div>
 
         <nav className="flex flex-wrap gap-1 md:flex-col md:flex-nowrap">
             {TABS.map(({id, label, icon: Icon}) => (
-                <Button
+                <button
                     key={id}
-                    size="lg"
-                    variant="ghost"
+                    type="button"
                     aria-current={tab === id ? "page" : undefined}
-                    className={cn("justify-start", tab === id && "bg-muted")}
+                    className={cn("btn btn-ghost justify-start", tab === id && "bg-base-200")}
                     onClick={() => onSelect(id)}
                 >
-                    <Icon data-icon="inline-start"/> {label}
-                </Button>
+                    <Icon className="size-4"/> {label}
+                </button>
             ))}
         </nav>
 
         <div className="mt-auto hidden md:block">
-            <Separator className="mb-3"/>
-            <p className="px-2 text-xs text-muted-foreground">v{VERSION}</p>
+            <div role="none" className="divider m-0 mb-3"/>
+            <p className="px-2 text-xs text-base-content/60">v{VERSION}</p>
         </div>
     </div>
 );
@@ -93,7 +106,12 @@ export function App() {
     const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
 
     useEffect(() => {
-        // 읽기 전이나 읽기에 실패한 채 그리면 빈 목록에서 고친 결과(전체 삭제·추가·가져오기)가 저장된 목록을 덮으므로 탭을 그리지 않는다.
+        // 열 때 100번 중 1번(1%)은 디시콘 비 이스터에그가 뜬다.
+        if (Math.random() < 0.01) useOptionsStore.getState().startRain();
+    }, []);
+
+    useEffect(() => {
+        // 읽기 전이나 읽기에 실패한 채 그리면 빈 목록에서 고친 결과(전체 삭제, 추가, 가져오기)가 저장된 목록을 덮으므로 탭을 그리지 않는다.
         Promise.all([initBlocksStore(), initMemosStore(), initModulesStore()]).then(
             () => setStatus("ready"),
             (e) => {
@@ -108,17 +126,16 @@ export function App() {
             <ExtensionPageVars/>
             <Sidebar tab={current.id} onSelect={(id) => (location.hash = id)}/>
             {/* 누를 때마다 새로 마운트해 무작위 배치와 끝내는 타이머를 처음부터 다시 건다. */}
-            {rain > 0 && <Suspense><DcconRain key={rain}/></Suspense>}
+            {rain > 0 && <DcconRain key={rain}/>}
             <Notice message={notice} onClose={() => useOptionsStore.setState({notice: null})}/>
             <ToastHost/>
 
             <div className="min-w-0 grow px-4 py-8 md:px-8">
-                {/* 탭마다 새로 마운트해 들어오는 애니메이션을 다시 건다.
-                    연 버튼이 막혀(데이터 초기화 중) 돌아갈 곳이 없으면 다이얼로그가 포커스를 이 탭으로 돌려준다 (useReturnFocus). */}
-                <div key={current.id} className="tab-enter mx-auto max-w-[880px] outline-none" tabIndex={-1}>
+                {/* 탭마다 새로 마운트해 들어오는 애니메이션을 다시 건다 - 포커스도 이 탭으로 돌아온다. */}
+                <div key={current.id} className="tab-enter mx-auto max-w-220 outline-none" tabIndex={-1}>
                     <h1 className="mb-6 text-2xl font-bold">{current.label}</h1>
                     {status === "failed"
-                        ? <p className="text-destructive">저장된 데이터를 읽지 못했습니다. 페이지를 새로고침해 주세요.</p>
+                        ? <p className="text-error">저장된 데이터를 읽지 못했습니다. 페이지를 새로고침해 주세요.</p>
                         : status === "ready" && current.content()}
                 </div>
             </div>
