@@ -35,5 +35,5 @@ export const SearchInput = ({className, onChange, ...props}: ComponentProps<"inp
 );
 
 export const EmptyList = ({children}: { children: ReactNode }) => (
-    <p className="w-full p-8 text-center text-sm text-base-content/60">{children}</p>
+    <p data-empty className="w-full p-8 text-center text-sm text-base-content/60">{children}</p>
 );

@@ -129,6 +129,8 @@ const useSearchHighlight = (root: RefObject<HTMLElement | null>, needle: string)
         const ranges: Range[] = [];
         const walker = document.createTreeWalker(root.current, NodeFilter.SHOW_TEXT);
         for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+            // "검색 결과 없음" 안내 문장에 검색어가 그대로 들어 있으니 칠하지 않는다.
+            if (node.parentElement?.closest("[data-empty]")) continue;
             const text = (node.nodeValue ?? "").toLowerCase();
             for (let at = text.indexOf(needle); at !== -1; at = text.indexOf(needle, at + needle.length)) {
                 const range = new Range();
