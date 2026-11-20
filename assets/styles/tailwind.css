@@ -2,6 +2,7 @@
    테마 전환은 appearance.ts가 data-theme 속성으로, dark: 변형과 콘텐츠 반전 규칙은 같은 함수가 단 .dark 클래스를 본다. */
 @import "tailwindcss" source(none);
 @import "tw-animate-css";
+
 @plugin "daisyui" {
     themes: false;
     logs: false;
@@ -9,7 +10,7 @@
 /* 스캔 폴더 직접 지정 - 파이어폭스 심사 zip엔 .gitignore가 없어 자동 탐색을 못 쓴다. */
 @source "../../{components,core,entrypoints,features,stores,utils}";
 
-/* 커스텀 테마 - 옛 shadcn(base-vega) 팔레트를 그대로 옮겼다(내장 테마 안 씀). 강조색은 라이트/다크 같은 인디고로 통일.
+/* 커스텀 테마(내장 테마 안 씀). 강조색은 라이트/다크 같은 인디고로 통일.
    base-100=배경, base-200=muted, base-300=accent, neutral=secondary. 모서리는 옛 룩 - 입력/버튼 8px, 카드 12px, 체크박스·슬라이더 엄지 둥글게. */
 @plugin "daisyui/theme" {
     name: "light";
@@ -82,7 +83,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /* 디시 링크색(본문 a, text-link). 테마 색이 아니라 콘텐츠 색이라 직접 정의한다 (라이트=진한 보라, 다크=밝은 보라).
-   --ring은 옛 shadcn 포커스 링 색 - 인풋·단추 포커스 룩이 이걸 본다. */
+   --ring은 포커스 링 색 - 인풋·단추 포커스 룩이 이걸 본다. */
 :root,
 :host {
     --link: oklch(0.457 0.24 277.023);
@@ -191,57 +192,73 @@ dialog.modal[data-viewer] {
     }
 }
 
-/* ===== 옛 shadcn(base-vega) 룩 보정 - daisyUI 기본값과 다른 부분만 돌려놓는다. daisyui 레이어가 @layer utilities 뒤에 붙어 이기려면 레이어 밖이어야 한다. ===== */
+/* ===== 룩 보정 - daisyUI 문서(Customize)가 제안하는 @utility로 daisyUI 컴포넌트를 확장한다. ===== */
 
 /* 인풋 포커스: 진한 색 아웃라인 대신 옛 룩 - 회색 3px 링 + 테두리만 진해지게. daisyUI는 --input-color 하나로 idle 테두리와 포커스를 같이 굴러서 속성을 덮어야 한다.
    label.input(검색창)처럼 안에 input을 감싼 경우 포커스는 :focus-within으로 붙는다. */
-.input:focus-visible, .input:focus-within,
-.select:focus-visible, .select:focus-within,
-.textarea:focus-visible, .textarea:focus-within {
-    border-color: var(--color-ring);
-    outline: 3px solid color-mix(in oklab, var(--color-ring) 50%, transparent);
-    outline-offset: 0;
+@utility input {
+    &:is(:focus-visible, :focus-within) {
+        border-color: var(--color-ring);
+        outline: 3px solid color-mix(in oklab, var(--color-ring) 50%, transparent);
+        outline-offset: 0;
+    }
+}
+
+@utility select {
+    &:is(:focus-visible, :focus-within) {
+        border-color: var(--color-ring);
+        outline: 3px solid color-mix(in oklab, var(--color-ring) 50%, transparent);
+        outline-offset: 0;
+    }
+}
+
+@utility textarea {
+    &:is(:focus-visible, :focus-within) {
+        border-color: var(--color-ring);
+        outline: 3px solid color-mix(in oklab, var(--color-ring) 50%, transparent);
+        outline-offset: 0;
+    }
 }
 
 /* 무색 btn-outline: daisyUI 기본은 currentColor 테두리라 진하고, 상태(hover/눌림)마다 검정을 섞어 옛 룩보다 훨씬 진해진다.
-   옛 shadcn outline처럼 옅은 회색 테두리 + 옅은 배경으로. (색 조합 btn-outline btn-primary 등은 안 쓴다) */
-.btn-outline:not(.btn-primary, .btn-secondary, .btn-error, .btn-ghost) {
-    border-color: color-mix(in oklab, var(--color-base-content) 15%, transparent);
-    background-color: var(--color-base-100);
+   옅은 회색 테두리 + 옅은 배경으로. (색 조합 btn-outline btn-primary 등은 안 쓴다) */
+@utility btn-outline {
+    &:not(.btn-primary, .btn-secondary, .btn-error, .btn-ghost) {
+        border-color: color-mix(in oklab, var(--color-base-content) 15%, transparent);
+        background-color: var(--color-base-100);
+
+        &:hover {
+            background-color: color-mix(in oklab, var(--color-base-content) 10%, transparent);
+        }
+
+        &:is(.btn-active, [aria-pressed="true"]) {
+            border-color: color-mix(in oklab, var(--color-base-content) 25%, transparent);
+            background-color: color-mix(in oklab, var(--color-base-content) 10%, transparent);
+        }
+    }
 }
 
-.btn-outline:not(.btn-primary, .btn-secondary, .btn-error, .btn-ghost):hover {
-    background-color: color-mix(in oklab, var(--color-base-content) 10%, transparent);
-}
-
-.btn-outline:not(.btn-primary, .btn-secondary, .btn-error, .btn-ghost).btn-active,
-.btn-outline:not(.btn-primary, .btn-secondary, .btn-error, .btn-ghost)[aria-pressed="true"] {
-    border-color: color-mix(in oklab, var(--color-base-content) 25%, transparent);
-    background-color: color-mix(in oklab, var(--color-base-content) 10%, transparent);
-}
-
-/* btn-error: daisyUI 기본은 빨간 바탕에 흰 글씨라 지나치게 강하다. 옛 shadcn destructive처럼 옅은 빨간 바탕에 빨간 글씨로. */
-.btn-error {
+/* btn-error: daisyUI 기본은 빨간 바탕에 흰 글씨라 지나치게 강하다. 옅은 빨간 바탕에 빨간 글씨로. */
+@utility btn-error {
     border-color: transparent;
     background-color: color-mix(in oklab, var(--color-error) 10%, transparent);
     color: var(--color-error);
+
+    &:hover {
+        background-color: color-mix(in oklab, var(--color-error) 20%, transparent);
+    }
+
+    &:is(.dark *) {
+        background-color: color-mix(in oklab, var(--color-error) 20%, transparent);
+    }
+
+    &:is(.dark *):hover {
+        background-color: color-mix(in oklab, var(--color-error) 30%, transparent);
+    }
 }
 
-.btn-error:hover {
-    background-color: color-mix(in oklab, var(--color-error) 20%, transparent);
-}
-
-.dark .btn-error {
-    background-color: color-mix(in oklab, var(--color-error) 20%, transparent);
-}
-
-.dark .btn-error:hover {
-    background-color: color-mix(in oklab, var(--color-error) 30%, transparent);
-}
-
-/* kbd: daisyUI 기본은 키캡(테두리+아래 그림자) 룩이다. 옛 shadcn Kbd처럼 muted 배경 + muted-foreground 글씨에 테두리·그림자 없이.
-   색은 옛 base-vega 토큰 값(muted/muted-foreground)을 그대로 옮긴다(테마의 base-200은 shadcn neutral 값이라 미세하게 다름). */
-.kbd {
+/* kbd: daisyUI 기본은 키캡(테두리+아래 그림자) 룩이다. muted 배경 + muted-foreground 글씨에 테두리·그림자 없이. */
+@utility kbd {
     height: 1.25rem;
     min-width: 1.25rem;
     padding-inline: 0.25rem;
@@ -253,9 +270,9 @@ dialog.modal[data-viewer] {
     font-size: 0.75rem;
     font-weight: 500;
     box-shadow: none;
-}
 
-.dark .kbd {
-    background-color: oklch(27.9% 0.041 260.031);
-    color: oklch(70.4% 0.04 256.788);
+    &:is(.dark *) {
+        background-color: oklch(27.9% 0.041 260.031);
+        color: oklch(70.4% 0.04 256.788);
+    }
 }
