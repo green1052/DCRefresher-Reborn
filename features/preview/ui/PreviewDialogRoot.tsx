@@ -46,7 +46,7 @@ export const PreviewDialogRoot = ({fading, busy, blur, onWheel, scroller, childr
     }, []);
 
     // 비모달이지만 연 동안 뒤 페이지를 inert로 잠가 보조 기술에는 모달로 보이게 한다(Base UI가 하던 것). 언마운트될 때 푼다.
-    // 오버레이가 그려진 shadow host(태그 refresher-root, entrypoints/content/overlay.tsx)와
+    // 오버레이가 그려진 shadow host(태그 refresher-root, entrypoints/content.tsx)와
     // 스텔스 이미지 보이기 버튼처럼 미리보기 위에 남을 조작부(stealth/index.ts의 data-refresher-ui)는 잠그면 안 된다.
     useEffect(() => {
         const locked: Element[] = [];

@@ -16,7 +16,7 @@ export const ContentRoot = () => {
     const [packageTarget, setPackageTarget] = useState<SelectedUser | null>(null);
 
     return (
-        // 다크모드는 오버레이 최상위 요소의 light/dark 클래스가 정한다 (entrypoints/content/overlay.tsx의 followDcAppearance).
+        // 다크모드는 오버레이 최상위 요소의 light/dark 클래스가 정한다 (entrypoints/content.tsx의 followDcAppearance).
         <>
             <ToastHost/>
             <BubbleHost onBlockPackage={setPackageTarget} onDcconInfo={(code) => usePreviewStore.setState({dcconInfo: code})}/>
