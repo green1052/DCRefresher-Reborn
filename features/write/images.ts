@@ -1,5 +1,3 @@
-import pLimit from "p-limit";
-
 import {isRecord} from "@/utils/record";
 
 /** 올리는 이미지를 바꾸는 방법. 모듈이 <html>의 data 속성에 JSON으로 두고, 페이지에 넣은 hookUploads가 이벤트마다 읽는다. */
@@ -8,8 +6,6 @@ export interface ImageOptions {
     /** WebP 품질 (0~1). */
     quality: number;
     rename: boolean;
-    /** 한꺼번에 바꾸는 이미지 수. 원본 크기 캔버스가 이만큼 함께 살아 있다. */
-    concurrency: number;
 }
 
 /** ImageOptions를 두는 <html> dataset 키. 없으면(모듈이 꺼졌거나 두 설정이 다 꺼짐) 파일을 그대로 둔다. */
@@ -22,16 +18,15 @@ export const hookUploads = (): void => {
     if (scope[hooked]) return;
     scope[hooked] = true;
 
-    // 페이지 스크립트도 바꿀 수 있는 속성이라 모양을 확인한다. 동시 변환 수가 1 이상의 정수가 아니면 pLimit이 던져, 이미 막은 업로드가 사라진다.
+    // 페이지 스크립트도 바꿀 수 있는 속성이라 모양을 확인한다.
     const readOptions = (): ImageOptions | null => {
         try {
             const raw = document.documentElement.dataset[UPLOAD_OPTIONS_KEY];
             const parsed: unknown = raw ? JSON.parse(raw) : null;
             if (!isRecord(parsed)) return null;
-            const {webp, quality, rename, concurrency} = parsed;
+            const {webp, quality, rename} = parsed;
             return typeof webp === "boolean" && typeof rename === "boolean" && typeof quality === "number" && Number.isFinite(quality)
-                && typeof concurrency === "number" && Number.isInteger(concurrency) && concurrency >= 1
-                ? {webp, quality, rename, concurrency} : null;
+                ? {webp, quality, rename} : null;
         } catch {
             return null;
         }
@@ -90,30 +85,10 @@ export const hookUploads = (): void => {
         return options.rename ? named(file, file, ext.toLowerCase(), true) : file;
     };
 
-    // resistFingerprinting은 캔버스 읽기에 무작위 잡음을 준다. 두 번 인코딩해 바이트가 같은지 본다.
-    const canvasReliable = async (): Promise<boolean> => {
-        const encode = async (): Promise<string> => {
-            const canvas = new OffscreenCanvas(1, 1);
-            const context = canvas.getContext("2d");
-            if (context) {
-                context.fillStyle = "#f00";
-                context.fillRect(0, 0, 1, 1);
-            }
-            return new Uint8Array(await (await canvas.convertToBlob({type: "image/webp"})).arrayBuffer()).join();
-        };
-        try {
-            return await encode() === await encode();
-        } catch (e) {
-            console.error(e);
-            return false;
-        }
-    };
-
     const convertAll = async (files: File[], options: ImageOptions): Promise<DataTransfer> => {
         const transfer = new DataTransfer();
-        const settings = options.webp && !(await canvasReliable()) ? {...options, webp: false} : options;
         // 결과는 고른 순서대로 온다.
-        for (const file of await pLimit(settings.concurrency).map(files, (file) => convert(file, settings))) {
+        for (const file of await Promise.all(files.map((file) => convert(file, options)))) {
             done.add(file);
             transfer.items.add(file);
         }

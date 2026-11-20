@@ -14,12 +14,12 @@ let hookRequested = false;
 const EDITED_KEY = "refresherEdited";
 
 /** hookUploads가 읽을 설정을 <html>에 둔다. 켜진 설정이 있으면 배경에 넣어 달라고 한다 (한 번만). */
-const publishImageOptions = ({webpConvert: webp, webpQuality, webpConcurrency: concurrency, obfuscateName: rename}: ModuleSettings["write"]): void => {
+const publishImageOptions = ({webpConvert: webp, webpQuality, obfuscateName: rename}: ModuleSettings["write"]): void => {
     if (!webp && !rename) {
         delete document.documentElement.dataset[UPLOAD_OPTIONS_KEY];
         return;
     }
-    const options: ImageOptions = {webp, quality: webpQuality / 100, rename, concurrency};
+    const options: ImageOptions = {webp, quality: webpQuality / 100, rename};
     document.documentElement.dataset[UPLOAD_OPTIONS_KEY] = JSON.stringify(options);
     if (hookRequested) return;
     hookRequested = true;

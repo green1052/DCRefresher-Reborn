@@ -21,14 +21,11 @@ class FakeDragEvent extends Event {
 
 /** 캔버스가 만들 WebP 크기 (바이트). */
 let webpSize = 1;
-/** 파이어폭스 resistFingerprinting처럼 인코딩할 때마다 다른 바이트를 줄지. */
-let noisyCanvas = false;
-let encodes = 0;
 const createImageBitmap = vi.fn(async () => ({width: 1, height: 1, close: () => {}}));
 
 class FakeOffscreenCanvas {
     getContext = () => ({drawImage: () => {}, fillRect: () => {}});
-    convertToBlob = async () => new Blob([new Uint8Array(webpSize).fill(noisyCanvas ? ++encodes : 0)], {type: "image/webp"});
+    convertToBlob = async () => new Blob([new Uint8Array(webpSize)], {type: "image/webp"});
 }
 
 beforeAll(() => {
@@ -73,7 +70,6 @@ const choose = (files: File[]): void => {
 
 beforeEach(() => {
     webpSize = 1;
-    noisyCanvas = false;
     received = [];
     input = document.body.appendChild(Object.assign(document.createElement("input"), {type: "file"}));
     input.addEventListener("change", () => received.push([...(input.files ?? [])]));
@@ -92,7 +88,7 @@ describe("파일 선택칸", () => {
     });
 
     it("이름 숨기기는 확장자를 남기고 무작위 이름으로 바꾼다", async () => {
-        setOptions({webp: false, quality: 0.8, rename: true, concurrency: 2});
+        setOptions({webp: false, quality: 0.8, rename: true});
         const text = new File(["글"], "메모.txt", {type: "text/plain"});
         choose([png("내 사진.PNG", ["IHDR", "IDAT"]), text]);
         expect(received).toEqual([]);
@@ -104,7 +100,7 @@ describe("파일 선택칸", () => {
     });
 
     it("WebP가 더 작으면 바꾸고 이름은 그대로 둔다", async () => {
-        setOptions({webp: true, quality: 0.5, rename: false, concurrency: 2});
+        setOptions({webp: true, quality: 0.5, rename: false});
         choose([png("사진.png", ["IHDR", "IDAT"])]);
         await vi.waitFor(() => expect(received).toHaveLength(1));
         expect(received[0]?.[0]?.name).toBe("사진.webp");
@@ -113,29 +109,15 @@ describe("파일 선택칸", () => {
 
     it("WebP가 더 크면 원본을 올린다", async () => {
         webpSize = 10_000;
-        setOptions({webp: true, quality: 0.5, rename: false, concurrency: 2});
+        setOptions({webp: true, quality: 0.5, rename: false});
         const file = png("사진.png", ["IHDR", "IDAT"]);
         choose([file]);
         await vi.waitFor(() => expect(received).toHaveLength(1));
         expect(received[0]?.[0]).toBe(file);
-    });
-
-    it("캔버스 출력이 무작위면 WebP로 바꾸지 않고 이름만 숨긴다", async () => {
-        noisyCanvas = true;
-        setOptions({webp: true, quality: 0.5, rename: false, concurrency: 2});
-        const file = png("사진.png", ["IHDR", "IDAT"]);
-        choose([file]);
-        await vi.waitFor(() => expect(received).toHaveLength(1));
-        expect(received[0]?.[0]).toBe(file);
-
-        setOptions({webp: true, quality: 0.5, rename: true, concurrency: 2});
-        choose([png("사진.png", ["IHDR", "IDAT"])]);
-        await vi.waitFor(() => expect(received).toHaveLength(2));
-        expect(received[1]?.[0]?.name).toMatch(/^[0-9a-f-]{36}\.png$/);
     });
 
     it("움직이는 PNG는 WebP로 바꾸지 않는다", async () => {
-        setOptions({webp: true, quality: 0.5, rename: false, concurrency: 2});
+        setOptions({webp: true, quality: 0.5, rename: false});
         const file = png("움짤.png", ["IHDR", "acTL", "IDAT"]);
         choose([file]);
         await vi.waitFor(() => expect(received).toHaveLength(1));
@@ -146,7 +128,7 @@ describe("파일 선택칸", () => {
     it("디코딩하지 못한 이미지는 원본을 올린다", async () => {
         vi.spyOn(console, "error").mockImplementation(() => {});
         createImageBitmap.mockRejectedValueOnce(new Error("깨진 이미지"));
-        setOptions({webp: true, quality: 0.5, rename: false, concurrency: 2});
+        setOptions({webp: true, quality: 0.5, rename: false});
         const file = png("깨짐.png", ["IHDR", "IDAT"]);
         choose([file]);
         await vi.waitFor(() => expect(received).toHaveLength(1));
@@ -160,7 +142,7 @@ describe("파일 선택칸", () => {
                 return {width: 1, height: 1, close: () => {}};
             })
             .mockImplementationOnce(async () => ({width: 1, height: 1, close: () => {}}));
-        setOptions({webp: true, quality: 0.5, rename: false, concurrency: 1});
+        setOptions({webp: true, quality: 0.5, rename: false});
         choose([png("1.png", ["IHDR", "IDAT"])]);
         // 첫 변환이 끝나기 전에 다시 고른다.
         choose([png("2.png", ["IHDR", "IDAT"])]);
@@ -170,26 +152,17 @@ describe("파일 선택칸", () => {
         expect(received[0]?.map((file) => file.name)).toEqual(["2.webp"]);
     });
 
-    it("한꺼번에 바꾸는 이미지 수를 설정만큼으로 제한하고, 고른 순서대로 넘긴다", async () => {
-        let active = 0;
-        let peak = 0;
-        createImageBitmap.mockImplementation(async () => {
-            peak = Math.max(peak, ++active);
-            await new Promise((resolve) => setTimeout(resolve, 5));
-            active--;
-            return {width: 1, height: 1, close: () => {}};
-        });
-        setOptions({webp: true, quality: 0.5, rename: false, concurrency: 2});
+    it("여러 장을 고른 순서대로 넘긴다", async () => {
+        setOptions({webp: true, quality: 0.5, rename: false});
         const names = ["1", "2", "3", "4", "5"];
         choose(names.map((name) => png(`${name}.png`, ["IHDR", "IDAT"])));
         await vi.waitFor(() => expect(received).toHaveLength(1));
         expect(createImageBitmap).toHaveBeenCalledTimes(5);
-        expect(peak).toBe(2);
         expect(received[0]?.map((file) => file.name)).toEqual(names.map((name) => `${name}.webp`));
     });
 
     it("GIF, WebP는 WebP 변환 대상이 아니다", async () => {
-        setOptions({webp: true, quality: 0.5, rename: false, concurrency: 2});
+        setOptions({webp: true, quality: 0.5, rename: false});
         const gif = new File(["GIF89a"], "a.gif", {type: "image/gif"});
         choose([gif]);
         expect(received).toEqual([[gif]]);
@@ -210,7 +183,7 @@ describe("붙여넣기, 끌어 놓기", () => {
 
     it("에디터 안에 붙여 넣은 이미지는 바꿔 끌어 놓기 칸에 넘긴다", async () => {
         document.body.innerHTML = EDITOR;
-        setOptions({webp: false, quality: 0.8, rename: true, concurrency: 2});
+        setOptions({webp: false, quality: 0.8, rename: true});
         const dropped: File[][] = [];
         document.querySelector(".note-dropzone")!.addEventListener("drop", (ev) => {
             if (ev instanceof FakeDragEvent) dropped.push([...ev.dataTransfer?.files ?? []]);
@@ -230,7 +203,7 @@ describe("붙여넣기, 끌어 놓기", () => {
         popupInput.addEventListener("change", () => changed.push([...(popupInput.files ?? [])]));
         // jsdom의 files는 FileList만 받아 속성으로 바꿔 둔다.
         Object.defineProperty(popupInput, "files", {value: null, writable: true, configurable: true});
-        setOptions({webp: false, quality: 0.8, rename: true, concurrency: 2});
+        setOptions({webp: false, quality: 0.8, rename: true});
 
         for (const type of ["drop", "paste"] as const) {
             const ev = transferEvent(type, [png("내 사진.png", ["IHDR", "IDAT"])]);
@@ -242,7 +215,7 @@ describe("붙여넣기, 끌어 놓기", () => {
     });
 
     it("에디터 밖은 건드리지 않는다", async () => {
-        setOptions({webp: false, quality: 0.8, rename: true, concurrency: 2});
+        setOptions({webp: false, quality: 0.8, rename: true});
         const ev = transferEvent("drop", [png("a.png", ["IHDR", "IDAT"])]);
         document.body.dispatchEvent(ev);
         await tick();

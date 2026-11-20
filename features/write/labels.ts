@@ -13,7 +13,6 @@ export default {
             desc: "올리는 이미지를 WebP로 바꿔 용량을 줄입니다. 움직이는 이미지(GIF, APNG)와 WebP, AVIF, WebP로 바꾸면 더 커지는 이미지는 그대로 올립니다."
         },
         webpQuality: {name: "WebP 품질", desc: "낮을수록 용량이 줄고 화질이 떨어집니다."},
-        webpConcurrency: {name: "동시 변환 수", desc: "여러 장을 한꺼번에 바꾸는 수입니다. 높을수록 빠르지만 메모리를 더 씁니다."},
         obfuscateName: {name: "이미지 이름 숨기기", desc: "올리는 이미지의 파일 이름을 무작위로 바꿉니다."}
     }
 } satisfies LabelsOf<typeof meta>;

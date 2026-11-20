@@ -14,7 +14,6 @@ export default defineModuleMeta({
         preventExit: {type: "check", default: true},
         webpConvert: {type: "check", default: false},
         webpQuality: {type: "range", default: 80, min: 10, max: 100, step: 5, unit: "%"},
-        webpConcurrency: {type: "range", default: 2, min: 1, max: 8, step: 1, unit: "장"},
         obfuscateName: {type: "check", default: false}
     }
 });
