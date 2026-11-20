@@ -173,19 +173,20 @@
 
 }
 
-/* 창(dialogs.tsx)은 daisyUI .modal(가운데 그리드, 열림/닫힘 전환, ::backdrop)에 얹는다. daisyUI 규칙은 @layer utilities 안이라 이 배경 덮어쓰기는 이기려면 레이어 밖에 있어야 한다. */
-dialog.modal::backdrop {
+/* 창(dialogs.tsx)은 daisyUI .modal(가운데 그리드, 열림/닫힘 전환)에 얹는다. daisyUI는 ::backdrop를 숨기고 열린 .modal 요소 자체에 40% 검정을 치므로 요소 배경을 덮어쓴다. */
+dialog.modal {
     /* 이전 dialog-overlay: bg-black/10. blur는 data-blur 속성으로 켠다(dialogs.tsx가 preview.popupBlur 설정을 넣는다). */
     background: rgb(0 0 0 / 10%);
 }
 
-/* 이미지 크게 보기(ImageViewer)는 더 어두운 배경을 쓴다(이전 Backdrop bg-black/85). */
-dialog.modal[data-viewer]::backdrop {
-    background: rgb(0 0 0 / 85%);
+/* 이미지 크게 보기(ImageViewer)는 더 어두운 배경을 쓴다(이전 Backdrop bg-black/85).
+   daisyUI는 ::backdrop를 숨기고 열린 .modal 요소 자체에 40% 검정을 칠므로 요소 배경을 덮어쓴다. */
+dialog.modal[data-viewer] {
+    background: rgb(0 0 0 / 90%);
 }
 
 @supports (backdrop-filter: blur(1px)) {
-    dialog.modal[data-blur]::backdrop {
+    dialog.modal[data-blur] {
         backdrop-filter: blur(2px);
     }
 }
