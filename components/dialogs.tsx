@@ -64,6 +64,8 @@ export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true,
     children: ReactNode;
 }) => {
     const dialog = useRef<HTMLDialogElement>(null);
+    // 문자 선택 드래그처럼 박스 안에서 눌러 밖에서 놓으면 click이 공통 조상인 dialog에서 발생한다. 누른 곳이 배경인지도 확인한다.
+    const pressedBackdrop = useRef(false);
     const focus = useReturnFocus(dialog);
     const titleId = useId();
     // 옵션 페이지에는 모듈 설정이 없어 기본(흐림)이다.
@@ -106,9 +108,12 @@ export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true,
                         ev.preventDefault();
                         if (dismissible) close();
                     }}
+                    onPointerDown={(ev) => {
+                        pressedBackdrop.current = ev.target === ev.currentTarget;
+                    }}
                     onClick={(ev) => {
                         // ::backdrop 누름은 dialog 요소로 전달된다.
-                        if (ev.target === ev.currentTarget && dismissible && !disablePointerDismissal) close();
+                        if (ev.target === ev.currentTarget && pressedBackdrop.current && dismissible && !disablePointerDismissal) close();
                     }}
                 >
                     <div
