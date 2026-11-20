@@ -320,9 +320,10 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
                                 <div className="flex min-w-0 items-baseline gap-1.5">
                                     {selected.nick ? (
                                         <>
-                                            <button type="button" className="min-w-0 cursor-pointer text-left" title="클릭하면 닉네임이 복사됩니다."
+                                            <button type="button" className="flex min-w-0 cursor-pointer items-baseline gap-1.5 text-left" title="클릭하면 닉네임이 복사됩니다."
                                                     onClick={() => copy(selected.nick!)}>
                                                 <strong className="truncate">{selected.nick}</strong>
+                                                {selected.icon && <img src={selected.icon} alt="" height={12} className="self-center"/>}
                                             </button>
                                             {idOrIp && (
                                                 <button type="button" className="min-w-0 cursor-pointer truncate text-left text-xs text-base-content/60"

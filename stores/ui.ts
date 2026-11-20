@@ -21,6 +21,8 @@ export interface SelectedUser {
     nick?: string;
     uid?: string;
     ip?: string;
+    /** 닉콘 이미지 주소(고정닉/반고정닉). 없으면 유동닉이다. */
+    icon?: string;
     /** 우클릭한 디시콘 코드 (dccon.php?no= 값). */
     dccon?: string;
     /** 갤러리 한정 차단, 메모에 쓰는 갤러리. 미리보기 글에서 연 버블은 그 글의 갤러리를 넘긴다 (selectedGallery). */
@@ -138,7 +140,9 @@ export const openWriterBubble = (ev: MouseEvent): void => {
     if (!nick && !uid && !ip) return;
 
     ev.preventDefault();
-    useUiStore.getState().openBubble({nick, uid, ip}, ev.clientX, ev.clientY);
+    // 닉콘(고정닉/반고정닉) 주소도 버블 머리에 보여 준다.
+    const icon = writer.querySelector(".writer_nikcon img")?.getAttribute("src") ?? undefined;
+    useUiStore.getState().openBubble({nick, uid, ip, icon}, ev.clientX, ev.clientY);
 };
 
 // 토스트, 유저 버블, 메모 창이 뜨면 오버레이를 띄운다 (components/overlay/demands.ts). 글댓비, 가린 내용 보기처럼 setup이 늘 채우는 값은 넣지 않는다.
