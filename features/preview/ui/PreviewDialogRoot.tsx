@@ -72,8 +72,8 @@ export const PreviewDialogRoot = ({fading, busy, blur, onWheel, scroller, childr
             <div
                 className="refresher-frame-scroll fixed inset-y-0 left-0 w-screen flex overflow-y-auto overscroll-contain py-[5vh] outline-none duration-150 animate-in fade-in [scrollbar-color:color-mix(in_oklab,var(--color-base-content)_25%,transparent)_var(--color-base-100)] [scrollbar-gutter:stable_both-edges] [scrollbar-width:auto] data-fading:pointer-events-none data-fading:animate-out data-fading:fade-out data-fading:fill-mode-forwards"
                 ref={(element) => {
+                    // 포커스는 Frame이 열릴 때 준다 - 매 렌더링마다 다시 주면 입력 중인 칸을 빼앗는다.
                     scroller.current = element;
-                    element?.focus({preventScroll: true});
                 }}
                 tabIndex={-1}
                 data-fading={fading || undefined}
