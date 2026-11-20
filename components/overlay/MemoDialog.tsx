@@ -78,7 +78,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
                     <div role="group" aria-label="메모 대상" className="join">
                         {MEMO_TYPES.filter((memoType) => state.targets[memoType]).map((memoType) => (
                             <button key={memoType} type="button" aria-pressed={type === memoType}
-                                    className={cn("btn btn-outline join-item", type === memoType && "btn-active")}
+                                    className={cn("btn btn-outline btn-sm join-item", type === memoType && "btn-active")}
                                     onClick={() => {
                                         setType(memoType);
                                         if (!touched) setForm(prefill(memoType));
