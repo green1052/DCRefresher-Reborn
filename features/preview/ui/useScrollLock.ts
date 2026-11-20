@@ -2,7 +2,7 @@ import { useEffect } from "preact/hooks";
 
 import {focusedElement} from "@/components/useReturnFocus";
 
-/** 창이 떠 있는 동안 뒤 페이지를 잠근다 - 비모달이라 inert로 막아 Tab, 스크린 리더가 목록으로 나가지 않게 한다(오버레이는 남긴다).
+/** 창이 떠 있는 동안 페이지 스크롤을 잠근다. 뒤 페이지의 inert 잠금은 PreviewDialogRoot가 한다 - 페이드아웃까지 덮는다.
  * 키보드로 열었을 때만 연 요소로 포커스를 돌려준다 - 마우스로 연 창까지 돌리면 새로고침 모듈이 갱신을 멈춘다. */
 export const useScrollLock = (active: boolean): void => {
     useEffect(() => {
@@ -17,13 +17,10 @@ export const useScrollLock = (active: boolean): void => {
         // 옆으로 밀리지만 어두운 배경 아래라 보이지 않는다.
         html.style.overflow = "hidden";
         html.style.scrollbarGutter = "auto";
-        const blocked = document.body.querySelectorAll<HTMLElement>(":scope > :not(refresher-root, [data-refresher-ui], [inert])");
-        for (const element of blocked) element.inert = true;
 
         return () => {
             html.style.overflow = previous.overflow;
             html.style.scrollbarGutter = previous.gutter;
-            for (const element of blocked) element.inert = false;
             opener?.focus({preventScroll: true});
         };
     }, [active]);
