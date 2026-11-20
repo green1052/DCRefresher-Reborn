@@ -45,7 +45,8 @@ test.describe("미리보기", () => {
             const short = await layout();
             await listPage.openPreview();
             await expect(frame).toBeVisible();
-            expect(await layout()).toEqual({...short, gutter: "auto"});
+            // 잠금은 useEffect에서 걸리고 풀리므로 프레임 표시와 시간차가 난다 - poll로 기다린다.
+            await expect.poll(layout).toEqual({...short, gutter: "auto"});
             await listPage.closePreview();
 
             // 페이지를 늘려 스크롤바를 세운다 (fixtures에서 Chromium의 스크롤바 숨김을 끈다).
@@ -55,9 +56,9 @@ test.describe("미리보기", () => {
             await listPage.openPreview();
             await expect(frame).toBeVisible();
             // 스크롤바 칸이 사라지며 뒤 페이지가 다시 창 폭만큼 넓어진다.
-            expect(await layout()).toEqual({width: short.width, gutter: "auto"});
+            await expect.poll(layout).toEqual({width: short.width, gutter: "auto"});
             await listPage.closePreview();
-            expect(await layout()).toEqual(long);
+            await expect.poll(layout).toEqual(long);
         });
     });
 
