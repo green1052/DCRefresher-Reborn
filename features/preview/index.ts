@@ -91,8 +91,6 @@ const controller = (ctx: Ctx) => {
         const early = !dir && !recent && preData.commentCount > 0 && esno && (ctx.settings.disableCache || !cachedPost(preData))
             ? fetchComments(preData, {esno}, abort!.signal).catch(() => undefined)
             : undefined;
-        // 본문을 받지 못해 given으로 쓰이지 않으면 처리되지 않은 거부가 된다.
-        void early?.catch(() => undefined);
 
         try {
             ({post, fresh, archived = false} = await posts.getPost(preData));

@@ -234,7 +234,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
         // 이전 글의 캡차, Turnstile 창은 닫는다. 남아 있으면 입력한 코드가 이전 글로 간다.
         get().captcha?.resolve("");
         get().turnstile?.resolve(undefined);
-        set({...freshPost(), ...patch, visible: true, fading: false, preData, signalId: ++signalSeq, mini: null, captcha: null, turnstile: null, dcconInfo: null});
+        set({...freshPost(), ...patch, visible: true, fading: false, preData, signalId: ++signalSeq, mini: null, captcha: null, turnstile: null, dcconInfo: null, warm: false});
     },
 
     close: () => {
