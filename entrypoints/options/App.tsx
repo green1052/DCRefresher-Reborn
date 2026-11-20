@@ -22,12 +22,13 @@ import {ShortcutTab} from "./tabs/ShortcutTab";
 // preact에는 lazy/Suspense가 없어 불러오는 동안 null을 그리는 얇은 대체물을 쓴다(기존 fallback도 없었다).
 let DcconRainComponent: ComponentType | undefined;
 const DcconRain = () => {
-    const [Component, setComponent] = useState<ComponentType | undefined>(DcconRainComponent);
+    // 함수 컴포넌트를 그대로 넘기면 갱신 함수로 실행해 버리니 값으로 감싼다.
+    const [Component, setComponent] = useState<ComponentType | undefined>(() => DcconRainComponent);
     useEffect(() => {
         if (!DcconRainComponent) {
             void import("./DcconRain").then(({DcconRain}) => {
                 DcconRainComponent = DcconRain;
-                setComponent(DcconRain);
+                setComponent(() => DcconRain);
             });
         }
     }, []);
