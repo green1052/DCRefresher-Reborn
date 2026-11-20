@@ -168,7 +168,7 @@
     body {
         @apply bg-base-100 text-base-content;
         /* 크롬은 확장 페이지(옵션, 팝업)의 body에 자체 폰트 규칙(크기 75% 포함)을 레이어 밖에 넣어, 레이어 안의 규칙은 진다. 폰트 교체 설정과 옛 글씨 크기(1rem)가 먹도록 important로 건다. */
-        font-family: var(--font-sans, sans-serif), sans-serif !important;
+        font-family: var(--font-sans, sans-serif) !important;
         font-size: 1rem !important;
     }
 
