@@ -66,11 +66,18 @@ export const storageSync = <K extends StorageItemKey>(keys: readonly K[], onChan
 };
 
 /** 객체 키를 정렬해 직렬화한다. 크롬 저장소는 키를 정렬해 돌려주므로, 그대로 비교하면 이 탭이 쓴 값이 돌아올 때 다른 값이 된다. */
-const canonical = (value: unknown): string =>
+export const canonical = (value: unknown): string =>
     JSON.stringify(value, (_key, item: unknown) => (isRecord(item) ? Object.fromEntries(Object.keys(item).sort().map((key) => [key, item[key]])) : item));
 
 /** 항목 수. 수가 다르면 직렬화해 볼 것도 없이 다른 값이다 (목록이 수천 개면 canonical이 탭마다 몇 ms 걸린다). */
 const sizeOf = (value: unknown): number | undefined => (Array.isArray(value) ? value.length : isRecord(value) ? Object.keys(value).length : undefined);
+
+/** 쓰기를 Web Locks로 줄 세운다. 파이어폭스 콘텐츠 스크립트는 콜백이 Xray 경계에서 실패하므로 p-limit으로만 줄을 세운다. */
+export const writeQueue = (lock?: string): ((write: () => Promise<void>) => Promise<void>) => {
+    const usable = lock && !(import.meta.env.BROWSER === "firefox" && location.protocol !== "moz-extension:") ? lock : undefined;
+    const queue = pLimit(1);
+    return usable ? (write) => navigator.locks.request(usable, write) : (write) => queue(write);
+};
 
 /** 유형마다 키 하나에 저장하는 목록(차단, 메모)을 스토어와 양방향으로 맞춘다. 값이 같으면 스토어를 건드리지 않는다. */
 export const typedListSync = <T extends string, V>(options: {
@@ -98,10 +105,7 @@ export const typedListSync = <T extends string, V>(options: {
         if (sizeOf(lists[type]) !== sizeOf(next) || canonical(lists[type]) !== canonical(next)) set({...lists, [type]: next});
     });
 
-    // 파이어폭스 콘텐츠 스크립트는 navigator.locks 콜백이 Xray 경계에서 실패하므로 p-limit으로만 줄을 세운다.
-    const locks = lock && !(import.meta.env.BROWSER === "firefox" && location.protocol !== "moz-extension:") ? lock : undefined;
-    const queue = pLimit(1);
-    const enqueue = locks ? (write: () => Promise<void>): Promise<void> => navigator.locks.request(locks, write) : (write: () => Promise<void>): Promise<void> => queue(write);
+    const enqueue = writeQueue(lock);
 
     /** 저장소의 현재 값에 change를 붙여 쓴다. change는 순수해야 한다 - 두 번 불리고 결과는 저장소 쪽으로 맞춰진다. */
     const update = async (type: T, change: (current: V) => V): Promise<void> => {

@@ -5,7 +5,7 @@ import {create} from "@/utils/store";
 import {enablesOf, isModuleEnabled, normalizeSetting, readModuleStorage, settingsOf} from "@/core/module/settings";
 import type {AnyModuleMeta} from "@/core/module/types";
 import {LIST_LOCKS, MODULES_KEY, moduleDataKey, moduleKeyModule, moduleSettingsKey, moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
-import {storageSync} from "@/core/storage/sync";
+import {canonical, storageSync} from "@/core/storage/sync";
 import type {SettingValue} from "@/core/storage/types";
 import features from "@/features/meta";
 import {once} from "@/utils/once";
@@ -112,14 +112,14 @@ const pruneStaleSettings = async (): Promise<void> => {
 };
 
 // 저장한 값은 감시로 되돌아온다. 이미 반영한 값이면 상태를 바꾸지 않는다 (바꾸면 구독하는 화면이 같은 값으로 한 번 더 그린다).
-const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
+// 비교는 키 정렬 canonical로 한다 - JSON.stringify는 키 순서가 다르면 같은 값도 다르다고 한다.
 const setEnables = (stored: unknown): void => {
     const enables = resolveEnables(enablesOf(stored));
-    if (!same(enables, useModulesStore.getState().enables)) useModulesStore.setState({enables});
+    if (canonical(enables) !== canonical(useModulesStore.getState().enables)) useModulesStore.setState({enables});
 };
 const setValues = (feature: AnyModuleMeta, stored: unknown): void => {
     const values = settingsOf(feature, stored);
-    if (!same(values, useModulesStore.getState().values[feature.id])) useModulesStore.setState((state) => ({values: {...state.values, [feature.id]: values}}));
+    if (canonical(values) !== canonical(useModulesStore.getState().values[feature.id])) useModulesStore.setState((state) => ({values: {...state.values, [feature.id]: values}}));
 };
 
 /** 설정이 있는 모듈. 설정 키로 찾는다. */

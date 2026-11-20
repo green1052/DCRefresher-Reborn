@@ -3,7 +3,7 @@ import {shallow} from "zustand/vanilla/shallow";
 
 import {BLOCK_DEFAULTS_KEY, BLOCK_TYPES, blockDefaultsStorage, blockListKey, LIST_LOCKS} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
-import {typedListSync} from "@/core/storage/sync";
+import {typedListSync, writeQueue} from "@/core/storage/sync";
 import {saveOrReload} from "@/utils/error";
 
 // 검사, 정규화는 core/block-list에 있다.
@@ -69,7 +69,8 @@ export const useBlocksStore = create<BlocksState>((set, get) => ({
 
     setDefault: async (type, mode) => {
         set((state) => ({defaults: {...state.defaults, [type]: mode}}));
-        await saveOrReload(blockDefaultsStorage().setValue(get().defaults), lists.load, "차단 목록을 저장하지 못했습니다.");
+        // 기본 모드 쓰기도 목록과 같은 잠금으로 줄 세운다 (가져오기가 두 값을 함께 쓴다).
+        await saveOrReload(defaultsQueue(() => blockDefaultsStorage().setValue(get().defaults)), lists.load, "차단 목록을 저장하지 못했습니다.");
     }
 }));
 
@@ -90,6 +91,8 @@ const lists = typedListSync({
     },
     lock: LIST_LOCKS.blocks
 });
+
+const defaultsQueue = writeQueue(LIST_LOCKS.blocks);
 
 /** 저장소 값을 읽고 변경(다른 탭, 옵션 페이지)을 감시한다. 여러 번 불러도 한 번만 한다. signal은 콘텐츠 스크립트 컨텍스트의 것이다. */
 export const initBlocksStore = lists.start;
