@@ -29,7 +29,7 @@ describe("refresher:hookUploads", () => {
 
         await receive(fromTab(3, {frameId: 2, documentId: "doc"}));
 
-        expect(execute).toHaveBeenCalledWith({target: {tabId: 3, documentIds: ["doc"]}, world: "MAIN", files: ["/upload-hook.js"]});
+        expect(execute).toHaveBeenCalledWith({target: {tabId: 3, documentIds: ["doc"]}, world: "MAIN", files: ["/write-page.js"]});
     });
 
     it("documentId가 없으면(파이어폭스) 프레임 번호로, 그것도 없으면 최상위 프레임에 넣는다", async () => {

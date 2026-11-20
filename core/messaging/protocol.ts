@@ -53,7 +53,7 @@ interface ProtocolMap {
     /** 탭 → 배경: 페이지마다 한 번 목록 다리를 건다 (LIST_REPLACED_EVENT 수신용). */
     "refresher:installListBridge"(): void;
 
-    /** 탭 → 배경: 글쓰기 모듈이 그 탭의 MAIN world에 이미지 변환(entrypoints/upload-hook.ts)을 넣는다. 페이지마다 한 번. */
+    /** 탭 → 배경: 글쓰기 모듈이 그 탭의 MAIN world에 이미지 변환(features/write/page.ts)을 넣는다. 페이지마다 한 번. */
     "refresher:hookUploads"(): void;
 
     /** 탭 → 배경: 디시 통합검색 결과(HTML). search.dcinside.com은 CORS를 열지 않는다. */
