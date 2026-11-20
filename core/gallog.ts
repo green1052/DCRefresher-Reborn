@@ -118,8 +118,10 @@ export const getGallogActivityUnlessBusy = (uid: string): Promise<GallogActivity
     return (async () => {
         const {mine, cached} = await sharedActivity(uid);
         if (cached) {
+            // 알림을 받는 쪽이 같은 uid를 다시 묻는 사이 아직 캐시가 비어 있으니 먼저 기억시킨다.
+            const request = remember(uid, Promise.resolve(cached));
             deliver(uid, cached);
-            return remember(uid, Promise.resolve(cached));
+            return request;
         }
         if (!mine) return null;
         return remember(uid, fetchAndShare(uid));
