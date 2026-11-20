@@ -5,7 +5,7 @@
 - 콘텐츠 스크립트는 디시 CSS와 섞이지 않게 `refresher-root` shadow DOM 안에 Preact 루트(`components/overlay/ContentRoot.tsx`)를 띄웁니다. 포털은 `overlay.portal`입니다.
 - 오버레이는 그릴 것이 처음 생길 때 띄우고 조건은 `needOverlayWhen(store, (state) => ...)`로 등록합니다(`components/overlay/demands.ts`). 새 UI는 자기 스토어의 조건에 상태를 더하면 됩니다.
 - 디시 페이지 자체를 바꾸는 CSS는 기능 폴더의 `page.css`입니다(`modules/feature-styles.ts`가 모아 `entrypoints/page.content.css`가 주입). 여러 모듈이 같이 쓰는 가림 규칙만 `assets/styles/content.css`에 있고, dev 중 `page.css`를 새로 만들면 dev를 다시 띄웁니다.
-- 콘텐츠 스크립트에서 import한 CSS는 오버레이를 처음 띄울 때 shadow에 들어갑니다(`cssInjectionMode: "manual"`, `entrypoints/content/overlay.tsx`). 치환 없이 그대로 쓰는 이유는 그 주석에. 오버레이 안 CSS는 `assets/styles/overlay.css`와 기능 폴더의 `overlay.css`입니다.
+- 콘텐츠 스크립트가 import한 CSS는 오버레이를 처음 띄울 때 shadow에 들어갑니다(`cssInjectionMode: "ui"`가 `content-scripts/content.css`를 넣고 `entrypoints/content.tsx`의 `inheritStyles` 주석이 리셋을 막는 이유를 적는다). 오버레이 안 CSS는 `assets/styles/overlay.css`와 기능 폴더의 `overlay.css`입니다.
 - 오버레이의 Tailwind는 `overlay.css`가 `tailwind.css`를 불러 만드는데 옵션, 팝업 전용 부품(`@source not` 목록)은 스캔하지 않습니다. 오버레이에서 쓰게 되면 목록에서 빼지 않으면 `tests/unit/assets/styles/overlay.test.ts`가 실패합니다.
 - 페이지, 오버레이는 다른 문서라 같은 규칙은 `assets/styles/shared.css`의 `@utility`로 맞춥니다(`@reference` + `@apply`). `:is()`로 감싸져 명시도가 달라지므로 명시도가 중요한 곳은 규칙을 나눠 씁니다.
 - UI는 Tailwind 클래스로 꾸미고 CSS 파일에는 디시 HTML(미리보기 본문, `.refresher-html`)처럼 클래스를 못 다는 곳만 남깁니다. Tailwind는 적힌 클래스만 만들므로 이어 붙여 만들지 않습니다. Tailwind 리셋이 들어가고 `.refresher-html`만 `all: revert-layer`로 되돌립니다.
@@ -29,7 +29,7 @@
 
 ## 옵션 페이지
 
-- `Layout.tsx`: `SearchInput`, `EmptyList`, `ImportDialog`, `downloadJson`, 읽기만 하는 `useStorageItem`.
+- `Layout.tsx`: `SearchInput`, `EmptyList`, `ImportDialog`, 읽기만 하는 `useStorageItem`.
 - `ListTabs.tsx`: 차단 목록, 메모가 같이 쓰는 목록 탭(검색, 거르기, 더 보기, 되돌리기). 목록 화면은 이것을 씁니다.
 - `optionsStore.ts`: 알림은 `notify`, `notifyDone`, `copyText`로. `SettingItem.tsx`: 설정 한 줄을 스키마 타입별로 그림. `RefresherSelect.tsx`: 값→문구 선택 상자(`aria-label` 필수).
 

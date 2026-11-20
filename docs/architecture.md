@@ -5,10 +5,8 @@
 ```
 entrypoints/
   background/           배경 스크립트. page.ts는 탭의 페이지(MAIN world)에서 실행
-  content/              콘텐츠 스크립트. index.ts는 부트스트랩(IIFE), main.ts는 본문
-  content-main.html     main.ts를 ESM 청크(chunks/content-main.js)로 묶는 HTML 엔트리
+  content.tsx           콘텐츠 스크립트 (IIFE 단일 파일)
   page.content.css      디시 페이지 CSS (manifest로 따로 주입)
-  upload-hook.ts        글쓰기 이미지 변환. 배경이 페이지에 넣는 unlisted script
 features/<id>/          기능 모듈 하나
   meta.ts               id, 설정 스키마, 단축키, 토글 id (모든 번들이 읽는다)
   labels.ts             이름, 설명, 설정 문구
@@ -31,12 +29,7 @@ scripts/                IP DB 빌드 스크립트
 
 ## 콘텐츠 스크립트
 
-`entrypoints/content/index.ts`가 디시 페이지(`CONTENT_MATCHES`)에서 `document_start`에 실행됩니다. `index.ts`는 얇은 부트스트랩으로 배포 빌드에서는 `chunks/content-main.js`를 불러 `main.ts`의 `start`를 부르고(옵션, 팝업과 청크 공유) 개발 빌드는 직접 씁니다. 모듈 구현은 `features/index.ts`의 lazy glob으로 켜진 모듈만 늦게 받습니다(꺼진 모듈은 청크를 내려받지도 평가하지도 않음). 파이어폭스는 모듈별 청크 없이 `content-main.js`에 인라인되고(WXT 기본), 155 미만은 실패한 동적 import가 새로고침까지 캐시됩니다.
-
-- WXT 문서가 안내하는 수동 구현입니다. 공식 지원(이슈 #357)이 나면 `type: "module"`로 바꿉니다. 비동기 로더라 `document_start`를 완전히는 못 지킵니다.
-- 청크 이름은 `wxt.config.ts`의 `vite:build:extendConfig` 훅이 고정하고(런타임에 경로로 찾으므로 해시 불가), 청크와 `content-scripts/content.css`는 `web_accessible_resources`에 디시 페이지에만 엽니다.
-
-`main.ts`:
+`entrypoints/content.tsx`가 디시 페이지(`CONTENT_MATCHES`)에서 `document_start`에 실행됩니다(IIFE 단일 파일). 모듈 구현은 `features/index.ts`의 lazy glob으로 켜진 모듈만 늦게 평가합니다(꺼진 모듈은 평가하지도 않음). 단일 파일이라 옵션, 팝업과 공유하는 코드(preact, core)가 번들에 중복으로 들어갑니다 - WXT가 콘텐츠 스크립트 ESM을 지원하면(이슈 #357) 나눌 수 있습니다.
 
 1. 단축키, 팝업 메시지 준비, 컨텍스트가 무효가 되면 모듈을 멈춥니다(`stopAll`, `releaseDatabase`).
 2. `BOARD_PAGE`면 차단, 메모 스토어와 모듈 on/off, 설정(`core/module/registry.ts`의 `loadAll`)을 동시에 읽고 setup을 돌립니다. 오버레이는 그릴 것이 생길 때 띄웁니다([UI](ui.md#오버레이와-css)).
