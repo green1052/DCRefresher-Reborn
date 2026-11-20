@@ -63,7 +63,7 @@ export const WriteComment = () => {
     // 기억한 비밀번호가 없으면 하나 만든다. 쓸 때 저장되므로 이후 같은 비밀번호로 자기 댓글을 지울 수 있다.
     const [password, setPassword] = useState(() => saved.pw || randomPassword());
     const pwSaved = Boolean(saved.pw);
-    // 저장된 비밀번호는 입력칸에 넣지 않는다. 오버레이 섀도 루트가 open이라 페이지 스크립트가 값을 읽을 수 있다.
+    // 비밀번호는 입력칸에 항상 보인다. 오버레이 섀도 루트가 open이라 페이지 스크립트가 값을 읽을 수 있지만, 사용자가 직접 확인하는 것을 우선한다.
     const [passwordEdited, setPasswordEdited] = useState(false);
     // 보내는 중인 디시콘(더블콘이면 둘)과 대왕콘 여부. 보내는 동안만 담겨 있다가 끝나면 비운다(submit의 finally).
     const [{list: dccons, big: bigDccon}, setDccon] = useState(NO_DCCON);
@@ -245,17 +245,22 @@ export const WriteComment = () => {
                         maxLength={20}
                         onInput={(ev) => setNick(ev.currentTarget.value)}
                     />
-                    <input
-                        type="password"
-                        className="input flex-1"
-                        value={passwordEdited ? password : ""}
-                        aria-label="비밀번호"
-                        placeholder={passwordEdited ? "비밀번호" : pwSaved ? "비밀번호 (저장됨)" : "비밀번호 (자동 생성)"}
-                        onInput={(ev) => {
-                            setPasswordEdited(true);
-                            setPassword(ev.currentTarget.value);
-                        }}
-                    />
+                    <div className="relative flex-1">
+                        <input
+                            type="text"
+                            className="input w-full pr-20"
+                            value={password}
+                            aria-label="비밀번호"
+                            placeholder="비밀번호"
+                            onInput={(ev) => {
+                                setPasswordEdited(true);
+                                setPassword(ev.currentTarget.value);
+                            }}
+                        />
+                        {!pwSaved && !passwordEdited && (
+                            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-base-content/40">(자동 생성)</span>
+                        )}
+                    </div>
                 </div>
             )}
 
