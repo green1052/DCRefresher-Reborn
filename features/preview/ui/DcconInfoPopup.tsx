@@ -4,7 +4,7 @@ import { type TargetedMouseEvent as MouseEvent } from "preact";
 import {ConfirmDialog, DialogCloseButton, DialogTitle, ModalDialog} from "@/components/dialogs";
 import {dcconCode, isBlockedHidden} from "@/core/block";
 import {urls} from "@/core/http/urls";
-import {addDcconPackage, dcconPackages, fetchDcconPackage} from "@/core/preview/request";
+import {addDcconPackage, dcconPackages, getDcconPackage} from "@/core/preview/request";
 import {clearDcconCaches} from "@/core/preview/dccon";
 import {useUiStore} from "@/stores/ui";
 
@@ -77,8 +77,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
         const controller = new AbortController();
         const {signal} = controller;
 
-        void fetchDcconPackage(code, signal).then((result) => {
-            dcconPackages.set(code, result);
+        void getDcconPackage(code, signal).then((result) => {
             if (!signal.aborted) setDccon(result);
         }, () => {
             if (signal.aborted) return;

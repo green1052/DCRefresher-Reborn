@@ -11,6 +11,8 @@ import {
     fetchComments,
     fetchDcconList,
     fetchDcconPackage,
+    dcconPackages,
+    getDcconPackage,
     fetchPost,
     setNotice,
     setRecommend,
@@ -220,6 +222,14 @@ describe("디시콘", () => {
             serve(fetchMock, () => reply);
             await expect(fetchDcconPackage("1")).rejects.toThrow("디시콘 정보가 아닙니다.");
         }
+    });
+
+    it("같은 패키지의 다른 디시콘 코드는 다시 받지 않는다", async () => {
+        dcconPackages.clear();
+        serve(fetchMock, () => JSON.stringify({info: {package_idx: "7", code: "main"}, detail: [{idx: "1", path: "memberA", title: "1"}, {idx: "2", path: "memberB", title: "2"}], tags: []}));
+        await getDcconPackage("memberA");
+        await getDcconPackage("memberB");
+        expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
     it("목록이 아닌 응답은 던진다", async () => {

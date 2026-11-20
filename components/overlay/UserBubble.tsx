@@ -11,7 +11,7 @@ import {banReasonsOf, databaseVersion, ipInfoOf, onDatabaseChange, subscribeData
 import {urls} from "@/core/http/urls";
 import {getModuleApi} from "@/core/module/registry";
 import {useRunningModuleSettings} from "@/core/module/useModuleSettings";
-import {dcconPackages, fetchDcconPackage} from "@/core/preview/request";
+import {dcconPackages, getDcconPackage} from "@/core/preview/request";
 import {TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {type BlockRequestOptions, handleBlockRequest} from "@/stores/blockRequest";
@@ -42,8 +42,7 @@ const DcconSummary = ({code, onOpen}: { code: string; onOpen: () => void }) => {
     useEffect(() => {
         if (dccon) return;
         const controller = new AbortController();
-        void fetchDcconPackage(code, controller.signal).then((result) => {
-            dcconPackages.set(code, result);
+        void getDcconPackage(code, controller.signal).then((result) => {
             if (!controller.signal.aborted) setDccon(result);
         }, () => !controller.signal.aborted && setFailed(true));
         return () => controller.abort();

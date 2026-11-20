@@ -2,7 +2,7 @@ import {render, act} from "@/tests/helpers";
 import type { ComponentChild as ReactNode } from "preact";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
-import {addDcconPackage, fetchDcconPackage} from "@/core/preview/request";
+import {addDcconPackage, getDcconPackage} from "@/core/preview/request";
 import type {DcinsideDcconPackage} from "@/core/preview/types";
 import {clearDcconCaches} from "@/core/preview/dccon";
 import {DcconInfoPopup} from "@/features/preview/ui/DcconInfoPopup";
@@ -19,7 +19,7 @@ vi.mock("@/components/dialogs", () => ({
     ConfirmDialog: ({confirmLabel, onConfirm}: { confirmLabel?: string; onConfirm: () => void }) => <button onClick={onConfirm}>{confirmLabel}</button>
 }));
 vi.mock("@/core/preview/dccon", () => ({clearDcconCaches: vi.fn()}));
-vi.mock("@/core/preview/request", () => ({addDcconPackage: vi.fn(), dcconPackages: new Map(), fetchDcconPackage: vi.fn()}));
+vi.mock("@/core/preview/request", () => ({addDcconPackage: vi.fn(), dcconPackages: new Map(), getDcconPackage: vi.fn()}));
 
 const pack = (title: string): DcinsideDcconPackage => ({
     info: {package_idx: 9, code: "", title, description: "", seller_name: "판매자", reg_date_short: "", main_img_path: "", register: false, residual: false},
@@ -38,7 +38,7 @@ const open = async (code: string): Promise<void> => {
 
 /** 패키지를 불러온 뒤 '사용' → 확인 창의 '추가'를 누른다. */
 const add = async (code: string): Promise<void> => {
-    vi.mocked(fetchDcconPackage).mockResolvedValue(pack(code));
+    vi.mocked(getDcconPackage).mockResolvedValue(pack(code));
     await open(code);
     await vi.waitFor(() => expect(button("사용")).toBeDefined());
     await act(() => button("사용")!.click());
@@ -66,7 +66,7 @@ describe("DcconInfoPopup", () => {
     });
 
     it("불러오기에 실패하면 알리고 창을 닫는다", async () => {
-        vi.mocked(fetchDcconPackage).mockRejectedValue(new Error("fail"));
+        vi.mocked(getDcconPackage).mockRejectedValue(new Error("fail"));
         await open("broken");
         await vi.waitFor(() => expect(showToast).toHaveBeenCalledWith("디시콘 정보를 불러오지 못했습니다.", "error"));
         expect(usePreviewStore.getState().dcconInfo).toBeNull();
@@ -74,7 +74,7 @@ describe("DcconInfoPopup", () => {
 
     it("닫은 뒤에 실패한 요청은 알리지 않고 다른 창을 닫지 않는다", async () => {
         const {promise, reject} = Promise.withResolvers<DcinsideDcconPackage>();
-        vi.mocked(fetchDcconPackage).mockReturnValue(promise);
+        vi.mocked(getDcconPackage).mockReturnValue(promise);
         await open("closed");
         await act(() => render(null, root));
         usePreviewStore.setState({dcconInfo: "other"});

@@ -14,8 +14,9 @@ const DCCON_TTL = 10 * 60_000;
 
 /**
  * 디시콘 코드별 패키지 정보. 같은 디시콘을 다시 눌러도 받지 않는다. 정보 창과 디시콘 버블이 같이 쓴다.
+ * 패키지 안 디시콘마다 코드가 다르므로, 받은 패키지는 구성원 코드 전체에 담는다(getDcconPackage).
  */
-export const dcconPackages = new QuickLRU<string, DcinsideDcconPackage>({maxSize: 100, maxAge: DCCON_TTL});
+export const dcconPackages = new QuickLRU<string, DcinsideDcconPackage>({maxSize: 500, maxAge: DCCON_TTL});
 
 /** 내 디시콘 패키지 목록 캐시 (한 슬롯). 디시콘 선택 창이 닫았다 열어도 다시 받지 않게 쓴다. */
 let dcconListCache: { list: DcinsideDcconDetailList[]; at: number } | null = null;
@@ -60,7 +61,9 @@ export const getDcconPackage = async (code: string, signal?: AbortSignal): Promi
     if (cached) return cached;
 
     const response = await fetchDcconPackage(code, signal);
+    // 패키지 안 디시콘마다 코드가 다르다. 다른 구성원을 눌렀을 때 같은 패키지를 다시 받지 않게 전부에 담는다.
     dcconPackages.set(code, response);
+    for (const item of response.detail) dcconPackages.set(item.path, response);
     return response;
 };
 
