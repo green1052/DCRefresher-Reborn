@@ -1,4 +1,4 @@
-import {ChevronDown, ChevronUp, ExternalLink, Link2} from "lucide-preact";
+import {ChevronDown, ChevronUp, ExternalLink, Link} from "lucide-preact";
 import { useState } from "preact/hooks";
 
 import {TooltipButton} from "@/components/WithTooltip";
@@ -70,7 +70,7 @@ export const Votes = ({post}: { post: PostInfo }) => {
                 </button>
             )}
             <TooltipButton tip="링크 복사" size="icon-lg" variant="ghost" onClick={onShare}>
-                <Link2/>
+                <Link/>
             </TooltipButton>
             {/* 링크 버튼은 <a>여야 새 탭/링크 동작이 보존된다. */}
             <a className="btn btn-square btn-ghost" href={preData?.link ?? location.href} target="_blank" rel="noreferrer"
