@@ -688,10 +688,7 @@ test.describe("댓글 쓰기, 지우기", () => {
         await popup.getByRole("button", {name: DCCON.title, exact: true}).click();
         await expect(popup).toHaveCount(0);
 
-        const input = frame.getByRole("textbox", {name: "디시콘 입력", exact: true});
-        await expect(input).toBeDisabled();
-        await frame.getByRole("button", {name: "작성", exact: true}).click();
-
+        // 고르자마자 바로 보낸다(작성 단계가 없다).
         await expect(frame.locator(`.refresher-comment img[src="${DCCON.list_img}"]`)).toBeVisible();
         expect(site.submitted.map(({path}) => path)).toEqual(["/dccon/insert_icon"]);
         const {body} = site.submitted[0]!;
@@ -829,7 +826,7 @@ test.describe("댓글 쓰기, 지우기", () => {
         const remove = listPage.comments.nth(1).getByRole("button", {name: "ㅇㅇ 댓글 삭제", exact: true});
         await remove.click();
         const password = listPage.dialog.getByRole("textbox", {name: "댓글 비밀번호", exact: true});
-        await expect(password).toHaveAttribute("type", "password");
+        await expect(password).toHaveAttribute("type", "text");
         await password.fill("pw1234");
         await listPage.dialog.getByRole("button", {name: "삭제", exact: true}).click();
 

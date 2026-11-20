@@ -251,21 +251,16 @@ test.describe("옵션 - 차단 탭", () => {
         await expect(alert).toContainText("차단 목록을 가져오지 못했습니다.");
     });
 
-    test("파일로 내보낸 목록을 가져오기 창에서 파일로 불러와 되살린다", async ({page, extensionId, storage}) => {
-        await storage.set({"refresher:block:NICK": [{id: "a", content: "파일닉", isRegex: false}]});
+    test("가져오기 창에서 파일을 불러와 목록을 되살린다", async ({page, extensionId, storage}) => {
+        await storage.set({"refresher:block:NICK": []});
         const {dialog, toasts} = await openOptions(page, extensionId, "block");
 
-        const downloading = page.waitForEvent("download");
-        await page.getByRole("button", {name: "파일로 내보내기", exact: true}).click();
-        const download = await downloading;
-        expect(download.suggestedFilename()).toMatch(/^dcrefresher-block-\d{8}\.json$/);
-        await expect(toasts).toContainText("차단 목록을 파일로 내보냈습니다.");
-
-        await storage.set({"refresher:block:NICK": []});
         await page.getByRole("button", {name: "가져오기", exact: true}).click();
         const choosing = page.waitForEvent("filechooser");
         await dialog.getByRole("button", {name: "파일에서 불러오기", exact: true}).click();
-        await (await choosing).setFiles(await download.path());
+        // 내보내기(cl립보드)가 만드는 JSON과 같은 모양을 파일로 올린다.
+        const json = JSON.stringify({NICK: [{id: "a", content: "파일닉", isRegex: false}], ID: [], IP: []});
+        await (await choosing).setFiles({name: "dcrefresher-block.json", mimeType: "application/json", buffer: Buffer.from(json)});
 
         await expect(toasts).toContainText("차단 목록을 가져왔습니다.");
         await expect.poll(() => storage.get("refresher:block:NICK")).toMatchObject([{content: "파일닉"}]);

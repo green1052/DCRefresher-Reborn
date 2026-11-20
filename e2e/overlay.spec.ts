@@ -10,7 +10,8 @@ test.describe("유저 버블", () => {
 
         const {bubble} = listPage;
         await expect(bubble).toContainText("user3");
-        await expect(bubble).toContainText("12 / 34");
+        await expect(bubble).toContainText("게시물 12");
+        await expect(bubble).toContainText("댓글 34");
         await bubble.getByRole("button", {name: "유저 차단"}).click();
 
         await expect(listPage.toast).toContainText("차단 목록에 추가했습니다.");
