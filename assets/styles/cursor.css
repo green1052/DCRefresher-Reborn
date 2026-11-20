@@ -1,0 +1,21 @@
+/* 데스크톱 앱처럼 커서를 쓴다: 라벨은 화살표, 누르는 것은 손가락, 입력칸만 I자.
+   브라우저 기본은 텍스트마다 I자 커서고 Tailwind v4는 단추도 화살표라 여기서 일괄 정한다.
+   옵션(pages.css)과 팝업(popup.css)이 같이 쓴다. */
+body {
+    cursor: default;
+}
+
+button:not(:disabled), select:not(:disabled), a,
+    /* 체크박스, 라디오, 슬라이더 등 클릭형 입력칸도 누르는 것이다. */
+input:not(:disabled):is([type=checkbox], [type=radio], [type=range], [type=button], [type=color], [type=file]) {
+    cursor: pointer;
+}
+
+input, textarea {
+    cursor: auto;
+}
+
+button:disabled, select:disabled,
+input:disabled:is([type=checkbox], [type=radio], [type=range], [type=button], [type=color], [type=file]) {
+    cursor: default;
+}

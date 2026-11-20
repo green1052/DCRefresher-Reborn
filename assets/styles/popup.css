@@ -1,6 +1,7 @@
 /* ===== 팝업 스타일 ===== */
 
 @import "./tailwind.css";
+@import "./cursor.css";
 /* 팝업이 안 쓰는 소스는 스캔에서 뺀다(features, core, stores는 화면을 그리지 않는다). 빼 놓고 불러오면 스타일이 빠진다(popup.test.ts가 지킨다). */
 @source not "../../entrypoints/{options,content,background}";
 @source not "../../{features,core,stores,components/overlay}";
