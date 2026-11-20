@@ -65,7 +65,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     };
 
     return (
-        <ModalDialog onClose={closeMemo} focusOnOpen={input} className="sm:max-w-[400px]">
+        <ModalDialog onClose={closeMemo} focusOnOpen={input} className="sm:max-w-100">
             <DialogHeader>
                 <DialogTitle>메모</DialogTitle>
                 <DialogDescription>

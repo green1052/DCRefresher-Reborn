@@ -92,7 +92,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
 
     return (
         // 우클릭 버블은 이 창 밖(components/overlay/UserBubble.tsx)에 뜨므로, 버블이 떠 있는 동안은 바깥 클릭으로 닫지 않는다.
-        <ModalDialog onClose={close} className="sm:max-w-[600px]" focusOnOpen="keyboard" disablePointerDismissal={bubble !== null}>
+        <ModalDialog onClose={close} className="sm:max-w-150" focusOnOpen="keyboard" disablePointerDismissal={bubble !== null}>
             <div className="flex items-center justify-between">
                 <DialogTitle>디시콘 정보</DialogTitle>
                 <DialogCloseButton/>
@@ -129,15 +129,15 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
                     ) : (
                         <>
                             <span className="h-6 w-40 skeleton"/>
-                            <span className="h-[18px] w-70 skeleton"/>
-                            <span className="h-[18px] w-50 skeleton"/>
+                            <span className="h-4.5 w-70 skeleton"/>
+                            <span className="h-4.5 w-50 skeleton"/>
                         </>
                     )}
                 </div>
             </div>
 
             {/* 우클릭하면 차단 버블 - 목록 높이를 미리 잡아 창이 커지지 않게 한다. */}
-            <div className="grid max-h-[420px] grid-cols-[repeat(auto-fill,minmax(96px,1fr))] content-start gap-2 overflow-y-auto aria-busy:h-[420px] aria-busy:overflow-hidden"
+            <div className="grid max-h-105 grid-cols-[repeat(auto-fill,minmax(96px,1fr))] content-start gap-2 overflow-y-auto aria-busy:h-105 aria-busy:overflow-hidden"
                  aria-busy={!dccon} onContextMenu={openBlockBubble}>
                 {dccon
                     ? dccon.detail.map((item) => <img key={item.idx} src={urls.dccon.image + item.path} alt={item.title} title={item.title} loading="lazy" decoding="async"

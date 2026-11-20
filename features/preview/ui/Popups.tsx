@@ -63,7 +63,7 @@ const BlockPopup = ({comments}: { comments?: string[] }) => {
     };
 
     return (
-        <ModalDialog onClose={() => usePreviewStore.setState({blockPopup: false})} className="sm:max-w-[440px]" focusOnOpen="keyboard">
+        <ModalDialog onClose={() => usePreviewStore.setState({blockPopup: false})} className="sm:max-w-110" focusOnOpen="keyboard">
             <DialogHeader>
                 <DialogTitle>{comments ? `댓글 작성자 차단 (${comments.length}개)` : "유저 차단"}</DialogTitle>
             </DialogHeader>
@@ -124,7 +124,7 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
                 captcha.resolve("");
                 usePreviewStore.setState({captcha: null});
             }}
-            className="sm:max-w-[320px]"
+            className="sm:max-w-80"
             focusOnOpen={input}
         >
             <DialogHeader>
@@ -174,14 +174,14 @@ const TurnstilePopup = ({turnstile}: { turnstile: TurnstilePrompt }) => {
                 turnstile.resolve(undefined);
                 usePreviewStore.setState({turnstile: null});
             }}
-            className="sm:max-w-[360px]"
+            className="sm:max-w-90"
         >
             <DialogHeader>
                 <DialogTitle>보안 확인</DialogTitle>
                 <DialogDescription>체크박스를 누르면 댓글을 보냅니다.</DialogDescription>
             </DialogHeader>
             {/* 위젯(300×65)이 뜨기 전에도 자리를 잡아 둔다. */}
-            <div ref={host} {...{[TURNSTILE_HOST]: ""}} className="flex min-h-[65px] justify-center"/>
+            <div ref={host} {...{[TURNSTILE_HOST]: ""}} className="flex min-h-16.25 justify-center"/>
             <DialogActions/>
         </ModalDialog>
     );
@@ -243,7 +243,7 @@ export const AdminPanel = () => {
     };
 
     return (
-        <div className="pointer-events-auto fixed top-[20%] left-0 w-[150px] rounded-r-xl bg-base-100 p-2 text-base-content shadow-md ring-1 ring-base-content/10 duration-150 animate-in fade-in">
+        <div className="pointer-events-auto fixed top-[20%] left-0 w-37.5 rounded-r-xl bg-base-100 p-2 text-base-content shadow-md ring-1 ring-base-content/10 duration-150 animate-in fade-in">
             <p className="mb-2 ml-1 text-xs font-medium text-base-content/60">관리</p>
             <div className="flex flex-col gap-1">
                 {actions.map((action) => (

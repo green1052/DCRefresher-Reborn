@@ -10,7 +10,7 @@ interface RefresherSelectProps<T extends string> {
 
 export const RefresherSelect = <T extends string>({value, options, disabled, onChange, ...aria}: RefresherSelectProps<T>) => (
     <select
-        className="select min-w-[140px]"
+        className="select min-w-35"
         disabled={disabled}
         value={value}
         // 목록이 바뀌어 지금 값이 빠지면 브라우저가 첫 항목을 보여 주기만 하고 onChange는 오지 않는다.

@@ -72,7 +72,7 @@ const MemoFormDialog = ({
 
     return (
         // 추가할 때는 비어 있는 대상부터, 고칠 때는(대상이 막혀 있다) 메모부터 입력한다.
-        <ModalDialog onClose={onClose} focusOnOpen={editing ? textInput : userInput} className="sm:max-w-[480px]">
+        <ModalDialog onClose={onClose} focusOnOpen={editing ? textInput : userInput} className="sm:max-w-120">
             <DialogHeader>
                 <DialogTitle>메모 {editing ? "수정" : "추가"}</DialogTitle>
             </DialogHeader>

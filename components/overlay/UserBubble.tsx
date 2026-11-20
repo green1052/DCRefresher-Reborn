@@ -160,7 +160,7 @@ export const DcconPackageDialog = ({target, onClose}: { target: SelectedUser; on
     };
 
     return (
-        <ModalDialog onClose={onClose} className="sm:max-w-[400px]">
+        <ModalDialog onClose={onClose} className="sm:max-w-100">
             <DialogHeader>
                 <DialogTitle>디시콘 패키지를 어떻게 차단할까요?</DialogTitle>
                 <DialogDescription>
@@ -287,7 +287,7 @@ const Bubble = ({bubble, selected, onBlockPackage, onDcconInfo}: BubbleProps) =>
         <div ref={popup} data-slot="popover-content" role="dialog"
              aria-label={selected.dccon ? "디시콘 메뉴" : `${selected.nick || identity || "사용자"} 메뉴`}
              style={{left: `${bubble.x}px`, top: `${bubble.y + 4}px`}}
-             className="fixed isolate z-50 flex min-w-[200px] max-w-[320px] flex-col gap-2 rounded-md bg-base-100 p-2 text-sm text-base-content shadow-md ring-1 ring-base-content/10 outline-none duration-100 animate-in fade-in-0 zoom-in-95">
+             className="fixed isolate z-50 flex min-w-50 max-w-80 flex-col gap-2 rounded-md bg-base-100 p-2 text-sm text-base-content shadow-md ring-1 ring-base-content/10 outline-none duration-100 animate-in fade-in-0 zoom-in-95">
             {/* 창이 닫힐 때 사라진 버블 대신 연 요소로 돌아오게 먼저 포커스를 옮겨 둔다. */}
             {selected.dccon ? (
                 <>

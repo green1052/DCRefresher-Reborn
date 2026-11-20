@@ -75,7 +75,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
     };
 
     return (
-        <ModalDialog onClose={onClose} className="sm:max-w-[480px]">
+        <ModalDialog onClose={onClose} className="sm:max-w-120">
             <DialogHeader>
                 <DialogTitle>{TYPE_NAMES[type]} 차단 {initial ? "수정" : "추가"}</DialogTitle>
                 <DialogDescription>

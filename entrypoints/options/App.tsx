@@ -131,7 +131,7 @@ export function App() {
 
             <div className="min-w-0 grow px-4 py-8 md:px-8">
                 {/* 탭마다 새로 마운트해 들어오는 애니메이션을 다시 건다 - 포커스도 이 탭으로 돌아온다. */}
-                <div key={current.id} className="tab-enter mx-auto max-w-[880px] outline-none" tabIndex={-1}>
+                <div key={current.id} className="tab-enter mx-auto max-w-220 outline-none" tabIndex={-1}>
                     <h1 className="mb-6 text-2xl font-bold">{current.label}</h1>
                     {status === "failed"
                         ? <p className="text-error">저장된 데이터를 읽지 못했습니다. 페이지를 새로고침해 주세요.</p>

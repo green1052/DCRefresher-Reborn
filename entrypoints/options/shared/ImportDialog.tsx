@@ -47,7 +47,7 @@ export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 
 
     // 가져오는 중에는 닫지 않는다. 다 들어가기 전에 닫혀 끝난 줄 알지 않게 한다.
     return (
-        <ModalDialog actionsRef={actions} dismissible={!busy} focusOnOpen={input} className="sm:max-w-[520px]" onClose={onClose}>
+        <ModalDialog actionsRef={actions} dismissible={!busy} focusOnOpen={input} className="sm:max-w-130" onClose={onClose}>
             <DialogHeader>
                 <DialogTitle>{title}</DialogTitle>
                 <DialogDescription>{desc}</DialogDescription>

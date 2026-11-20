@@ -240,7 +240,7 @@ const PasswordDialog = ({warning, onSubmit, onClose}: { warning?: string; onSubm
     const value = edited ? password : (saved ?? "");
 
     return (
-        <ModalDialog onClose={onClose} className="sm:max-w-[320px]" focusOnOpen={input}>
+        <ModalDialog onClose={onClose} className="sm:max-w-80" focusOnOpen={input}>
             <DialogHeader>
                 <DialogTitle>댓글 비밀번호</DialogTitle>
                 {warning && <p className="text-sm text-error">{warning}</p>}

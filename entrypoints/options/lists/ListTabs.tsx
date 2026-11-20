@@ -268,7 +268,7 @@ export const ListTabs = <T extends string, I>({
                                                 resetLimits();
                                             }}/>
                                         )}
-                                        <SearchInput className="w-[180px]" placeholder="검색" aria-label={`${label} 검색`} value={query}
+                                        <SearchInput className="w-45" placeholder="검색" aria-label={`${label} 검색`} value={query}
                                                      onChange={(ev) => {
                                                          setQuery(ev.currentTarget.value);
                                                          resetLimits();

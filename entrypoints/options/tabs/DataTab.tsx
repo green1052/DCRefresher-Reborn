@@ -133,7 +133,7 @@ export function DataTab() {
                 </div>
 
                 {restoreOpen && (
-                    <ModalDialog onClose={() => setRestoreOpen(false)} className="sm:max-w-[420px]">
+                    <ModalDialog onClose={() => setRestoreOpen(false)} className="sm:max-w-105">
                         <DialogHeader>
                             <DialogTitle>어느 백업으로 복원할까요?</DialogTitle>
                         </DialogHeader>
