@@ -75,7 +75,6 @@ export function BlockTab() {
                 types={BLOCK_TYPES}
                 names={TYPE_NAMES}
                 label="차단 목록"
-                fileName="dcrefresher-block"
                 columns={["항목", "정보"]}
                 emptyText={(type) => `차단된 ${TYPE_NAMES[type]} 없음`}
                 exportData={() => ({...entries, defaults})}
@@ -84,10 +83,10 @@ export function BlockTab() {
                 onAdd={(type) => setDialog({type, initial: null})}
                 toolbar={(type) => (
                     <div className="flex items-center gap-2">
-                        <span className="text-base-content/60">기본 차단 모드</span>
+                        <span className="text-base-content/60 whitespace-nowrap">기본 모드</span>
                         <RefresherSelect
                             value={defaults[type]}
-                            aria-label="기본 차단 모드"
+                            aria-label="기본 모드"
                             onChange={(next) => void setDefault(type, next).catch(() => notify(SAVE_FAILED))}
                             options={DETECT_MODE_NAMES}
                         />

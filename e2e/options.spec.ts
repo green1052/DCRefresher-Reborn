@@ -94,7 +94,7 @@ test.describe("옵션 - 설정 탭", () => {
 test.describe("옵션 - 차단 탭", () => {
     test("항목을 추가하면 표에 보이고 저장소에 남는다", async ({page, extensionId, storage}) => {
         const options = await openOptions(page, extensionId, "block");
-        await expect(page.getByText("기본 차단 모드")).toBeVisible();
+        await expect(page.getByText("기본 모드")).toBeVisible();
         await expect(page.getByRole("button", {name: "값과 똑같으면 가립니다."})).toBeVisible();
 
         await page.getByRole("button", {name: "추가", exact: true}).click();

@@ -227,7 +227,6 @@ export function MemoTab() {
                 types={MEMO_TYPES}
                 names={MEMO_TYPE_NAMES}
                 label="메모"
-                fileName="dcrefresher-memo"
                 columns={["대상", "메모"]}
                 emptyText={(type) => `${MEMO_TYPE_NAMES[type]} 메모 없음`}
                 exportData={() => memos}

@@ -8,7 +8,7 @@ import {mergeBackup, parseImport, writeSettings} from "@/core/settings-transfer"
 import {backupStorage} from "@/core/storage/items";
 import {friendlyMessage} from "@/utils/error";
 
-import {downloadJson, formatTime} from "../shared/format";
+import {formatTime} from "../shared/format";
 import {type Done, notify, notifyDone} from "../optionsStore";
 
 export type RestoreMode = "replace" | "merge";
@@ -93,9 +93,6 @@ export function useDataActions(restoreRef: RefObject<HTMLButtonElement | null>, 
             "클립보드로 내보내지 못했습니다."
         );
 
-    const exportFile = () =>
-        run(() => collectLocalData().then((data) => downloadJson("dcrefresher", data)).then(() => "데이터를 파일로 내보냈습니다."), "파일로 내보내지 못했습니다.");
-
     // run()을 거치지 않는다. loading이 가져오기 버튼을 막으면 다이얼로그를 닫을 때 포커스가 그 버튼으로 돌아가지 못한다.
     const submitImport = async (text: string): Promise<Done | undefined> => {
         try {
@@ -123,5 +120,5 @@ export function useDataActions(restoreRef: RefObject<HTMLButtonElement | null>, 
             return undoable(`데이터를 초기화했습니다.${wasAuto ? " 클라우드 백업을 지키려고 자동 백업을 껐습니다." : ""}`, at, wasAuto);
         }, "초기화하지 못했습니다.");
 
-    return {loading, forceUpdate, backupCloud, recoverCloud, toggleAutoBackup, exportData, exportFile, submitImport, clearCloud, clearData, revert};
+    return {loading, forceUpdate, backupCloud, recoverCloud, toggleAutoBackup, exportData, submitImport, clearCloud, clearData, revert};
 }

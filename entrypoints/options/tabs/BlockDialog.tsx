@@ -112,7 +112,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                     <div className="flex w-full flex-col gap-3">
                         <div className="flex items-center gap-1.5">
                             <span className="text-sm font-medium leading-snug">차단 모드</span>
-                            <TooltipButton tip={mode ? DETECT_MODE_DESCRIPTIONS[mode] : "기본 차단 모드를 따릅니다."}
+                            <TooltipButton tip={mode ? DETECT_MODE_DESCRIPTIONS[mode] : "기본 모드를 따릅니다."}
                                            variant="ghost" size="icon-xs">
                                 <Info className="size-3.5"/>
                             </TooltipButton>

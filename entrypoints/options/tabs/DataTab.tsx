@@ -1,4 +1,4 @@
-import {ClipboardCopy, CloudDownload, CloudUpload, FileDown, RefreshCw, Trash2, Undo2, Upload} from "lucide-preact";
+import {CloudDownload, CloudUpload, Download, RefreshCw, Trash2, Undo2, Upload} from "lucide-preact";
 import { useEffect, useId, useRef, useState } from "preact/hooks";
 
 import {ConfirmDialog, DialogActions, DialogDescription, DialogHeader, DialogTitle, ModalDialog} from "@/components/dialogs";
@@ -38,7 +38,6 @@ export function DataTab() {
         recoverCloud,
         toggleAutoBackup,
         exportData,
-        exportFile,
         submitImport,
         clearCloud,
         clearData,
@@ -174,10 +173,7 @@ export function DataTab() {
                      desc="설정을 내보냅니다.">
                 <div className="flex flex-wrap gap-2">
                     <button type="button" className="btn" disabled={loading} onClick={() => void exportData()}>
-                        <ClipboardCopy className="size-4"/> 클립보드로 내보내기
-                    </button>
-                    <button type="button" className="btn" disabled={loading} onClick={() => void exportFile()}>
-                        <FileDown className="size-4"/> 파일로 내보내기
+                        <Download className="size-4"/> 내보내기
                     </button>
                     <button type="button" className="btn" disabled={loading} onClick={() => setImportOpen(true)}>
                         <Upload className="size-4"/> 가져오기

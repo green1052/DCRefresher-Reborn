@@ -1,5 +1,5 @@
 import {cn} from "cn";
-import {ClipboardCopy, FileDown, Plus, Trash2, Upload} from "lucide-preact";
+import {Download, Plus, Trash2, Upload} from "lucide-preact";
 import { useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 import { type ComponentChild as ReactNode } from "preact";
 
@@ -10,7 +10,6 @@ import {focusPanel, panelOf} from "@/components/useReturnFocus";
 import {friendlyMessage, SAVE_FAILED} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 
-import {downloadJson} from "../shared/format";
 import {ImportDialog} from "../shared/ImportDialog";
 import {EmptyList, SearchInput} from "../shared/widgets";
 import {notify, notifyDone} from "../optionsStore";
@@ -99,7 +98,6 @@ export const ListTabs = <T extends string, I>({
                                                   types,
                                                   names,
                                                   label,
-                                                  fileName,
                                                   columns,
                                                   emptyText,
                                                   exportData,
@@ -118,9 +116,7 @@ export const ListTabs = <T extends string, I>({
     types: readonly T[];
     names: Record<T, string>;
     label: string;
-    fileName: string;
-    columns: [string, string];
-    emptyText: (type: T) => string;
+    columns: [string, string];    emptyText: (type: T) => string;
     exportData: () => unknown;
     /** 돌려준 수가 0이면 다른 데이터로 보고 실패로 알린다. */
     importData: (parsed: Record<string, unknown>) => Promise<number>;
@@ -187,14 +183,8 @@ export const ListTabs = <T extends string, I>({
         );
     };
 
-    const exportList = (sink: "클립보드" | "파일"): Promise<void> => {
-        if (sink === "파일") {
-            downloadJson(fileName, exportData());
-            notifyDone(`${object} 파일로 내보냈습니다.`);
-            return Promise.resolve();
-        }
-        return copyText(JSON.stringify(exportData()), `${object} 클립보드로 내보냈습니다.`, `${object} 내보내지 못했습니다.`);
-    };
+    const exportList = (): Promise<void> =>
+        copyText(JSON.stringify(exportData()), `${object} 클립보드로 내보냈습니다.`, `${object} 내보내지 못했습니다.`);
 
     const submitImport = async (text: string): Promise<string | undefined> => {
         let data: unknown;
@@ -241,11 +231,8 @@ export const ListTabs = <T extends string, I>({
                             })}
                         </div>
                         <div className="flex gap-1 pb-1">
-                            <TooltipButton tip="클립보드로 내보내기" variant="ghost" size="icon" onClick={() => void exportList("클립보드")}>
-                                <ClipboardCopy/>
-                            </TooltipButton>
-                            <TooltipButton tip="파일로 내보내기" variant="ghost" size="icon" onClick={() => void exportList("파일")}>
-                                <FileDown/>
+                            <TooltipButton tip="내보내기" variant="ghost" size="icon" onClick={() => void exportList()}>
+                                <Download/>
                             </TooltipButton>
                             <TooltipButton tip="가져오기" variant="ghost" size="icon" onClick={() => setImportOpen(true)}>
                                 <Upload/>
