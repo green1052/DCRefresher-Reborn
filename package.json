@@ -35,7 +35,7 @@
         "@tailwindcss/vite": "^4.3.5",
         "@types/bun": "^1.4.5",
         "@wxt-dev/auto-icons": "^1.1.2",
-        "daisyui": "^5.8.1",
+        "daisyui": "^5.8.2",
         "jsdom": "^31.0.1",
         "mmdb-lib": "^3.0.5",
         "netmask": "^2.1.1",

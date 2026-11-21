@@ -20,7 +20,7 @@
         "@tailwindcss/vite": "^4.3.5",
         "@types/bun": "^1.4.5",
         "@wxt-dev/auto-icons": "^1.1.2",
-        "daisyui": "^5.8.1",
+        "daisyui": "^5.8.2",
         "jsdom": "^31.0.1",
         "mmdb-lib": "^3.0.5",
         "netmask": "^2.1.1",
@@ -445,7 +445,7 @@
 
     "cssomnom": ["cssomnom@0.1.12", "", {}, "sha512-nlsLjRxRN2RPomw3r+e+oD3KQBbEbKK0+oBUATbodf5N38FlOMg/5nqV0CdClNvpVsjFLikD63H6dgKTgeuuUg=="],
 
-    "daisyui": ["daisyui@5.8.1", "", {}, "sha512-ptP4WHOJ6WltNnA5zwkg3GypOLhsyUM2FHuXCckWVEpWviioInFKsjnShCWYGYHsQ5P9bUCOH1tn45cKLeTUpg=="],
+    "daisyui": ["daisyui@5.8.2", "", {}, "sha512-InScsDXX0pbfgvWyPQ8iTHV4rNMZdfbMo85KqlQUn62/PCIjwczViw5lbotzoXy/nPrn4qjDMmx/fspuUnjBtA=="],
 
     "data-urls": ["data-urls@8.0.0", "", { "dependencies": { "whatwg-mimetype": "^5.0.0", "whatwg-url": "^17.1.2" } }, "sha512-JQUCCK+/CAGbGGx618PlFZMXH81Jtj7t73CHv9dd/zVWvxgGT2zLFRjnKb+Ng46GIwcy+f7f88qd4duqllK+WQ=="],
 
