@@ -1,0 +1,8 @@
+/*
+  Access-Control-Allow-Origin: *
+/version
+  Cache-Control: public, max-age=300
+/ip.json
+  Cache-Control: public, max-age=3600
+/ban.json
+  Cache-Control: public, max-age=3600
