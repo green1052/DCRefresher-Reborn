@@ -19,7 +19,7 @@
         "@playwright/test": "^1.65.1",
         "@tailwindcss/vite": "^4.3.5",
         "@types/bun": "^1.4.5",
-        "@wxt-dev/auto-icons": "^1.1.2",
+        "@wxt-dev/auto-icons": "^2.0.0",
         "daisyui": "^5.8.2",
         "jsdom": "^31.0.1",
         "mmdb-lib": "^3.0.5",
@@ -319,7 +319,7 @@
 
     "@webext-core/messaging": ["@webext-core/messaging@4.0.2", "", { "dependencies": { "@aklinker1/zero-serialize-error": "^1.0.2" }, "peerDependencies": { "@types/chrome": "*" }, "optionalPeers": ["@types/chrome"] }, "sha512-pnAPo5DyInzFyHNDPxsB+6Bg9/WSOJXb8EDL3b7f0x+QVxoh1TbCj0pi2ONxxsenaxlOPEMHQoquAlk2/T1GNQ=="],
 
-    "@wxt-dev/auto-icons": ["@wxt-dev/auto-icons@1.1.2", "", { "dependencies": { "defu": "^6.1.4", "sharp": "^0.35.3" }, "peerDependencies": { "wxt": ">=0.19.0" } }, "sha512-tLBTgvAAPj5n9VTrNVgbkqSvcuKTZjppgrpGq6YnZ+oOj69bqOWQdFRMhHutTcs4tvIvhgJ80LmhwQXhUyyTxA=="],
+    "@wxt-dev/auto-icons": ["@wxt-dev/auto-icons@2.0.0", "", { "dependencies": { "defu": "^6.1.4", "sharp": "^0.35.3" }, "peerDependencies": { "wxt": ">=0.19.0" } }, "sha512-U6W62V37RKlGWb2vdOouaD7Xv2cIuCsPzdRrgOWD9yp4obt23oIz/LG+evrFecP19GtWtOT7Q6HpN9eSQKzS2A=="],
 
     "@wxt-dev/browser": ["@wxt-dev/browser@0.3.7", "", { "dependencies": { "@types/har-format": "*" } }, "sha512-TCBcayayb2mycJxt9X3kTq3QZerqltx/I4FW1WVTafBcqQC6vUaDz5Sboummy0rVsSMbYzyKnS5118VTw0dt4A=="],
 
