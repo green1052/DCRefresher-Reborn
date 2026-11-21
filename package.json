@@ -20,7 +20,7 @@
         "postinstall": "wxt prepare"
     },
     "dependencies": {
-        "@webext-core/messaging": "^4.0.1",
+        "@webext-core/messaging": "^4.0.2",
         "cn": "^0.5.2",
         "dompurify": "^3.4.18",
         "ky": "^2.2.0",
