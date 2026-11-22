@@ -22,7 +22,7 @@
     "dependencies": {
         "@webext-core/messaging": "^4.0.2",
         "cn": "^0.5.2",
-        "dompurify": "^3.4.18",
+        "dompurify": "^3.5.0",
         "ky": "^2.2.0",
         "lucide-preact": "^1.77.0",
         "p-limit": "^7.3.3",
