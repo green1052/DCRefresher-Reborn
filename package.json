@@ -24,7 +24,7 @@
         "cn": "^0.5.2",
         "dompurify": "^3.5.0",
         "ky": "^2.2.0",
-        "lucide-preact": "^1.78.0",
+        "lucide-preact": "^1.79.0",
         "p-limit": "^7.3.3",
         "preact": "^11.2.0",
         "quick-lru": "^8.0.0",
